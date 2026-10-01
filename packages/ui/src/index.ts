@@ -14,5 +14,7 @@ export * from './toast';
 export * from './avatar';
 export * from './eyebrow';
 export * from './logo';
+export * from './map-card';
+export * from './edge-label';
 export type { Tone } from './tone';
-// Adiados (features posteriores): MapCard/EdgeLabel (F01), RatingButton/VerdictBox (F04), StatBox (F11).
+// Adiados (features posteriores): RatingButton/VerdictBox (F04), StatBox (F11).

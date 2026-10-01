@@ -14,7 +14,7 @@
     "test:e2e": "pnpm --filter @remoa/web test:e2e",
     "strings:check": "pnpm --filter @remoa/web lint:strings",
     "storybook": "pnpm --filter @remoa/ui storybook",
-    "env:local": "pnpm -C ../remoa-backend --silent db:env > apps/web/.env.local"
+    "env:local": "pnpm -C ../remoa-backend --silent db:env > apps/web/.env.local && echo NEXT_PUBLIC_API_URL=http://localhost:4000 >> apps/web/.env.local"
   },
   "devDependencies": {
     "@types/node": "^20.19.0",

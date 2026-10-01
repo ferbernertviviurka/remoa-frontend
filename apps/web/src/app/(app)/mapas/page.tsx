@@ -1,12 +1,11 @@
-import { t } from '@remoa/strings';
-import { Button } from '@remoa/ui';
+import { t, type StringKey } from '@remoa/strings';
+import type { BoardSummary } from '@remoa/contracts';
+import { BoardsView } from '@/features/map/boards/boards-view';
 import { EmptyState } from '@/features/shell/empty-state';
+import { serverApi } from '@/lib/api/server';
 
-export default function Page() {
-  return (
-    <EmptyState title={t('empty.boards.title')} body={t('empty.boards.body')}>
-      <Button disabled>{t('empty.boards.import')}</Button>
-      <Button variant="secondary" disabled>{t('empty.boards.template')}</Button>
-    </EmptyState>
-  );
+export default async function Page() {
+  const r = await serverApi<BoardSummary[]>('/v1/boards');
+  if (!r.ok) return <EmptyState title={t('boards.title')} body={t(`errors.${r.error.code}` as StringKey)} />;
+  return <BoardsView boards={r.data} />;
 }

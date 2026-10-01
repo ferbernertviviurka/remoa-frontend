@@ -4,9 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { t } from '@remoa/strings';
 import { Logo } from '@remoa/ui';
+import type { BoardSummary } from '@remoa/contracts';
 import { navItems } from './nav-items';
 
-export function Sidebar() {
+export function Sidebar({ boards = [] }: { boards?: BoardSummary[] }) {
   const path = usePathname();
   return (
     <aside className="hidden w-60 shrink-0 flex-col gap-6 border-r border-border bg-surface p-4 md:flex">
@@ -30,6 +31,22 @@ export function Sidebar() {
           );
         })}
       </nav>
+      {boards.length > 0 ? (
+        <ul aria-label={t('boards.sidebarLabel')} className="flex flex-col gap-1">
+          {boards.map((b) => (
+            <li key={b.id}>
+              <Link
+                href={`/mapas/${b.id}`}
+                aria-current={path === `/mapas/${b.id}` ? 'page' : undefined}
+                className="flex min-h-[44px] items-center justify-between gap-2 rounded-btn px-3 text-sm text-text hover:bg-primary-tint"
+              >
+                <span className="truncate">{b.title}</span>
+                <span className="shrink-0 text-xs text-muted">{b.cardCount}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </aside>
   );
 }

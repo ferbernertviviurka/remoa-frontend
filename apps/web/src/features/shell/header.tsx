@@ -9,7 +9,6 @@ export function Header() {
         {t('shell.header.breadcrumbRoot')}
       </nav>
       <div className="flex shrink-0 items-center gap-2">
-        <span className="hidden text-xs text-muted sm:inline">{t('shell.header.savedNow')}</span>
         <ThemeToggle />
         <Button disabled>{t('shell.header.import')}</Button>
       </div>

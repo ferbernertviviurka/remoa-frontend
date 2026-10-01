@@ -14,7 +14,7 @@ test('cadastro, logout e login', async ({ page }) => {
   await page.getByLabel('Senha').fill(password);
   await page.getByRole('button', { name: 'Criar conta' }).click();
   await expect(page).toHaveURL(/\/mapas$/);
-  await expect(page.getByRole('heading', { name: 'Você ainda não tem mapas' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Seu primeiro mapa' })).toBeVisible();
   const events = await page.evaluate(() => window.__remoaEvents ?? []);
   expect(events.map((e) => e.event)).toContain('signup');
 
