@@ -1,0 +1,29 @@
+{
+  "name": "remoa-frontend",
+  "private": true,
+  "packageManager": "pnpm@9.11.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo dev --filter=@remoa/web",
+    "check": "turbo lint typecheck test",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "test:e2e": "pnpm --filter @remoa/web test:e2e",
+    "strings:check": "pnpm --filter @remoa/web lint:strings",
+    "storybook": "pnpm --filter @remoa/ui storybook",
+    "env:local": "pnpm -C ../remoa-backend --silent db:env > apps/web/.env.local"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "jiti": "^2.7.0",
+    "turbo": "^2.11.6",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.71.0",
+    "vitest": "^3.2.7"
+  }
+}

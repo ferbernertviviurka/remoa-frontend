@@ -1,0 +1,9 @@
+@import 'tailwindcss';
+@import '@remoa/ui/tokens.css';
+@source "../../../../packages/ui/src";
+
+/* next/font expõe --font-manrope/--font-inter; os tokens esperam --font-display/--font-body */
+:root {
+  --font-display: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}

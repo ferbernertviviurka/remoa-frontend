@@ -1,0 +1,9 @@
+# Lanes from ../AGENTS.md. Single owner until there is a team.
+* @ferbernertviviurka
+/packages/ui/ @ferbernertviviurka # F00 design-system
+/packages/strings/ @ferbernertviviurka # F00 design-system
+/apps/web/src/server/auth/ @ferbernertviviurka # F00 auth (sensível)
+/apps/web/src/middleware.ts @ferbernertviviurka # F00 auth (sensível)
+/apps/web/src/features/map/ @ferbernertviviurka # F01
+/apps/web/src/features/challenge/ @ferbernertviviurka # F04
+/apps/web/src/app/(mobile)/ @ferbernertviviurka # F09

@@ -1,0 +1,33 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# @remoa/contracts comes from remoa-backend (link:), so both repos are checked out side by side.
+# Private backend repo: add secret REMOA_BACKEND_TOKEN (fine-grained, read-only contents).
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: remoa-frontend } }
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: remoa-frontend }
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/remoa-backend
+          path: remoa-backend
+          token: ${{ secrets.REMOA_BACKEND_TOKEN || github.token }}
+      - uses: pnpm/action-setup@v4
+        with: { package_json_file: remoa-frontend/package.json }
+      - uses: actions/setup-node@v4
+        with: { node-version-file: remoa-frontend/.nvmrc }
+      - run: pnpm -C ../remoa-backend i --frozen-lockfile && pnpm i --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm strings:check
+      - uses: supabase/setup-cli@v1
+      - run: supabase start && pnpm db:migrate
+        working-directory: remoa-backend
+      - run: pnpm env:local
+      - run: pnpm --filter @remoa/web exec playwright install --with-deps chromium
+      - run: pnpm test:e2e

@@ -1,0 +1,102 @@
+/* Torph tokens (fonte: docs/DESIGN.md). Importar depois de `@import 'tailwindcss'`.
+   Tema escuro: prefers-color-scheme, ou data-theme="dark" em <html> (toggle do app). */
+:root {
+  --primary: #6d5bd0;
+  --primary-deep: #443881;
+  --primary-tint: #f0effa;
+  --on-primary: #ffffff;
+  --canvas: #f6f8f7;
+  --surface: #ffffff;
+  --text: #142b3c;
+  --muted: #566673;
+  --border: #d6dfe2;
+  --grid: #d9e2e3;
+  --navy: #16324f;
+  --apricot: #f0b78c;
+
+  --state-review-border: #c2410c;
+  --state-review-bg: #ffedd5;
+  --state-review-text: #9a3412;
+  --state-watch-border: #ca8a04;
+  --state-watch-bg: #fef3c7;
+  --state-watch-text: #854d0e;
+  --state-steady-border: var(--primary);
+  --state-steady-bg: var(--primary-tint);
+  --state-steady-text: var(--primary-deep);
+  --state-unknown-border: #9aa6b2;
+  --state-unknown-bg: #eef2f4;
+  --state-unknown-text: var(--muted);
+
+  --radius-btn: 11px;
+  --radius-map: 15px;
+  --radius-review: 24px;
+  --radius-tag: 7px;
+  --radius-pill: 999px;
+  --shadow-card: 0 10px 34px rgba(20, 43, 60, 0.05);
+
+  --font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --primary: #beb0ff;
+    --primary-deep: #d9d0ff;
+    --primary-tint: #30294a;
+    --on-primary: #1c1538;
+    --canvas: #101b24;
+    --surface: #172934;
+    --text: #eaf2f3;
+    --muted: #aebcc7;
+    --border: #3b5363;
+    --grid: #263a47;
+  }
+}
+
+:root[data-theme='dark'] {
+  --primary: #beb0ff;
+  --primary-deep: #d9d0ff;
+  --primary-tint: #30294a;
+  --on-primary: #1c1538;
+  --canvas: #101b24;
+  --surface: #172934;
+  --text: #eaf2f3;
+  --muted: #aebcc7;
+  --border: #3b5363;
+  --grid: #263a47;
+}
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-deep: var(--primary-deep);
+  --color-primary-tint: var(--primary-tint);
+  --color-on-primary: var(--on-primary);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-grid: var(--grid);
+  --color-navy: var(--navy);
+  --color-apricot: var(--apricot);
+  --color-review: var(--state-review-border);
+  --color-review-bg: var(--state-review-bg);
+  --color-review-text: var(--state-review-text);
+  --color-watch: var(--state-watch-border);
+  --color-watch-bg: var(--state-watch-bg);
+  --color-watch-text: var(--state-watch-text);
+  --color-steady: var(--state-steady-border);
+  --color-steady-bg: var(--state-steady-bg);
+  --color-steady-text: var(--state-steady-text);
+  --color-unknown: var(--state-unknown-border);
+  --color-unknown-bg: var(--state-unknown-bg);
+  --color-unknown-text: var(--state-unknown-text);
+  --radius-btn: var(--radius-btn);
+  --radius-map: var(--radius-map);
+  --radius-review: var(--radius-review);
+  --radius-tag: var(--radius-tag);
+  --radius-pill: var(--radius-pill);
+  --shadow-card: var(--shadow-card);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-body);
+}
