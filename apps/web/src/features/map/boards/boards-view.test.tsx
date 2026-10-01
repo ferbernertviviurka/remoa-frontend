@@ -12,7 +12,7 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push, refresh }) }));
 vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
 vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
 
-const board: BoardSummary = { id: 'b1', title: 'Sepse', area: 'CM', status: 'private', updatedAt: new Date('2026-10-01T00:00:00Z'), cardCount: 0, edgeCount: 0 };
+const board: BoardSummary = { id: 'b1', title: 'Sepse', area: 'CM', status: 'private', updatedAt: new Date('2026-10-01T00:00:00Z'), cardCount: 0, edgeCount: 0, dueCount: 0 };
 const view = (boards: BoardSummary[]) =>
   render(
     <ToastProvider closeLabel="Fechar" viewportLabel="Avisos">

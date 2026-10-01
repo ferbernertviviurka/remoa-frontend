@@ -24,6 +24,20 @@ export const ptBR = {
   revisar: {
     hoje: 'Revisar hoje',
   },
+  review: {
+    headlineNone: 'Nada vence hoje',
+    headlineOne: '1 conceito vence hoje',
+    headlineMany: '{due} conceitos vencem hoje',
+    headlineIn: '{head}, {n} em {board}',
+    due: 'Vencem hoje',
+    new: 'Novos',
+    weak: 'Para acompanhar',
+    start: 'Começar revisão',
+    groupsLabel: 'Fila por mapa',
+    unknownBoard: 'Mapa sem nome',
+    empty: { title: 'Nada para revisar hoje', body: 'Volte amanhã ou adicione conceitos a um mapa.', cta: 'Ir para Meus mapas' },
+    badge: '{n} vencem hoje',
+  },
   mapState: {
     review: 'Revisitar',
     watch: 'Acompanhar',

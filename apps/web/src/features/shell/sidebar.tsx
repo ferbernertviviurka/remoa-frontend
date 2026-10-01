@@ -7,8 +7,17 @@ import { Logo, Separator } from '@remoa/ui';
 import type { BoardSummary } from '@remoa/contracts';
 import { navItems } from './nav-items';
 
+const DueBadge = ({ n }: { n: number }) =>
+  n > 0 ? (
+    <span className="ml-auto shrink-0 rounded-pill border border-review bg-review-bg px-2 text-xs font-bold text-review-text">
+      <span aria-hidden="true">{n}</span>
+      <span className="sr-only">{t('review.badge', { n })}</span>
+    </span>
+  ) : null;
+
 export function Sidebar({ boards = [] }: { boards?: BoardSummary[] }) {
   const path = usePathname();
+  const totalDue = boards.reduce((a, b) => a + b.dueCount, 0);
   return (
     <aside className="hidden w-60 shrink-0 flex-col gap-6 border-r border-border bg-surface p-4 md:flex">
       <Link href="/mapas" className="flex items-center gap-2 font-display text-lg font-extrabold text-text">
@@ -28,6 +37,7 @@ export function Sidebar({ boards = [] }: { boards?: BoardSummary[] }) {
             >
               {i.icon}
               {t(i.label)}
+              {i.href === '/revisar' ? <DueBadge n={totalDue} /> : null}
             </Link>
           );
         })}
@@ -44,7 +54,10 @@ export function Sidebar({ boards = [] }: { boards?: BoardSummary[] }) {
                 className="flex min-h-[44px] items-center justify-between gap-2 rounded-btn px-3 text-sm text-text hover:bg-primary-tint"
               >
                 <span className="truncate">{b.title}</span>
-                <span className="shrink-0 text-xs text-muted">{b.cardCount}</span>
+                <span className="flex shrink-0 items-center gap-2 text-xs text-muted">
+                  <DueBadge n={b.dueCount} />
+                  {b.cardCount}
+                </span>
               </Link>
             </li>
           ))}
