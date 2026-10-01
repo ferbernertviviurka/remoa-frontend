@@ -349,7 +349,8 @@ function Canvas({ data }: { data: BoardGraph }) {
               maxZoom={2}
               onlyRenderVisibleElements={graph.nodes.length > VIRTUALIZE_ABOVE}
               ariaLabelConfig={ariaLabelConfig}
-              fitView
+              // only on load: on an empty map RF would fit once the first card appears and yank it away from the click
+              fitView={init.graph.nodes.length > 0}
               fitViewOptions={{ maxZoom: 1 }}
             >
               <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="var(--grid)" />
