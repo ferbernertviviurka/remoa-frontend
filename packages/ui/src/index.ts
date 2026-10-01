@@ -25,6 +25,8 @@ export * from './stat';
 export * from './empty';
 export * from './breadcrumb';
 export * from './rating';
+export * from './rating-button';
+export * from './verdict-box';
 export * from './tooltip';
 export * from './tabs';
 export * from './accordion';

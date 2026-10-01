@@ -1,12 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { reviewQueueFixture } from '@remoa/contracts/mocks';
 import { QueueView } from './queue-view';
 import { Sidebar } from '@/features/shell/sidebar';
 
 const track = vi.fn();
 vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
-vi.mock('next/navigation', () => ({ usePathname: () => '/revisar' }));
+const push = vi.fn();
+vi.mock('next/navigation', () => ({ usePathname: () => '/revisar', useRouter: () => ({ push }) }));
 
 afterEach(() => {
   cleanup();
@@ -21,9 +22,14 @@ describe('QueueView', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('4 conceitos vencem hoje, 4 em Sepse');
     expect(screen.getByRole('link', { name: 'Sepse' })).toHaveAttribute('href', `/mapas/${boardId}`);
     expect(screen.getByRole('list', { name: 'Fila por mapa' })).toHaveTextContent('4 Vencem hoje · 2 Novos · 1 Para acompanhar');
-    expect(screen.getByRole('button', { name: 'Começar revisão' })).toBeDisabled();
     expect(track).toHaveBeenCalledTimes(1);
     expect(track).toHaveBeenCalledWith('queue_opened', { due: 4, new: 2, weak: 1 });
+  });
+
+  it('starts the challenge session', () => {
+    render(<QueueView items={reviewQueueFixture} boardTitles={{}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Começar revisão' }));
+    expect(push).toHaveBeenCalledWith('/revisar/sessao');
   });
 
   it('shows the empty state with a link to the boards', () => {

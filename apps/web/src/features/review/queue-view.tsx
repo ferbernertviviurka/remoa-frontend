@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import type { QueueItem } from '@remoa/contracts';
 import { t } from '@remoa/strings';
@@ -11,6 +12,7 @@ import { EmptyState } from '@/features/shell/empty-state';
 const count = (items: QueueItem[], reason: QueueItem['reason']) => items.filter((i) => i.reason === reason).length;
 
 export function QueueView({ items, boardTitles }: { items: QueueItem[]; boardTitles: Record<string, string> }) {
+  const router = useRouter();
   const due = count(items, 'due');
   const fresh = count(items, 'new');
   const weak = count(items, 'weak');
@@ -59,9 +61,8 @@ export function QueueView({ items, boardTitles }: { items: QueueItem[]; boardTit
           </li>
         ))}
       </ul>
-      {/* F04 hook: replace this disabled button with the challenge session launcher (items → challengeSession). */}
       <div>
-        <Button disabled title={t('common.comingSoon')}>
+        <Button onClick={() => router.push('/revisar/sessao')}>
           {t('review.start')}
         </Button>
       </div>

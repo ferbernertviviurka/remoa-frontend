@@ -190,8 +190,12 @@ function Canvas({ data }: { data: BoardGraph }) {
         const c = rf.screenToFlowPosition({ x: (r?.left ?? 0) + (r?.width ?? 0) / 2, y: (r?.top ?? 0) + (r?.height ?? 0) / 2 });
         p = { x: c.x - CARD_W / 2, y: c.y - CARD_H / 2 };
       }
+      // toolbar cards all start at the viewport centre: slide along the grid until no other card sits (mostly) on the spot
+      let pos = snapPos(p);
+      const taken = (q: XYPosition) => g.current.nodes.some((n) => Math.abs(n.position.x - q.x) < CARD_W - 16 && Math.abs(n.position.y - q.y) < CARD_H - 16);
+      for (let i = 0; i < 50 && !at && taken(pos); i++) pos = snapPos({ x: pos.x + CARD_W + 32, y: pos.y + (i % 2 ? CARD_H + 32 : 0) });
       const id = uuid();
-      commit([{ op: 'createCard', opId: uuid(), boardId: board.id, card: { id, type, title: t(`map.newCardTitle.${type}`), position: snapPos(p) } }]);
+      commit([{ op: 'createCard', opId: uuid(), boardId: board.id, card: { id, type, title: t(`map.newCardTitle.${type}`), position: pos } }]);
       track('card_created', { type, origin: 'manual' });
       openCard(id);
     },

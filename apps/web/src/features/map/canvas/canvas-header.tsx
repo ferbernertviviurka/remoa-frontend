@@ -85,6 +85,9 @@ export const CanvasHeader = memo(function CanvasHeader(p: { board: Board; cards:
         <div className="flex items-center gap-4">
           <span className="text-sm text-muted">{t('map.stats', { cards: p.cards, edges: p.edges })}</span>
           <SaveIndicator status={p.status} />
+          <Button variant="secondary" onClick={() => router.push(`/mapas/${p.board.id}/desafiar`)}>
+            {t('vocab.challengeBoard')}
+          </Button>
         </div>
       </div>
       {p.status.state === 'error' ? (
