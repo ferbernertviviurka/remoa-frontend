@@ -56,6 +56,7 @@ export function createOpQueue(o: OpQueueOptions) {
   const debounceMs = o.debounceMs ?? DEBOUNCE_MS;
   let queue = loadPending(o.boardId, storage);
   let inflight = 0;
+  let acked = 0; // batches the API answered (applied or rejected)
   let attempt = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let offline = false;
@@ -86,9 +87,16 @@ export function createOpQueue(o: OpQueueOptions) {
   };
   const backoff = () => schedule(Math.min(MAX_BACKOFF_MS, 1000 * 2 ** attempt++));
 
-  async function flush(): Promise<void> {
+  let running: Promise<void> | null = null;
+  /** Sends now. A call while a batch is in flight waits for that send instead of returning early. */
+  function flush(): Promise<void> {
     clearTimeout(timer);
-    if (disposed || inflight || !queue.length) return;
+    running ??= send().finally(() => (running = null));
+    return running;
+  }
+
+  async function send(): Promise<void> {
+    if (disposed || !queue.length) return;
     const batch = queue.slice(0, CHUNK);
     inflight = batch.length;
     emit();
@@ -106,6 +114,7 @@ export function createOpQueue(o: OpQueueOptions) {
     offline = false;
     if (r.ok || !RETRYABLE.has(r.error.code)) {
       queue = queue.slice(batch.length);
+      acked++;
       persist();
       attempt = 0;
       if (r.ok) {
@@ -113,7 +122,7 @@ export function createOpQueue(o: OpQueueOptions) {
         if (error === 'retry') error = null;
       } else error = 'dropped';
       emit();
-      if (queue.length) return flush();
+      if (queue.length) return send();
       return;
     }
     error = 'retry';
@@ -146,6 +155,18 @@ export function createOpQueue(o: OpQueueOptions) {
       return flush();
     },
     status,
+    /**
+     * Resolves true once no queued op matches `pending` (e.g. this card's createCard reached the API),
+     * false if the queue is stuck (offline, retrying, disposed). F02 awaits it before the first PUT of a new card.
+     */
+    async sent(pending: (op: MapOp) => boolean): Promise<boolean> {
+      while (queue.some(pending)) {
+        const before = acked;
+        await flush();
+        if (disposed || offline || error === 'retry' || acked === before) return !queue.some(pending);
+      }
+      return true;
+    },
     dispose() {
       disposed = true;
       clearTimeout(timer);

@@ -6,16 +6,17 @@ import {
   applyEdgeChanges, applyNodeChanges, Background, BackgroundVariant, MiniMap, Panel, ReactFlow, ReactFlowProvider, useReactFlow,
   type Connection, type EdgeChange, type NodeChange, type XYPosition,
 } from '@xyflow/react';
-import { MAX_CARDS_PER_BOARD, type BoardGraph, type CardType, type MapOp, type RetrievabilityMap } from '@remoa/contracts';
+import { MAX_CARDS_PER_BOARD, type BoardGraph, type CardDetail, type CardType, type MapOp, type RetrievabilityMap, type SaveCardInput } from '@remoa/contracts';
 import { cardTypes } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { Button, Dialog, IconButton, Switch, useToast } from '@remoa/ui';
+import { previewOf } from '@/features/cards/draft';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { CanvasContext, type CanvasCtx } from './canvas-context';
 import { CanvasHeader } from './canvas-header';
 import { CardNodeView } from './card-node';
-import { applyOps, invertAll, snapPos, toEdge, toNode, type CardCache, type CardNode, type Graph, type LinkEdge } from './graph';
+import { applyOps, freshen, invertAll, patchCard, snapPos, toEdge, toNode, type CardCache, type CardNode, type Graph, type LinkEdge } from './graph';
 import { emptyHistory, push, redo, undo, type History } from './history';
 import { Inspector } from './inspector';
 import { autoLayout, CARD_H, CARD_W } from './layout';
@@ -47,6 +48,8 @@ function storage() {
 
 const isTyping = (el: EventTarget | null) =>
   el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName));
+/** Keys inside a dialog (e.g. Delete in the mask editor) belong to the dialog, never to the canvas. */
+const inDialog = (el: EventTarget | null) => el instanceof Element && !!el.closest('[role="dialog"]');
 
 /** Server graph → local graph: lays out cards without position (imports), then replays ops left offline. */
 function initialGraph(data: BoardGraph, cache: CardCache): { graph: Graph; layout: MapOp[] } {
@@ -92,6 +95,7 @@ function Canvas({ data }: { data: BoardGraph }) {
   const [heatOn, setHeatOn] = useState(false);
   const [retrievability, setRetrievability] = useState<RetrievabilityMap>({});
   const [confirmDelete, setConfirmDelete] = useState<MapOp[] | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
 
   // --- autosave queue ---------------------------------------------------------
   useEffect(() => {
@@ -154,9 +158,24 @@ function Canvas({ data }: { data: BoardGraph }) {
   const openCard = useCallback(
     (id: string) => {
       select(id);
-      // F02: open the card editor for `id` here (the inspector already shows it).
+      setEditing(id); // F02: the inspector shows the editor for the selected card
     },
     [select],
+  );
+
+  const closeEditor = useCallback(() => setEditing(null), []);
+
+  /** A card created on the map only exists server-side once its createCard op is sent: wait for it before GET/PUT. */
+  const prepareCard = useCallback(
+    (cardId: string) => queue.current?.sent((o) => o.op === 'createCard' && o.card.id === cardId) ?? Promise.resolve(false),
+    [],
+  );
+
+  /** F02: reflect a saved card on the map at once; not a map op, so nothing is queued or undoable. */
+  const onCardSaved = useCallback(
+    (d: CardDetail, input: SaveCardInput) =>
+      setGraph(patchCard(g.current, cache.current, d.id, { title: d.title, front: d.front, back: d.back, source: d.source, preview: d.preview ?? previewOf(input) })),
+    [setGraph],
   );
 
   const createCard = useCallback(
@@ -258,14 +277,14 @@ function Canvas({ data }: { data: BoardGraph }) {
       const r = (dir === 'undo' ? undo : redo)(history.current, uuid);
       if (!r) return;
       history.current = r.history;
-      commit(r.ops, { record: false });
+      commit(freshen(r.ops, cache.current, g.current), { record: false });
     },
     [commit],
   );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (isTyping(e.target) || confirmDelete) return;
+      if (isTyping(e.target) || inDialog(e.target) || confirmDelete) return;
       const mod = e.metaKey || e.ctrlKey;
       const key = e.key.toLowerCase();
       if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -361,7 +380,16 @@ function Canvas({ data }: { data: BoardGraph }) {
             </ReactFlow>
           </CanvasContext.Provider>
         </section>
-        <Inspector board={board} card={selected} entry={selected ? retrievability[selected.id] : undefined} />
+        <Inspector
+          board={board}
+          card={selected}
+          entry={selected ? retrievability[selected.id] : undefined}
+          editing={!!selected && editing === selected.id}
+          onEdit={openCard}
+          onClose={closeEditor}
+          onSaved={onCardSaved}
+          prepare={prepareCard}
+        />
       </div>
       <Dialog
         open={!!confirmDelete}

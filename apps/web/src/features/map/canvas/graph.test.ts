@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MapOp } from '@remoa/contracts';
 import { retrievabilityFixture, sepseBoardId, sepseCardIds, sepseCards, sepseEdges } from '@remoa/contracts/mocks';
-import { applyOps, heatOf, invertAll, snap, toEdge, toNode, type CardCache, type Graph } from './graph';
+import { applyOps, freshen, heatOf, invertAll, patchCard, snap, toEdge, toNode, type CardCache, type Graph } from './graph';
 import { emptyHistory, push, redo, undo } from './history';
 
 let n = 0;
@@ -144,5 +144,30 @@ describe('history', () => {
     expect(push(emptyHistory, { redo: [], undo: [] })).toBe(emptyHistory);
     expect(undo(emptyHistory, id)).toBeNull();
     expect(redo(emptyHistory, id)).toBeNull();
+  });
+});
+
+describe('F02: card saved in the editor', () => {
+  it('patchCard updates the node and the cache without ops; redo of an old createCard keeps the new title', () => {
+    const cache: CardCache = new Map();
+    let h = emptyHistory;
+    const cardId = id();
+    const create: MapOp = { op: 'createCard', opId: id(), boardId, card: { id: cardId, type: 'flow', title: 'Novo fluxograma', position: { x: 0, y: 0 } } };
+    let g = applyOps({ nodes: [], edges: [] }, [create], cache);
+    h = push(h, { redo: [create], undo: invertAll({ nodes: [], edges: [] }, [create], cache, id) });
+
+    g = patchCard(g, cache, cardId, { title: 'Pacote', preview: { steps: 3 } });
+    expect(g.nodes[0]!.data.card).toMatchObject({ title: 'Pacote', preview: { steps: 3 } });
+    expect(cache.get(cardId)?.title).toBe('Pacote');
+
+    const u = undo(h, id)!; // deletes the card
+    g = applyOps(g, freshen(u.ops, cache, g), cache);
+    expect(g.nodes).toHaveLength(0);
+    const r = redo(u.history, id)!; // re-creates it: must not bring back "Novo fluxograma"
+    const ops = freshen(r.ops, cache, g);
+    expect(ops[0]).toMatchObject({ op: 'createCard', card: { title: 'Pacote' } });
+    g = applyOps(g, ops, cache);
+    expect(g.nodes[0]!.data.card).toMatchObject({ title: 'Pacote', preview: { steps: 3 } });
+    expect(freshen([u.ops[0]!], new Map(), { nodes: [], edges: [] })).toEqual([u.ops[0]]);
   });
 });

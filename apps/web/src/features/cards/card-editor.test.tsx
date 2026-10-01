@@ -1,0 +1,309 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import type { Card, CardDetail, SaveCardInput } from '@remoa/contracts';
+import * as mocks from '@remoa/contracts/mocks';
+import { retrievabilityFixture, sepseCardIds, sepseCards } from '@remoa/contracts/mocks';
+import { CardEditor } from './card-editor';
+import { clearAssetCache } from './upload';
+import { violations } from './test-utils';
+
+const api = vi.fn();
+const track = vi.fn();
+vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
+vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
+
+const U = mocks.fixtureUserId;
+const imageId = '00000000-0000-4000-8000-000000000901';
+const caseId = '00000000-0000-4000-8000-000000000902';
+const base = sepseCards[0]!;
+const extra: Record<string, CardDetail> = {
+  [imageId]: { ...base, id: imageId, type: 'image', title: 'Coração', front: null, back: null, payload: {} as never, rubric: null },
+  [caseId]: { ...base, id: caseId, type: 'case', title: 'Novo caso', front: null, back: null, payload: {} as never, rubric: null },
+};
+
+/** Routes the browser API client to the contract mocks (same validation as the real API). */
+function route(path: string, init?: RequestInit) {
+  const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+  const card = /^\/v1\/cards\/(.+)$/.exec(path)?.[1];
+  if (card && extra[card]) {
+    if (init?.method !== 'PUT') return { ok: true, data: extra[card] };
+    const parsed = (body as SaveCardInput);
+    return { ok: true, data: { ...extra[card], ...parsed, preview: undefined } };
+  }
+  if (card) return init?.method === 'PUT' ? mocks.saveCard(U, card, body) : mocks.getCard(U, card);
+  const asset = /^\/v1\/assets\/(.+)$/.exec(path)?.[1];
+  if (asset) return mocks.getAsset(U, asset);
+  if (path === '/v1/uploads/sign') return mocks.signUpload(U, body);
+  if (path === '/v1/uploads/complete') return mocks.completeUpload(U, body);
+  throw new Error(`unexpected ${path}`);
+}
+
+const prepare = vi.fn(async () => true);
+const onSaved = vi.fn();
+const onClose = vi.fn();
+const asCard = (d: CardDetail): Card => d;
+const editor = (card: CardDetail, subs?: Parameters<typeof CardEditor>[0]['subs']) =>
+  render(<CardEditor card={asCard(card)} subs={subs} prepare={prepare} onSaved={onSaved} onClose={onClose} />);
+const form = () => screen.findByRole('form');
+
+beforeEach(() => {
+  api.mockImplementation(async (p: string, i?: RequestInit) => route(p, i));
+  clearAssetCache();
+});
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
+
+describe('CardEditor: concept', () => {
+  it('loads, edits and saves through PUT; tracks card_edited; refreshes the map node and closes', async () => {
+    editor(base);
+    await form();
+    expect(screen.getByLabelText('Título')).toHaveValue('Sepse');
+    fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Sepse (Sepsis-3)' } });
+    fireEvent.change(screen.getByLabelText('Resposta'), { target: { value: '**Disfunção** orgânica' } });
+    expect(within(screen.getByRole('region', { name: 'Prévia da resposta' })).getByText('Disfunção').tagName).toBe('STRONG');
+    fireEvent.change(screen.getByLabelText('Fonte (texto ou URL)'), { target: { value: 'SSC 2021' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+    expect(prepare).toHaveBeenCalledWith(base.id);
+    const [detail, input] = onSaved.mock.calls[0]!;
+    expect(input).toEqual({ type: 'concept', title: 'Sepse (Sepsis-3)', front: base.front, back: '**Disfunção** orgânica', source: 'SSC 2021', payload: {} });
+    expect(detail.title).toBe('Sepse (Sepsis-3)');
+    expect(track).toHaveBeenCalledWith('card_edited', { type: 'concept' });
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('invalid input is not sent (FR-8); Esc cancels; Ctrl+Enter saves from a textarea', async () => {
+    editor(sepseCards[1]!);
+    await form();
+    fireEvent.change(screen.getByLabelText('Título'), { target: { value: ' ' } });
+    fireEvent.keyDown(screen.getByLabelText('Resposta'), { key: 'Enter', ctrlKey: true });
+    expect(await screen.findByText('Dê um título ao card.')).toBeInTheDocument();
+    expect(api.mock.calls.filter(([, i]) => i?.method === 'PUT')).toHaveLength(0);
+    fireEvent.keyDown(screen.getByLabelText('Título'), { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('does not PUT when the card never reached the server', async () => {
+    prepare.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    editor(base);
+    await form();
+    fireEvent.submit(await form());
+    expect(await screen.findByText('O card ainda não chegou ao servidor. Confira a conexão e tente de novo.')).toBeInTheDocument();
+    expect(api.mock.calls.filter(([, i]) => i?.method === 'PUT')).toHaveLength(0);
+  });
+
+  it('shows the read-only rubric and a disabled "Gerar rubrica"', async () => {
+    editor(base);
+    await form();
+    expect(screen.getByText('Disfunção orgânica com risco de vida')).toBeInTheDocument();
+    expect(screen.getAllByText('Essencial')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Gerar rubrica · Em breve' })).toBeDisabled();
+  });
+
+  it('axe: no violations', async () => {
+    const { container } = editor(base);
+    await form();
+    expect(await violations(container)).toEqual([]);
+  });
+});
+
+describe('CardEditor: flow', () => {
+  const flow = sepseCards.find((c) => c.id === sepseCardIds.pacote)!;
+  const stepTexts = () => screen.getAllByRole('textbox', { name: /^Passo \d+$/ }).map((i) => (i as HTMLInputElement).value);
+
+  // dnd-kit measures rects; jsdom has none: lay the steps out 100px apart.
+  beforeEach(() => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const li = this.closest('li[data-step-id]');
+      const i = li ? [...li.parentElement!.children].indexOf(li) : 0;
+      return { x: 0, y: i * 100, top: i * 100, left: 0, width: 300, height: 80, right: 300, bottom: i * 100 + 80, toJSON: () => ({}) } as DOMRect;
+    });
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('colours step 5 "Revisitar" from the FSRS mock (FR-2)', async () => {
+    editor(flow, retrievabilityFixture[sepseCardIds.pacote]!.subs);
+    await form();
+    const step5 = screen.getByLabelText('Passo 5').closest('li')!;
+    expect(within(step5).getByText('Revisitar')).toBeInTheDocument();
+    expect(within(screen.getByLabelText('Passo 1').closest('li')!).getByText('Mais estável')).toBeInTheDocument();
+  });
+
+  it('adds and removes steps, never below 2', async () => {
+    editor(flow);
+    await form();
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar passo' }));
+    expect(stepTexts()).toHaveLength(6);
+    expect(track).toHaveBeenCalledWith('flow_step_added', {});
+    for (let n = 6; n > 2; n--) fireEvent.click(screen.getByRole('button', { name: `Remover passo ${n}` }));
+    expect(stepTexts()).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Remover passo 1' })).toBeDisabled();
+  });
+
+  it('reorders with the keyboard (space, arrow down, space) and saves the new order', async () => {
+    editor(flow);
+    await form();
+    const handle = screen.getByRole('button', { name: 'Reordenar passo 1' });
+    act(() => handle.focus());
+    const tick = () => act(() => new Promise((r) => setTimeout(r, 0))); // dnd-kit attaches its key listener on the next tick
+    fireEvent.keyDown(handle, { key: ' ', code: 'Space' });
+    await tick();
+    fireEvent.keyDown(document, { key: 'ArrowDown', code: 'ArrowDown' });
+    await tick();
+    fireEvent.keyDown(document, { key: ' ', code: 'Space' });
+    await tick();
+    await waitFor(() => expect(stepTexts().slice(0, 2)).toEqual(['Colher hemoculturas antes do antimicrobiano', 'Dosar lactato']));
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+    expect(onSaved.mock.calls[0]![1].payload.steps.map((s: { id: string }) => s.id)).toEqual(['step-2', 'step-1', 'step-3', 'step-4', 'step-5']);
+  });
+
+  it('axe: no violations', async () => {
+    const { container } = editor(flow, retrievabilityFixture[sepseCardIds.pacote]!.subs);
+    await form();
+    expect(await violations(container)).toEqual([]);
+  });
+});
+
+describe('CardEditor: case', () => {
+  it('a card born from a map op ({} payload) starts empty; empty stages are omitted on save', async () => {
+    editor(extra[caseId]!);
+    await form();
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    expect(await screen.findByText('Preencha pelo menos uma etapa do caso.')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Apresentação'), { target: { value: 'Febre e confusão' } });
+    fireEvent.change(screen.getByLabelText('Conduta'), { target: { value: 'Pacote da primeira hora' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+    expect(onSaved.mock.calls[0]![1].payload).toEqual({
+      caseSteps: [{ stage: 'presentation', text: 'Febre e confusão' }, { stage: 'management', text: 'Pacote da primeira hora' }],
+    });
+  });
+
+  it('axe: no violations', async () => {
+    const { container } = editor(sepseCards.find((c) => c.id === sepseCardIds.caso)!);
+    await form();
+    expect(await violations(container)).toEqual([]);
+  });
+});
+
+describe('CardEditor: image', () => {
+  class FakeXHR {
+    static fail = false;
+    static last: FakeXHR | null = null;
+    upload: { onprogress: ((e: { lengthComputable: boolean; loaded: number; total: number }) => void) | null } = { onprogress: null };
+    onload: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    onabort: (() => void) | null = null;
+    status = 0;
+    headers: Record<string, string> = {};
+    method = '';
+    open(m: string) {
+      this.method = m;
+    }
+    setRequestHeader(k: string, v: string) {
+      this.headers[k] = v;
+    }
+    send() {
+      FakeXHR.last = this;
+      this.upload.onprogress?.({ lengthComputable: true, loaded: 50, total: 100 });
+      setTimeout(() => {
+        if (FakeXHR.fail) this.onerror?.();
+        else {
+          this.status = 200;
+          this.onload?.();
+        }
+      }, 0);
+    }
+  }
+  beforeEach(() => {
+    FakeXHR.fail = false;
+    vi.stubGlobal('XMLHttpRequest', FakeXHR);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  const file = (name: string, type: string, size = 2048) => {
+    const f = new File(['x'], name, { type });
+    Object.defineProperty(f, 'size', { value: size });
+    return f;
+  };
+  const pick = (f: File) => fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [f] } });
+
+  it('rejects other formats and > 10 MB before uploading', async () => {
+    editor(extra[imageId]!);
+    await form();
+    pick(file('a.gif', 'image/gif'));
+    expect(await screen.findByText('Formato não aceito. Use JPG, PNG ou WebP.')).toBeInTheDocument();
+    pick(file('a.png', 'image/png', 11 * 1024 * 1024));
+    expect(await screen.findByText('A imagem passa de 10 MB. Reduza e tente de novo.')).toBeInTheDocument();
+    expect(api).toHaveBeenCalledTimes(1); // only the GET of the card
+  });
+
+  it('needs attribution when the license is not "own" (licença não escolhida)', async () => {
+    Element.prototype.scrollIntoView ??= () => undefined;
+    editor(extra[imageId]!);
+    await form();
+    const select = screen.getByRole('combobox', { name: 'Licença da imagem' });
+    expect(select).toHaveTextContent('Própria');
+    expect(screen.queryByLabelText('Autoria / atribuição')).toBeNull();
+    fireEvent.keyDown(select, { key: 'Enter' });
+    fireEvent.keyDown(await screen.findByRole('option', { name: 'Servier Medical Art' }), { key: 'Enter' });
+    expect(select).toHaveTextContent('Servier Medical Art');
+    pick(file('a.png', 'image/png'));
+    expect(await screen.findByText('Licença não escolhida: informe a autoria da imagem para essa licença.')).toBeInTheDocument();
+    expect(api).toHaveBeenCalledTimes(1);
+    fireEvent.change(screen.getByLabelText('Autoria / atribuição'), { target: { value: 'Servier, CC BY 4.0' } });
+    pick(file('a.png', 'image/png'));
+    await waitFor(() =>
+      expect(api).toHaveBeenCalledWith('/v1/uploads/complete', { method: 'POST', body: expect.stringContaining('"license":"servier","attribution":"Servier, CC BY 4.0"') }),
+    );
+  });
+
+  it('uploads sign → PUT → complete, shows the thumbnail and saves with the asset; failure offers retry', async () => {
+    FakeXHR.fail = true;
+    editor(extra[imageId]!);
+    await form();
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    expect(await screen.findByText('Envie uma imagem antes de salvar.')).toBeInTheDocument();
+
+    pick(file('a.png', 'image/png', 4096));
+    expect(await screen.findByText('O envio da imagem falhou.')).toBeInTheDocument();
+    expect(FakeXHR.last?.method).toBe('PUT');
+    expect(FakeXHR.last?.headers['Content-Type']).toBe('image/png');
+
+    FakeXHR.fail = false;
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }));
+    expect(await screen.findByRole('img', { name: 'Imagem do card Coração' })).toHaveAttribute('src', expect.stringContaining('-800.webp'));
+    expect(track).toHaveBeenCalledWith('image_uploaded', { sizeKb: 4 });
+    expect(api).toHaveBeenCalledWith('/v1/uploads/complete', expect.objectContaining({ method: 'POST' }));
+    expect(screen.getByText('0 máscaras')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+    expect(onSaved.mock.calls[0]![1].payload).toEqual({ assetId: expect.any(String), masks: [] });
+  });
+
+  it('a failed save from the full-screen mask editor is reported inside the dialog', async () => {
+    editor(extra[imageId]!);
+    await form();
+    pick(file('a.png', 'image/png', 4096));
+    await screen.findByRole('img', { name: 'Imagem do card Coração' });
+    fireEvent.click(await screen.findByRole('button', { name: 'Abrir editor de máscaras' }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Adicionar máscara' }));
+    api.mockImplementation(async (p: string, i?: RequestInit) =>
+      i?.method === 'PUT' ? { ok: false, error: { code: 'internal', message: 'x' } } : route(p, i),
+    );
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Salvar' }));
+    expect(await within(dialog).findByRole('alert')).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('axe: no violations', async () => {
+    const { container } = editor(extra[imageId]!);
+    await form();
+    expect(await violations(container)).toEqual([]);
+  });
+});

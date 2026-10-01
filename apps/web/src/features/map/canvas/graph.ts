@@ -130,3 +130,25 @@ export function invertAll(g: Graph, ops: MapOp[], cache: CardCache, newId: () =>
   }
   return out.reverse().flat();
 }
+
+/**
+ * F02: after a card save, the node shows the new fields right away. Not a MapOp: nothing is queued or recorded.
+ * The cache is updated too, so a later undo of a delete restores the edited card.
+ */
+export function patchCard(g: Graph, cache: CardCache, id: string, patch: Partial<Card>): Graph {
+  const prev = cache.get(id) ?? g.nodes.find((n) => n.id === id)?.data.card;
+  if (prev) cache.set(id, { ...prev, ...patch });
+  return { ...g, nodes: g.nodes.map((n) => (n.id === id ? { ...n, data: { card: { ...n.data.card, ...patch } } } : n)) };
+}
+
+/**
+ * Replayed createCard ops (undo/redo) carry the title from when they were recorded; the API upserts it.
+ * Use the latest known title so an edit made in the card editor is not reverted.
+ */
+export function freshen(ops: MapOp[], cache: CardCache, g: Graph): MapOp[] {
+  return ops.map((o) => {
+    if (o.op !== 'createCard') return o;
+    const title = g.nodes.find((n) => n.id === o.card.id)?.data.card.title ?? cache.get(o.card.id)?.title;
+    return title && title !== o.card.title ? { ...o, card: { ...o.card, title } } : o;
+  });
+}

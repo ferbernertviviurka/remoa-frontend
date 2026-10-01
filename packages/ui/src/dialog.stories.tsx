@@ -7,3 +7,6 @@ export default meta;
 export const Default: StoryObj<typeof meta> = {
   args: { title: 'Excluir mapa?', description: 'Essa ação não pode ser desfeita.', closeLabel: 'Fechar', trigger: <Button>Abrir</Button>, children: 'Conteúdo' },
 };
+export const FullScreen: StoryObj<typeof meta> = {
+  args: { title: 'Máscaras de Coração', description: 'Editor em tela cheia.', closeLabel: 'Fechar', size: 'full', trigger: <Button>Abrir</Button>, children: 'Conteúdo' },
+};

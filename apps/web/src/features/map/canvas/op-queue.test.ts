@@ -172,3 +172,39 @@ describe('op queue', () => {
     expect(send).not.toHaveBeenCalled();
   });
 });
+
+describe('sent (F02: wait for createCard before the first PUT)', () => {
+  const create = (k: number): MapOp => ({ op: 'createCard', opId: id(), boardId, card: { id: card(k), type: 'concept', title: 'x', position: { x: 0, y: 0 } } });
+  const isCreate = (k: number) => (o: MapOp) => o.op === 'createCard' && o.card.id === card(k);
+
+  it('sends right away (no debounce) and resolves true once the op is acknowledged', async () => {
+    const send = vi.fn<SendOps>().mockResolvedValue(okSend());
+    const { q } = setup(send);
+    q.enqueue([create(1)]);
+    await expect(q.sent(isCreate(1))).resolves.toBe(true);
+    expect(send).toHaveBeenCalledOnce();
+  });
+
+  it('waits for a batch already in flight instead of returning early', async () => {
+    let release!: () => void;
+    const send = vi.fn<SendOps>().mockImplementationOnce(() => new Promise((r) => (release = () => r(okSend())))).mockResolvedValue(okSend());
+    const { q } = setup(send);
+    q.enqueue([create(1)]);
+    void q.flush();
+    let done = false;
+    const p = q.sent(isCreate(1)).then((v) => (done = v));
+    await Promise.resolve();
+    expect(done).toBe(false);
+    release();
+    await p;
+    expect(done).toBe(true);
+  });
+
+  it('resolves false when offline, true when nothing is pending', async () => {
+    const send = vi.fn<SendOps>().mockRejectedValue(new Error('offline'));
+    const { q } = setup(send);
+    await expect(q.sent(isCreate(1))).resolves.toBe(true);
+    q.enqueue([create(1)]);
+    await expect(q.sent(isCreate(1))).resolves.toBe(false);
+  });
+});

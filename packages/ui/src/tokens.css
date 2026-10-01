@@ -129,6 +129,7 @@
 
 .remoa-overlay[data-state='open'] { animation: remoa-fade-in 180ms ease-out both; }
 .remoa-dialog[data-state='open'] { animation: remoa-dialog-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.remoa-sheet[data-state='open'] { animation: remoa-fade-in 180ms ease-out both; }
 .remoa-toast[data-state='open'] { animation: remoa-toast-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 .remoa-pop[data-state='open'] { animation: remoa-pop-in 160ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 .remoa-skeleton {
@@ -141,6 +142,7 @@
 @media (prefers-reduced-motion: reduce) {
   .remoa-overlay,
   .remoa-dialog,
+  .remoa-sheet,
   .remoa-toast,
   .remoa-pop,
   .remoa-skeleton,

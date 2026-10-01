@@ -4,6 +4,7 @@ import { memo, useContext } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { t } from '@remoa/strings';
 import { MapCard } from '@remoa/ui';
+import { useCardFace } from '@/features/cards/card-face';
 import { CanvasContext } from './canvas-context';
 import { heatOf, type CardNode } from './graph';
 
@@ -15,6 +16,7 @@ export const CardNodeView = memo(function CardNodeView({ id, data, selected }: N
   const { card } = data;
   const type = t(`map.cardType.${card.type}`);
   const state = heat ? heatOf(id, heat) : null;
+  const face = useCardFace(card);
   return (
     <>
       <Handle type="target" position={Position.Left} className={port} />
@@ -28,6 +30,7 @@ export const CardNodeView = memo(function CardNodeView({ id, data, selected }: N
         state={state}
         stateLabel={state ? t(`mapState.${state}`) : undefined}
         selected={selected}
+        {...face}
       />
       <Handle type="source" position={Position.Right} className={port} />
     </>

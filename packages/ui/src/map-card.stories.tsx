@@ -11,3 +11,9 @@ export const Watch: S = { args: { ...base, state: 'watch', stateLabel: 'Acompanh
 export const Steady: S = { args: { ...base, state: 'steady', stateLabel: 'Mais estável' } };
 export const Unknown: S = { args: { ...base, state: 'unknown', stateLabel: 'Sem revisões' } };
 export const Selected: S = { args: { ...base, selected: true } };
+export const ConceptSummary: S = {
+  args: { ...base, summary: 'Disfunção orgânica com risco de vida causada por resposta desregulada do hospedeiro à infecção.' },
+};
+export const Flow: S = { args: { ...base, label: 'Fluxograma: Pacote', typeLabel: 'Fluxograma', title: 'Pacote da primeira hora', meta: '5 passos' } };
+export const Case: S = { args: { ...base, label: 'Caso: Idoso febril', typeLabel: 'Caso', title: 'Idoso febril e confuso', chips: ['Apresentação', 'Exames', 'Conduta'] } };
+export const ImageLoading: S = { args: { ...base, label: 'Imagem: Coração', typeLabel: 'Imagem', title: 'Coração', meta: '3 máscaras', thumbnail: { src: null, alt: 'Imagem do card Coração' } } };

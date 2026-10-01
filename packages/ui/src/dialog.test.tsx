@@ -23,4 +23,14 @@ describe('Dialog', () => {
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
+  it('size="full" ocupa a tela inteira', async () => {
+    render(
+      <Dialog title="Editor" closeLabel="Fechar" size="full" trigger={<Button>Abrir</Button>}>
+        x
+      </Dialog>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir' }));
+    expect(screen.getByRole('dialog', { name: 'Editor' })).toHaveClass('inset-0');
+    expect(await violations(document.body)).toEqual([]);
+  });
 });

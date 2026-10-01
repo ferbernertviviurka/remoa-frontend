@@ -1,0 +1,43 @@
+// T6: what a map card shows per type, from `Card` + `preview` only (no payload fetch per node).
+import { useMemo } from 'react';
+import type { Card } from '@remoa/contracts';
+import { t } from '@remoa/strings';
+import { stripMarkdown } from './markdown';
+import { useAsset } from './upload';
+
+export type CardFace = {
+  summary: string | null;
+  meta: string | null;
+  chips: readonly string[] | undefined;
+  thumbnail: { src: string | null; alt: string } | null;
+};
+
+const count = (n: number, one: 'cards.image.masksOne', many: 'cards.image.masks' | 'cards.flow.count') => (n === 1 ? t(one) : t(many, { n }));
+
+export function cardFace(card: Card, thumbSrc: string | null): CardFace {
+  const p = card.preview;
+  switch (card.type) {
+    case 'concept': {
+      const text = card.back ?? card.front;
+      return { summary: text ? stripMarkdown(text) : null, meta: null, chips: undefined, thumbnail: null };
+    }
+    case 'flow':
+      return { summary: null, meta: p?.steps ? t('cards.flow.count', { n: p.steps }) : null, chips: undefined, thumbnail: null };
+    case 'case':
+      return { summary: null, meta: null, chips: p?.stages?.map((s) => t(`cards.case.stage.${s}`)), thumbnail: null };
+    case 'image':
+      return {
+        summary: null,
+        meta: p?.assetId ? count(p.masks ?? 0, 'cards.image.masksOne', 'cards.image.masks') : null,
+        chips: undefined,
+        thumbnail: { src: thumbSrc, alt: t('cards.image.alt', { title: card.title }) },
+      };
+  }
+}
+
+/** Memoized face; image thumbnails come from the shared per-asset cache (one request per asset). */
+export function useCardFace(card: Card): CardFace {
+  const asset = useAsset(card.type === 'image' ? card.preview?.assetId : null);
+  const src = asset?.urls.w800 ?? null;
+  return useMemo(() => cardFace(card, src), [card, src]);
+}
