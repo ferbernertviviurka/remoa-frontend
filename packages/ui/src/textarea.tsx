@@ -1,5 +1,5 @@
 import { useId, type ComponentProps } from 'react';
-import { focusRing } from './button';
+import { fieldControl, focusRing } from './button';
 
 /** Textarea com rótulo visível (`label` obrigatório, ligado por id). Sem variantes. */
 export type TextareaProps = Omit<ComponentProps<'textarea'>, 'className' | 'id'> & { label: string };
@@ -13,7 +13,7 @@ export function Textarea({ label, rows = 4, ...rest }: TextareaProps) {
         id={id}
         rows={rows}
         {...rest}
-        className={`rounded-btn border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-muted ${focusRing}`}
+        className={`py-2.5 ${fieldControl} ${focusRing}`}
       />
     </div>
   );

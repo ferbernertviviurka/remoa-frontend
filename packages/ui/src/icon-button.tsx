@@ -1,6 +1,6 @@
-import type { ComponentProps } from 'react';
+import { forwardRef, type ComponentProps } from 'react';
 import { clsx } from 'clsx';
-import { buttonVariants, focusRing } from './button';
+import { buttonVariants, focusRing, pressable } from './button';
 
 /**
  * IconButton (só ícone). `aria-label` OBRIGATÓRIO no tipo. variant = primary | secondary | quiet | danger;
@@ -12,13 +12,18 @@ export type IconButtonProps = Omit<ComponentProps<'button'>, 'className' | 'aria
   size?: 'md' | 'touch';
 };
 
-export function IconButton({ variant = 'quiet', size = 'md', type = 'button', children, ...rest }: IconButtonProps) {
+export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
+  { variant = 'quiet', size = 'md', type = 'button', children, ...rest },
+  ref,
+) {
   return (
     <button
+      ref={ref}
       type={type}
       {...rest}
       className={clsx(
-        'inline-flex items-center justify-center rounded-btn disabled:opacity-50 disabled:pointer-events-none',
+        'inline-flex items-center justify-center rounded-btn disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100',
+        pressable,
         focusRing,
         buttonVariants[variant],
         size === 'touch' ? 'h-[46px] w-[46px]' : 'h-[46px] w-[46px] md:h-[42px] md:w-[42px]',
@@ -27,4 +32,4 @@ export function IconButton({ variant = 'quiet', size = 'md', type = 'button', ch
       <span aria-hidden="true" className="inline-flex">{children}</span>
     </button>
   );
-}
+});

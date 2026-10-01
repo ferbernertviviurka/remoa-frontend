@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { Board } from '@remoa/contracts';
 import { boardTitleSchema } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
-import { Button, Eyebrow, Input, useToast } from '@remoa/ui';
+import { Alert, Button, Eyebrow, Input, useToast } from '@remoa/ui';
 import { api } from '@/lib/api';
 import type { QueueStatus } from './op-queue';
 
@@ -88,12 +88,11 @@ export const CanvasHeader = memo(function CanvasHeader(p: { board: Board; cards:
         </div>
       </div>
       {p.status.state === 'error' ? (
-        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-map border border-review bg-review-bg px-4 py-2 text-sm text-review-text">
-          <span>{t('map.save.error')}</span>
+        <Alert tone="review" role="alert" title={t('map.save.error')}>
           <Button variant="secondary" onClick={p.onRetry}>
             {t('common.retry')}
           </Button>
-        </div>
+        </Alert>
       ) : null}
     </header>
   );

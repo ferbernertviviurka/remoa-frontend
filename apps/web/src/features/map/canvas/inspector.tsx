@@ -3,7 +3,7 @@
 import { memo, type ReactNode } from 'react';
 import type { Board, Card, RetrievabilityMap } from '@remoa/contracts';
 import { t } from '@remoa/strings';
-import { Button, Eyebrow, Progress, Tag } from '@remoa/ui';
+import { Button, Empty, Eyebrow, Progress, Tag } from '@remoa/ui';
 
 type Entry = RetrievabilityMap[string] | undefined;
 
@@ -20,7 +20,7 @@ function Row({ term, children }: { term: string; children: ReactNode }) {
 export const Inspector = memo(function Inspector({ board, card, entry }: { board: Board; card: Card | null; entry: Entry }) {
   return (
     <aside aria-label={t('map.inspector.label')} className="hidden w-80 shrink-0 flex-col gap-5 overflow-y-auto rounded-map border border-border bg-surface p-4 md:flex">
-      {card ? <Details board={board} card={card} entry={entry} /> : <p className="text-sm text-muted">{t('map.inspector.empty')}</p>}
+      {card ? <Details board={board} card={card} entry={entry} /> : <Empty title={t('map.inspector.empty')} />}
     </aside>
   );
 });

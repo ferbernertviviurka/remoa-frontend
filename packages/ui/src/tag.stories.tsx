@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { Tag } from './tag';
 
-const meta = { title: 'Torph/Tag', component: Tag } satisfies Meta<typeof Tag>;
+const meta = { title: 'Tag', component: Tag } satisfies Meta<typeof Tag>;
 export default meta;
 type S = StoryObj<typeof meta>;
 export const Brand: S = { args: { children: 'Sepse' } };

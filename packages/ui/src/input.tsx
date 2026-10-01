@@ -1,5 +1,5 @@
 import { useId, type ComponentProps } from 'react';
-import { focusRing } from './button';
+import { fieldControl, focusRing } from './button';
 
 /** Input de texto com rótulo visível (`label` obrigatório, ligado por id). Sem variantes. */
 export type InputProps = Omit<ComponentProps<'input'>, 'className' | 'id'> & { label: string };
@@ -12,7 +12,7 @@ export function Input({ label, ...rest }: InputProps) {
       <input
         id={id}
         {...rest}
-        className={`min-h-[42px] rounded-btn border border-border bg-surface px-3 text-sm text-text placeholder:text-muted ${focusRing}`}
+        className={`min-h-11 ${fieldControl} ${focusRing}`}
       />
     </div>
   );

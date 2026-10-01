@@ -5,5 +5,5 @@ import { toneClasses, type Tone } from './tone';
 export type PillProps = Omit<ComponentProps<'span'>, 'className'> & { tone?: Tone };
 
 export function Pill({ tone = 'brand', ...rest }: PillProps) {
-  return <span {...rest} className={`inline-flex items-center rounded-pill px-3 py-1 text-xs font-semibold ${toneClasses[tone]}`} />;
+  return <span {...rest} className={`inline-flex items-center rounded-pill border border-current/15 px-3 py-1 text-xs font-semibold ${toneClasses[tone]}`} />;
 }

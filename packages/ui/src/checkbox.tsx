@@ -10,11 +10,11 @@ export type CheckboxProps = Omit<ComponentProps<typeof RC.Root>, 'className' | '
 export function Checkbox({ label, ...rest }: CheckboxProps) {
   const id = useId();
   return (
-    <div className="flex items-center gap-2.5">
+    <div className="flex min-h-11 items-center gap-2.5">
       <RC.Root
         id={id}
         {...rest}
-        className={`flex h-[22px] w-[22px] items-center justify-center rounded-tag border border-border bg-surface data-[state=checked]:border-primary data-[state=checked]:bg-primary ${focusRing}`}
+        className={`flex h-6 w-6 cursor-pointer items-center justify-center rounded-tag border border-border bg-surface transition-colors duration-150 data-[state=checked]:border-primary data-[state=checked]:bg-primary ${focusRing}`}
       >
         <RC.Indicator className="text-on-primary">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">

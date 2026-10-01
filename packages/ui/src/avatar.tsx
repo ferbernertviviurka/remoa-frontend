@@ -7,7 +7,7 @@ export type AvatarProps = { name: string; fallback: string; src?: string };
 
 export function Avatar({ name, fallback, src }: AvatarProps) {
   return (
-    <RA.Root className="inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-pill bg-navy text-white">
+    <RA.Root className="inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-pill bg-navy text-sm font-bold text-white ring-2 ring-border">
       {src ? <RA.Image src={src} alt={name} className="h-full w-full object-cover" /> : null}
       <RA.Fallback aria-label={name} role="img" className="text-xs font-bold">{fallback}</RA.Fallback>
     </RA.Root>

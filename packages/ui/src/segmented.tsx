@@ -1,7 +1,7 @@
 'use client';
 
 import * as TG from '@radix-ui/react-toggle-group';
-import { focusRing } from './button';
+import { focusRing, pressable } from './button';
 
 /**
  * Segmented (escolha única). `options` [{value,label}], `value`/`onValueChange` (controlado) ou `defaultValue`.
@@ -27,7 +27,7 @@ export function Segmented({ options, onValueChange, ...rest }: SegmentedProps) {
         <TG.Item
           key={o.value}
           value={o.value}
-          className={`min-h-[34px] rounded-tag px-3 text-sm font-semibold text-muted data-[state=on]:bg-primary-tint data-[state=on]:text-primary-deep ${focusRing}`}
+          className={`min-h-11 rounded-tag px-3 text-sm font-semibold text-muted transition-colors duration-150 data-[state=on]:bg-primary data-[state=on]:text-on-primary ${pressable} ${focusRing}`}
         >
           {o.label}
         </TG.Item>

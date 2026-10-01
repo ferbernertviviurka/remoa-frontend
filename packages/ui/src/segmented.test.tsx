@@ -13,9 +13,9 @@ describe('Segmented', () => {
   it('muda valor e não permite desmarcar', async () => {
     const fn = vi.fn();
     render(<Segmented aria-label="Modo" options={options} defaultValue="a" onValueChange={fn} />);
-    await userEvent.click(screen.getByText('B'));
+    await userEvent.click(screen.getByRole('radio', { name: 'B' }));
     expect(fn).toHaveBeenCalledWith('b');
-    await userEvent.click(screen.getByText('B'));
+    await userEvent.click(screen.getByRole('radio', { name: 'B' }));
     expect(fn).toHaveBeenCalledTimes(1);
   });
 });

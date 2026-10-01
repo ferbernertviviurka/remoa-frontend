@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { t } from '@remoa/strings';
-import { Logo } from '@remoa/ui';
+import { Logo, Separator } from '@remoa/ui';
 import type { BoardSummary } from '@remoa/contracts';
 import { navItems } from './nav-items';
 
@@ -15,6 +15,7 @@ export function Sidebar({ boards = [] }: { boards?: BoardSummary[] }) {
         <Logo size={28} />
         {t('common.appName')}
       </Link>
+      <Separator />
       <nav aria-label={t('shell.nav.label')} className="flex flex-col gap-1">
         {navItems.map((i) => {
           const active = path === i.href || path.startsWith(`${i.href}/`);
@@ -32,7 +33,9 @@ export function Sidebar({ boards = [] }: { boards?: BoardSummary[] }) {
         })}
       </nav>
       {boards.length > 0 ? (
-        <ul aria-label={t('boards.sidebarLabel')} className="flex flex-col gap-1">
+        <>
+          <Separator />
+          <ul aria-label={t('boards.sidebarLabel')} className="flex flex-col gap-1">
           {boards.map((b) => (
             <li key={b.id}>
               <Link
@@ -45,7 +48,8 @@ export function Sidebar({ boards = [] }: { boards?: BoardSummary[] }) {
               </Link>
             </li>
           ))}
-        </ul>
+          </ul>
+        </>
       ) : null}
     </aside>
   );

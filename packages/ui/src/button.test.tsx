@@ -19,4 +19,21 @@ describe('Button', () => {
     render(<Button size="touch">Ir</Button>);
     expect(screen.getByRole('button').className).toContain('min-h-[46px]');
   });
+  it('coloca ícone no começo e no fim, fora do nome acessível', () => {
+    render(<Button icon={<svg data-testid="start" />} iconEnd={<svg data-testid="end" />}>Ir</Button>);
+    const button = screen.getByRole('button', { name: 'Ir' });
+    const start = button.querySelector('[data-testid="start"]');
+    const end = button.querySelector('[data-testid="end"]');
+    expect(start).toBeTruthy();
+    expect(end).toBeTruthy();
+    expect(Boolean(start && end && start.compareDocumentPosition(end) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+  });
+  it('loading mostra o spinner e anima o rótulo', async () => {
+    const { container } = render(<Button loading loadingLabel="Salvando">Salvar</Button>);
+    const button = screen.getByRole('button', { name: 'Salvando' });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-busy', 'true');
+    expect(button.querySelector('.remoa-spin')).toBeTruthy();
+    expect(await violations(container)).toEqual([]);
+  });
 });

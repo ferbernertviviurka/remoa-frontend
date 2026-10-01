@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import type { Board, BoardSummary } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
-import { Button, Card, Dialog, Eyebrow, Input, useToast } from '@remoa/ui';
+import { Button, Card, Dialog, Eyebrow, Input, Stat, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { EmptyState } from '@/features/shell/empty-state';
@@ -110,6 +110,11 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
             <h1 className="font-display text-2xl font-extrabold text-text">{t('boards.title')}</h1>
             <Button onClick={() => open({ kind: 'create' })}>{t('boards.new')}</Button>
           </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Stat label={t('boards.title')} value={String(boards.length)} />
+            <Stat label={t('vocab.cards')} value={String(boards.reduce((total, board) => total + board.cardCount, 0))} />
+            <Stat label={t('vocab.edges')} value={String(boards.reduce((total, board) => total + board.edgeCount, 0))} />
+          </div>
           {groups.map((area) => (
             <section key={area} className="flex flex-col gap-3">
               <Eyebrow>{t(`boards.area.${area}` as StringKey)}</Eyebrow>
@@ -156,7 +161,7 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
         <form onSubmit={(e) => void onCreate(e)} className="flex flex-col gap-3">
           {nameInput}
           {errorText}
-          <Button type="submit" disabled={busy || !name.trim()}>{t('boards.create')}</Button>
+          <Button type="submit" loading={busy} loadingLabel={t('common.loading')} disabled={!name.trim()}>{t('boards.create')}</Button>
         </form>
       </Dialog>
 
@@ -164,7 +169,7 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
         <form onSubmit={(e) => void onRename(e)} className="flex flex-col gap-3">
           {nameInput}
           {errorText}
-          <Button type="submit" disabled={busy || !name.trim()}>{t('boards.rename')}</Button>
+          <Button type="submit" loading={busy} loadingLabel={t('common.loading')} disabled={!name.trim()}>{t('boards.rename')}</Button>
         </form>
       </Dialog>
 
@@ -177,7 +182,7 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
       >
         <div className="flex flex-col gap-3">
           {errorText}
-          <Button variant="danger" disabled={busy} onClick={() => void onArchive()}>{t('boards.archive')}</Button>
+          <Button variant="danger" loading={busy} loadingLabel={t('common.loading')} onClick={() => void onArchive()}>{t('boards.archive')}</Button>
         </div>
       </Dialog>
     </div>

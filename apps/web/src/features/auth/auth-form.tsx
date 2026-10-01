@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ErrorCode } from '@remoa/contracts';
 import { t } from '@remoa/strings';
-import { Button, Card, Input, Logo } from '@remoa/ui';
+import { TextMorph } from 'torph/react';
+import { Button, Card, Input, Logo, Separator } from '@remoa/ui';
 import { sendMagicLink, signIn, signInWithGoogle, signUp, type AuthResult } from '@/server/auth/actions';
 import { identify, track } from '@/lib/analytics';
 import { createClient } from '@/lib/supabase/client';
@@ -57,9 +58,9 @@ export function AuthForm({ mode, next }: { mode: 'signIn' | 'signUp'; next?: str
         <Input label={t('auth.email')} type="email" autoComplete="email" required placeholder={t('auth.emailPlaceholder')} value={email} onChange={(e) => setEmail(e.target.value)} />
         <Input label={t('auth.password')} type="password" autoComplete={up ? 'new-password' : 'current-password'} required minLength={up ? 8 : undefined} value={password} onChange={(e) => setPassword(e.target.value)} />
         <div aria-live="polite" role="status" className="min-h-5 text-sm text-review-text">
-          {error ? t(`errors.${error}`) : null}
+          <TextMorph locale="pt-BR">{error ? t(`errors.${error}`) : ''}</TextMorph>
         </div>
-        <Button type="submit" size="touch" disabled={busy}>{t(`${ns}.submit`)}</Button>
+        <Button type="submit" size="touch" loading={busy} loadingLabel={t('common.loading')}>{t(`${ns}.submit`)}</Button>
         {up ? null : (
           <Button
             variant="secondary"
@@ -76,13 +77,14 @@ export function AuthForm({ mode, next }: { mode: 'signIn' | 'signUp'; next?: str
           </Button>
         ) : null}
         <div aria-live="polite" role="status">
-          {sentTo ? (
-            <>
-              <p className="text-sm font-bold text-text">{t('auth.linkSent.title')}</p>
-              <p className="text-sm text-muted">{t('auth.linkSent.body', { email: sentTo })}</p>
-            </>
-          ) : null}
+          <p className="text-sm font-bold text-text">
+            <TextMorph locale="pt-BR">{sentTo ? t('auth.linkSent.title') : ''}</TextMorph>
+          </p>
+          <p className="text-sm text-muted">
+            <TextMorph locale="pt-BR">{sentTo ? t('auth.linkSent.body', { email: sentTo }) : ''}</TextMorph>
+          </p>
         </div>
+        <Separator />
         <p className="text-sm text-muted">
           {t(up ? 'auth.signUp.hasAccount' : 'auth.signIn.noAccount')}{' '}
           <Link href={up ? '/entrar' : '/cadastro'} className="font-bold text-primary-deep underline">

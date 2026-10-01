@@ -13,9 +13,9 @@ Pode editar: `apps/web/src/features/<lane>/`, `apps/web/src/app/<rota>/` (confor
 Leia primeiro: `CLAUDE.md`, `docs/STATUS.md`, `docs/features/Fxx-*.md`, `docs/DESIGN.md`.
 
 Regras:
-1. Todas as UI vêm de `@remoa/ui` (Torph). Nenhum className livre.
+1. Todas as UI vêm de `@remoa/ui`. Nenhum className livre.
 2. Texto visível em JSX: sempre de `@remoa/strings` com `t(...)`. Roda `pnpm strings:check` antes de PR.
-3. Se precisa de componente novo em Torph, abra CCR no STATUS.
+3. Se precisa de componente novo no design system, abra CCR no STATUS.
 4. Acessibilidade: `<button>`/`<a>`/`<input>` reais, `aria-label` em ícones, contraste 4,5:1, alvo ≥ 44 px.
 5. Escala para -deep se UI é complexa ou estado é frágil.
 

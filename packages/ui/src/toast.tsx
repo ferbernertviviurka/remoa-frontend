@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import * as RT from '@radix-ui/react-toast';
-import { focusRing } from './button';
+import { focusRing, pressable } from './button';
 
 /**
  * Toast. Envolva o app em <ToastProvider closeLabel viewportLabel>, use `useToast().toast({title, description?, tone?})`.
@@ -24,13 +24,13 @@ export function ToastProvider({ children, closeLabel, viewportLabel }: { childre
           <RT.Root
             key={i.id}
             onOpenChange={(o) => { if (!o) setItems((l) => l.filter((x) => x.id !== i.id)); }}
-            className={`relative rounded-map border bg-surface p-4 pr-14 text-text shadow-card ${i.tone === 'danger' ? 'border-review' : 'border-border'}`}
+            className={`remoa-toast relative rounded-map border bg-surface p-4 pr-14 text-text shadow-lift ${i.tone === 'danger' ? 'border-review' : 'border-border'}`}
           >
             <RT.Title className="text-sm font-bold">{i.title}</RT.Title>
             {i.description ? <RT.Description className="mt-0.5 text-xs text-muted">{i.description}</RT.Description> : null}
             <RT.Close
               aria-label={closeLabel}
-              className={`absolute right-1 top-1 flex h-[44px] w-[44px] items-center justify-center rounded-btn text-muted hover:bg-primary-tint ${focusRing}`}
+              className={`absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-btn text-muted hover:bg-primary-tint ${pressable} ${focusRing}`}
             >
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />

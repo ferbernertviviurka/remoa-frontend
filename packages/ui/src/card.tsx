@@ -9,7 +9,7 @@ export function Card({ radius = 'map', padded = true, ...rest }: CardProps) {
     <div
       {...rest}
       className={clsx(
-        'border border-border bg-surface text-text shadow-card',
+        'border border-border bg-surface text-text shadow-card transition-shadow duration-200',
         radius === 'map' ? 'rounded-map' : 'rounded-review',
         padded && 'p-4',
       )}
