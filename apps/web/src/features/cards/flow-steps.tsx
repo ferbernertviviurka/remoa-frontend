@@ -8,13 +8,14 @@ import { t } from '@remoa/strings';
 import { Button, IconButton, Input, Tag } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { newStep } from './draft';
+import { ImageSlot } from './image-field';
 
 export const MIN_STEPS = 2;
 export const MAX_STEPS = 12;
 type Subs = Record<string, { state: MapState }> | undefined;
 
-/** FR-2: ordered steps, add/remove (2..12), reorder by drag or keyboard; colour per step from FSRS `subs`. */
-export function FlowSteps({ steps, onChange, subs }: { steps: FlowStep[]; onChange: (steps: FlowStep[]) => void; subs?: Subs }) {
+/** FR-2: ordered steps, add/remove (2..12), reorder by drag or keyboard; colour per step from FSRS `subs`; an image per step (D-201). */
+export function FlowSteps({ title, steps, onChange, subs }: { title: string; steps: FlowStep[]; onChange: (steps: FlowStep[]) => void; subs?: Subs }) {
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
   const pos = (id: string | number) => steps.findIndex((s) => s.id === id) + 1;
   const announcements: Announcements = {
@@ -46,10 +47,12 @@ export function FlowSteps({ steps, onChange, subs }: { steps: FlowStep[]; onChan
                 key={s.id}
                 step={s}
                 n={i + 1}
+                title={title}
                 state={subs?.[s.id]?.state}
                 canRemove={steps.length > MIN_STEPS}
                 onText={(text) => update(i, { text })}
                 onNote={(note) => update(i, { note })}
+                onImage={(assetId) => onChange(steps.map((x, k) => (k !== i ? x : assetId ? { ...x, assetId } : { id: x.id, text: x.text, ...(x.note ? { note: x.note } : {}) })))}
                 onRemove={() => onChange(steps.filter((_, k) => k !== i))}
               />
             ))}
@@ -75,14 +78,16 @@ export function FlowSteps({ steps, onChange, subs }: { steps: FlowStep[]; onChan
 type StepProps = {
   step: FlowStep;
   n: number;
+  title: string;
   state: MapState | undefined;
   canRemove: boolean;
   onText: (v: string) => void;
   onNote: (v: string) => void;
+  onImage: (assetId: string | null) => void;
   onRemove: () => void;
 };
 
-function Step({ step, n, state, canRemove, onText, onNote, onRemove }: StepProps) {
+function Step({ step, n, title, state, canRemove, onText, onNote, onImage, onRemove }: StepProps) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: step.id });
   return (
     <li
@@ -109,6 +114,14 @@ function Step({ step, n, state, canRemove, onText, onNote, onRemove }: StepProps
       </div>
       <Input label={t('cards.flow.step', { n })} value={step.text} maxLength={500} onChange={(e) => onText(e.target.value)} />
       <Input label={t('cards.flow.note', { n })} value={step.note ?? ''} maxLength={1000} onChange={(e) => onNote(e.target.value)} />
+      <ImageSlot
+        label={t('cards.flow.image', { n })}
+        alt={t('canvas.stepImageAlt', { n, title })}
+        addLabel={t('cards.flow.addImage', { n })}
+        removeLabel={t('cards.flow.removeImage', { n })}
+        assetId={step.assetId ?? null}
+        onChange={onImage}
+      />
     </li>
   );
 }

@@ -1,8 +1,8 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
-import { useRouter, useSelectedLayoutSegment } from 'next/navigation';
+import { useSelectedLayoutSegment } from 'next/navigation';
 import { accountSections, type AccountSection } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { Alert, Button, Icon, SettingsNav, SettingsNavAction, useToast, type SettingsNavLinkProps } from '@remoa/ui';
@@ -42,12 +42,33 @@ function DeletionBanner({ at }: { at: Date | string }) {
   );
 }
 
+/**
+ * email_change_confirmed / identity_linked happen outside the app (mail link, Google redirect), so they are detected by
+ * comparing the snapshot with the last one this browser saw. Flags only, never the address.
+ */
+function useAccountTransitions() {
+  const { account } = useAccount();
+  const pending = !!account.pendingEmail;
+  const google = account.identities.some((i) => i.provider === 'google');
+  useEffect(() => {
+    try {
+      const key = `remoa-account-seen:${account.profile.userId ?? ''}`;
+      const prev = JSON.parse(localStorage.getItem(key) ?? 'null') as { pending: boolean; google: boolean } | null;
+      if (prev?.pending && !pending && account.emailConfirmed) track('email_change_confirmed', {});
+      if (prev && !prev.google && google) track('identity_linked', { provider: 'google' });
+      localStorage.setItem(key, JSON.stringify({ pending, google }));
+    } catch {
+      /* private mode: the event is skipped */
+    }
+  }, [pending, google, account.emailConfirmed, account.profile.userId]);
+}
+
 /** Banner, hero and subnav live in the layout, so switching sections never remounts them (FR-1). */
 export function AccountShell({ children }: { children: ReactNode }) {
   const { account } = useAccount();
-  const router = useRouter();
   const online = useOnline();
   const segment = useSelectedLayoutSegment();
+  useAccountTransitions();
   const current = (accountSections as readonly string[]).includes(segment ?? '') ? (segment as AccountSection) : null;
 
   const items = accountSections.map((id) => ({
@@ -76,10 +97,8 @@ export function AccountShell({ children }: { children: ReactNode }) {
                 icon={<Icon name="logout" size={20} />}
                 onClick={async () => {
                   const res = await signOut();
-                  if (res.ok) {
-                    router.push('/');
-                    router.refresh();
-                  }
+                  // Full navigation: push + refresh re-rendered the protected /conta first and bounced to /entrar?next=/conta (G08).
+                  if (res.ok) window.location.assign('/');
                 }}
               >
                 {t('account.nav.signOut')}

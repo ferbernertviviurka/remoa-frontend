@@ -2,7 +2,10 @@ node_modules
 .next
 .turbo
 dist
-coverage
+# test coverage output only (a bare `coverage` also ignored src/features/coverage, G08)
+/coverage
+/apps/*/coverage
+/packages/*/coverage
 .env*
 !.env.example
 storybook-static

@@ -26,7 +26,7 @@ export function HomeSkeleton() {
           <div className="flex min-w-0 flex-col gap-7">
             <B height={300} radius={30} />
             <B width={260} height={28} radius={10} />
-            <div className="grid gap-5 md:grid-cols-3"><Tile h={288} /><Tile h={288} /><Tile h={288} /></div>
+            <div className="grid gap-5 md:grid-cols-2 min-[1100px]:grid-cols-3"><Tile h={312} /><div className="hidden md:block"><Tile h={312} /></div><div className="hidden min-[1100px]:block"><Tile h={312} /></div></div>
             <B height={190} radius={28} />
           </div>
           <div className="flex min-w-0 flex-col gap-5">

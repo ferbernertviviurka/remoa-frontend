@@ -10,7 +10,7 @@ export function SectionCard({ title, body, action, children }: { title: string; 
           <h2 id={id} className="m-0 font-display text-[23px] font-extrabold leading-tight tracking-[-0.025em]">
             {title}
           </h2>
-          {body ? <p className={`m-0 text-[15px] text-muted ${children ? 'mb-2.5' : ''}`}>{body}</p> : null}
+          {body ? <p className={`m-0 text-sm text-muted ${children ? 'mb-2.5' : ''}`}>{body}</p> : null}
         </div>
         {action}
       </div>
@@ -32,7 +32,7 @@ export const SettingRow = ({ title, body, children }: { title: string; body?: st
   <div className="flex min-h-[82px] items-center justify-between gap-4 border-t border-divider py-3">
     <div className="flex min-w-0 flex-col">
       <span className="font-bold text-ink">{title}</span>
-      {body ? <span className="text-[15px] text-muted">{body}</span> : null}
+      {body ? <span className="text-sm text-muted">{body}</span> : null}
     </div>
     <div className="shrink-0">{children}</div>
   </div>

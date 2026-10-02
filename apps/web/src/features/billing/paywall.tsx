@@ -40,7 +40,7 @@ export function Paywall({ reason, onClose }: { reason: PaywallReason | null; onC
         <Button
           onClick={() => {
             onClose();
-            router.push('/precos');
+            router.push(`/planos?de=${reason}`);
           }}
         >
           {t('billing.paywall.cta')}

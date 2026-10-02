@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countDue, countEdges } from './map-canvas';
+import { countDue, countEdges, toCardSize } from './map-canvas';
 import { floatingEnds, labelsVisible } from './link-edge';
 import { nodeFooter } from './card-node';
 import { endOfDay, isDue } from './canvas-context';
@@ -71,5 +71,13 @@ describe('T5: dados derivados do painel', () => {
     expect(saveText({ state: 'saved', savedAt: null }, new Date(now - 3 * 3600_000), now)).toBe('Salvo há 3 h');
     expect(saveText({ state: 'saving', savedAt: null }, new Date(0), now)).toBe('Salvando…');
     expect(saveText({ state: 'offline', savedAt: null }, new Date(0), now)).toBe('Sem conexão, salvando depois');
+  });
+});
+
+describe('toCardSize (D-202)', () => {
+  it('rounds and clamps what the resize handles report to the contract limits', () => {
+    expect(toCardSize({ width: 301.6, height: 199.2 })).toEqual({ w: 302, h: 199 });
+    expect(toCardSize({ width: 10, height: 10 })).toEqual({ w: 140, h: 90 });
+    expect(toCardSize({ width: 9999, height: 9999 })).toEqual({ w: 640, h: 560 });
   });
 });

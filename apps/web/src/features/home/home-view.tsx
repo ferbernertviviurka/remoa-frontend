@@ -1,11 +1,11 @@
 import Link from 'next/link';
-import { PendingLink } from '@/features/shell/nav-pending';
 import type { ReactNode } from 'react';
 import type { BoardSummary, CoverageRow, HomeSummary } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
-import { Constellation, Hero, Icon, MapTile, type IconName } from '@remoa/ui';
+import { Constellation, Hero, Icon, type IconName } from '@remoa/ui';
 import { toConstellation } from './constellation';
 import { eyebrowDate, hourIn, salutationKey, todayIso, weekdayName } from './format';
+import { MapSlider } from './slider/map-slider';
 import { GoButton, HeroActions, HomeHeaderActions } from './home-actions';
 
 export type FirstInQueue = { title: string; pct: number };
@@ -100,7 +100,7 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart }: 
           <span className="text-xs font-bold uppercase leading-normal tracking-[.12em] text-muted">{eyebrowDate(now)}</span>
           <h1 className="m-0 max-w-[780px] font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.035em] md:text-[46px] md:leading-[1.05]">{greeting}</h1>
         </div>
-        <HomeHeaderActions />
+        <HomeHeaderActions mapCount={boards.length} />
       </div>
       <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-7">
@@ -121,31 +121,7 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart }: 
           >
             <Constellation {...toConstellation(live)} />
           </Hero>
-          {recent.length > 0 ? (
-            <section aria-labelledby="home-maps" className="flex flex-col gap-4">
-              <div className="flex flex-wrap items-baseline justify-between gap-x-4">
-                <h2 id="home-maps" className={`${h2} text-[22px] tracking-[-0.025em] md:text-[26px]`}>{t('home.continueFrom')}</h2>
-                <Link href="/mapas" className="inline-flex min-h-11 items-center font-bold text-primary-deep no-underline">{t('home.seeAll')}</Link>
-              </div>
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {recent.slice(0, 3).map((b) => (
-                  <MapTile
-                    key={b.id}
-                    as={PendingLink}
-                    href={`/mapas/${b.id}`}
-                    aria-label={t('home.reviewOpenLabel', { mapa: b.title })}
-                    area={t(`boards.area.${b.area}`)}
-                    title={b.title}
-                    preview={b.preview}
-                    counts={b.stateCounts}
-                    stateBarLabel={t('boards.stateBarLabel', b.stateCounts)}
-                    meta={t('library.cardMeta', { cards: b.cardCount, edges: b.edgeCount })}
-                    due={{ text: t('library.dueToday', { n: b.dueCount }), tone: b.dueCount > 0 ? 'review' : 'unknown' }}
-                  />
-                ))}
-              </div>
-            </section>
-          ) : null}
+          <MapSlider maps={boards} />
           <Panel id="home-cov" size="lg" title={t('home.coverage')} aside={<span className="text-[13px] text-muted">{t('home.coverageHint')}</span>}>
             {rows.length === 0 ? (
               <p className="m-0 text-muted">{t('home.coverageEmpty')}</p>

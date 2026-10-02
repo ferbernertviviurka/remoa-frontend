@@ -1,14 +1,16 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
-import { caseStages, type Card, type CardDetail, type MapState, type Rubric, type SaveCardInput } from '@remoa/contracts';
+import { TextMorph } from 'torph/react';
+import { caseStages, type Card, type CardDetail, type CardShape, type MapState, type Rubric, type SaveCardInput } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { Alert, Button, Input, Skeleton, Tag, Textarea } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { buildSaveInput, toDraft, type Draft } from './draft';
 import { FlowSteps } from './flow-steps';
-import { ImageField, QuestionImage } from './image-field';
+import { CaseStageHelp } from './case-stage-help';
+import { AnswerImage, ImageField, ImageSlot, QuestionImage } from './image-field';
 import { ShapePicker } from './shape-picker';
 import { Markdown } from './markdown';
 
@@ -20,18 +22,25 @@ export type CardEditorProps = {
   prepare: (cardId: string) => Promise<boolean>;
   onSaved: (detail: CardDetail, input: SaveCardInput) => void;
   onClose: () => void;
+  /** G04: the map node takes the picked shape at once (preview), and the saved one back if the shape autosave fails. */
+  onShape?: (cardId: string, shape: CardShape) => void;
 };
 
 type Load = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; rubric: Rubric | null };
 
 /** Inline editor hosted by the inspector: loads GET /v1/cards/:id, validates with the contract, PUTs. */
-export function CardEditor({ card, subs, prepare, onSaved, onClose }: CardEditorProps) {
+export function CardEditor({ card, subs, prepare, onSaved, onClose, onShape }: CardEditorProps) {
   const [load, setLoad] = useState<Load>({ state: 'loading' });
   const [draft, setDraft] = useState<Draft | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const saving = useRef(false); // no overlapping PUTs for the same card
   const [attempt, setAttempt] = useState(0);
+  // G04 (D-146): the shape saves on its own, on top of what the server has (never the unsaved draft), one PUT at a time
+  const saved = useRef<Draft | null>(null);
+  const shapeQueue = useRef<Promise<void>>(Promise.resolve());
+  const shapeReq = useRef(0);
+  const [shapeStatus, setShapeStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   useEffect(() => {
     let live = true;
@@ -41,7 +50,8 @@ export function CardEditor({ card, subs, prepare, onSaved, onClose }: CardEditor
       const r = await api<CardDetail>(`/v1/cards/${card.id}`);
       if (!live) return;
       if (!r.ok) return setLoad({ state: 'error', message: t(`errors.${r.error.code}`) });
-      setDraft(toDraft(r.data));
+      saved.current = toDraft(r.data);
+      setDraft(saved.current);
       setLoad({ state: 'ready', rubric: r.data.rubric ?? null });
     })().catch(() => live && setLoad({ state: 'error', message: t('cards.errors.offline') }));
     return () => {
@@ -61,6 +71,7 @@ export function CardEditor({ card, subs, prepare, onSaved, onClose }: CardEditor
       setBusy(true);
       setErrors([]);
       try {
+        await shapeQueue.current; // a shape PUT still in flight lands first; this one carries the same shape
         if (!(await prepare(d.id))) {
           setErrors([t('cards.errors.notSynced')]);
           return false;
@@ -84,6 +95,38 @@ export function CardEditor({ card, subs, prepare, onSaved, onClose }: CardEditor
     },
     [prepare, onSaved, onClose],
   );
+
+  const changeShape = (shape: CardShape) => {
+    if (!saved.current || shape === draft?.shape) return;
+    setDraft((cur) => (cur ? { ...cur, shape } : cur));
+    onShape?.(card.id, shape);
+    const n = ++shapeReq.current;
+    setShapeStatus('saving');
+    shapeQueue.current = shapeQueue.current.then(async () => {
+      const base = saved.current!; // set: the picker only renders once the card has loaded
+      const built = buildSaveInput({ ...base, shape });
+      let ok = false;
+      try {
+        if (built.ok && (await prepare(base.id))) {
+          const r = await api<CardDetail>(`/v1/cards/${base.id}`, { method: 'PUT', body: JSON.stringify(built.data) });
+          if (r.ok) {
+            ok = true;
+            saved.current = { ...base, shape };
+            track('card_edited', { type: base.type });
+            onSaved(r.data, built.data);
+          }
+        }
+      } catch {
+        // offline: same rollback as an API error
+      }
+      if (n !== shapeReq.current) return; // a newer pick is queued: it decides what the node shows
+      setShapeStatus(ok ? 'saved' : 'error');
+      if (ok) return;
+      const back = saved.current!.shape;
+      setDraft((cur) => (cur ? { ...cur, shape: back } : cur));
+      onShape?.(base.id, back);
+    });
+  };
 
   if (load.state === 'loading' || (load.state === 'ready' && !draft))
     return (
@@ -138,12 +181,25 @@ export function CardEditor({ card, subs, prepare, onSaved, onClose }: CardEditor
               <Markdown text={d.back} />
             </section>
           ) : null}
+          <AnswerImage title={d.title || card.title} assetId={d.backAssetId} onChange={(backAssetId) => set({ backAssetId })} />
+        </>
+      ) : null}
+
+      {d.type === 'note' ? (
+        <>
+          <p className="-mt-2 text-xs text-muted">{t('cards.fields.noteHint')}</p>
+          <Textarea label={t('cards.fields.text')} rows={5} value={d.front} maxLength={5000} onChange={(e) => set({ front: e.target.value })} />
+          <p className="-mt-2 text-xs text-muted">{t('cards.fields.backHint')}</p>
+          <QuestionImage title={d.title || card.title} assetId={d.frontAssetId} onChange={(frontAssetId) => set({ frontAssetId })} />
         </>
       ) : null}
 
       {d.type === 'concept' ? (
         <>
-          <ShapePicker value={d.shape} onChange={(shape) => set({ shape })} />
+          <ShapePicker value={d.shape} onChange={changeShape} />
+          <p role="status" className={`-mt-2 text-xs ${shapeStatus === 'error' ? 'text-review-text' : 'text-muted'}`}>
+            <TextMorph locale="pt-BR">{shapeStatus === 'idle' ? '' : t(`cards.shape.${shapeStatus}`)}</TextMorph>
+          </p>
           {d.frontAssetId && d.shape !== 'rect' ? <p className="-mt-2 text-xs text-muted">{t('cards.shape.imageHint')}</p> : null}
         </>
       ) : null}
@@ -152,22 +208,39 @@ export function CardEditor({ card, subs, prepare, onSaved, onClose }: CardEditor
         <QuestionImage title={d.title || card.title} assetId={d.frontAssetId} onChange={(frontAssetId) => set({ frontAssetId })} />
       ) : null}
 
-      {d.type === 'flow' ? <FlowSteps steps={d.steps} subs={subs} onChange={(steps) => set({ steps })} /> : null}
+      {d.type === 'flow' ? <FlowSteps title={d.title || card.title} steps={d.steps} subs={subs} onChange={(steps) => set({ steps })} /> : null}
 
       {d.type === 'case' ? (
         <fieldset className="flex flex-col gap-3">
           <legend className="mb-2 text-xs font-semibold text-text">{t('cards.case.stagesLabel')}</legend>
           {caseStages.map((stage) => (
-            <Textarea
-              key={stage}
-              label={t(`cards.case.stage.${stage}`)}
-              rows={2}
-              value={d.stages[stage]}
-              maxLength={2000}
-              onChange={(e) => set({ stages: { ...d.stages, [stage]: e.target.value } })}
-            />
+            <div key={stage} className="relative flex flex-col gap-2 rounded-map border border-border p-2">
+              {/* G06: same "what is this stage / what filling it changes" tooltip as the map node, beside the field label */}
+              <span className="absolute right-1 top-0">
+                <CaseStageHelp stage={stage} iconOnly />
+              </span>
+              <Textarea
+                label={t(`cards.case.stage.${stage}`)}
+                rows={2}
+                value={d.stages[stage]}
+                maxLength={2000}
+                onChange={(e) => set({ stages: { ...d.stages, [stage]: e.target.value } })}
+              />
+              <ImageSlot
+                label={t('cards.case.image', { stage: t(`cards.case.stage.${stage}`) })}
+                alt={t('canvas.stageImageAlt', { stage: t(`cards.case.stage.${stage}`), title: d.title || card.title })}
+                addLabel={t('cards.case.addImage', { stage: t(`cards.case.stage.${stage}`) })}
+                removeLabel={t('cards.case.removeImage', { stage: t(`cards.case.stage.${stage}`) })}
+                assetId={d.stageAssets[stage]}
+                onChange={(id) => set({ stageAssets: { ...d.stageAssets, [stage]: id } })}
+              />
+            </div>
           ))}
         </fieldset>
+      ) : null}
+
+      {d.type === 'flow' || d.type === 'case' ? (
+        <AnswerImage title={d.title || card.title} assetId={d.backAssetId} onChange={(backAssetId) => set({ backAssetId })} />
       ) : null}
 
       {d.type === 'image' ? (
@@ -204,7 +277,7 @@ export function CardEditor({ card, subs, prepare, onSaved, onClose }: CardEditor
         </Alert>
       ) : null}
 
-      <RubricView rubric={load.rubric} />
+      {d.type === 'note' ? null : <RubricView rubric={load.rubric} />}
 
       <p className="text-xs text-muted">{t('cards.shortcuts')}</p>
       <div className="flex justify-end gap-2">

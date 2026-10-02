@@ -67,6 +67,23 @@ export function loadAsset(id: string): Promise<AssetView | null> {
 /** Test helper. */
 export const clearAssetCache = () => assets.clear();
 
+/** Several assets at once (flow steps, case stages): id → view (null while loading or on failure). */
+export function useAssets(ids: readonly (string | null | undefined)[]): ReadonlyMap<string, AssetView | null> {
+  const key = [...new Set(ids.filter((x): x is string => !!x))].sort().join(',');
+  const [views, setViews] = useState<{ key: string; map: ReadonlyMap<string, AssetView | null> }>({ key: '', map: new Map() });
+  useEffect(() => {
+    if (!key) return;
+    let live = true;
+    const list = key.split(',');
+    void Promise.all(list.map(loadAsset)).then((vs) => live && setViews({ key, map: new Map(list.map((id, i) => [id, vs[i] ?? null])) }));
+    return () => {
+      live = false;
+    };
+  }, [key]);
+  return views.key === key ? views.map : empty;
+}
+const empty: ReadonlyMap<string, AssetView | null> = new Map();
+
 export function useAsset(id: string | null | undefined): AssetView | null {
   const [view, setView] = useState<{ id: string; v: AssetView | null } | null>(null);
   useEffect(() => {

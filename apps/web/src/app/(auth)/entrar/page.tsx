@@ -1,6 +1,6 @@
-import { AuthForm } from '@/features/auth/auth-form';
+import { SignInForm } from '@/features/auth/sign-in-form';
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams;
-  return <AuthForm mode="signIn" next={next} />;
+  return <SignInForm next={next} />;
 }

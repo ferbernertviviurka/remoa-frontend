@@ -24,11 +24,24 @@ export function usePhotoDialog() {
 /** One photo dialog for the hero avatar, the "Foto" row and the "Adicionar foto" chip. Radix returns focus to the opener on close. */
 export function PhotoDialogProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const opener = useRef<HTMLElement | null>(null);
+  // Radix only returns focus to a <Trigger>; here the opener is the hero avatar, the "Foto" row or a chip, so remember it (FR-4).
+  const change = (v: boolean) => {
+    setOpen(v);
+    if (!v) requestAnimationFrame(() => opener.current?.focus());
+  };
   return (
-    <PhotoCtx.Provider value={{ open: () => setOpen(true) }}>
+    <PhotoCtx.Provider
+      value={{
+        open: () => {
+          opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+          setOpen(true);
+        },
+      }}
+    >
       {children}
-      <Dialog open={open} onOpenChange={setOpen} title={t('account.photoDialog.title')} closeLabel={t('account.photoDialog.closeLabel')} size="xl">
-        {open ? <PhotoForm onClose={() => setOpen(false)} /> : null}
+      <Dialog open={open} onOpenChange={change} title={t('account.photoDialog.title')} closeLabel={t('account.photoDialog.closeLabel')} size="xl">
+        {open ? <PhotoForm onClose={() => change(false)} /> : null}
       </Dialog>
     </PhotoCtx.Provider>
   );

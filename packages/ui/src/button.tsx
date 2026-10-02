@@ -8,7 +8,7 @@ import { Spinner } from './spinner';
 /**
  * Button (medidas v2: fonte do corpo 15 px/700). Variantes: variant = primary | secondary | quiet | danger | light | outline-light
  * (light e outline-light só sobre painel escuro: botão branco e botão com contorno branco).
- * Tamanhos: sm 44 px (raio 14) | md 48 px (raio 15, padrão) | hero 50 px (16 px, dentro do Hero) | lg 52 px (raio 16, 16 px, rodapé do Novo mapa) | touch 46 px mínimo (celular).
+ * Tamanhos: sm 44 px (raio 14) | md 48 px (raio 15, padrão) | hero 50 px (16 px, dentro do Hero) | lg 52 px (raio 16, 16 px, rodapé do Novo mapa) | cta 56 px (17 px/800, resumo do pedido de Planos) | touch 46 px mínimo (celular).
  * `primary` desabilitado vira cinza-lilás chapado (como no mock do Novo mapa).
  * `icon` fica antes do texto, `iconEnd` depois. Os dois são decorativos.
  * `loading` troca o ícone inicial pelo Spinner e, se `loadingLabel` vier, o Torph anima a troca do rótulo.
@@ -16,7 +16,7 @@ import { Spinner } from './spinner';
  */
 export type ButtonProps = Omit<ComponentProps<'button'>, 'className'> & {
   variant?: 'primary' | 'secondary' | 'quiet' | 'danger' | 'light' | 'outline-light';
-  size?: 'sm' | 'md' | 'lg' | 'hero' | 'touch';
+  size?: 'sm' | 'md' | 'lg' | 'cta' | 'hero' | 'touch';
   icon?: ReactNode;
   iconEnd?: ReactNode;
   loading?: boolean;
@@ -37,6 +37,7 @@ const sizes = {
   md: 'min-h-12 rounded-btn text-[15px]',
   hero: 'min-h-[50px] gap-2.5 rounded-btn px-6 text-base',
   lg: 'min-h-[52px] gap-2.5 rounded-field px-[26px] text-base',
+  cta: 'min-h-14 gap-2.5 rounded-field px-[26px] text-[17px] font-extrabold!',
   touch: 'min-h-[46px] min-w-[46px] rounded-btn px-5 text-[15px]',
 } as const;
 

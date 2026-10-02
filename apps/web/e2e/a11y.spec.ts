@@ -1,6 +1,7 @@
 // G01 v2 / T8: axe (WCAG 2.x A/AA) nas telas v2: Hoje, Meus mapas, Novo mapa (3 passos), Editor (resumo, card, cada aba do inspetor) e paleta ⌘K.
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { PLAN_LIMITS } from '@remoa/contracts';
 import { seedMock, signUpAndLogin } from './visual/fixture';
 
 test.use({ viewport: { width: 1440, height: 900 } });
@@ -69,7 +70,7 @@ test('axe: Editor (resumo, card, cada aba do inspetor) e paleta ⌘K', async ({ 
   await expect(page.getByRole('button', { name: 'Corrigir resposta' })).toBeVisible();
   await page.getByLabel('Sua resposta').fill('Iniciar noradrenalina');
   expect(await axe(page), 'desafio').toEqual([]);
-  for (const mode of ['Opções', 'Falar']) { // Falar: Chromium do Playwright não tem Web Speech => caminho "não suportado"
+  for (const mode of ['Opções', 'Falar']) { // Falar: botão de gravar desabilitado com "Em breve" (D-203)
     await page.getByRole('group', { name: 'Como responder' }).getByRole('button', { name: mode }).click();
     expect(await axe(page), `desafio: ${mode}`).toEqual([]);
   }
@@ -82,10 +83,10 @@ test('axe: Editor (resumo, card, cada aba do inspetor) e paleta ⌘K', async ({ 
 test('axe: Preços, Conta (e confirmação de exclusão) e Paywall de mapas', async ({ page, request }) => {
   test.setTimeout(120_000);
   const { headers } = await signUpAndLogin(page, request);
-  await page.goto('/precos');
+  await page.goto('/planos');
   await expect(page.getByRole('table', { name: 'Comparação entre Free e Pro' })).toBeVisible();
   expect(await axe(page), 'preços').toEqual([]);
-  await page.goto('/conta');
+  await page.goto('/conta/dados');
   await expect(page.getByRole('button', { name: 'Exportar meus dados' })).toBeVisible();
   expect(await axe(page), 'conta').toEqual([]);
   await page.getByRole('button', { name: 'Excluir conta' }).click();
@@ -93,7 +94,7 @@ test('axe: Preços, Conta (e confirmação de exclusão) e Paywall de mapas', as
   expect(await axe(page), 'conta: confirmar exclusão').toEqual([]);
   await page.keyboard.press('Escape');
 
-  for (let i = 0; i < 3; i++) expect((await request.post('http://localhost:4000/v1/boards', { headers, data: { title: `M${i}` } })).status()).toBe(201);
+  for (let i = 0; i < PLAN_LIMITS.free.limits.boards; i++) expect((await request.post('http://localhost:4000/v1/boards', { headers, data: { title: `M${i}` } })).status()).toBe(201);
   await page.goto('/mapas/novo?caminho=blank');
   await page.getByRole('button', { name: 'Continuar' }).click();
   await page.getByRole('button', { name: 'Continuar' }).click();

@@ -102,10 +102,13 @@ describe('editor v2 (T5)', () => {
 
   it('D-098: sem seleção não há painel; com seleção, abas operáveis por teclado; fechar, Esc e clique no fundo escondem', async () => {
     mount();
-    const panel = () => screen.queryByRole('complementary', { name: 'Painel do mapa' });
-    expect(panel()).toBeNull();
+    // G06: the panel plays a closing animation (data-state="closed") before it unmounts
+    const aside = () => screen.queryByRole('complementary', { name: 'Painel do mapa' });
+    const panel = () => (aside()?.dataset.state === 'open' ? aside() : null);
+    expect(aside()).toBeNull();
 
     fireEvent.click(selectBtn('Sepse'));
+    expect(aside()).toHaveAttribute('data-state', 'open');
     const tabs = within(panel()!).getByRole('tablist', { name: 'Seções do card' });
     expect(within(tabs).getByRole('tab', { name: 'Conteúdo' })).toHaveAttribute('aria-selected', 'true');
     expect(within(panel()!).getByText('Conexões · 5')).toBeInTheDocument();
@@ -121,7 +124,9 @@ describe('editor v2 (T5)', () => {
     expect(within(panel()!).getByRole('tabpanel')).toHaveTextContent('Enamed 2026.2');
 
     fireEvent.click(within(panel()!).getByRole('button', { name: 'Fechar painel do card' }));
-    expect(panel()).toBeNull();
+    expect(aside()).toHaveAttribute('data-state', 'closed');
+    expect(aside()).toHaveTextContent('Sepse'); // still the card it had while it slides out
+    await waitFor(() => expect(aside()).toBeNull());
 
     fireEvent.click(selectBtn('Sepse'));
     expect(panel()).not.toBeNull();
@@ -192,6 +197,63 @@ describe('editor v2 (T5)', () => {
     gesture('gesturestart', 1);
     gesture('gesturechange', 0.01);
     await waitFor(() => expect(zoom).toHaveTextContent('60%'));
+  });
+
+  const sentOps = () => api.mock.calls.filter((c) => c[0] === '/v1/boards/ops').flatMap((c) => JSON.parse(c[1].body).ops as { op: string }[]);
+  const flushQueue = () => act(async () => {
+    await vi.advanceTimersByTimeAsync(5000);
+  });
+
+  it('G06: "Conteúdo" na barra cria um card note: sem virar, sem rubrica, sem "Revisar este card"; a paleta lista os 5 tipos', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      mount();
+      const bar = screen.getByRole('toolbar', { name: 'Ferramentas do mapa' });
+      expect(within(bar).getAllByRole('button').map((b) => b.getAttribute('aria-label')).filter((l) => l?.startsWith('Adicionar'))).toEqual([
+        'Adicionar Pergunta e Resposta', 'Adicionar Conteúdo', 'Adicionar fluxograma', 'Adicionar caso clínico', 'Adicionar imagem',
+      ]);
+      fireEvent.click(within(bar).getByRole('button', { name: 'Adicionar Conteúdo' }));
+      const node = nodeOf('Novo conteúdo');
+      expect(node).toHaveAttribute('data-type', 'note');
+      expect(within(node).queryByRole('button', { name: 'Ver resposta' })).toBeNull();
+      const panel = screen.getByRole('complementary', { name: 'Painel do mapa' });
+      expect(within(panel).getByText('Conteúdo', { selector: 'span' })).toBeInTheDocument(); // eyebrow
+      expect(within(panel).queryByRole('button', { name: 'Revisar este card' })).toBeNull();
+      await flushQueue();
+      expect(sentOps()).toContainEqual(expect.objectContaining({ op: 'createCard', card: expect.objectContaining({ type: 'note', title: 'Novo conteúdo' }) }));
+
+      fireEvent.keyDown(window, { key: 'k', metaKey: true });
+      const input = await screen.findByRole('combobox', { name: 'Buscar comando' });
+      fireEvent.change(input, { target: { value: 'Novo Conteúdo' } });
+      expect(screen.getByRole('option', { name: /Novo Conteúdo/ })).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('G06 (D-202): card com tamanho próprio desenha esse tamanho; alças só no selecionado; "Restaurar tamanho padrão" enfileira resizeCards null', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const original = graph.cards;
+    graph.cards = original.map((c) => (c.title === 'qSOFA' ? { ...c, size: { w: 320, h: 240 } } : c));
+    try {
+      mount();
+      expect(nodeOf('qSOFA')).toHaveStyle({ width: '320px', height: '240px' });
+      expect(document.querySelectorAll('.react-flow__resize-control')).toHaveLength(0);
+      fireEvent.click(selectBtn('qSOFA'));
+      expect(document.querySelectorAll('.react-flow__node.selected .react-flow__resize-control')).toHaveLength(4);
+      const panel = screen.getByRole('complementary', { name: 'Painel do mapa' });
+      fireEvent.keyDown(within(panel).getByRole('button', { name: 'Mais ações de qSOFA' }), { key: 'Enter' });
+      fireEvent.click(await screen.findByRole('menuitem', { name: 'Restaurar tamanho padrão' }));
+      expect(nodeOf('qSOFA').style.width).toBe('');
+      await flushQueue();
+      const id = sepseCards.find((c) => c.title === 'qSOFA')!.id;
+      expect(sentOps()).toContainEqual(expect.objectContaining({ op: 'resizeCards', sizes: [{ cardId: id, size: null }] }));
+      fireEvent.keyDown(document.body, { key: 'z', metaKey: true }); // undo brings the size back
+      expect(nodeOf('qSOFA')).toHaveStyle({ width: '320px' });
+    } finally {
+      graph.cards = original;
+      vi.useRealTimers();
+    }
   });
 
   it('⌘K abre a paleta com foco no campo; filtra; Enter executa; Esc fecha', async () => {

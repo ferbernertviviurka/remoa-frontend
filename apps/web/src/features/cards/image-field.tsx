@@ -161,25 +161,78 @@ export function ImageUpload({ hasImage, onAsset }: { hasImage: boolean; onAsset:
   );
 }
 
-/** D-096: optional image on the question (front) side: add, replace or remove; the card stores `frontAssetId`. */
-export function QuestionImage({ title, assetId, onChange }: { title: string; assetId: string | null; onChange: (assetId: string | null) => void }) {
+type SlotProps = {
+  label: string;
+  hint?: string;
+  alt: string;
+  removeLabel: string;
+  /** Compact (flow step, case stage): the uploader stays behind this button until asked for. */
+  addLabel?: string;
+  assetId: string | null;
+  onChange: (assetId: string | null) => void;
+};
+
+/** An optional image anywhere on a card (D-096 question, D-201 answer, step, stage): add, replace or remove. */
+export function ImageSlot({ label, hint, alt, removeLabel, addLabel, assetId, onChange }: SlotProps) {
   const asset = useAsset(assetId);
+  const [open, setOpen] = useState(false);
+  const collapsed = !!addLabel && !open;
   return (
     <fieldset className="flex flex-col gap-3">
-      <legend className="mb-2 text-xs font-semibold text-text">{t('cards.frontImage.label')}</legend>
+      <legend className="mb-2 text-xs font-semibold text-text">{label}</legend>
       {assetId ? (
         <div className="flex flex-col gap-2">
           <div className="overflow-hidden rounded-map border border-border bg-canvas">
-            {asset ? <img src={asset.urls.w800} alt={t('cards.frontImage.alt', { title })} className="block w-full" /> : <div className="h-28" />}
+            {asset ? <img src={asset.urls.w800} alt={alt} className="block w-full" /> : <div className="h-28" />}
           </div>
           <Button variant="quiet" onClick={() => onChange(null)}>
-            {t('cards.frontImage.remove')}
+            {removeLabel}
           </Button>
         </div>
+      ) : hint ? (
+        <p className="m-0 text-xs text-muted">{hint}</p>
+      ) : null}
+      {collapsed ? (
+        <Button variant="secondary" onClick={() => setOpen(true)}>
+          {assetId ? t('cards.image.replace') : addLabel}
+        </Button>
       ) : (
-        <p className="m-0 text-xs text-muted">{t('cards.frontImage.hint')}</p>
+        <ImageUpload
+          hasImage={!!assetId}
+          onAsset={(id) => {
+            setOpen(false);
+            onChange(id);
+          }}
+        />
       )}
-      <ImageUpload hasImage={!!assetId} onAsset={onChange} />
     </fieldset>
+  );
+}
+
+/** D-096: optional image on the question (front) side; the card stores `frontAssetId`. */
+export function QuestionImage({ title, assetId, onChange }: { title: string; assetId: string | null; onChange: (assetId: string | null) => void }) {
+  return (
+    <ImageSlot
+      label={t('cards.frontImage.label')}
+      hint={t('cards.frontImage.hint')}
+      alt={t('cards.frontImage.alt', { title })}
+      removeLabel={t('cards.frontImage.remove')}
+      assetId={assetId}
+      onChange={onChange}
+    />
+  );
+}
+
+/** D-201: optional image on the answer (back) side; the card stores `backAssetId`. */
+export function AnswerImage({ title, assetId, onChange }: { title: string; assetId: string | null; onChange: (assetId: string | null) => void }) {
+  return (
+    <ImageSlot
+      label={t('cards.backImage.label')}
+      hint={t('cards.backImage.hint')}
+      alt={t('cards.backImage.alt', { title })}
+      removeLabel={t('cards.backImage.remove')}
+      assetId={assetId}
+      onChange={onChange}
+    />
   );
 }

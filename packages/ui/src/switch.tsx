@@ -19,7 +19,7 @@ export function Switch({ label, size = 'md', hideLabel, ...rest }: SwitchProps) 
         id={id}
         {...rest}
         className={`relative cursor-pointer rounded-pill border border-border bg-grid transition-colors duration-200 data-[state=checked]:border-primary data-[state=checked]:bg-primary ${
-          lg ? "h-8 w-14 border-unknown bg-unknown after:absolute after:-inset-x-0.5 after:-inset-y-1.5 after:content-['']" : 'h-6 w-11'
+          lg ? "h-8 w-14 border-unknown bg-unknown after:absolute after:-inset-x-0.5 after:-inset-y-[7px] after:content-['']" : 'h-6 w-11'
         } ${focusRing}`}
       >
         <RS.Thumb

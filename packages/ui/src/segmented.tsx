@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import * as TG from '@radix-ui/react-toggle-group';
 import { focusRing, pressable } from './button';
 
@@ -13,7 +14,7 @@ export const segItem = 'inline-flex items-center justify-center rounded-[12px] t
  */
 export type SegmentedProps = {
   'aria-label': string;
-  options: ReadonlyArray<{ value: string; label: string }>;
+  options: ReadonlyArray<{ value: string; label: string; disabled?: boolean; badge?: ReactNode; describedBy?: string }>;
   value?: string;
   defaultValue?: string;
   onValueChange?: (value: string) => void;
@@ -31,9 +32,13 @@ export function Segmented({ options, onValueChange, ...rest }: SegmentedProps) {
         <TG.Item
           key={o.value}
           value={o.value}
+          disabled={o.disabled}
+          aria-disabled={o.disabled || undefined}
+          aria-describedby={o.describedBy}
           className={`h-[38px] px-5 text-sm max-lg:h-11 ${segItem} ${pressable} ${focusRing}`}
         >
           {o.label}
+          {o.badge ? <span className="ml-2">{o.badge}</span> : null}
         </TG.Item>
       ))}
     </TG.Root>

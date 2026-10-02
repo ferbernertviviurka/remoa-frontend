@@ -10,7 +10,7 @@ import {
   type XYPosition,
 } from '@xyflow/react';
 import {
-  MAX_CARDS_PER_BOARD, type BoardGraph, type CardDetail, type CardType, type CoverageRow, type MapOp, type MatrixItem, type RetrievabilityMap, type SaveCardInput,
+  CARD_SIZE_MAX, CARD_SIZE_MIN, MAX_CARDS_PER_BOARD, type BoardGraph, type CardDetail, type CardShape, type CardSize, type CardType, type CoverageRow, type MapOp, type MatrixItem, type RetrievabilityMap, type SaveCardInput,
 } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import {
@@ -42,6 +42,12 @@ const uuid = () => crypto.randomUUID();
 const VIRTUALIZE_ABOVE = 150;
 /** Below `md` the editor is the phone layout: compact header, panel as a bottom sheet (G02). */
 const isPhone = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+/**
+ * Touch screens review, not edit (DESIGN): cards don't drag there, so a pinch or pan that starts on a card moves the map (P-083).
+ * G04: only touch-first devices; a laptop with a touchscreen or pen can report `pointer: coarse` and must keep the drag.
+ */
+const TOUCH_ONLY = '(hover: none) and (pointer: coarse)';
+const isTouch = () => typeof window !== 'undefined' && window.matchMedia(TOUCH_ONLY).matches;
 type Insets = { top: number; left: number; right: number; bottom: number };
 /**
  * Free area of the canvas: clear of the floating controls (layer bar on top, zoom/toolbar below) and of the card panel
@@ -68,6 +74,17 @@ function zoomAt(rf: Pick<ReactFlowInstance, 'getViewport' | 'setViewport'>, el: 
 }
 type Tool = 'select' | 'move' | 'connect';
 const notSelf = (c: { source: string; target: string }) => c.source !== c.target;
+const clampInt = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Math.round(v)));
+/** D-202: what the resize handles report → a size the contract accepts (integer px within CARD_SIZE_MIN/MAX). */
+export const toCardSize = (d: { width: number; height: number }): CardSize => ({
+  w: clampInt(d.width, CARD_SIZE_MIN.w, CARD_SIZE_MAX.w),
+  h: clampInt(d.height, CARD_SIZE_MIN.h, CARD_SIZE_MAX.h),
+});
+/** Card types created from the toolbar / palette, in menu order (G06 item 6). */
+const CREATE_TYPES = ['concept', 'note', 'flow', 'case', 'image'] as const;
+const createIcon = { concept: 'plus', note: 'file', flow: 'flow', case: 'case', image: 'image' } as const;
+const createLabel = { concept: 'editor.addCardConcept', note: 'editor.addCardNote', flow: 'editor.addCardFlow', case: 'editor.addCardCase', image: 'editor.addCardImage' } as const;
+const createCommand = { concept: 'newConcept', note: 'newNote', flow: 'newFlow', image: 'newImage', case: 'newCase' } as const;
 
 const ariaLabelConfig = {
   'node.a11yDescription.default': t('map.a11y.node'),
@@ -157,6 +174,9 @@ function Canvas({ data }: { data: BoardGraph }) {
   const [status, setStatus] = useState<QueueStatus>({ state: 'saved', savedAt: null, pending: 0, dropped: false });
   const wrap = useRef<HTMLElement>(null);
   const dragStart = useRef(new Map<string, XYPosition>());
+  /** D-202: size and position of each card being resized, as they were when the handle was grabbed (the undo). */
+  const resizeStart = useRef(new Map<string, { size: CardSize | null; position: XYPosition }>());
+  const draggedAt = useRef(-Infinity); // last drag that moved a card: its trailing dblclick is not "edit" (G04)
   const [layer, setLayer] = useState<NodeLayer>('recall');
   const [retrievability, setRetrievability] = useState<RetrievabilityMap>({});
   const [coverage, setCoverage] = useState<CoverageRow | null>(null);
@@ -166,6 +186,7 @@ function Canvas({ data }: { data: BoardGraph }) {
   const [palette, setPalette] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [tool, setToolState] = useState<Tool>('select');
+  const [touch] = useState(isTouch); // canvas is client-only (lazy, ssr: false), so no hydration mismatch
   const [endOfToday] = useState(() => endOfDay());
   const [linkFrom, setLinkFromState] = useState<string | null>(null); // "Ligar" tool: first card clicked
   const linkFromRef = useRef<string | null>(null);
@@ -237,7 +258,7 @@ function Canvas({ data }: { data: BoardGraph }) {
       try {
         const r = await api('/v1/matrix/links', { method: 'POST', body: JSON.stringify({ boardId: board.id, matrixItemId: item.id }) });
         if (!r.ok) throw new Error(r.error.code);
-        track('board_linked_to_matrix', { suggested: true });
+        track('board_linked_to_matrix', { count: 1, suggestedCount: 1 });
         setMatrixItemId(item.id);
       } catch {
         toast({ title: t('editor.linkError'), tone: 'danger' });
@@ -299,6 +320,12 @@ function Canvas({ data }: { data: BoardGraph }) {
     [setGraph],
   );
 
+  /** G04: shape preview while the editor autosaves it (and the rollback); sizeOf/nodeSize follow `card.shape`. */
+  const onCardShape = useCallback(
+    (id: string, shape: CardShape) => setGraph(patchCard(g.current, cache.current, id, { shape })),
+    [setGraph],
+  );
+
   const createCard = useCallback(
     (type: CardType, at?: XYPosition) => {
       if (g.current.nodes.length >= MAX_CARDS_PER_BOARD) {
@@ -336,8 +363,20 @@ function Canvas({ data }: { data: BoardGraph }) {
       const before = g.current;
       const moves: { cardId: string; position: XYPosition }[] = [];
       const undoMoves: typeof moves = [];
+      // D-202: the resize handles send `dimensions` changes with `resizing` (+ a position change from a top/left corner).
+      // They become `card.size` (what the NodeCard draws), never node.width/height, so undo/reload/layout read one source.
+      const live = new Map<string, CardSize>();
+      const ended: string[] = [];
       for (const c of changes) {
-        if (c.type !== 'position' || !c.position) continue;
+        if (c.type !== 'dimensions' || c.resizing === undefined || !c.dimensions) continue;
+        const node = before.nodes.find((n) => n.id === c.id);
+        if (!node) continue;
+        if (!resizeStart.current.has(c.id)) resizeStart.current.set(c.id, { size: node.data.card.size, position: node.position });
+        live.set(c.id, toCardSize(c.dimensions));
+        if (!c.resizing) ended.push(c.id);
+      }
+      for (const c of changes) {
+        if (c.type !== 'position' || !c.position || resizeStart.current.has(c.id)) continue;
         const prev = dragStart.current.get(c.id) ?? before.nodes.find((n) => n.id === c.id)?.position;
         if (c.dragging) {
           if (prev && !dragStart.current.has(c.id)) dragStart.current.set(c.id, prev);
@@ -351,13 +390,51 @@ function Canvas({ data }: { data: BoardGraph }) {
           undoMoves.push({ cardId: c.id, position: prev });
         }
       }
-      setGraph({ ...before, nodes: applyNodeChanges(changes, before.nodes) });
-      if (moves.length)
+      const kept = live.size ? changes.filter((c) => !(c.type === 'dimensions' && c.resizing !== undefined)) : changes;
+      let nodes = applyNodeChanges(kept, before.nodes);
+      if (live.size) nodes = nodes.map((n) => (live.has(n.id) ? { ...n, data: { card: { ...n.data.card, size: live.get(n.id)! } } } : n));
+      setGraph({ ...before, nodes });
+      // pressing a card selects it (React Flow, selectNodesOnDrag): the editor stays open only for the card it belongs to
+      if (changes.some((c) => c.type === 'select')) setEditing((cur) => (cur && nodes.some((n) => n.id === cur && n.selected) ? cur : null));
+      if (moves.length) {
+        draggedAt.current = performance.now();
         commit([{ op: 'moveCards', opId: uuid(), boardId: board.id, moves }], {
           undo: [{ op: 'moveCards', opId: uuid(), boardId: board.id, moves: undoMoves }],
         });
+      }
+      for (const id of ended) {
+        const start = resizeStart.current.get(id)!;
+        resizeStart.current.delete(id);
+        const n = nodes.find((x) => x.id === id);
+        if (!n) continue;
+        const size = live.get(id)!;
+        const position = snapPos(n.position);
+        const same = (a: CardSize | null, b: CardSize | null) => a?.w === b?.w && a?.h === b?.h;
+        const moved = position.x !== start.position.x || position.y !== start.position.y;
+        if (same(start.size, size) && !moved) continue;
+        const base = { boardId: board.id };
+        draggedAt.current = performance.now(); // the dblclick that may follow a resize is not "edit"
+        commit(
+          [
+            { ...base, op: 'resizeCards', opId: uuid(), sizes: [{ cardId: id, size }] },
+            ...(moved ? [{ ...base, op: 'moveCards' as const, opId: uuid(), moves: [{ cardId: id, position }] }] : []),
+          ],
+          {
+            undo: [
+              { ...base, op: 'resizeCards', opId: uuid(), sizes: [{ cardId: id, size: start.size }] },
+              ...(moved ? [{ ...base, op: 'moveCards' as const, opId: uuid(), moves: [{ cardId: id, position: start.position }] }] : []),
+            ],
+          },
+        );
+      }
     },
     [board.id, commit, setGraph],
+  );
+
+  /** D-202: card menu "Restaurar tamanho padrão" (size null), undoable like any map op. */
+  const resetSize = useCallback(
+    (id: string) => commit([{ op: 'resizeCards', opId: uuid(), boardId: board.id, sizes: [{ cardId: id, size: null }] }]),
+    [board.id, commit],
   );
 
   const onEdgesChange = useCallback(
@@ -472,7 +549,11 @@ function Canvas({ data }: { data: BoardGraph }) {
   );
 
   /** Double-click a card = open it in the editor (the panel menu "Editar card" is the keyboard path). */
-  const onNodeDoubleClick = useCallback<NodeMouseHandler<CardNode>>((_e, node) => openCard(node.id), [openCard]);
+  const onNodeDoubleClick = useCallback<NodeMouseHandler<CardNode>>((_e, node) => {
+    // a click and then a quick press-and-drag (or a trackpad tap-and-drag) ends in a dblclick: that was a move, not an edit
+    if (performance.now() - draggedAt.current < 500) return;
+    openCard(node.id);
+  }, [openCard]);
 
   const changeLayer = useCallback((next: NodeLayer) => {
     setLayer(next);
@@ -547,8 +628,10 @@ function Canvas({ data }: { data: BoardGraph }) {
     () => ({
       layer, challenge: mode === 'challenge', quiz, heat: retrievability, edgeCounts, coverageItem: coverage?.title ?? null, endOfToday,
       selectCard: select, editLabel: setLabelEdit, prepare: prepareCard,
+      // D-202 + D-148: resize handles only where cards are edited with a mouse (not on touch, not in the challenge)
+      resizable: !touch && mode === 'explore' && tool === 'select',
     }),
-    [layer, mode, quiz, retrievability, edgeCounts, coverage, endOfToday, select, prepareCard],
+    [layer, mode, quiz, retrievability, edgeCounts, coverage, endOfToday, select, prepareCard, touch, tool],
   );
 
   const selectedNodes = graph.nodes.filter((n) => n.selected);
@@ -569,8 +652,8 @@ function Canvas({ data }: { data: BoardGraph }) {
 
   const commands = useMemo<CommandItem[]>(
     () => [
-      ...(['concept', 'flow', 'image', 'case'] as const).map((type) => {
-        const k = ({ concept: 'newConcept', flow: 'newFlow', image: 'newImage', case: 'newCase' } as const)[type];
+      ...CREATE_TYPES.map((type) => {
+        const k = createCommand[type];
         return { id: `create:${type}`, group: t('palette.groups.create'), label: t(`palette.${k}.label`), hint: t(`palette.${k}.hint`) };
       }),
       ...(['link', 'organize', 'challenge'] as const).map((k) => ({ id: `map:${k}`, group: t('palette.groups.map'), label: t(`palette.${k}.label`), hint: t(`palette.${k}.hint`) })),
@@ -596,16 +679,13 @@ function Canvas({ data }: { data: BoardGraph }) {
 
   const tools = useMemo<ToolbarItem[]>(
     () => [
-      { id: 'select', icon: 'cursor', label: t('canvas.toolbar.select'), pressed: tool === 'select' },
-      { id: 'move', icon: 'move', label: t('canvas.toolbar.move'), pressed: tool === 'move' },
+      { id: 'select', icon: 'cursor', label: t('canvas.toolbar.select'), hint: t('canvas.toolbar.hint.select'), pressed: tool === 'select' },
+      { id: 'move', icon: 'move', label: t('canvas.toolbar.move'), hint: t('canvas.toolbar.hint.move'), pressed: tool === 'move' },
       { separator: true },
-      { id: 'concept', icon: 'plus', label: t('editor.addCardConcept') },
-      { id: 'flow', icon: 'flow', label: t('editor.addCardFlow') },
-      { id: 'image', icon: 'image', label: t('editor.addCardImage') },
-      { id: 'case', icon: 'case', label: t('editor.addCardCase') },
+      ...CREATE_TYPES.map((type) => ({ id: type, icon: createIcon[type], label: t(createLabel[type]), hint: t(`canvas.toolbar.hint.${type}`) })),
       { separator: true },
-      { id: 'connect', icon: 'link', label: t('canvas.toolbar.connect'), pressed: tool === 'connect' },
-      { id: 'organize', icon: 'tidy', label: t('canvas.toolbar.organize') },
+      { id: 'connect', icon: 'link', label: t('canvas.toolbar.connect'), hint: t('canvas.toolbar.hint.connect'), pressed: tool === 'connect' },
+      { id: 'organize', icon: 'tidy', label: t('canvas.toolbar.organize'), hint: t('canvas.toolbar.hint.organize') },
     ],
     [tool],
   );
@@ -624,6 +704,36 @@ function Canvas({ data }: { data: BoardGraph }) {
   const [initialFit] = useState(() => fitOptions(false));
   const fit = useCallback(() => void rf.fitView({ ...fitOptions(g.current.nodes.some((n) => n.selected)), duration: 200 }), [rf]);
   const onPaneClick = useCallback(() => select(null), [select]);
+
+  // G06 item 2: the panel animates in/out (CanvasPanel data-state). Focus goes into it once it has finished opening (the
+  // heading, so the screen reader reads the card/question), unless the user already moved focus somewhere on purpose
+  // (into the panel, a field). Closing with focus inside returns it to the card that was selected.
+  const panelWrap = useRef<HTMLDivElement>(null);
+  const lastSelected = useRef<string | null>(null);
+  useEffect(() => {
+    if (selected) lastSelected.current = selected.id;
+  }, [selected]);
+  const focusPanel = useCallback(() => {
+    const el = document.activeElement;
+    if (!panelWrap.current || panelWrap.current.contains(el) || isTyping(el) || inDialog(el)) return;
+    const h = panelWrap.current.querySelector<HTMLElement>('aside h2');
+    if (!h) return;
+    h.tabIndex = -1;
+    h.focus({ preventScroll: true });
+  }, []);
+  const wasOpen = useRef(panelOpen);
+  useEffect(() => {
+    if (wasOpen.current === panelOpen) return;
+    wasOpen.current = panelOpen;
+    if (panelOpen) {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) focusPanel(); // no animation, no animationend
+      return;
+    }
+    if (!panelWrap.current?.contains(document.activeElement)) return;
+    const id = lastSelected.current;
+    const node = id ? wrap.current?.querySelector<HTMLElement>(`.react-flow__node[data-id="${CSS.escape(id)}"] button[aria-pressed]`) : null;
+    node?.focus({ preventScroll: true });
+  }, [panelOpen, focusPanel]);
 
   // G02 pinch: Chrome/Firefox send a trackpad pinch as ctrl+wheel, which React Flow only hears over its own pane; over the
   // floating pieces it zoomed the whole page. Safari sends gesture events (React Flow ignores them) and zoomed the page too.
@@ -693,10 +803,13 @@ function Canvas({ data }: { data: BoardGraph }) {
             onNodeDoubleClick={onNodeDoubleClick}
             onNodeClick={tool === 'connect' ? onNodeClick : undefined}
             onPaneClick={onPaneClick}
-            nodesDraggable={tool === 'select'}
+            nodesDraggable={tool === 'select' && !touch}
+            // G04: threshold 0 = the card keeps the exact grab offset. With the default (1 px) React Flow measures the offset at
+            // the first move, so a fast drag (or moves coalesced while the panel opens) left the card behind the pointer or still.
+            // Pressing a card selects it, as a click would.
+            nodeDragThreshold={0}
             snapToGrid
             snapGrid={[8, 8]}
-            selectNodesOnDrag={false}
             deleteKeyCode={null}
             selectionKeyCode="Shift"
             multiSelectionKeyCode={['Shift', 'Meta', 'Control']}
@@ -734,7 +847,10 @@ function Canvas({ data }: { data: BoardGraph }) {
         ) : null}
         {/* zoom + toolbar share one row; on the phone the row scrolls instead of overlapping (hidden under the challenge sheet) */}
         <div
-          className={`pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col items-start gap-2 p-4 md:bottom-1 md:right-auto md:p-5 [&>*]:pointer-events-auto ${
+          className={`pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col items-start gap-2 p-4 md:bottom-1 md:items-center md:p-5 [&>*]:pointer-events-auto ${
+            // desktop: toolbar centred in the canvas; with the 340 px panel open (+20 gap, +20 margin) it centres in the space left of it
+            panelOpen ? 'lg:pr-[380px]' : ''
+          } ${
             mode === 'challenge' ? 'max-md:hidden' : ''
           }`}
         >
@@ -743,14 +859,21 @@ function Canvas({ data }: { data: BoardGraph }) {
               {linkFrom ? t('canvas.connectFrom') : t('canvas.connectStart')}
             </p>
           ) : null}
-          <div className="flex max-w-full items-end gap-[23px] overflow-x-auto [&>*]:shrink-0">
-            <Zoom onFit={fit} />
+          <div className="flex max-w-full items-end gap-[23px] overflow-x-auto md:overflow-visible [&>*]:shrink-0">
+            {/* md+: zoom pinned to the corner so it never pushes the centred toolbar */}
+            <div className="md:absolute md:bottom-5 md:left-5">
+              <Zoom onFit={fit} />
+            </div>
             <CanvasToolbar aria-label={t('canvas.toolbar.label')} items={tools} onSelect={onTool} />
           </div>
         </div>
-        {panelOpen ? (
-          // desktop: floating 340 px panel on the right; phone: bottom sheet (full width, up to 55% of the canvas)
-          <div className="absolute inset-x-0 bottom-0 z-20 h-[55%] md:inset-x-auto md:bottom-5 md:right-5 md:top-5 md:h-auto [&>aside]:max-md:w-full [&>aside]:max-md:rounded-b-none">
+        {/* desktop: floating 340 px panel on the right; phone: bottom sheet (full width, up to 55% of the canvas). Always mounted so
+            the panel can play its closing animation; the empty frame lets clicks through to the map. */}
+        <div
+          ref={panelWrap}
+          onAnimationEnd={(e) => /^cv-(panel|sheet)-in$/.test(e.animationName) && focusPanel()}
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[55%] md:inset-x-auto md:bottom-5 md:right-5 md:top-5 md:h-auto [&>aside]:pointer-events-auto [&>aside]:max-md:w-full [&>aside]:max-md:rounded-b-none"
+        >
             <Inspector
               board={board}
               challengePanel={
@@ -766,13 +889,14 @@ function Canvas({ data }: { data: BoardGraph }) {
               onEdit={openCard}
               onClose={closeEditor}
               onSaved={onCardSaved}
+              onShape={onCardShape}
               prepare={prepareCard}
               onDeselect={() => select(null)}
               onDelete={deleteCard}
               onReviewCard={reviewCard}
+              onResetSize={resetSize}
             />
-          </div>
-        ) : null}
+        </div>
       </section>
       <CommandPalette
         open={palette}

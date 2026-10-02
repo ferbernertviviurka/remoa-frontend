@@ -1,17 +1,19 @@
 'use client';
 
 import { memo, useState, type ReactNode } from 'react';
-import type { Board, Card, CardDetail, MapState, RetrievabilityMap, SaveCardInput } from '@remoa/contracts';
+import type { Board, Card, CardDetail, CardShape, MapState, RetrievabilityMap, SaveCardInput } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import {
-  Button, CanvasPanel, Icon, IconButton, InspectorTabPanel, InspectorTabs, Menu, RubricList, StatePill, Tag,
+  Button, CanvasPanel, Icon, IconButton, InspectorTabPanel, InspectorTabs, Menu, RubricList, StatePill, StepTimeline, type NodeStep,
 } from '@remoa/ui';
+import { CaseStageHelp } from '@/features/cards/case-stage-help';
 import { CardEditor } from '@/features/cards/card-editor';
 import { useCardFace } from '@/features/cards/card-face';
 import { Markdown } from '@/features/cards/markdown';
-import { useAsset } from '@/features/cards/upload';
+import { useAsset, useAssets } from '@/features/cards/upload';
 import { isDue } from './canvas-context';
 import { useCardDetail } from './card-detail';
+import { caseStageItems } from './card-node';
 
 type Entry = RetrievabilityMap[string] | undefined;
 export type Connection = { id: string; dir: 'out' | 'in'; title: string; label: string | null };
@@ -23,6 +25,8 @@ export type EditorHooks = {
   onClose: () => void;
   onSaved: (detail: CardDetail, input: SaveCardInput) => void;
   prepare: (cardId: string) => Promise<boolean>;
+  /** G04: shape preview on the map node while the editor autosaves it. */
+  onShape: (cardId: string, shape: CardShape) => void;
 };
 
 type Props = EditorHooks & {
@@ -36,6 +40,8 @@ type Props = EditorHooks & {
   onDeselect: () => void;
   onDelete: (cardId: string) => void;
   onReviewCard: (cardId: string) => void;
+  /** D-202: card menu "Restaurar tamanho padrão" (only while the card has a size of its own). */
+  onResetSize: (cardId: string) => void;
 };
 
 const eyebrow = 'text-xs font-bold uppercase tracking-[.12em] text-muted';
@@ -46,10 +52,15 @@ const h2 = 'm-0 font-display text-[27px] font-extrabold leading-[1.1] tracking-[
  * D-098: only rendered with a card selected (or in the challenge); the map summary moved out (header CTA, Meus mapas).
  */
 export const Inspector = memo(function Inspector(p: Props) {
-  if (!p.challengePanel && !p.card) return null;
+  const open = !!(p.challengePanel || p.card);
+  // G06: the panel plays its closing animation after the deselect, so it keeps showing the card it had (CanvasPanel unmounts it)
+  const shown = p.challengePanel ? null : p.card;
+  const [kept, setKept] = useState(shown);
+  if (open && shown !== kept) setKept(shown);
+  const card = open ? shown : kept;
   return (
-    <CanvasPanel aria-label={t('editor.panelLabel')}>
-      {p.challengePanel ? p.challengePanel : p.card ? <CardPanel key={p.card.id} {...p} card={p.card} /> : null}
+    <CanvasPanel aria-label={t('editor.panelLabel')} open={open}>
+      {p.challengePanel ? p.challengePanel : card ? <CardPanel key={card.id} {...p} card={card} /> : null}
     </CanvasPanel>
   );
 });
@@ -63,6 +74,8 @@ const dots = (
 
 const tabs = (['content', 'rubric', 'origin', 'history'] as const).map((id) => ({ id, label: t(`inspector.tabs.${id}`) }));
 type Tab = (typeof tabs)[number]['id'];
+/** D-200: Conteúdo is never graded nor reviewed: no rubric, no history. */
+const noteTabs = tabs.filter((x) => x.id === 'content' || x.id === 'origin');
 
 function CardPanel(p: Props & { card: Card }) {
   const { card, entry } = p;
@@ -71,6 +84,7 @@ function CardPanel(p: Props & { card: Card }) {
   const state = entry?.state ?? 'unknown';
   const reviewed = !!entry && state !== 'unknown';
   const pill = reviewed ? t('canvas.footer.recall', { state: t(`mapState.${state}`), pct: Math.round(entry.r * 100) }) : t('canvas.footer.none');
+  const note = card.type === 'note';
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex flex-col gap-2.5 px-5 pb-3.5 pt-5">
@@ -84,7 +98,8 @@ function CardPanel(p: Props & { card: Card }) {
               label={t('editor.cardMenu', { title: card.title })}
               items={[
                 { label: t('cards.edit'), onSelect: () => p.onEdit(card.id) },
-                { label: t('map.card.delete'), tone: 'danger', onSelect: () => p.onDelete(card.id) },
+                ...(card.size ? [{ label: t('editor.resetSize'), onSelect: () => p.onResetSize(card.id) }] : []),
+                { label: t('map.card.delete'), tone: 'danger' as const, onSelect: () => p.onDelete(card.id) },
               ]}
             />
             <IconButton variant="secondary" aria-label={t('editor.closePanelLabel')} onClick={p.onDeselect}>
@@ -93,44 +108,79 @@ function CardPanel(p: Props & { card: Card }) {
           </span>
         </div>
         <h2 className={h2}>{card.title}</h2>
-        <span className="flex"><StatePill state={state} label={pill} /></span>
+        {note ? null : <span className="flex"><StatePill state={state} label={pill} /></span>}
       </div>
       {p.editing ? (
         <div className="min-h-0 grow overflow-auto border-t border-border px-5 py-[18px]">
-          <CardEditor card={card} subs={entry?.subs} prepare={p.prepare} onSaved={p.onSaved} onClose={p.onClose} />
+          <CardEditor card={card} subs={entry?.subs} prepare={p.prepare} onSaved={p.onSaved} onClose={p.onClose} onShape={p.onShape} />
         </div>
       ) : (
         <>
-          <InspectorTabs aria-label={t('editor.sections')} idPrefix={`card-${card.id}`} tabs={tabs} value={tab} onChange={setTab} />
+          <InspectorTabs aria-label={t('editor.sections')} idPrefix={`card-${card.id}`} tabs={note ? noteTabs : tabs} value={tab} onChange={setTab} />
           <div className="min-h-0 grow overflow-auto px-5 py-[18px]">
             <InspectorTabPanel idPrefix={`card-${card.id}`} id={tab}>
-              {tab === 'content' ? <ContentTab card={card} entry={entry} connections={p.connections} endOfToday={p.endOfToday} /> : null}
+              {tab === 'content' ? <ContentTab card={card} detail={detail} entry={entry} connections={p.connections} endOfToday={p.endOfToday} /> : null}
               {tab === 'rubric' ? <RubricTab detail={detail} onEdit={() => p.onEdit(card.id)} /> : null}
               {tab === 'origin' ? <OriginTab board={p.board} card={card} /> : null}
               {tab === 'history' ? <p className="m-0 text-sm leading-normal text-(--cv-ink-2)">{t('inspector.noHistory')}</p> : null}
             </InspectorTabPanel>
           </div>
-          <div className="border-t border-border px-5 pb-5 pt-3.5 [&>button]:w-full">
-            <Button icon={bolt} onClick={() => p.onReviewCard(card.id)}>{t('inspector.reviewThis')}</Button>
-          </div>
+          {note ? null : (
+            <div className="border-t border-border px-5 pb-5 pt-3.5 [&>button]:w-full">
+              <Button icon={bolt} onClick={() => p.onReviewCard(card.id)}>{t('inspector.reviewThis')}</Button>
+            </div>
+          )}
         </>
       )}
     </div>
   );
 }
 
-function Summary({ card }: { card: Card }) {
+const img = 'mb-3 block w-full rounded-[14px]';
+
+function Pic({ assetId, alt }: { assetId: string | null; alt: string }) {
+  const a = useAsset(assetId);
+  if (!assetId) return null;
+  return a ? <img src={a.urls.w800} alt={alt} className={img} /> : <span className="mb-3 block h-28 rounded-[14px] bg-canvas" />;
+}
+
+/** The card's content in the panel: question image first, then the text/steps/stages, then the answer image (D-096, D-201). */
+function Summary({ card, detail }: { card: Card; detail: CardDetail | null }) {
   const face = useCardFace(card);
-  const front = useAsset(card.frontAssetId);
-  const text = card.type === 'concept' ? (card.back ?? card.front) : null;
-  // D-096: the question image first, then the content
-  const image = card.frontAssetId ? (
-    front ? <img src={front.urls.w800} alt={t('cards.frontImage.alt', { title: card.title })} className="mb-3 block w-full rounded-[14px]" /> : <span className="mb-3 block h-28 rounded-[14px] bg-canvas" />
-  ) : null;
-  if (text) return <>{image}<Markdown text={text} /></>;
-  if (face.thumbnail?.src) return <>{image}<img src={face.thumbnail.src} alt={face.thumbnail.alt} className="w-full rounded-[14px]" /></>;
-  if (face.chips?.length) return <>{image}<span className="flex flex-wrap gap-1">{face.chips.map((c) => <Tag key={c} tone="unknown">{c}</Tag>)}</span></>;
-  return <>{image}{face.meta ?? t('inspector.noSummary')}</>;
+  const ids = detail?.type === 'flow' ? (detail.payload.steps ?? []).map((s) => s.assetId) : detail?.type === 'case' ? (detail.payload.caseSteps ?? []).map((s) => s.assetId) : [];
+  const assets = useAssets(ids);
+  const src = (id: string) => assets.get(id)?.urls.w800 ?? null;
+  const front = <Pic assetId={card.frontAssetId} alt={t('cards.frontImage.alt', { title: card.title })} />;
+  const back = card.type === 'note' ? null : <Pic assetId={card.backAssetId} alt={t('cards.backImage.alt', { title: card.title })} />;
+  const text = card.type === 'concept' ? (card.back ?? card.front) : card.type === 'note' ? card.front : null;
+  if (text) return <>{front}<Markdown text={text} />{back}</>;
+  if (detail?.type === 'flow' && detail.payload.steps?.length) {
+    const steps: NodeStep[] = detail.payload.steps.map((s, i) => ({
+      text: s.text,
+      ...(s.assetId ? { image: { src: src(s.assetId), alt: t('canvas.stepImageAlt', { n: i + 1, title: card.title }) } } : {}),
+    }));
+    return <>{front}<StepTimeline steps={steps} />{back}</>;
+  }
+  if (card.type === 'case') {
+    const stages = caseStageItems(card.preview?.stages, detail, (id, stage) => ({ src: src(id), alt: t('canvas.stageImageAlt', { stage, title: card.title }) }));
+    return (
+      <>
+        {front}
+        <ol className="m-0 flex list-none flex-col gap-3 p-0">
+          {stages.map((st) => (
+            <li key={st.key} className="flex flex-col gap-1">
+              <CaseStageHelp stage={st.key} filled={!!st.filled} />
+              <span className={st.filled ? 'text-sm' : 'text-sm text-muted'}>{st.text ?? (st.filled ? '' : t('cards.case.empty'))}</span>
+              {st.image?.src ? <img src={st.image.src} alt={st.image.alt} className="block w-full rounded-[10px]" /> : null}
+            </li>
+          ))}
+        </ol>
+        {back}
+      </>
+    );
+  }
+  if (face.thumbnail?.src) return <>{front}<img src={face.thumbnail.src} alt={face.thumbnail.alt} className="w-full rounded-[14px]" /></>;
+  return <>{front}{face.meta ?? t('inspector.noSummary')}{back}</>;
 }
 
 const stateBox: Record<MapState, { bg: string; fg: string; bar: string }> = {
@@ -140,14 +190,14 @@ const stateBox: Record<MapState, { bg: string; fg: string; bar: string }> = {
   unknown: { bg: 'bg-unknown-bg', fg: 'text-unknown-text', bar: 'bg-unknown' },
 };
 
-function ContentTab({ card, entry, connections, endOfToday }: { card: Card; entry: Entry; connections: Connection[]; endOfToday: number }) {
+function ContentTab({ card, detail, entry, connections, endOfToday }: { card: Card; detail: CardDetail | null; entry: Entry; connections: Connection[]; endOfToday: number }) {
   const state = entry?.state ?? 'unknown';
   const pct = Math.round((entry?.r ?? 0) * 100);
   const box = stateBox[state];
   return (
     <>
       <div className="text-[15px] leading-[1.55] text-(--cv-ink-2)">
-        <Summary card={card} />
+        <Summary card={card} detail={detail} />
       </div>
       {entry && state !== 'unknown' ? (
         <div className={`flex flex-col gap-2 rounded-[20px] p-4 ${box.bg} ${box.fg}`}>
@@ -221,8 +271,18 @@ function Row({ term, children, last }: { term: string; children: ReactNode; last
 /** Rule 6: source, temporal mark, reviewer (name + CRM). No reviewer profile endpoint yet: honest placeholder. */
 function OriginTab({ board, card }: { board: Board; card: Card }) {
   const approved = card.status === 'approved';
+  // F17 T7 (FR-16): board.copiedFrom — origin notice for copied boards.
+  const copiedDate = board.copiedFrom?.at
+    ? new Date(board.copiedFrom.at).toLocaleDateString('pt-BR')
+    : null;
   return (
     <dl className="m-0 flex flex-col">
+      {/* FR-16: show copy origin when the board was copied from a shared link. */}
+      {copiedDate ? (
+        <div className="mb-3 rounded-[12px] bg-canvas px-3 py-2.5 text-sm text-muted" data-testid="board-copied-from">
+          {t('boardsOrigin.copiedFrom', { date: copiedDate })}
+        </div>
+      ) : null}
       <Row term={t('inspector.sourceLabel')}>{card.source ?? t('inspector.noSource')}</Row>
       <Row term={t('inspector.temporalLabel')}>{board.temporalMark ?? t('inspector.noMark')}</Row>
       <Row term={t('inspector.editorialLabel')}>{approved ? t('inspector.reviewerPending') : t('inspector.noEditorial')}</Row>

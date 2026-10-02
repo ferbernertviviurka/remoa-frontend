@@ -8,6 +8,8 @@ import { boardTitleSchema } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
 import { Alert, Button, Icon, InlineTitle, Kbd, Menu, Segmented, useToast } from '@remoa/ui';
 import { api } from '@/lib/api';
+// F17 T7: ShareDialog (FR-12) — loaded only when the board is private and not a seed.
+import { ShareDialog } from '@/features/map/share/share-dialog';
 import type { QueueStatus } from './op-queue';
 
 export type Mode = 'explore' | 'challenge';
@@ -63,6 +65,9 @@ export const CanvasHeader = memo(function CanvasHeader(p: Props) {
   const saved = useRef(p.board.title);
   const [title, setTitle] = useState(p.board.title);
   const now = useNow(30_000);
+  // F17 T7 (FR-12): share dialog state — only for owner boards (status=private, not seed/archived).
+  const [shareOpen, setShareOpen] = useState(false);
+  const canShare = p.board.status === 'private' && !p.board.archivedAt;
 
   async function save(input: string) {
     const next = boardTitleSchema.safeParse(input);
@@ -120,6 +125,12 @@ export const CanvasHeader = memo(function CanvasHeader(p: Props) {
           <Button size="sm" variant="secondary" icon={<Icon name="search" size={18} />} iconEnd={<Kbd>{t('palette.keyboardHint')}</Kbd>} onClick={p.onPalette} aria-keyshortcuts="Meta+K Control+K">
             {t('editor.commandPalette')}
           </Button>
+          {/* F17 T7 (FR-12): "Compartilhar" — only for private (student) boards, not seeds or archived. */}
+          {canShare ? (
+            <Button size="sm" variant="secondary" icon={<Icon name="link" size={18} />} onClick={() => setShareOpen(true)}>
+              {t('share.headerButton')}
+            </Button>
+          ) : null}
           {p.mode === 'explore' ? (
             <Button size="sm" icon={<Icon name="bolt" size={18} />} onClick={() => p.onMode('challenge')}>
               {challengeText}
@@ -138,11 +149,16 @@ export const CanvasHeader = memo(function CanvasHeader(p: Props) {
             label={t('editor.moreActions')}
             items={[
               { label: t('editor.commandPalette'), onSelect: p.onPalette },
+              ...(canShare ? [{ label: t('share.headerButton'), onSelect: () => setShareOpen(true) }] : []),
               p.mode === 'explore' ? { label: challengeText, onSelect: () => p.onMode('challenge') } : { label: t('quiz.exit'), onSelect: () => p.onMode('explore') },
             ]}
           />
         </span>
       </header>
+      {/* F17 T7 (FR-12): ShareDialog — mounted conditionally to avoid loading share state on every page load. */}
+      {canShare ? (
+        <ShareDialog board={p.board} open={shareOpen} onOpenChange={setShareOpen} />
+      ) : null}
       {failed ? (
         <div className="absolute inset-x-0 top-[68px] z-20 px-5 pt-3">
           <Alert tone="review" role="alert" title={t('map.save.error')}>

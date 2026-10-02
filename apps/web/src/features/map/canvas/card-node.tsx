@@ -1,12 +1,12 @@
 'use client';
 
 import { memo, useCallback, useContext, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
-import type { Card, CardDetail, MapState } from '@remoa/contracts';
+import { Handle, NodeResizeControl, Position, type ControlPosition, type NodeProps } from '@xyflow/react';
+import { CARD_SIZE_MAX, CARD_SIZE_MIN, caseStages, type Card, type CardDetail, type CaseStage as Stage, type MapState } from '@remoa/contracts';
 import { t } from '@remoa/strings';
-import { NodeCard, type NodeCardProps, type NodeChip, type NodeLayer, type NodeStep } from '@remoa/ui';
+import { CaseStageList, NodeCard, StepTimeline, type CaseStage, type NodeCardProps, type NodeLayer, type NodeStep } from '@remoa/ui';
 import { useCardFace, type CardFace } from '@/features/cards/card-face';
-import { useAsset } from '@/features/cards/upload';
+import { useAsset, useAssets } from '@/features/cards/upload';
 import { CanvasContext, isDue } from './canvas-context';
 import { useCardDetail } from './card-detail';
 import { heatOf, type CardNode } from './graph';
@@ -31,45 +31,60 @@ export function nodeFooter({ layer, state, r, due, edges, item }: FooterInput): 
 /** Whether the card has an answer to show on the back (from what the map already has; the text loads on flip). */
 export function hasAnswer(card: Card, face: Pick<CardFace, 'answer'>): boolean {
   const p = card.preview;
+  const img = !!card.backAssetId; // D-201: an answer image alone is an answer too
   switch (card.type) {
     case 'concept':
-      return !!face.answer;
+      return !!face.answer || img;
     case 'flow':
-      return (p?.steps ?? 0) > 0;
+      return (p?.steps ?? 0) > 0 || img;
     case 'case':
-      return (p?.stages?.length ?? 0) > 0;
+      return (p?.stages?.length ?? 0) > 0 || img;
     case 'image':
       return (p?.masks ?? 0) > 0;
+    case 'note':
+      return false; // D-200: Conteúdo has no back
   }
+}
+
+/** G06: the four stages of a clinical case, in order, with the tooltip text (what it is, what filling it changes). */
+export function caseStageItems(
+  filled: readonly string[] | undefined,
+  detail: CardDetail | null,
+  image?: (assetId: string, stage: string) => CaseStage['image'],
+): (CaseStage & { key: Stage })[] {
+  // a card born from a map op stores `{}` whatever its type (draft.ts): read the payload defensively
+  const steps = detail?.type === 'case' ? (detail.payload.caseSteps ?? []) : undefined;
+  return caseStages.map((key) => {
+    const s = steps?.find((x) => x.stage === key);
+    const label = t(`cards.case.stage.${key}`);
+    return {
+      key, label, hint: t(`cards.case.hint.${key}`), text: s?.text, filled: steps ? !!s : !!filled?.includes(key),
+      ...(s?.assetId && image ? { image: image(s.assetId, label) } : {}),
+    };
+  });
 }
 
 const list = 'm-0 flex list-none flex-col gap-1 p-0';
 
 /** D-097: the back face. Flow steps, case stages and mask labels come from the card detail, fetched only once flipped. */
 function Back({ card, face, detail, weak }: { card: Card; face: CardFace; detail: CardDetail | null; weak: (stepId: string) => boolean }): ReactNode {
-  if (card.type === 'concept') return <p className="m-0 line-clamp-6">{face.answer}</p>;
+  const ids = detail?.type === 'flow' ? (detail.payload.steps ?? []).map((s) => s.assetId) : detail?.type === 'case' ? (detail.payload.caseSteps ?? []).map((s) => s.assetId) : [];
+  const assets = useAssets(ids);
+  const src = (id: string) => assets.get(id)?.urls.w800 ?? null;
+  if (card.type === 'concept') return face.answer ? <p className="m-0 line-clamp-6">{face.answer}</p> : null;
   if (!detail) return <p className="m-0 text-muted">{t('canvas.backLoading')}</p>;
-  if (detail.type === 'flow')
-    return (
-      <ol className={list}>
-        {(detail.payload.steps ?? []).map((s, i) => (
-          <li key={s.id} className={`flex gap-2 ${weak(s.id) ? 'text-review-text' : ''}`}>
-            <span className="font-bold text-primary-deep">{i + 1}</span>
-            <span className="line-clamp-2">{s.text}</span>
-          </li>
-        ))}
-      </ol>
-    );
-  if (detail.type === 'case')
-    return (
-      <ul className={list}>
-        {(detail.payload.caseSteps ?? []).map((s) => (
-          <li key={s.stage} className="line-clamp-2">
-            <span className="font-bold">{t(`cards.case.stage.${s.stage}`)}:</span> {s.text}
-          </li>
-        ))}
-      </ul>
-    );
+  if (detail.type === 'flow') {
+    const steps: NodeStep[] = (detail.payload.steps ?? []).map((s, i) => ({
+      text: s.text,
+      tone: weak(s.id) ? 'weak' : 'default',
+      ...(s.assetId ? { image: { src: src(s.assetId), alt: t('canvas.stepImageAlt', { n: i + 1, title: card.title }) } } : {}),
+    }));
+    return <StepTimeline steps={steps} />;
+  }
+  if (detail.type === 'case') {
+    const stages = caseStageItems(undefined, detail, (id, stage) => ({ src: src(id), alt: t('canvas.stageImageAlt', { stage, title: card.title }) }));
+    return <CaseStageList stages={stages.filter((s) => s.filled)} />;
+  }
   if (detail.type === 'image')
     return (
       <ul className={list}>
@@ -92,7 +107,10 @@ export function useNodeCardProps(id: string, card: Card, selected: boolean): Nod
   const target = quiz?.cardId === id;
   const showBack = flipped && !challenge;
   const detail = useCardDetail(showBack && card.type !== 'concept' ? id : null, prepare);
+  // case front: stage texts only if already cached (no GET per mounted case card; the trail needs just which are filled)
+  const cached = useCardDetail(card.type === 'case' ? id : null, prepare, false);
   const frontAsset = useAsset(card.frontAssetId);
+  const backAsset = useAsset(showBack ? card.backAssetId : null);
   const subs = entry?.subs;
   const steps = useMemo<NodeStep[] | undefined>(
     () =>
@@ -100,10 +118,14 @@ export function useNodeCardProps(id: string, card: Card, selected: boolean): Nod
       target && quiz.revealed ? [...quiz.revealed.map((text) => ({ text })), { text: t('quiz.hiddenStep'), tone: 'hidden' as const }] : undefined,
     [quiz, target],
   );
-  const chips = useMemo<NodeChip[] | undefined>(() => face.chips?.map((label) => ({ label })), [face.chips]);
+  const stages = useMemo(() => (card.type === 'case' ? caseStageItems(card.preview?.stages, cached) : undefined), [card.type, card.preview?.stages, cached]);
   const frontImage = useMemo(
     () => (card.frontAssetId ? { src: frontAsset?.urls.w800 ?? null, alt: t('cards.frontImage.alt', { title: card.title }) } : undefined),
     [card.frontAssetId, card.title, frontAsset],
+  );
+  const backImage = useMemo(
+    () => (card.backAssetId && showBack ? { src: backAsset?.urls.w800 ?? null, alt: t('canvas.backImageAlt', { title: card.title }) } : undefined),
+    [card.backAssetId, card.title, showBack, backAsset],
   );
   const image = useMemo(() => (target && quiz.hideImage && face.thumbnail ? { ...face.thumbnail, src: null } : face.thumbnail), [face.thumbnail, quiz, target]);
   const title = target && quiz.hideTitle ? t('quiz.hiddenTitle') : card.title;
@@ -124,12 +146,14 @@ export function useNodeCardProps(id: string, card: Card, selected: boolean): Nod
     onSelect,
     layer,
     state,
-    footer: nodeFooter({ layer, state, r: entry?.r, due, edges: edgeCounts.get(id) ?? 0, item: coverageItem }),
+    footer: card.type === 'note' ? undefined : nodeFooter({ layer, state, r: entry?.r, due, edges: edgeCounts.get(id) ?? 0, item: coverageItem }),
     due,
     selected,
     challenge: target ? 'target' : undefined,
     summary: face.summary ?? undefined,
-    chips,
+    caseStages: stages,
+    size: card.size ?? undefined,
+    backImage,
     steps,
     image,
     frontImage,
@@ -147,9 +171,32 @@ const keepToCard = (selectLabel: string) => (e: MouseEvent) => {
   if (b && b.getAttribute('aria-label') !== selectLabel) e.stopPropagation();
 };
 
-/** React Flow node: Torph NodeCard (fixed size per type/shape, layers without reflow) + connection ports. */
+const corners: ControlPosition[] = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+
+/**
+ * D-202: resize handles on the selected card's corners (sides would sit on the connection ports). React Flow reports the
+ * new size through onNodesChange, which turns it into `card.size` and, on release, a `resizeCards` op (map-canvas).
+ * Circles keep their aspect ratio. Handles are mouse-only: hidden on touch and in the challenge (`resizable`).
+ */
+function Resizer({ circle }: { circle: boolean }) {
+  return corners.map((pos) => (
+    <NodeResizeControl
+      key={pos}
+      position={pos}
+      className="cv-resize"
+      minWidth={CARD_SIZE_MIN.w}
+      minHeight={CARD_SIZE_MIN.h}
+      maxWidth={CARD_SIZE_MAX.w}
+      maxHeight={CARD_SIZE_MAX.h}
+      keepAspectRatio={circle}
+    />
+  ));
+}
+
+/** React Flow node: Torph NodeCard (size per type/shape or the user's, layers without reflow) + connection ports. */
 export const CardNodeView = memo(function CardNodeView({ id, data, selected }: NodeProps<CardNode>) {
   const p = useNodeCardProps(id, data.card, selected);
+  const { resizable } = useContext(CanvasContext);
   const stop = useMemo(() => keepToCard(p.selectLabel), [p.selectLabel]);
   return (
     <>
@@ -158,6 +205,7 @@ export const CardNodeView = memo(function CardNodeView({ id, data, selected }: N
         <NodeCard {...p} />
       </div>
       <Handle type="source" position={Position.Right} className={port} />
+      {selected && resizable ? <Resizer circle={data.card.type === 'concept' && data.card.shape === 'circle'} /> : null}
     </>
   );
 });

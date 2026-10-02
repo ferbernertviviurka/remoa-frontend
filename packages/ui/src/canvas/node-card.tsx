@@ -1,13 +1,15 @@
 'use client';
 
-import { memo, useEffect, useState, type ReactNode } from 'react';
+import { memo, useEffect, useId, useState, type ReactNode } from 'react';
 import { clsx } from 'clsx';
 import type { MapState } from '../state';
 import { anchor, type Rect, type Side, type Point } from './route';
 import { focusRing } from '../button';
+import { Icon } from '../icons';
+import { Tooltip } from '../tooltip';
 import './canvas.css';
 
-export type NodeType = 'concept' | 'case' | 'flow' | 'image';
+export type NodeType = 'concept' | 'case' | 'flow' | 'image' | 'note';
 export type NodeLayer = 'structure' | 'recall' | 'coverage';
 /** Formato do contorno (D-095). Espelha `CardShape` de @remoa/contracts; só `concept` usa algo além de `rect`. */
 export type CardShape = 'rect' | 'pill' | 'circle' | 'diamond' | 'hexagon';
@@ -17,11 +19,14 @@ export type CardShape = 'rect' | 'pill' | 'circle' | 'diamond' | 'hexagon';
  */
 export type NodeChallengeRole = 'target' | 'neighbor' | 'dim';
 export type NodeChip = { label: string; active?: boolean };
-export type NodeStep = { text: string; /** default | weak (passo fraco na camada Lembrança) | hidden (passo oculto no desafio) */ tone?: 'default' | 'weak' | 'hidden' };
+export type NodeImage = { src: string | null; alt: string };
+/** Etapa do caso clínico (Apresentação → Exames → Diagnóstico → Conduta). `text` preenchido = etapa preenchida; `hint` = o que é e o que muda ao preencher (Tooltip). */
+export type CaseStage = { key: string; label: string; text?: string; hint: string; image?: NodeImage; /** Preenchida sem o texto em mãos (o mapa só tem `preview.stages`; o texto vem ao virar). Default: `text` não vazio. */ filled?: boolean };
+export type NodeStep = { image?: NodeImage; text: string; /** default | weak (passo fraco na camada Lembrança) | hidden (passo oculto no desafio) */ tone?: 'default' | 'weak' | 'hidden' };
 
 /**
  * NodeCard: nó do mapa (v2). `<article>` com um `<button>` real cobrindo o card (clique/Enter/Espaço = `onSelect`).
- * Tamanhos fixos por `type`: concept 232×150, case 248×176, flow 248×282, image 248×206 (raio 20).
+ * Tamanhos fixos por `type`: concept 232×150, case 280×216, flow 248×282, image 248×206 (raio 20).
  * Camadas (`layer`): recall = borda e rodapé na cor do `state`; structure/coverage = borda neutra e rodapé neutro/primário.
  * O rodapé (`footer`) é texto pronto de quem chama ("Revisitar · 58% · vence hoje", "3 conexões"…).
  * `selected` = borda e anel primários. `pulse` = anel laranja pulsante, só aparece com `due` + layer recall + sem `challenge`
@@ -40,12 +45,20 @@ export type NodeCardProps = {
   onSelect?: () => void;
   layer: NodeLayer;
   state: MapState;
-  footer: string;
+  /** Obrigatório exceto em `note` (Conteúdo não tem rodapé de lembrança). */
+  footer?: string;
   due?: boolean;
   selected?: boolean;
   challenge?: NodeChallengeRole;
   summary?: string;
+  /** @deprecated use `caseStages`. */
   chips?: readonly NodeChip[];
+  /** Caso clínico: trilha de etapas com Tooltip. Com card grande (h ≥ 250) mostra o resumo da última etapa preenchida (nunca no desafio). */
+  caseStages?: readonly CaseStage[];
+  /** Tamanho livre (D-202); sobrepõe `nodeSize`. O conteúdo se adapta (linhas cortadas, imagem escala, rodapé sempre visível). */
+  size?: Size;
+  /** Imagem da resposta, no verso (D-201). */
+  backImage?: NodeImage;
   steps?: readonly NodeStep[];
   image?: { src: string | null; alt: string } | null;
   /** Formato (só concept; demais tipos são sempre rect). Default 'rect'. */
@@ -61,19 +74,20 @@ export type NodeCardProps = {
   unflipLabel?: string;
 };
 
-type Size = { w: number; h: number };
+export type Size = { w: number; h: number };
 const concept: Record<CardShape, Size> = {
   rect: { w: 232, h: 150 },
-  pill: { w: 232, h: 110 },
+  pill: { w: 232, h: 132 },
   circle: { w: 180, h: 180 },
   diamond: { w: 224, h: 224 }, // 200 deixava só ~100px úteis no losango; 224 dá ~112
   hexagon: { w: 220, h: 190 },
 };
-const fixed: Record<Exclude<NodeType, 'concept'>, Size> = { case: { w: 248, h: 176 }, flow: { w: 248, h: 282 }, image: { w: 248, h: 206 } };
+const fixed: Record<Exclude<NodeType, 'concept'>, Size> = { case: { w: 280, h: 216 }, flow: { w: 248, h: 282 }, image: { w: 248, h: 206 }, note: { w: 248, h: 176 } };
 /** Altura extra da imagem da pergunta (84 de imagem + gap). */
 export const FRONT_IMAGE_EXTRA = 90;
 /** Tamanho fixo do nó. Para layout/dagre/route. `frontImage` só soma em rect e tipo != image. */
-export function nodeSize(type: NodeType, shape: CardShape = 'rect', opts?: { frontImage?: boolean }): Size {
+export function nodeSize(type: NodeType, shape: CardShape = 'rect', opts?: { frontImage?: boolean; size?: Size | null }): Size {
+  if (opts?.size) return { w: opts.size.w, h: opts.size.h };
   const base = type === 'concept' ? concept[shape] : fixed[type];
   const extra = opts?.frontImage && type !== 'image' && (type !== 'concept' || shape === 'rect') ? FRONT_IMAGE_EXTRA : 0;
   return { w: base.w, h: base.h + extra };
@@ -84,6 +98,7 @@ export const NODE_SIZE: Record<NodeType, Record<CardShape, Size>> = {
   case: { rect: fixed.case, pill: fixed.case, circle: fixed.case, diamond: fixed.case, hexagon: fixed.case },
   flow: { rect: fixed.flow, pill: fixed.flow, circle: fixed.flow, diamond: fixed.flow, hexagon: fixed.flow },
   image: { rect: fixed.image, pill: fixed.image, circle: fixed.image, diamond: fixed.image, hexagon: fixed.image },
+  note: { rect: fixed.note, pill: fixed.note, circle: fixed.note, diamond: fixed.note, hexagon: fixed.note },
 };
 /**
  * Âncora na borda real do formato. Para todos os formatos o meio de cada lado do retângulo envolvente já cai sobre o contorno
@@ -95,19 +110,20 @@ export function shapeAnchor(_shape: CardShape, rect: Rect, side: Side): Point {
 
 const size: Record<NodeType, string> = {
   concept: 'w-[232px] h-[150px]',
-  case: 'w-[248px] h-[176px]',
+  case: 'w-[280px] h-[216px]',
   flow: 'w-[248px] h-[282px]',
   image: 'w-[248px] h-[206px]',
+  note: 'w-[248px] h-[176px]',
 };
 
 const shapeSize: Record<CardShape, string> = {
   rect: 'w-[232px] h-[150px]',
-  pill: 'w-[232px] h-[110px]',
+  pill: 'w-[232px] h-[132px]',
   circle: 'w-[180px] h-[180px]',
   diamond: 'w-[224px] h-[224px]',
   hexagon: 'w-[220px] h-[190px]',
 };
-const radius: Record<CardShape, string> = { rect: 'rounded-[20px]', pill: 'rounded-[55px]', circle: 'rounded-full', diamond: 'rounded-none', hexagon: 'rounded-none' };
+const radius: Record<CardShape, string> = { rect: 'rounded-[20px]', pill: 'rounded-[66px]', circle: 'rounded-full', diamond: 'rounded-none', hexagon: 'rounded-none' };
 /** Contorno desenhado em SVG (box-shadow some com clip-path). viewBox = tamanho do nó; inset 2px para o traço caber. */
 const polygon = {
   diamond: '112,2 222,112 112,222 2,112',
@@ -134,10 +150,12 @@ const footText: Record<MapState, string> = { review: 'text-review-text', watch: 
 const opacity: Record<NodeChallengeRole, string> = { target: 'opacity-100 z-[6]', neighbor: 'opacity-50', dim: 'opacity-[.18]' };
 
 const stepTone = {
-  default: { row: 'border border-border bg-surface text-(--cv-ink)', num: 'text-primary-deep' },
-  weak: { row: 'border border-review bg-[#fff7f0] text-(--cv-ink)', num: 'text-review-text' },
-  hidden: { row: 'border-[1.5px] border-dashed border-review bg-review-bg text-review-text', num: 'text-review-text' },
+  default: { marker: 'bg-primary text-on-primary', text: 'text-(--cv-ink)' },
+  weak: { marker: 'border border-review bg-review-bg text-review-text', text: 'text-review-text' },
+  hidden: { marker: 'border-[1.5px] border-dashed border-review bg-review-bg text-review-text', text: 'text-review-text' },
 } as const;
+const clamp = ['', 'line-clamp-1', 'line-clamp-2', 'line-clamp-3', 'line-clamp-4', 'line-clamp-5', 'line-clamp-6', 'line-clamp-7', 'line-clamp-8'] as const;
+const lines = (n: number) => clamp[Math.max(1, Math.min(8, Math.floor(n)))]!;
 
 
 /** Botão de virar sempre dentro do retângulo do nó (nunca passa de `nodeSize`). */
@@ -149,9 +167,9 @@ const flipPos: Record<CardShape, string> = {
   hexagon: 'bottom-2 left-1/2 -translate-x-1/2',
 };
 
-type FaceProps = { shape: CardShape; ringClass: string; stroke: string; strokeW: number; focused: boolean; back?: boolean; inert?: boolean; children: ReactNode };
+type FaceProps = { free?: boolean; shape: CardShape; ringClass: string; stroke: string; strokeW: number; focused: boolean; back?: boolean; inert?: boolean; children: ReactNode };
 /** Uma face do card (frente ou verso). Decorativa: pointer-events-none (só o botão que cobre o card recebe clique). */
-function Face({ shape, ringClass, stroke, strokeW, focused, back, inert, children }: FaceProps) {
+function Face({ free, shape, ringClass, stroke, strokeW, focused, back, inert, children }: FaceProps) {
   const poly = shape === 'diamond' || shape === 'hexagon' ? polygon[shape] : null;
   const { w, h } = concept[shape];
   return (
@@ -168,7 +186,7 @@ function Face({ shape, ringClass, stroke, strokeW, focused, back, inert, childre
       )}
     >
       {poly ? (
-        <svg aria-hidden="true" viewBox={`0 0 ${w} ${h}`} className="absolute inset-0 -z-10 size-full overflow-visible" style={{ filter: focused ? dropShadowSel : dropShadow }}>
+        <svg aria-hidden="true" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio={free ? 'none' : undefined} className="absolute inset-0 -z-10 size-full overflow-visible" style={{ filter: focused ? dropShadowSel : dropShadow }}>
           {focused ? <polygon points={poly} fill="none" stroke="var(--primary-tint)" strokeWidth={10} strokeLinejoin="round" /> : null}
           <polygon points={poly} fill="var(--surface)" stroke={stroke} strokeWidth={strokeW} strokeLinejoin="round" />
         </svg>
@@ -178,15 +196,103 @@ function Face({ shape, ringClass, stroke, strokeW, focused, back, inert, childre
   );
 }
 
+
+/** Miniatura/placeholder de imagem em passo ou etapa. */
+function Thumb({ image, className }: { image: NodeImage; className: string }) {
+  return image.src ? (
+    <img src={image.src} alt={image.alt} loading="lazy" draggable={false} className={clsx('rounded-md object-cover', className)} />
+  ) : (
+    <span role="img" aria-label={image.alt} className={clsx('rounded-md bg-(--cv-panel-dark)', className)} />
+  );
+}
+
+/**
+ * Fluxograma como timeline vertical (G06): trilho + marcador numerado por passo + conector. Passos `weak`/`hidden` mantêm o
+ * estilo de aviso. `compact` (dentro do card): 1 linha por passo e miniatura de 24 px; sem `compact` (verso, painel): texto
+ * inteiro e imagem de 96 px de altura. Montado só onde é mostrado (verso só quando virado).
+ */
+export function StepTimeline({ steps, compact }: { steps: readonly NodeStep[]; compact?: boolean }) {
+  return (
+    <ol className="m-0 flex list-none flex-col p-0 text-[12.5px] leading-4">
+      {steps.map((s, i) => {
+        const t = stepTone[s.tone ?? 'default'];
+        const last = i === steps.length - 1;
+        return (
+          <li key={i} className={clsx('relative flex gap-2.5', !last && (compact ? 'pb-2' : 'pb-3.5'))}>
+            {!last ? <span aria-hidden="true" className="absolute bottom-0 left-[9px] top-5 w-0.5 bg-(--cv-border-strong)" /> : null}
+            <span aria-hidden="true" className={clsx('z-[1] flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold', t.marker)}>{i + 1}</span>
+            <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <span className={clsx('pt-0.5 font-semibold', t.text, compact && 'line-clamp-1')}>{s.text}</span>
+              {s.image && !compact ? <Thumb image={s.image} className="h-24 w-full" /> : null}
+            </span>
+            {s.image && compact ? <Thumb image={s.image} className="size-6 shrink-0" /> : null}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/** Etapas do caso por extenso (verso e painel): rótulo, texto completo e imagem de cada etapa. */
+export function CaseStageList({ stages }: { stages: readonly CaseStage[] }) {
+  return (
+    <ol className="m-0 flex list-none flex-col gap-3 p-0 text-[12.5px] leading-[18px]">
+      {stages.map((st) => (
+        <li key={st.key} className="flex flex-col gap-1">
+          <span className="text-xs font-bold uppercase tracking-[.1em] text-primary-deep">{st.label}</span>
+          {st.text ? <span className="text-(--cv-ink-2)">{st.text}</span> : null}
+          {st.image ? <Thumb image={st.image} className="h-24 w-full" /> : null}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+const filledOf = (st: CaseStage) => st.filled ?? !!st.text?.trim();
+
+/** Etapas Apresentação · Exames · Diagnóstico · Conduta em grade 2×2 (rótulo inteiro, sem corte). Cada etapa é um botão (seleciona o card) com Tooltip (hint). */
+function CaseTrail({ stages, onSelect }: { stages: readonly CaseStage[]; onSelect?: () => void }) {
+  const uid = useId();
+  return (
+    <ol className="pointer-events-auto relative m-0 grid shrink-0 list-none grid-cols-2 gap-x-2 gap-y-1 p-0">
+      {stages.map((st, i) => {
+        const filled = filledOf(st);
+        const hid = `${uid}-${st.key}`;
+        return (
+          <li key={st.key} className="min-w-0">
+            <Tooltip label={st.hint}>
+              <button
+                type="button"
+                data-filled={filled}
+                aria-describedby={hid}
+                onClick={onSelect}
+                className={clsx('relative flex min-h-10 w-full cursor-pointer items-center gap-1.5 rounded-[10px] border px-1.5 text-left before:absolute before:-inset-0.5 before:content-[""]', filled ? 'border-primary bg-primary-tint' : 'border-dashed border-(--cv-border-strong) bg-surface', focusRing)}
+              >
+                <span aria-hidden="true" className={clsx('flex size-[22px] shrink-0 items-center justify-center rounded-full text-[11px] font-bold', filled ? 'bg-primary text-on-primary' : 'border-[1.5px] border-dashed border-(--cv-border-strong) text-muted')}>
+                  {filled ? <Icon name="check" size={13} /> : i + 1}
+                </span>
+                <span className={clsx('whitespace-nowrap text-xs font-semibold', filled ? 'text-primary-deep' : 'text-muted')}>{st.label}</span>
+              </button>
+            </Tooltip>
+            <span id={hid} className="sr-only">{st.hint}</span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 export const NodeCard = memo(function NodeCard({
-  type, typeLabel, title, selectLabel, onSelect, layer, state, footer, due, selected, challenge, summary, chips, steps, image,
+  type, typeLabel, title, selectLabel, onSelect, layer: layerProp, state, footer, due, selected, challenge, summary, chips, caseStages, size: sizeProp, backImage, steps, image,
   shape: shape0 = 'rect', frontImage, back, flipped, onFlip, flipLabel, unflipLabel,
 }: NodeCardProps) {
+  const note = type === 'note';
+  const layer: NodeLayer = note ? 'structure' : layerProp; // Conteúdo: só Estrutura
   const recall = layer === 'recall';
   const target = challenge === 'target';
   const shape: CardShape = type === 'concept' ? shape0 : 'rect';
   const rect = shape === 'rect';
-  const hasBack = back != null && !challenge; // desafio: só a frente
+  const hasBack = back != null && !challenge && !note; // desafio: só a frente
   const isFlipped = hasBack && !!flipped;
   const pulse = !!due && recall && !challenge && !selected && shape !== 'diamond' && shape !== 'hexagon';
   const showImg = !!frontImage && rect && type !== 'image';
@@ -203,15 +309,29 @@ export const NodeCard = memo(function NodeCard({
   const stroke = focused ? 'var(--primary)' : recall ? stateStroke[state] : 'var(--cv-node-border)';
   const strokeW = focused ? 2 : recall ? 1.5 : 1;
   const compact = !rect;
-  const faceProps = { shape, ringClass, stroke, strokeW, focused };
+  const faceProps = { shape, ringClass, stroke, strokeW, focused, free: !!sizeProp };
+  const dims = sizeProp ?? (showImg ? nodeSize(type, shape, { frontImage: true }) : null);
+  const h = dims?.h ?? nodeSize(type, shape).h;
+  // linhas conforme a altura: só com `size` livre (sem `size` o visual fixo de sempre)
+  const free = !!sizeProp && rect;
+  const titleLines = h < 140 ? 1 : h < 200 ? 2 : 3;
+  const sumLines = free ? (showImg ? (h >= 260 ? 2 : 1) : Math.floor((h - (note ? 70 : 100) - 22 * titleLines) / 18)) : note ? 3 : 2;
+  const stages = type === 'case' ? caseStages : undefined;
+  const lastFilled = stages && !challenge && h >= 250 ? [...stages].reverse().find((st) => filledOf(st) && !!st.text?.trim()) : undefined;
   const select = (
     <button type="button" aria-label={selectLabel} aria-pressed={!!selected} onClick={onSelect} className={clsx('pointer-events-auto absolute inset-0', radius[shape], focusRing)} />
   );
-  const label = <span className={clsx('text-[11px] font-bold uppercase tracking-[.12em] text-muted', (shape === 'diamond' || shape === 'pill') && 'sr-only')}>{typeLabel}</span>;
-  const footerEl = (
+  const label = note ? (
+    <span className="flex shrink-0 items-center gap-1.5 self-start rounded-pill bg-primary-tint px-2 py-[3px] text-[11px] font-bold uppercase tracking-[.12em] text-primary-deep">
+      <Icon name="book" size={12} />{typeLabel}
+    </span>
+  ) : (
+    <span className={clsx('shrink-0 text-[11px] font-bold uppercase tracking-[.12em] text-muted', ((shape === 'diamond' || shape === 'pill') || (free && h < 110)) && 'sr-only')}>{typeLabel}</span>
+  );
+  const footerEl = note || footer == null ? null : (
     <span
       className={clsx(
-        'flex items-center gap-[7px] text-xs font-semibold',
+        'flex shrink-0 items-center gap-[7px] text-xs font-semibold',
         compact ? 'max-w-full justify-center' : 'mt-auto w-full border-t border-(--cv-line-soft) pt-2',
         recall ? footText[state] : layer === 'coverage' ? 'text-primary-deep' : 'text-muted',
       )}
@@ -221,15 +341,44 @@ export const NodeCard = memo(function NodeCard({
     </span>
   );
   const titleEl = (
-    <span className={clsx('font-display font-bold tracking-[-.02em]', compact ? 'line-clamp-2 text-[15px] leading-[1.2]' : 'text-[18px] leading-[1.2]', shape === 'pill' && 'line-clamp-1')}>{title}</span>
+    <span className={clsx('shrink-0 font-display font-bold tracking-[-.02em]', compact ? 'line-clamp-2 text-[15px] leading-[1.2]' : 'text-[18px] leading-[1.2]', free && lines(titleLines), shape === 'pill' && 'line-clamp-1')}>{title}</span>
+  );
+  const grow = !!sizeProp;
+  const sum = summary && (type === 'concept' || note) && (rect || shape === 'pill') && sumLines >= 1 ? (
+    <span className={clsx('shrink-0 text-[12.5px] leading-[18px] text-(--cv-ink-2)', shape === 'pill' ? 'line-clamp-1' : lines(sumLines))}>{summary}</span>
+  ) : null;
+  const front = (
+    <>
+      {label}
+      {titleEl}
+      {sum}
+      {type === 'case' && stages ? (
+        <>
+          <CaseTrail stages={stages} onSelect={onSelect} />
+          {lastFilled ? <span className={clsx('shrink-0 text-[12.5px] leading-[18px] text-(--cv-ink-2)', h >= 280 ? 'line-clamp-2' : 'line-clamp-1')}>{lastFilled.text}</span> : null}
+        </>
+      ) : null}
+      {type === 'case' && !stages && chips ? (
+        <ul className="m-0 flex list-none gap-1.5 p-0 text-[11px] font-bold">
+          {chips.map((c) => (
+            <li key={c.label} className={clsx('rounded-pill px-2 py-[3px]', c.active ? 'bg-primary text-on-primary' : 'border border-(--cv-border-strong) text-muted')}>{c.label}</li>
+          ))}
+        </ul>
+      ) : null}
+      {type === 'flow' && steps ? <StepTimeline steps={steps} compact /> : null}
+      {type === 'image' ? <Pic image={image} grow={grow} /> : null}
+      {note && image ? <Pic image={image} grow={grow} /> : null}
+      {showImg ? <Pic image={frontImage} grow={grow} /> : null}
+    </>
   );
   return (
     <article
       data-layer={layer}
       data-state={state}
       data-shape={shape}
+      data-type={type}
       data-flipped={isFlipped || undefined}
-      style={showImg ? { height: nodeSize(type, shape, { frontImage: true }).h } : undefined}
+      style={dims ? (sizeProp ? { width: dims.w, height: dims.h } : { height: dims.h }) : undefined}
       className={clsx(
         'relative box-border text-(--cv-ink) [perspective:1100px]',
         type === 'concept' ? shapeSize[shape] : size[type],
@@ -241,31 +390,7 @@ export const NodeCard = memo(function NodeCard({
       <div className={clsx('absolute inset-0', hasBack && 'cv-flip [transform-style:preserve-3d]')} style={isFlipped ? { transform: 'rotateY(180deg)' } : undefined}>
         <Face {...faceProps} inert={isFlipped}>
           {select}
-          {label}
-          {titleEl}
-          {type === 'concept' && summary && (rect || shape === 'pill') ? <span className={clsx('text-[12.5px] leading-[18px] text-(--cv-ink-2)', shape === 'pill' ? 'line-clamp-1' : 'line-clamp-2')}>{summary}</span> : null}
-          {type === 'case' && chips ? (
-            <ul className="m-0 flex list-none gap-1.5 p-0 text-[11px] font-bold">
-              {chips.map((c) => (
-                <li key={c.label} className={clsx('rounded-pill px-2 py-[3px]', c.active ? 'bg-primary text-on-primary' : 'border border-(--cv-border-strong) text-muted')}>{c.label}</li>
-              ))}
-            </ul>
-          ) : null}
-          {type === 'flow' && steps ? (
-            <ol className="m-0 flex list-none flex-col gap-1 p-0 text-[12.5px] leading-4">
-              {steps.map((s, i) => {
-                const t = stepTone[s.tone ?? 'default'];
-                return (
-                  <li key={i} className={clsx('flex gap-2 rounded-[9px] px-2 py-[5px]', t.row)}>
-                    <span className={clsx('font-bold', t.num)}>{i + 1}</span>
-                    <span>{s.text}</span>
-                  </li>
-                );
-              })}
-            </ol>
-          ) : null}
-          {type === 'image' ? <Pic image={image} /> : null}
-          {showImg ? <Pic image={frontImage} /> : null}
+          {rect ? <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">{front}</div> : front}
           {footerEl}
         </Face>
         {mountBack ? (
@@ -273,7 +398,10 @@ export const NodeCard = memo(function NodeCard({
             {select}
             {label}
             {titleEl}
-            <div className="min-h-0 flex-1 overflow-hidden text-[12.5px] leading-[18px] text-(--cv-ink-2)">{back}</div>
+            <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden text-[12.5px] leading-[18px] text-(--cv-ink-2)">
+              {back}
+              {backImage ? <Pic image={backImage} grow /> : null}
+            </div>
             {footerEl}
           </Face>
         ) : null}
@@ -284,7 +412,8 @@ export const NodeCard = memo(function NodeCard({
           aria-pressed={isFlipped}
           onClick={onFlip}
           className={clsx(
-            'absolute z-10 h-7 rounded-pill border border-(--cv-border-strong) bg-surface px-2.5 text-xs font-bold text-primary-deep before:absolute before:-inset-2 before:content-[""]',
+            // nodrag: o React Flow não arrasta o nó a partir do botão de virar (G04)
+            'nodrag absolute z-10 h-7 whitespace-nowrap rounded-pill border border-(--cv-border-strong) bg-surface px-2.5 text-xs font-bold text-primary-deep before:absolute before:-inset-2 before:content-[""]',
             flipPos[shape],
             focusRing,
           )}
@@ -296,10 +425,10 @@ export const NodeCard = memo(function NodeCard({
   );
 });
 
-function Pic({ image }: { image?: { src: string | null; alt: string } | null }) {
+function Pic({ image, grow }: { image?: NodeImage | null; grow?: boolean }) {
   const ph = image && !image.src;
   return (
-    <span role={ph ? 'img' : undefined} aria-label={ph ? image.alt : undefined} className="relative block h-[84px] shrink-0 overflow-hidden rounded-[10px] bg-(--cv-panel-dark)">
+    <span role={ph ? 'img' : undefined} aria-label={ph ? image.alt : undefined} className={clsx('relative block overflow-hidden rounded-[10px] bg-(--cv-panel-dark)', grow ? 'min-h-8 flex-1' : 'h-[84px] shrink-0')}>
       {image?.src ? (
         <img src={image.src} alt={image.alt} loading="lazy" draggable={false} className="size-full object-cover" />
       ) : (

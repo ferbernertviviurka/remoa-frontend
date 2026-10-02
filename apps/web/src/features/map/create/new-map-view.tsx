@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Board, MatrixItem } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
 import { Button, ChoiceCard, ChoiceRow, Dialog, Dropzone, FilterChip, Icon, IconButton, Input, Logo, Stepper } from '@remoa/ui';
@@ -10,6 +10,8 @@ import { api } from '@/lib/api';
 import { usePaywall } from '@/features/billing/paywall';
 import { useMatrixSuggestions } from '@/features/coverage/matrix-suggestions';
 import Link from 'next/link';
+import { AnkiImportFlow } from '@/features/import/anki-import-flow';
+import { useAnkiImport } from '@/features/import/use-anki-import';
 import { MapPreview, type Path } from './map-preview';
 
 const PATHS: ReadonlyArray<{ id: Path; icon: 'file' | 'archive' | 'book' | 'plus' }> = [
@@ -18,21 +20,27 @@ const PATHS: ReadonlyArray<{ id: Path; icon: 'file' | 'archive' | 'book' | 'plus
   { id: 'seed', icon: 'book' },
   { id: 'blank', icon: 'plus' },
 ];
-const AREAS = ['CM', 'Cirurgia', 'GO', 'Pediatria', 'MP'] as const;
-const OPTS = { pdf: ['flows', 'rubrics'], anki: ['tags', 'images'] } as const;
+const AREAS = ['CM', 'CIR', 'GO', 'PED', 'MP'] as const;
+const OPTS = { pdf: ['flows', 'rubrics'] } as const;
 
-type Props = { items: MatrixItem[]; initialPath?: Path };
+type Props = { items: MatrixItem[]; initialPath?: Path; initialItemId?: string; initialStep?: 0 | 1 };
 
-export function NewMapView({ items, initialPath }: Props) {
+export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 }: Props) {
   const router = useRouter();
   const paywall = usePaywall();
-  const [step, setStep] = useState<0 | 1 | 2>(0);
+  const anki = useAnkiImport();
+  const h1 = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (anki.state.kind !== 'idle') h1.current?.focus(); // each import stage announces itself by moving focus to its heading
+  }, [anki.state.kind]);
+  const [step, setStep] = useState<0 | 1 | 2>(initialStep);
   const [path, setPath] = useState<Path>(initialPath ?? 'pdf');
-  const [itemId, setItemId] = useState<string | null>(items[0]?.id ?? null);
-  const [name, setName] = useState(items[0]?.title ?? '');
+  const ankiRunning = path === 'anki' && anki.state.kind !== 'idle';
+  const [itemId, setItemId] = useState<string | null>(initialItemId ?? items[0]?.id ?? null);
+  const [name, setName] = useState((items.find((i) => i.id === (initialItemId ?? items[0]?.id)))?.title ?? '');
   const [touched, setTouched] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [opts, setOpts] = useState<Record<string, boolean>>({ flows: true, rubrics: true, tags: true, images: true });
+  const [opts, setOpts] = useState<Record<string, boolean>>({ flows: true, rubrics: true });
   const [soon, setSoon] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +68,7 @@ export function NewMapView({ items, initialPath }: Props) {
         return;
       }
       track('board_created', {});
-      if (itemId) track('board_linked_to_matrix', { suggested: suggested.some((s) => s.id === itemId) });
+      if (itemId) track('board_linked_to_matrix', { count: 1, suggestedCount: suggested.some((s) => s.id === itemId) ? 1 : 0 });
       router.push(`/mapas/${r.data.id}`);
     } catch {
       setError(t('errors.internal'));
@@ -71,7 +79,7 @@ export function NewMapView({ items, initialPath }: Props) {
 
   const heading = (title: string, desc: string) => (
     <div className="flex flex-col gap-2">
-      <h1 className="font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.035em] md:text-[44px] md:leading-[1.05]">{title}</h1>
+      <h1 ref={h1} tabIndex={-1} className="outline-none font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.035em] md:text-[44px] md:leading-[1.05]">{title}</h1>
       <p className="text-base text-muted">{desc}</p>
     </div>
   );
@@ -90,7 +98,7 @@ export function NewMapView({ items, initialPath }: Props) {
 
   return (
     <div className="flex min-h-dvh bg-canvas text-ink">
-      <main className="flex min-w-0 flex-1 flex-col gap-6 px-4 pb-8 pt-5 sm:px-6 sm:pt-[30px] md:gap-7 md:px-14">
+      <main className="flex min-w-0 flex-1 flex-col lg:w-1/2 lg:flex-none gap-6 px-4 pb-8 pt-5 sm:px-6 sm:pt-[30px] md:gap-7 md:px-14">
         <div className="flex items-center justify-between gap-4">
           <Link href="/" aria-label={t('pages.logoLink')} className="inline-flex min-h-11 min-w-11 items-center no-underline">
             <span className="max-sm:hidden"><Logo size={32} withWordmark /></span>
@@ -166,8 +174,13 @@ export function NewMapView({ items, initialPath }: Props) {
 
           {step === 2 ? (
             <>
-              {heading(t(`newMap.step3Title.${path}` as StringKey), t(`newMap.step3Desc.${path}` as StringKey))}
-              {needsFile ? (
+              {ankiRunning && anki.state.kind !== 'idle'
+                ? heading(t(`import.heading.${anki.state.kind === 'uploading' || anki.state.kind === 'inspecting' ? 'sending' : anki.state.kind}.title` as StringKey), t(`import.heading.${anki.state.kind === 'uploading' || anki.state.kind === 'inspecting' ? 'sending' : anki.state.kind}.desc` as StringKey))
+                : heading(t(`newMap.step3Title.${path}` as StringKey), t(`newMap.step3Desc.${path}` as StringKey))}
+              {ankiRunning && anki.state.kind !== 'idle' ? (
+                <AnkiImportFlow state={anki.state} onPlan={anki.setPlan} onConfirm={() => void anki.confirm()} onReset={anki.reset} onOpen={(id) => router.push(`/mapas/${id}`)} />
+              ) : null}
+              {needsFile && !ankiRunning ? (
                 <>
                   <Dropzone
                     title={t(`newMap.dropTitle.${path}` as StringKey)}
@@ -179,9 +192,10 @@ export function NewMapView({ items, initialPath }: Props) {
                     replaceLabel={t('newMap.replaceFile')}
                     onReplace={() => setFile(null)}
                   />
-                  {file ? (
+                  {file && path === 'anki' ? <p className="text-sm text-muted">{t('import.subdecksNote')}</p> : null}
+                  {file && path === 'pdf' ? (
                     <div className="flex flex-col gap-2.5">
-                      {OPTS[path].map((o) => (
+                      {OPTS.pdf.map((o) => (
                         <ChoiceRow key={o} indicator="check" selected={!!opts[o]} onSelect={() => setOpts({ ...opts, [o]: !opts[o] })}>
                           {t(`newMap.opts.${path}.${o}` as StringKey)}
                         </ChoiceRow>
@@ -203,7 +217,7 @@ export function NewMapView({ items, initialPath }: Props) {
           ) : null}
         </div>
 
-        <div className="sticky bottom-0 -mb-8 flex max-w-[660px] items-center justify-between gap-3 max-sm:flex-col-reverse max-sm:items-stretch max-sm:[&>button]:w-full bg-canvas pb-[calc(2rem+env(safe-area-inset-bottom))] pt-3">
+        {ankiRunning ? null : <div className="sticky bottom-0 -mb-8 flex max-w-[660px] items-center justify-between gap-3 max-sm:flex-col-reverse max-sm:items-stretch max-sm:[&>button]:w-full bg-canvas pb-[calc(2rem+env(safe-area-inset-bottom))] pt-3">
           {step > 0 ? (
             <Button variant="secondary" size="lg" icon={<Icon name="left" size={20} />} onClick={() => setStep((step - 1) as 0 | 1)}>{t('newMap.backButton')}</Button>
           ) : (
@@ -216,14 +230,14 @@ export function NewMapView({ items, initialPath }: Props) {
               loading={busy}
               loadingLabel={t('common.loading')}
               iconEnd={path === 'blank' ? <Icon name="right" size={20} /> : undefined}
-              onClick={() => (path === 'blank' ? void create() : setSoon(true))}
+              onClick={() => (path === 'blank' ? void create() : path === 'anki' && file ? void anki.start(file) : setSoon(true))}
             >
               {cta}
             </Button>
           ) : (
             <Button size="lg" disabled={!canContinue} iconEnd={<Icon name="right" size={20} />} onClick={() => setStep((step + 1) as 1 | 2)}>{t('newMap.continueButton')}</Button>
           )}
-        </div>
+        </div>}
         <MapPreview compact path={path} step={step} name={name.trim()} area={area} item={item?.title ?? ''} />
       </main>
 

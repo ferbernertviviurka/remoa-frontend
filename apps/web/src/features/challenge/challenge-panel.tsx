@@ -8,7 +8,6 @@ import { t } from '@remoa/strings';
 import { Alert, Button, QuestionPanel, RatingButton, RatingGroup, Skeleton, Tag, VerdictBox, type AnswerMode } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import type { AnswerPayload } from './client';
-import { useSpeech } from './speech';
 import { Occlusion } from './occlusion';
 import { MAX_SKIPS, useChallenge, type Scope } from './provider';
 import { Summary } from './summary';
@@ -17,6 +16,8 @@ const grades = ['again', 'hard', 'good', 'easy'] as const;
 const letters = ['A', 'B', 'C', 'D'];
 const fallbackText = { no_rubric: 'challenge.fallbackNoRubric', grader_error: 'challenge.fallbackGraderError', quota: 'challenge.fallbackQuota' } as const;
 const subjectOf = { next_step: 'step', case: 'stage', occlusion: 'region', edge: 'card', hidden_card: 'card' } as const;
+
+const voiceSoon = { recordLabel: t('quiz.voiceRecord'), soonLabel: t('quiz.voiceSoon'), note: t('quiz.voiceSoonNote') };
 
 function interval(days: number) {
   const n = Math.round(days);
@@ -97,13 +98,6 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
   const modes = [...(canWrite || selfOnly ? [{ value: 'write' as const, label: t('challenge.write') }] : []), ...(canPick ? [{ value: 'options' as const, label: t('challenge.options') }] : []), ...(canWrite ? [{ value: 'speak' as const, label: t('quiz.speak') }] : [])];
   const [mode, setMode] = useState<AnswerMode>(modes[0]!.value);
   const [text, setText] = useState('');
-  const [fromVoice, setFromVoice] = useState(false);
-  // the transcript lands in the editable answer field: the student fixes it before "Corrigir resposta"
-  const speech = useSpeech((heard) => {
-    setText(heard);
-    setFromVoice(true);
-    setMode('write');
-  });
   const [picked, setPicked] = useState<string | null>(null);
   const [busy, setBusy] = useState<Busy>(null);
   const [answered, setAnswered] = useState<{ out: AnswerOutput; kind: AnswerPayload['inputKind'] } | null>(null);
@@ -134,7 +128,7 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
     else setError(t('challenge.answerError'));
   }
   const showWrite = mode === 'write';
-  const submitText = () => text.trim() && void submit({ inputKind: fromVoice ? 'voice' : 'text', text: text.trim() });
+  const submitText = () => text.trim() && void submit({ inputKind: 'text', text: text.trim() });
   const submitPick = () => picked !== null && void submit({ inputKind: 'mcq', optionIndex: Number(picked) });
   const reveal = () => void submit({ inputKind: 'self' });
   const check = () => (selfOnly ? reveal() : showWrite ? submitText() : submitPick());
@@ -229,7 +223,7 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
       ) : null}
       {out.fallback ? (
         <Alert tone={out.fallback === 'quota' ? 'watch' : 'unknown'} title={t(fallbackText[out.fallback])}>
-          {out.fallback === 'quota' ? <Link href="/precos" className="font-semibold underline">{t('challenge.quotaCta')}</Link> : null}
+          {out.fallback === 'quota' ? <Link href="/planos?de=ai_quota" className="font-semibold underline">{t('challenge.quotaCta')}</Link> : null}
         </Alert>
       ) : null}
       {out.gradeLocked ? <Alert tone="review" title={t('challenge.gradeLocked')} /> : null}
@@ -284,16 +278,8 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
           checkLabel={busy === 'text' || busy === 'voice' ? t('challenge.grading') : selfOnly ? t('challenge.reveal') : showWrite ? t('challenge.submitText') : t('challenge.submitOption')}
           canCheck={canCheck}
           onCheck={check}
-          voice={
-            speech.supported
-              ? {
-                  recordLabel: speech.listening ? t('quiz.voiceStop') : t('quiz.voiceRecord'),
-                  transcript: speech.interim || (speech.listening ? t('quiz.voiceListening') : speech.failed ? t('quiz.voiceError') : undefined),
-                  note: t('quiz.voiceNote'),
-                  onRecord: speech.listening ? speech.stop : speech.start,
-                }
-              : { recordLabel: t('quiz.voiceSwitch'), note: t('quiz.voiceUnavailable'), onRecord: () => setMode('write') }
-          }
+          // D-203: "Falar" stays visible with the record button disabled and "Em breve"; no Web Speech transcription until F09
+          voice={voiceSoon}
           result={resultNode}
         />
       </div>
@@ -305,7 +291,7 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
             {!selfOnly ? (
               <Button variant="secondary" size="sm" loading={busy === 'self'} disabled={!!busy} onClick={reveal}>{t('challenge.reveal')}</Button>
             ) : null}
-            <Button variant="quiet" size="sm" disabled={!canSkip || skipLimit || !!busy} onClick={() => void skip()}>{t('challenge.skip')}</Button>
+            <Button variant="secondary" size="sm" disabled={!canSkip || skipLimit || !!busy} onClick={() => void skip()}>{t('challenge.skip')}</Button>
           </div>
           {skipLimit || !canSkip ? <p role="status" className="m-0 text-xs text-muted">{t('challenge.skipLimit')}</p> : null}
           <p className="m-0 text-xs text-muted">{t('challenge.shortcuts')}</p>

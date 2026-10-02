@@ -8,8 +8,9 @@ import { snapPos } from './graph';
 export const CARD_W = 248;
 export const CARD_H = 176;
 
-/** D-095/D-096: fixed size per type + shape (+ question image), the same the NodeCard draws. */
-export const sizeOf = (c: Pick<Card, 'type' | 'shape' | 'frontAssetId'>) => nodeSize(c.type, c.shape, { frontImage: !!c.frontAssetId });
+/** D-095/D-096/D-202: the user's size, or the default per type + shape (+ question image); the same the NodeCard draws. */
+export const sizeOf = (c: Pick<Card, 'type' | 'shape' | 'frontAssetId'> & { size?: Card['size'] }) =>
+  nodeSize(c.type, c.shape, { frontImage: !!c.frontAssetId, size: c.size });
 
 export function autoLayout(
   nodes: { id: string; width?: number; height?: number }[],

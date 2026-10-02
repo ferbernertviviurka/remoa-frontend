@@ -35,3 +35,18 @@
 @media (prefers-reduced-motion: reduce) {
   .cv-flip { transition: none; }
 }
+
+/* Painel do canvas (G06): slide + fade, 220 ms, só transform/opacity. Celular (bottom sheet) sobe de baixo. */
+@keyframes cv-panel-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@keyframes cv-panel-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(24px); } }
+@keyframes cv-sheet-in { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: none; } }
+@keyframes cv-sheet-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(100%); } }
+.cv-panel[data-state='open'] { animation: cv-panel-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.cv-panel[data-state='closed'] { animation: cv-panel-out 220ms ease-in both; }
+@media (max-width: 767px) {
+  .cv-panel[data-state='open'] { animation-name: cv-sheet-in; }
+  .cv-panel[data-state='closed'] { animation-name: cv-sheet-out; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cv-panel[data-state] { animation: none; }
+}

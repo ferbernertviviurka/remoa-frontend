@@ -48,7 +48,7 @@ export * from './choice-card';
 export * from './dropzone';
 // Canvas v2 (G01 T2).
 export {
-  NodeCard, nodeSize, NODE_SIZE, FRONT_IMAGE_EXTRA, shapeAnchor, type CardShape, type NodeCardProps, type NodeType, type NodeLayer, type NodeChallengeRole, type NodeChip, type NodeStep,
+  NodeCard, nodeSize, NODE_SIZE, FRONT_IMAGE_EXTRA, shapeAnchor, type CardShape, type NodeCardProps, type NodeType, type NodeLayer, type NodeChallengeRole, type NodeChip, type NodeStep, type NodeImage, type CaseStage, StepTimeline, CaseStageList,
   route, routePoints, anchor, MAX_RADIUS, type Side, type Rect, type Point, type Route,
   EdgeLabel, type EdgeLabelProps,
   LayerSwitch, type LayerSwitchProps, Legend, type LegendProps,
@@ -62,3 +62,12 @@ export {
 } from './canvas';
 // Conta (F13).
 export * from './account';
+// Navbar e carrossel (F14).
+export * from './shell';
+export * from './home';
+export * from './plans';
+export * from './marketing';
+// F17 — componentes novos (Combobox, CopyField, PasswordInput).
+export * from './combobox';
+export * from './copy-field';
+export * from './password-input';

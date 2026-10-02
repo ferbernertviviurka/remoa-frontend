@@ -22,7 +22,7 @@ test.describe('desktop', () => {
     }
     await page.goto('/conta/seguranca');
     await page.getByRole('button', { name: 'Alterar senha' }).click();
-    await page.getByLabel('Nova senha').fill('abc12345');
+    await page.getByLabel('Nova senha', { exact: true }).fill('abc12345');
     expect(await axe(page), 'seguranca: formulário aberto').toEqual([]);
 
     await page.goto('/conta/perfil');
@@ -75,7 +75,7 @@ test.describe('desktop', () => {
     await accountUser(page, request);
     await page.goto('/conta/perfil');
     await page.getByRole('button', { name: 'Editar nome' }).click();
-    await page.getByLabel('Nome', { exact: true }).fill('Novo Nome');
+    await page.getByRole('textbox', { name: 'Nome' }).fill('Novo Nome');
     await page.getByRole('button', { name: 'Salvar nome' }).click();
     const live = page.locator('[aria-live], [role="status"], [role="alert"]').filter({ hasText: 'Nome atualizado' });
     await expect(live.first()).toBeVisible();
@@ -92,13 +92,21 @@ test.describe('mobile (390 px)', () => {
       await page.goto(`/conta/${s}`);
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await page.waitForTimeout(1000);
-      const small = await page.evaluate(() =>
-        [...document.querySelectorAll<HTMLElement>('main button, main a[href], main input:not([type=hidden]), main [role=switch], main [role=radio]')]
-          .filter((el) => el.offsetParent !== null && getComputedStyle(el).visibility !== 'hidden' && !el.closest('[hidden]'))
+      const small = await page.evaluate(() => {
+        const visible = (el: HTMLElement) => el.offsetParent !== null && getComputedStyle(el).visibility !== 'hidden' && !el.closest('[hidden]');
+        // Switch: o trilho tem 32 px, o alvo de 44 px é o ::after (-inset-y-1.5); confere por elementFromPoint.
+        const hitsSwitch = (el: HTMLElement) => {
+          el.scrollIntoView({ block: 'center' });
+          const r = el.getBoundingClientRect();
+          const x = r.left + r.width / 2;
+          return [r.top + r.height / 2 - 21, r.top + r.height / 2 + 21].every((y) => document.elementFromPoint(x, y) === el);
+        };
+        return [...document.querySelectorAll<HTMLElement>('main button, main a[href], main input:not([type=hidden]), main [role=radio]')]
+          .filter(visible)
           .map((el) => ({ el, r: el.getBoundingClientRect() }))
-          .filter(({ el, r }) => r.width > 0 && (r.height < 43.5 || (r.width < 43.5 && el.tagName !== 'INPUT')) && !(el.tagName === 'A' && getComputedStyle(el).display === 'inline'))
-          .map(({ el, r }) => `${el.tagName}.${(el.getAttribute('aria-label') ?? el.textContent ?? '').slice(0, 30)} ${Math.round(r.width)}x${Math.round(r.height)}`),
-      );
+          .filter(({ el, r }) => r.width > 0 && (r.height < 43.5 || (r.width < 43.5 && el.tagName !== 'INPUT')) && !(el.tagName === 'A' && getComputedStyle(el).display === 'inline') && !(el.getAttribute('role') === 'switch' && hitsSwitch(el)))
+          .map(({ el, r }) => `${el.tagName}.${(el.getAttribute('aria-label') ?? el.textContent ?? '').slice(0, 30)} ${Math.round(r.width)}x${Math.round(r.height)}`);
+      });
       expect(small, s).toEqual([]);
     }
   });

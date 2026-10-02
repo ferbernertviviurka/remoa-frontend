@@ -34,13 +34,14 @@ function load(id: string, prepare: (id: string) => Promise<boolean>) {
 
 /**
  * `null` until loaded (or when `id` is null); re-renders only when this card's detail changes.
- * `prepare` waits for a card created on the map to reach the API.
+ * `prepare` waits for a card created on the map to reach the API. `fetch = false` only reads what is already cached (G06: the
+ * case front shows stage texts once some other view loaded them, without one GET per mounted case card).
  * ponytail: flow nodes fetch their steps with one GET per mounted flow card; ask for step texts in `CardPreview` (CCR) if maps get flow-heavy.
  */
-export function useCardDetail(id: string | null, prepare: (id: string) => Promise<boolean>): CardDetail | null {
+export function useCardDetail(id: string | null, prepare: (id: string) => Promise<boolean>, fetch = true): CardDetail | null {
   const d = useSyncExternalStore(subscribe, () => (id ? (details.get(id) ?? null) : null), () => null);
   useEffect(() => {
-    if (id) load(id, prepare);
-  }, [id, prepare]);
+    if (id && fetch) load(id, prepare);
+  }, [id, prepare, fetch]);
   return d;
 }

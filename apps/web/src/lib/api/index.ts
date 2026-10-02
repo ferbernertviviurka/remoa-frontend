@@ -1,7 +1,7 @@
 import { httpErrorBodySchema, type Result } from '@remoa/contracts';
 import { createClient } from '@/lib/supabase/client';
 
-const base = () => process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+export const apiBase = () => process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 /**
  * Calls the backend API (`/v1/*`). HTTP errors come back as `{ ok: false, error }`;
@@ -11,7 +11,7 @@ export async function apiFetch<T>(path: string, token: string | null, init: Requ
   const headers = new Headers(init.headers);
   if (token) headers.set('authorization', `Bearer ${token}`);
   if (init.body) headers.set('content-type', 'application/json');
-  const res = await fetch(`${base()}${path}`, { ...init, headers, cache: 'no-store' });
+  const res = await fetch(`${apiBase()}${path}`, { ...init, headers, cache: 'no-store' });
   const body: unknown = await res.json().catch(() => null);
   if (res.ok) return body as Result<T>;
   const parsed = httpErrorBodySchema.safeParse(body);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { RETENTION, type AccountExport } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { Alert, Button, DangerCard, Dialog, Icon, Input, useToast } from '@remoa/ui';
@@ -117,6 +117,7 @@ function DeleteCard() {
   const { account, refresh } = useAccount();
   const online = useOnline();
   const [open, setOpen] = useState(false);
+  const opener = useRef<HTMLElement | null>(null);
   const [word, setWord] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -125,6 +126,7 @@ function DeleteCard() {
 
   function change(v: boolean) {
     setOpen(v);
+    if (!v) requestAnimationFrame(() => opener.current?.focus()); // Radix only restores focus to a <Trigger>
     if (!v) {
       setWord('');
       setError(null);
@@ -160,7 +162,7 @@ function DeleteCard() {
   return (
     <>
       <DangerCard title={t('account.data.dangerTitle')} description={t('account.data.dangerBody', { days })}>
-        <Button variant="danger" icon={<Icon name="trash" size={18} />} disabled={!online} onClick={() => setOpen(true)}>{t('account.data.dangerCta')}</Button>
+        <Button variant="danger" icon={<Icon name="trash" size={18} />} disabled={!online} onClick={(e) => { opener.current = e.currentTarget; setOpen(true); }}>{t('account.data.dangerCta')}</Button>
       </DangerCard>
       <Dialog size="lg" icon={<Icon name="warning" size={26} />} open={open} onOpenChange={change} title={t('account.data.dialogTitle')} closeLabel={t('account.data.dialogClose')}>
         <form

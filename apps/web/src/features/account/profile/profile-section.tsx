@@ -116,18 +116,16 @@ function EmailForm({ close, onSent }: { close: () => void; onSent: () => void })
   );
 }
 
-const goalOptions = () =>
+const go = (value: Goal, key: string) => ({ value, label: t(`account.profile.goalOptions.${key}` as 'account.profile.goalOptions.unknown') });
+export const goalGroups = () =>
   [
-    { value: 'enamed_2027_1', label: t('account.profile.goalOptions.enamed20271') },
-    { value: 'enamed_2027_2', label: t('account.profile.goalOptions.enamed20272') },
-    { value: 'undecided', label: t('account.profile.goalOptions.unknown') },
-  ] satisfies { value: Goal; label: string }[];
-const stageOptions = () =>
-  [
-    { value: 'y3_4', label: t('account.profile.stageOptions.y34') },
-    { value: 'y5_6', label: t('account.profile.stageOptions.y56') },
-    { value: 'graduated', label: t('account.profile.stageOptions.graduate') },
-  ] satisfies { value: Stage; label: string }[];
+    { label: t('account.profile.goalGroups.enamed'), options: [go('enamed_2027_1', 'enamed20271'), go('enamed_2027_2', 'enamed20272'), go('enamed_2028_1', 'enamed20281'), go('enamed_2028_2', 'enamed20282')] },
+    { label: t('account.profile.goalGroups.residencia'), options: [go('residencia_enare', 'enare'), go('residencia_sus_sp', 'susSp'), go('residencia_usp', 'usp'), go('residencia_unifesp', 'unifesp'), go('residencia_outras', 'outrasResidencias')] },
+    { label: t('account.profile.goalGroups.outros'), options: [go('provas_faculdade', 'provasFaculdade'), go('manter_atualizado', 'manterAtualizado'), go('undecided', 'unknown')] },
+  ];
+const st = (value: Stage, key: string) => ({ value, label: t(`account.profile.stageOptions.${key}` as 'account.profile.stageOptions.y34') });
+// earliest to latest
+export const stageOptions = () => [st('y1_2', 'y12'), st('y3_4', 'y34'), st('y5_6', 'y56'), st('graduated', 'graduate'), st('cursinho', 'cursinho'), st('resident', 'resident'), st('working', 'working')];
 
 export function ProfileSection() {
   const { account, setAccount } = useAccount();
@@ -264,7 +262,14 @@ export function ProfileSection() {
       <Card title={t('account.profile.studyTitle')} body={t('account.profile.studyBody')}>
         <div ref={studyRef} className="contents">
           <Row label={t('account.profile.goal')}>
-            <ChoiceChip label={t('account.profile.goal')} options={goalOptions()} value={profile.goal} onValueChange={(v) => goals.includes(v as Goal) && void setStudy('goal', v)} />
+            <div className="flex flex-col gap-3">
+              {goalGroups().map((g) => (
+                <div key={g.label} className="flex flex-col gap-1.5">
+                  <span className="text-xs font-bold text-muted">{g.label}</span>
+                  <ChoiceChip label={`${t('account.profile.goal')}: ${g.label}`} options={g.options} value={g.options.some((o) => o.value === profile.goal) ? profile.goal : null} onValueChange={(v) => goals.includes(v as Goal) && void setStudy('goal', v)} />
+                </div>
+              ))}
+            </div>
           </Row>
           <Row label={t('account.profile.stage')}>
             <ChoiceChip label={t('account.profile.stageLabel')} options={stageOptions()} value={profile.stage} onValueChange={(v) => stageSchema.safeParse(v).success && void setStudy('stage', v)} />

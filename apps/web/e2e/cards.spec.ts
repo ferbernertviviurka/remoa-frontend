@@ -1,11 +1,9 @@
 import { createBlankBoard } from './create-map';
+import { signUpViaForm } from './sign-up';
 import { expect, test, type Page } from '@playwright/test';
 
 async function signUpAndCreateBoard(page: Page, title: string) {
-  await page.goto('/cadastro');
-  await page.getByLabel('E-mail').fill(`e2e-cards-${Date.now()}@remoa.test`);
-  await page.getByLabel('Senha').fill('senha-forte-123');
-  await page.getByRole('button', { name: 'Criar conta' }).click();
+  await signUpViaForm(page, `e2e-cards-${Date.now()}@remoa.test`);
   await expect(page).toHaveURL(/\/$/); // D-086: pós-login cai no Hoje
   await page.goto('/mapas');
   await createBlankBoard(page, title);
@@ -14,7 +12,7 @@ async function signUpAndCreateBoard(page: Page, title: string) {
 
 const inspector = (page: Page) => page.getByRole('complementary', { name: 'Painel do mapa' });
 const node = (page: Page, title: string) => page.locator('.react-flow__node').filter({ has: page.getByRole('button', { name: `Selecionar ${title}` }) });
-const tool = { Conceito: 'Adicionar card de conceito', Fluxograma: 'Adicionar fluxograma', Imagem: 'Adicionar imagem', Caso: 'Adicionar caso clínico' } as const;
+const tool = { Conceito: 'Adicionar Pergunta e Resposta', Fluxograma: 'Adicionar fluxograma', Imagem: 'Adicionar imagem', Caso: 'Adicionar caso clínico' } as const;
 const editorForm = (page: Page) => inspector(page).getByRole('form');
 
 /** T5: one toolbar button per card type. */
@@ -54,7 +52,7 @@ test('cards: um de cada tipo, salva, recarrega e o mapa mostra cada tipo', async
     await editorForm(page).getByLabel('Resposta', { exact: true }).fill('**Disfunção orgânica** com risco de vida');
     await editorForm(page).getByLabel('Fonte (texto ou URL)').fill('Sepsis-3 (2016)');
     // G02 / D-096: question image (same upload flow as the image card)
-    await editorForm(page).locator('input[type="file"]').setInputFiles({ name: 'q.png', mimeType: 'image/png', buffer: await pngFixture(page) });
+    await editorForm(page).getByRole('group', { name: 'Imagem da pergunta (opcional)' }).locator('input[type="file"]').setInputFiles({ name: 'q.png', mimeType: 'image/png', buffer: await pngFixture(page) });
     await expect(editorForm(page).getByRole('img', { name: 'Imagem da pergunta de Sepse' })).toBeVisible({ timeout: 30_000 });
     await save(page);
     // D-097: the front shows the question (and its image); the answer only on the back
@@ -87,8 +85,8 @@ test('cards: um de cada tipo, salva, recarrega e o mapa mostra cada tipo', async
 
   await test.step('caso com 2 etapas', async () => {
     await create(page, 'Caso', 'Idoso febril');
-    await editorForm(page).getByLabel('Apresentação').fill('Febre e confusão');
-    await editorForm(page).getByLabel('Conduta').fill('Pacote da primeira hora');
+    await editorForm(page).getByLabel('Apresentação', { exact: true }).fill('Febre e confusão');
+    await editorForm(page).getByLabel('Conduta', { exact: true }).fill('Pacote da primeira hora');
     await save(page);
   });
 
@@ -127,7 +125,7 @@ test('cards: um de cada tipo, salva, recarrega e o mapa mostra cada tipo', async
     await node(page, 'Pacote').getByRole('button', { name: 'Ver resposta' }).click();
     await expect(node(page, 'Pacote').getByRole('listitem')).toHaveCount(3);
     const caso = node(page, 'Idoso febril');
-    await expect(caso.getByRole('listitem')).toHaveText(['Apresentação', 'Conduta']);
+    await expect(caso.locator('button[data-filled="true"]')).toHaveText(['Apresentação', 'Conduta']); // G06: the 4-stage trail, filled ones marked
     const img = node(page, 'Coração');
     await expect(img.getByRole('img', { name: 'Imagem do card Coração' })).toHaveAttribute('src', /^https?:/);
   });

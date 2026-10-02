@@ -57,6 +57,20 @@ describe('applyOps + undo/redo of every action', () => {
     expect(shape(again)).toEqual(shape(after));
   });
 
+  it('D-202 resize → previous size (null = default); the cache keeps it for a later restore', () => {
+    const g = sepse();
+    const cache: CardCache = new Map();
+    const cardId = sepseCardIds.sepse;
+    const ops: MapOp[] = [{ op: 'resizeCards', opId: id(), boardId, sizes: [{ cardId, size: { w: 320, h: 240 } }] }];
+    const { after, back, again } = roundTrip(g, ops, cache);
+    const size = (x: Graph) => x.nodes.find((n) => n.id === cardId)?.data.card.size;
+    expect(size(after)).toEqual({ w: 320, h: 240 });
+    expect(size(back)).toBeNull();
+    expect(size(again)).toEqual({ w: 320, h: 240 });
+    expect(cache.get(cardId)?.size).toEqual({ w: 320, h: 240 });
+    expect(invertAll(g, [{ ...ops[0]!, sizes: [{ cardId: id(), size: null }] } as MapOp], cache, id)).toEqual([]); // unknown card: nothing to undo
+  });
+
   it('create card → delete', () => {
     const g = sepse();
     const cid = id();

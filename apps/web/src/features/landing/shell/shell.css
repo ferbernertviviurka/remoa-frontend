@@ -1,0 +1,3 @@
+@keyframes lp-floaty { 50% { transform: translateY(-14px); } }
+.lp-dot { animation: lp-floaty 6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .lp-dot { animation: none; } }

@@ -1,8 +1,10 @@
 // FR-6 / T8: 200 cards + ~200 edges, pan for ~2 s, sample requestAnimationFrame deltas.
 // Run with `PERF=1 pnpm test:e2e e2e/map-perf.spec.ts`. Headless numbers are indicative only (no GPU, shared CPU):
 // confirm in Chrome's Performance panel on a real laptop.
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { formReady } from './sign-up';
 
 test.skip(!process.env.PERF, 'set PERF=1 to run');
 
@@ -17,7 +19,11 @@ test('200 cards: pan fps', async ({ page, request }) => {
   const email = `e2e-perf-${Date.now()}@remoa.test`;
   const password = 'senha-forte-123';
   const signup = await request.post(`${SUPABASE}/auth/v1/signup`, { headers: { apikey: ANON }, data: { email, password } });
-  const token = (await signup.json()).access_token as string;
+  const body = await signup.json();
+  const token = body.access_token as string;
+  // Free allows 50 cards: make the perf user Pro (as visual/fixture.ts seedMock does)
+  const db = process.env.DATABASE_URL ?? /DATABASE_URL="?([^"\n]*)/.exec(readFileSync('../../../remoa-backend/.env', 'utf8'))?.[1] ?? '';
+  execFileSync('psql', [db, '-q', '-c', `insert into subscriptions (user_id, plan, status) values ('${body.user.id}','pro','active') on conflict (user_id) do update set plan='pro'`]);
   const headers = { authorization: `Bearer ${token}` };
   const board = (await (await request.post(`${API}/v1/boards`, { headers, data: { title: 'Perf 200' } })).json()).data.id as string;
 
@@ -36,6 +42,7 @@ test('200 cards: pan fps', async ({ page, request }) => {
 
   await expect(async () => { // retried: a submit before hydration is a native GET and loses the fields
     await page.goto('/entrar');
+    await formReady(page);
     await page.getByLabel('E-mail').fill(email);
     await page.getByLabel('Senha').fill(password);
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();

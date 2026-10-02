@@ -54,7 +54,7 @@ describe('HomeView', () => {
   it('no maps: invites the first map', () => {
     render(<HomeView now={now} summary={summary(0, 0)} boards={[]} coverage={[]} />);
     expect(screen.getByRole('heading', { name: 'Crie o seu primeiro mapa.' })).toBeInTheDocument();
-    expect(screen.queryByText('Continue de onde parou')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Criar um novo mapa' })).toHaveAttribute('href', '/mapas/novo');
     fireEvent.click(screen.getAllByRole('button', { name: 'Novo mapa' })[1]!);
     expect(push).toHaveBeenCalledWith('/mapas/novo');
   });

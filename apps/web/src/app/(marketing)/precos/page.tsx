@@ -1,14 +1,10 @@
-import type { Metadata } from 'next';
-import type { Entitlements } from '@remoa/contracts';
-import { t } from '@remoa/strings';
-import { PricingView } from '@/features/billing/pricing-view';
-import { serverApi } from '@/lib/api/server';
-import { getUser } from '@/server/auth/session';
+import { permanentRedirect } from 'next/navigation';
 
-export const metadata: Metadata = { title: t('pages.pricing') };
-
-export default async function Page() {
-  const user = await getUser();
-  const ent = user ? await serverApi<Entitlements>('/v1/billing/entitlements').catch(() => null) : null;
-  return <PricingView loggedIn={user !== null} isPro={ent?.ok === true && ent.data.plan === 'pro'} />;
+/** D-180: /precos moved to /planos; `periodo` and `de` survive the redirect. */
+export default async function Page({ searchParams }: { searchParams: Promise<{ periodo?: string; de?: string }> }) {
+  const { periodo, de } = await searchParams;
+  const q = new URLSearchParams();
+  if (periodo) q.set('periodo', periodo);
+  if (de) q.set('de', de);
+  permanentRedirect(`/planos${q.size ? `?${q}` : ''}`);
 }
