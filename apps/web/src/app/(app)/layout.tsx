@@ -1,6 +1,11 @@
 import type { ReactNode } from 'react';
+import { ChallengeProvider } from '@/features/challenge/provider';
 import { AppShell } from '@/features/shell/app-shell';
 
 export default function Layout({ children }: { children: ReactNode }) {
-  return <AppShell>{children}</AppShell>;
+  return (
+    <ChallengeProvider>
+      <AppShell>{children}</AppShell>
+    </ChallengeProvider>
+  );
 }

@@ -1,11 +1,12 @@
 // Auto-layout (FR-10): dagre left-to-right. Pure; returns top-left positions snapped to the 8px grid.
 import dagre from '@dagrejs/dagre';
-import type { Position } from '@remoa/contracts';
+import type { CardType, Position } from '@remoa/contracts';
 import { snapPos } from './graph';
 
-export const CARD_W = 216;
-// ponytail: fixed height estimate; pass measured heights if tall cards start overlapping.
-export const CARD_H = 140;
+/** T5: NodeCard sizes (HANDOFF rule 3). Layout uses the widest card so columns line up. */
+export const NODE_H: Record<CardType, number> = { concept: 150, case: 176, flow: 282, image: 206 };
+export const CARD_W = 248;
+export const CARD_H = 176;
 
 export function autoLayout(
   nodes: { id: string; height?: number }[],

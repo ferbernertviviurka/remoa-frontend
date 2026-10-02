@@ -1,3 +1,4 @@
+import { createBlankBoard } from './create-map';
 import { expect, test, type Page } from '@playwright/test';
 
 async function signUpAndCreateBoard(page: Page, title: string) {
@@ -5,19 +6,20 @@ async function signUpAndCreateBoard(page: Page, title: string) {
   await page.getByLabel('E-mail').fill(`e2e-cards-${Date.now()}@remoa.test`);
   await page.getByLabel('Senha').fill('senha-forte-123');
   await page.getByRole('button', { name: 'Criar conta' }).click();
-  await expect(page).toHaveURL(/\/mapas$/);
-  await page.getByRole('button', { name: 'Criar mapa em branco' }).click();
-  await page.getByLabel('Nome do mapa').fill(title);
-  await page.getByRole('button', { name: 'Criar mapa', exact: true }).click();
-  await expect(page).toHaveURL(/\/mapas\/[0-9a-f-]{36}$/);
+  await expect(page).toHaveURL(/\/$/); // D-086: pós-login cai no Hoje
+  await page.goto('/mapas');
+  await createBlankBoard(page, title);
   await expect(page.locator('.react-flow__pane')).toBeVisible();
 }
 
-const inspector = (page: Page) => page.getByRole('complementary', { name: 'Detalhes do card' });
+const inspector = (page: Page) => page.getByRole('complementary', { name: 'Painel do mapa' });
+const node = (page: Page, title: string) => page.locator('.react-flow__node').filter({ has: page.getByRole('button', { name: `Selecionar ${title}` }) });
+const tool = { Conceito: 'Adicionar card de conceito', Fluxograma: 'Adicionar fluxograma', Imagem: 'Adicionar imagem', Caso: 'Adicionar caso clínico' } as const;
 const editorForm = (page: Page) => inspector(page).getByRole('form');
 
-async function create(page: Page, tool: string, title: string) {
-  await page.getByRole('button', { name: `Adicionar ${tool}` }).click();
+/** T5: one toolbar button per card type. */
+async function create(page: Page, type: keyof typeof tool, title: string) {
+  await page.getByRole('toolbar', { name: 'Ferramentas do mapa' }).getByRole('button', { name: tool[type] }).click();
   await expect(editorForm(page)).toBeVisible(); // the new card opens in the editor
   await editorForm(page).getByLabel('Título').fill(title);
 }
@@ -47,12 +49,12 @@ test('cards: um de cada tipo, salva, recarrega e o mapa mostra cada tipo', async
   await signUpAndCreateBoard(page, 'Sepse');
 
   await test.step('conceito', async () => {
-    await create(page, 'Card', 'Sepse');
+    await create(page, 'Conceito', 'Sepse');
     await editorForm(page).getByLabel('Pergunta ou dica (opcional)').fill('Qual a definição de sepse?');
     await editorForm(page).getByLabel('Resposta', { exact: true }).fill('**Disfunção orgânica** com risco de vida');
     await editorForm(page).getByLabel('Fonte (texto ou URL)').fill('Sepsis-3 (2016)');
     await save(page);
-    await expect(page.getByRole('article', { name: 'Conceito: Sepse' })).toContainText('Disfunção orgânica com risco de vida');
+    await expect(node(page, 'Sepse')).toContainText('Disfunção orgânica com risco de vida');
   });
 
   await test.step('fluxograma com 3 passos', async () => {
@@ -62,7 +64,7 @@ test('cards: um de cada tipo, salva, recarrega e o mapa mostra cada tipo', async
     await editorForm(page).getByRole('button', { name: 'Adicionar passo' }).click();
     await editorForm(page).getByLabel('Passo 3', { exact: true }).fill('Antimicrobiano');
     await save(page);
-    await expect(page.getByRole('article', { name: 'Fluxograma: Pacote' })).toContainText('3 passos');
+    await expect(node(page, 'Pacote').getByRole('listitem')).toHaveText(['1Dosar lactato', '2Colher hemoculturas', '3Antimicrobiano']);
   });
 
   await test.step('caso com 2 etapas', async () => {
@@ -93,24 +95,29 @@ test('cards: um de cada tipo, salva, recarrega e o mapa mostra cada tipo', async
     await expect(editorForm(page)).toHaveCount(0);
   });
 
-  await page.getByRole('button', { name: 'Organizar' }).click();
+  await page.getByRole('button', { name: 'Organizar o mapa' }).click();
   await expect(page.getByRole('status').filter({ hasText: /Salv/ })).toHaveText('Salvo agora', { timeout: 15_000 });
   const events = await page.evaluate(() => (window.__remoaEvents ?? []).map((e) => e.event));
   expect(events).toEqual(expect.arrayContaining(['card_edited', 'flow_step_added', 'image_uploaded', 'mask_created']));
 
   await test.step('recarrega: cada card mostra seu tipo', async () => {
     await page.reload();
-    await expect(page.getByRole('article', { name: 'Conceito: Sepse' })).toContainText('Disfunção orgânica com risco de vida');
-    await expect(page.getByRole('article', { name: 'Fluxograma: Pacote' })).toContainText('3 passos');
-    const caso = page.getByRole('article', { name: 'Caso: Idoso febril' });
+    await expect(node(page, 'Sepse')).toContainText('Disfunção orgânica com risco de vida');
+    await expect(node(page, 'Pacote').getByRole('listitem')).toHaveCount(3);
+    const caso = node(page, 'Idoso febril');
     await expect(caso.getByRole('listitem')).toHaveText(['Apresentação', 'Conduta']);
-    const img = page.getByRole('article', { name: 'Imagem: Coração' });
-    await expect(img).toContainText('3 máscaras');
+    const img = node(page, 'Coração');
     await expect(img.getByRole('img', { name: 'Imagem do card Coração' })).toHaveAttribute('src', /^https?:/);
   });
 
   await test.step('reabre a imagem: 3 máscaras no editor', async () => {
-    await page.getByRole('button', { name: 'Abrir Coração' }).click();
+    // ⌘K › card: centres and selects it (it may be off-screen or under the panel after "Organizar")
+    await page.keyboard.press('ControlOrMeta+k');
+    await page.getByRole('combobox', { name: 'Buscar comando' }).fill('Coração');
+    await page.keyboard.press('Enter');
+    await expect(inspector(page).getByRole('heading', { name: 'Coração' })).toBeVisible();
+    await inspector(page).getByRole('button', { name: 'Mais ações de Coração' }).click();
+    await page.getByRole('menuitem', { name: 'Editar card' }).click();
     await editorForm(page).getByRole('button', { name: 'Abrir editor de máscaras' }).click();
     const dialog = page.getByRole('dialog', { name: 'Máscaras de Coração' });
     await expect(dialog.getByRole('button', { name: /^Máscara: Região \d$/ })).toHaveCount(3);

@@ -39,18 +39,20 @@ test('200 cards: pan fps', async ({ page, request }) => {
     await page.getByLabel('E-mail').fill(email);
     await page.getByLabel('Senha').fill(password);
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-    await expect(page).toHaveURL(/\/mapas$/, { timeout: 4000 });
+    await expect(page).toHaveURL(/:3000\/(mapas)?$/, { timeout: 4000 }); // D-086: "/" after login
   }).toPass({ timeout: 30_000 });
   await page.goto(`/mapas/${board}`);
   await expect(page.locator('.react-flow__node').first()).toBeVisible();
-  await expect(page.getByText('200 conceitos · 199 conexões')).toBeVisible();
+  const panel = page.getByRole('complementary', { name: 'Painel do mapa' });
+  await expect(panel).toContainText(/200\s*cards/);
+  await expect(panel).toContainText(/199\s*conexões/);
 
   const pane = (await page.locator('.react-flow__pane').boundingBox())!;
   const cx = pane.x + pane.width / 2;
   const cy = pane.y + pane.height / 2;
 
   for (const zoom of ['fit', 'zoom-in'] as const) {
-    if (zoom === 'zoom-in') for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'Aproximar' }).click();
+    if (zoom === 'zoom-in') for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'Aumentar zoom' }).click();
     await page.waitForTimeout(500);
     await page.evaluate(() => {
       const w = window as unknown as { __frames: number[]; __run?: number };

@@ -14,8 +14,6 @@ export * from './toast';
 export * from './avatar';
 export * from './eyebrow';
 export * from './logo';
-export * from './map-card';
-export * from './edge-label';
 export * from './alert';
 export * from './skeleton';
 export * from './spinner';
@@ -25,8 +23,6 @@ export * from './stat';
 export * from './empty';
 export * from './breadcrumb';
 export * from './rating';
-export * from './rating-button';
-export * from './verdict-box';
 export * from './tooltip';
 export * from './tabs';
 export * from './accordion';
@@ -34,3 +30,33 @@ export * from './select';
 export * from './radio-group';
 export * from './menu';
 export type { Tone } from './tone';
+export * from './state-pill';
+export * from './state-bar';
+export * from './graph-preview';
+export * from './inline-title';
+export { mapStateOrder, type MapState } from './state';
+export * from './icons';
+export * from './app-rail';
+export * from './ring';
+export * from './hero';
+export * from './constellation';
+export * from './map-tile';
+export * from './filter-chip';
+export * from './view-toggle';
+export * from './stepper';
+export * from './choice-card';
+export * from './dropzone';
+// Canvas v2 (G01 T2).
+export {
+  NodeCard, type NodeCardProps, type NodeType, type NodeLayer, type NodeChallengeRole, type NodeChip, type NodeStep,
+  route, routePoints, anchor, MAX_RADIUS, type Side, type Rect, type Point, type Route,
+  EdgeLabel, type EdgeLabelProps,
+  LayerSwitch, type LayerSwitchProps, Legend, type LegendProps,
+  CanvasToolbar, type CanvasToolbarProps, type ToolbarItem,
+  ZoomControl, type ZoomControlProps, stepZoom, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP,
+  InspectorTabs, InspectorTabPanel, type InspectorTabsProps, RubricList, type RubricListProps,
+  QuestionPanel, type QuestionPanelProps, type AnswerMode,
+  VerdictBox, type VerdictBoxProps,
+  RatingButton, RatingGroup, type RatingButtonProps,
+  CanvasPanel, CommandPalette, type CommandPaletteProps, type CommandItem,
+} from './canvas';

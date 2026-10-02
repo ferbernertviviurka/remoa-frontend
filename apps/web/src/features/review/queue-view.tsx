@@ -2,17 +2,20 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { QueueItem } from '@remoa/contracts';
 import { t } from '@remoa/strings';
-import { Button, Card, Stat } from '@remoa/ui';
+import { Alert, Button, Card, Stat } from '@remoa/ui';
 import { track } from '@/lib/analytics';
+import { useChallenge } from '@/features/challenge/provider';
 import { EmptyState } from '@/features/shell/empty-state';
 
 const count = (items: QueueItem[], reason: QueueItem['reason']) => items.filter((i) => i.reason === reason).length;
 
 export function QueueView({ items, boardTitles }: { items: QueueItem[]; boardTitles: Record<string, string> }) {
   const router = useRouter();
+  const { begin } = useChallenge();
+  const [starting, setStarting] = useState<'idle' | 'busy' | 'failed'>('idle');
   const due = count(items, 'due');
   const fresh = count(items, 'new');
   const weak = count(items, 'weak');
@@ -62,9 +65,19 @@ export function QueueView({ items, boardTitles }: { items: QueueItem[]; boardTit
         ))}
       </ul>
       <div>
-        <Button onClick={() => router.push('/revisar/sessao')}>
+        {/* G01 T6: the daily session runs inside the map of its first item (and moves to other maps as the queue does) */}
+        <Button
+          loading={starting === 'busy'}
+          onClick={async () => {
+            setStarting('busy');
+            const first = await begin({ kind: 'daily' });
+            if (first) router.push(`/mapas/${first.boardId}?modo=desafio&sessao=diaria`);
+            else setStarting('failed');
+          }}
+        >
           {t('review.start')}
         </Button>
+        {starting === 'failed' ? <Alert tone="review" role="alert" title={t('challenge.loadError')} /> : null}
       </div>
     </div>
   );

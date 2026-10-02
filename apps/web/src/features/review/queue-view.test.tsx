@@ -1,13 +1,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { reviewQueueFixture } from '@remoa/contracts/mocks';
 import { QueueView } from './queue-view';
-import { Sidebar } from '@/features/shell/sidebar';
+import { ChallengeProvider } from '@/features/challenge/provider';
+import { Rail } from '@/features/shell/rail';
 
 const track = vi.fn();
 vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
 const push = vi.fn();
-vi.mock('next/navigation', () => ({ usePathname: () => '/revisar', useRouter: () => ({ push }) }));
+const api = vi.fn();
+vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
+const render = (ui: ReactElement) => rtlRender(<ChallengeProvider>{ui}</ChallengeProvider>);
+vi.mock('next/navigation', () => ({ usePathname: () => '/revisar', useRouter: () => ({ push }), useSearchParams: () => new URLSearchParams() }));
 
 afterEach(() => {
   cleanup();
@@ -26,10 +31,21 @@ describe('QueueView', () => {
     expect(track).toHaveBeenCalledWith('queue_opened', { due: 4, new: 2, weak: 1 });
   });
 
-  it('starts the challenge session', () => {
+  it('starts the daily session and opens the map of its first item in challenge mode', async () => {
+    api.mockResolvedValue({ ok: true, data: { sessionId: 's1', items: [{ id: 'c9', cardId: 'c9', boardId: 'b9', cardTitle: '', subId: null, mode: 'hidden_card', prompt: 'p', context: { neighbors: [] }, grading: 'none' }] } });
     render(<QueueView items={reviewQueueFixture} boardTitles={{}} />);
     fireEvent.click(screen.getByRole('button', { name: 'Começar revisão' }));
-    expect(push).toHaveBeenCalledWith('/revisar/sessao');
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/mapas/b9?modo=desafio&sessao=diaria'));
+    expect(api.mock.calls[0]![0]).toBe('/v1/challenge/start');
+    expect(JSON.parse(api.mock.calls[0]![1].body)).toMatchObject({ kind: 'daily' });
+  });
+
+  it('says so when the session cannot start', async () => {
+    api.mockResolvedValue({ ok: false, error: { code: 'internal', message: 'x' } });
+    render(<QueueView items={reviewQueueFixture} boardTitles={{}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Começar revisão' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não conseguimos montar a sessão.');
+    expect(push).not.toHaveBeenCalled();
   });
 
   it('shows the empty state with a link to the boards', () => {
@@ -40,11 +56,12 @@ describe('QueueView', () => {
   });
 });
 
-describe('Sidebar badge', () => {
-  const mk = (id: string, dueCount: number) => ({ id, title: `M${id}`, area: 'CM', status: 'private', updatedAt: new Date(), cardCount: 5, edgeCount: 0, dueCount }) as never;
-  it('labels due counts per board and in total, hides zero', () => {
-    render(<Sidebar boards={[mk('1', 3), mk('2', 0)]} />);
-    expect(screen.getAllByText('3 vencem hoje')).toHaveLength(2); // board + "Revisar hoje" total
-    expect(screen.queryByText('0 vencem hoje')).toBeNull();
+describe('Rail badge', () => {
+  it('labels the total due count on Revisar, hides zero', () => {
+    const { unmount } = render(<Rail dueTotal={3} />);
+    expect(screen.getByRole('link', { name: /Revisar/ })).toHaveAccessibleName(/3/);
+    unmount();
+    render(<Rail dueTotal={0} />);
+    expect(screen.getByRole('link', { name: 'Revisar' })).toHaveAccessibleName('Revisar');
   });
 });

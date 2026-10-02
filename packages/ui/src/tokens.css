@@ -1,19 +1,38 @@
-/* Tokens do design system (fonte: docs/DESIGN.md). Importar depois de `@import 'tailwindcss'`.
-   Tema escuro: prefers-color-scheme, ou data-theme="dark" em <html> (toggle do app). */
-:root {
-  --primary: #6d5bd0;
-  --primary-deep: #443881;
-  --primary-tint: #f0effa;
-  --on-primary: #ffffff;
-  --canvas: #f6f8f7;
-  --surface: #ffffff;
-  --text: #142b3c;
-  --muted: #566673;
-  --border: #d6dfe2;
-  --grid: #d9e2e3;
-  --navy: #16324f;
-  --apricot: #f0b78c;
+/* Tokens do design system v2 (fonte: docs/DESIGN.md, identidade roxa). Importar depois de `@import 'tailwindcss'`.
+   O app é claro; o tema escuro (prefers-color-scheme / data-theme="dark") só mantém o v1 funcional até a onda 2.
 
+   ALIASES v1 (nomes antigos que o app ainda usa; apontam para os v2 e saem na onda 2):
+   --text → --ink · --grid → --grid-dot · --shadow-card/--shadow-map/--shadow-map-hover/--shadow-lift (valores v2 achatados)
+   --font-body → --font-sans.  Cores v1 sem equivalente v2 (--navy, --apricot, --edge) seguem iguais. */
+:root {
+  /* marca (derivados: tint = 92% de branco, deep = 0,58 × primary) */
+  --primary: #6d5bd0;
+  --primary-deep: #3f3579;
+  --primary-tint: #f3f2fb;
+  --on-primary: #ffffff;
+
+  /* superfícies e texto */
+  --canvas: #f6f5fb;
+  --surface: #ffffff;
+  --ink: #1a1533;
+  --ink-2: #3a3558;
+  --muted: #5f5b7a;
+  --border: #e3e0f1;
+  --border-strong: #d9d4f0;
+  --track: #ece9f8; /* fundo de Segmented/ViewToggle e passo inativo */
+  --chip: #f1effa; /* etiqueta neutra e botão discreto sobre branco */
+  --divider: #eeebf8; /* linhas de lista, trilhos de barra, contador de chip */
+  --grid-dot: #dad6ee; /* pontos do fundo do canvas, a cada 24 px */
+
+  /* painel escuro (hero, barra de ferramentas, prévia do Novo mapa) */
+  --panel-dark: #241a5c;
+  --on-dark: #ffffff;
+  --on-dark-muted: #cfc8f5; /* eyebrow, legendas */
+  --on-dark-muted-2: #ddd7fa; /* texto de apoio */
+  --on-dark-line: rgba(255, 255, 255, 0.22);
+  --on-dark-fill: rgba(255, 255, 255, 0.1);
+
+  /* estados do mapa */
   --state-review-border: #c2410c;
   --state-review-bg: #ffedd5;
   --state-review-text: #9a3412;
@@ -23,20 +42,45 @@
   --state-steady-border: var(--primary);
   --state-steady-bg: var(--primary-tint);
   --state-steady-text: var(--primary-deep);
-  --state-unknown-border: #9aa6b2;
-  --state-unknown-bg: #eef2f4;
+  --state-unknown-border: #a39fbe;
+  --state-unknown-bg: #eeedf6;
   --state-unknown-text: var(--muted);
+  --state-unknown-soft: #b8b3d0; /* "sem revisões" em prévias e barras de estado */
+  /* estados sobre fundo escuro (constelação) */
+  --state-review-on-dark: #fdba74;
+  --state-watch-on-dark: #fcd34d;
+  --state-steady-on-dark: #c9bfff;
+  --state-unknown-on-dark: #7a6fb0;
+  --preview-edge: #c9c3e6; /* conexões na prévia do grafo */
 
-  --radius-btn: 11px;
-  --radius-map: 15px;
+  /* raios */
+  --radius-btn: 15px; /* botão e input: 14–16 */
+  --radius-field: 16px;
+  --radius-map: 20px; /* nó do mapa */
+  --radius-list: 26px; /* card de lista / painel flutuante */
+  --radius-hero: 30px;
   --radius-review: 24px;
   --radius-tag: 7px;
   --radius-pill: 999px;
-  --shadow-card: 0 1px 2px rgba(20, 43, 60, 0.05), 0 14px 36px rgba(20, 43, 60, 0.07);
-  --shadow-lift: 0 10px 24px rgba(68, 56, 129, 0.22);
 
-  --font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
-  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  /* sombras */
+  --shadow-float: 0 18px 40px rgba(36, 26, 92, 0.14);
+  --shadow-toast: 0 14px 34px rgba(26, 21, 51, 0.35);
+  --shadow-card: 0 0 #0000;
+  --shadow-map: 0 10px 34px rgba(36, 26, 92, 0.05);
+  --shadow-map-hover: var(--shadow-float);
+  --shadow-lift: var(--shadow-float);
+
+  /* aliases v1 */
+  --text: var(--ink);
+  --grid: var(--grid-dot);
+  --navy: #16324f;
+  --apricot: #f0b78c;
+  --edge: #70818d;
+
+  --font-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-sans);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -47,10 +91,15 @@
     --on-primary: #1c1538;
     --canvas: #101b24;
     --surface: #172934;
-    --text: #eaf2f3;
+    --ink: #eaf2f3;
+    --ink-2: #d5e0e3;
     --muted: #aebcc7;
     --border: #3b5363;
-    --grid: #263a47;
+    --border-strong: #4a6476;
+    --track: #1f3441;
+    --divider: #263a47;
+    --chip: #1f3441;
+    --grid-dot: #263a47;
   }
 }
 
@@ -61,10 +110,15 @@
   --on-primary: #1c1538;
   --canvas: #101b24;
   --surface: #172934;
-  --text: #eaf2f3;
+  --ink: #eaf2f3;
+  --ink-2: #d5e0e3;
   --muted: #aebcc7;
   --border: #3b5363;
-  --grid: #263a47;
+  --border-strong: #4a6476;
+  --track: #1f3441;
+  --divider: #263a47;
+  --chip: #1f3441;
+  --grid-dot: #263a47;
 }
 
 @theme inline {
@@ -74,34 +128,79 @@
   --color-on-primary: var(--on-primary);
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
   --color-text: var(--text);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-track: var(--track);
+  --color-divider: var(--divider);
+  --color-chip: var(--chip);
   --color-grid: var(--grid);
+  --color-grid-dot: var(--grid-dot);
+  --color-panel-dark: var(--panel-dark);
+  --color-on-dark: var(--on-dark);
+  --color-on-dark-muted: var(--on-dark-muted);
+  --color-on-dark-muted-2: var(--on-dark-muted-2);
   --color-navy: var(--navy);
   --color-apricot: var(--apricot);
   --color-review: var(--state-review-border);
   --color-review-bg: var(--state-review-bg);
   --color-review-text: var(--state-review-text);
+  --color-review-on-dark: var(--state-review-on-dark);
   --color-watch: var(--state-watch-border);
   --color-watch-bg: var(--state-watch-bg);
   --color-watch-text: var(--state-watch-text);
+  --color-watch-on-dark: var(--state-watch-on-dark);
   --color-steady: var(--state-steady-border);
   --color-steady-bg: var(--state-steady-bg);
   --color-steady-text: var(--state-steady-text);
+  --color-steady-on-dark: var(--state-steady-on-dark);
   --color-unknown: var(--state-unknown-border);
   --color-unknown-bg: var(--state-unknown-bg);
   --color-unknown-text: var(--state-unknown-text);
+  --color-unknown-soft: var(--state-unknown-soft);
+  --color-unknown-on-dark: var(--state-unknown-on-dark);
   --radius-btn: var(--radius-btn);
+  --radius-field: var(--radius-field);
   --radius-map: var(--radius-map);
+  --radius-list: var(--radius-list);
+  --radius-hero: var(--radius-hero);
   --radius-review: var(--radius-review);
   --radius-tag: var(--radius-tag);
   --radius-pill: var(--radius-pill);
   --shadow-card: var(--shadow-card);
+  --shadow-map: var(--shadow-map);
+  --shadow-map-hover: var(--shadow-map-hover);
+  --shadow-float: var(--shadow-float);
+  --shadow-toast: var(--shadow-toast);
+  --color-edge: var(--edge);
   --shadow-lift: var(--shadow-lift);
   --font-display: var(--font-display);
-  --font-sans: var(--font-body);
+  --font-sans: var(--font-sans);
 }
+
+/* ---- Movimento v2 (copiado do <helmet><style> dos mocks) ---- */
+.lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.lift:hover { transform: translateY(-3px); box-shadow: 0 18px 40px rgba(36, 26, 92, 0.14); }
+@keyframes ring {
+  0% { box-shadow: 0 0 0 0 rgba(194, 65, 12, 0.4); }
+  70% { box-shadow: 0 0 0 12px rgba(194, 65, 12, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(194, 65, 12, 0); }
+}
+@keyframes ringd {
+  0% { box-shadow: 0 0 0 0 rgba(253, 186, 116, 0.55); }
+  70% { box-shadow: 0 0 0 14px rgba(253, 186, 116, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(253, 186, 116, 0); }
+}
+@keyframes pop {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+.pulse { animation: ring 2.4s ease-out infinite; }
+.pulsed { animation: ringd 2.4s ease-out infinite; }
+.pop { animation: pop 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 @keyframes remoa-fade-in {
   from { opacity: 0; }
@@ -140,6 +239,9 @@
 .remoa-spin { animation: remoa-spin 0.7s linear infinite; }
 
 @media (prefers-reduced-motion: reduce) {
+  .pulse,
+  .pulsed,
+  .pop,
   .remoa-overlay,
   .remoa-dialog,
   .remoa-sheet,
@@ -150,5 +252,7 @@
   .remoa-press {
     animation: none !important;
   }
+  .lift { transition: none; }
+  .lift:hover { transform: none; }
   .remoa-press { transition: none !important; }
 }

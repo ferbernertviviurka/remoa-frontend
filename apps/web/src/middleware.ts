@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-const protectedPrefixes = ['/mapas', '/revisar', '/cobertura', '/loja', '/conta', '/m', '/editorial'];
+const protectedPrefixes = ['/hoje', '/mapas', '/revisar', '/cobertura', '/loja', '/conta', '/m', '/editorial'];
 const isProtected = (path: string) => protectedPrefixes.some((p) => path === p || path.startsWith(`${p}/`));
 
 export async function middleware(request: NextRequest) {
@@ -24,6 +24,14 @@ export async function middleware(request: NextRequest) {
     url.pathname = '/entrar';
     url.search = `?next=${encodeURIComponent(pathname + search)}`;
     return NextResponse.redirect(url);
+  }
+  if (data.user && pathname === '/') {
+    // D-086: Hoje vive em `/` para quem está logado; deslogado continua vendo a landing.
+    const url = request.nextUrl.clone();
+    url.pathname = '/hoje';
+    const rewrite = NextResponse.rewrite(url, { request });
+    response.cookies.getAll().forEach((c) => rewrite.cookies.set(c));
+    return rewrite;
   }
   return response;
 }

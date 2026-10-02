@@ -8,7 +8,7 @@ function ThemeFrame({ theme, children }: { theme: string; children: ReactNode })
   useEffect(() => {
     document.documentElement.dataset.theme = value;
   }, [value]);
-  return <div className="min-h-[280px] bg-canvas p-8 font-sans text-text">{children}</div>;
+  return <div className="min-h-[280px] bg-canvas p-8 font-sans text-ink">{children}</div>;
 }
 
 const preview: Preview = {

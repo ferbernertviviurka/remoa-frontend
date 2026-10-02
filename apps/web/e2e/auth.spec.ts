@@ -13,8 +13,8 @@ test('cadastro, logout e login', async ({ page }) => {
   await page.getByLabel('E-mail').fill(email);
   await page.getByLabel('Senha').fill(password);
   await page.getByRole('button', { name: 'Criar conta' }).click();
-  await expect(page).toHaveURL(/\/mapas$/);
-  await expect(page.getByRole('heading', { name: 'Seu primeiro mapa' })).toBeVisible();
+  await expect(page).toHaveURL(/\/$/); // D-086: pós-login cai no Hoje
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Seu primeiro mapa começa aqui');
   const events = await page.evaluate(() => window.__remoaEvents ?? []);
   expect(events.map((e) => e.event)).toContain('signup');
 
@@ -27,5 +27,5 @@ test('cadastro, logout e login', async ({ page }) => {
   await page.getByLabel('E-mail').fill(email);
   await page.getByLabel('Senha').fill(password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-  await expect(page).toHaveURL(/\/mapas$/);
+  await expect(page).toHaveURL(/\/$/); // D-086: pós-login cai no Hoje
 });

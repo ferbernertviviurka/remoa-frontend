@@ -1,0 +1,49 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { t } from '@remoa/strings';
+import { Button, Dialog, Icon } from '@remoa/ui';
+
+/** Importar (diálogo "Em breve", D-068) e Novo mapa no topo do Hoje. */
+export function HomeHeaderActions() {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex gap-3">
+      <Button variant="secondary" icon={<Icon name="upload" size={20} />} onClick={() => setOpen(true)}>
+        {t('shell.header.import')}
+      </Button>
+      <Button icon={<Icon name="plus" size={20} />} onClick={() => router.push('/mapas/novo')}>
+        {t('library.newMapButton')}
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen} title={t('shell.header.importTitle')} description={t('shell.header.importBody')} closeLabel={t('common.close')} />
+    </div>
+  );
+}
+
+/** Botões do Hero. `only` = mapa com mais vencidos (aparece quando há mais de um mapa vencendo). */
+export function HeroActions({ only }: { only?: { id: string; title: string } }) {
+  const router = useRouter();
+  return (
+    <>
+      <Button variant="light" size="hero" iconEnd={<Icon name="right" size={20} />} onClick={() => router.push('/revisar')}>
+        {t('home.startReview')}
+      </Button>
+      {only ? (
+        <Button variant="outline-light" size="hero" onClick={() => router.push(`/mapas/${only.id}?modo=desafio`)}>
+          {t('home.reviewOnlyBoard', { board: only.title })}
+        </Button>
+      ) : null}
+    </>
+  );
+}
+
+export function GoButton({ href, label, variant }: { href: string; label: string; variant?: 'light' | 'primary' }) {
+  const router = useRouter();
+  return (
+    <Button variant={variant ?? 'primary'} size={variant === 'light' ? 'hero' : 'md'} onClick={() => router.push(href)}>
+      {label}
+    </Button>
+  );
+}

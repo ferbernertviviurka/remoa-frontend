@@ -2,8 +2,15 @@
 @import '@remoa/ui/tokens.css';
 @source "../../../../packages/ui/src";
 
-/* next/font expõe --font-manrope/--font-inter; os tokens esperam --font-display/--font-body */
+/* next/font expõe --font-bricolage/--font-instrument; os tokens esperam --font-display/--font-sans */
 :root {
-  --font-display: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
-  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-instrument), 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Base v2 (do <helmet><style> dos mocks). Keyframes ring/ringd/pop e as classes .lift/.pulse/.pulsed/.pop vêm de tokens.css. */
+@layer base {
+  body { margin: 0; font-size: 15px; line-height: 1.5; }
+  button:not(:disabled) { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 }

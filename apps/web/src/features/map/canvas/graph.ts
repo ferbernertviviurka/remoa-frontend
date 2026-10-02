@@ -1,6 +1,5 @@
 // Pure graph helpers for the canvas: Card/Edge <-> React Flow nodes/edges, local apply of MapOps, inverses for undo.
 import type { Edge as RFEdge, Node } from '@xyflow/react';
-import { mapCardDragHandle } from '@remoa/ui';
 import type { Card, CardType, Edge, MapOp, MapState, Position, RetrievabilityMap } from '@remoa/contracts';
 
 export type CardNode = Node<{ card: Card }, 'card'>;
@@ -10,8 +9,8 @@ export type Graph = { nodes: CardNode[]; edges: LinkEdge[] };
 export type CardCache = Map<string, Card>;
 
 export const GRID = 8;
-/** DESIGN.md: edges #70818D 1.5px (same in both themes). */
-export const EDGE_COLOR = '#70818D';
+/** D-084: edges #8E88B5 1.7px with an arrow (Editor.dc.html). */
+export const EDGE_COLOR = '#8E88B5';
 export const snap = (v: number) => Math.round(v / GRID) * GRID;
 export const snapPos = (p: Position): Position => ({ x: snap(p.x), y: snap(p.y) });
 
@@ -19,7 +18,8 @@ export const toNode = (card: Card, position: Position): CardNode => ({
   id: card.id,
   type: 'card',
   position,
-  dragHandle: `.${mapCardDragHandle}`,
+  // T5: the NodeCard <button> is the only tab stop; the RF wrapper keeps its keydown (Enter selects, arrows move).
+  domAttributes: { tabIndex: -1 },
   data: { card },
 });
 
@@ -28,7 +28,7 @@ export const toEdge = (e: Pick<Edge, 'id' | 'fromCardId' | 'toCardId' | 'label'>
   type: 'link',
   source: e.fromCardId,
   target: e.toCardId,
-  markerEnd: { type: 'arrowclosed', color: EDGE_COLOR, width: 16, height: 16 },
+  markerEnd: { type: 'arrowclosed', color: EDGE_COLOR, width: 12, height: 12 },
   data: { label: e.label },
 });
 

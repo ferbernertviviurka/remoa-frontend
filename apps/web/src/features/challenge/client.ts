@@ -2,7 +2,7 @@ import type { AnswerOutput, ItemRef, RateInput, Result, SessionSummary, StartSes
 import { api } from '@/lib/api';
 
 /** Answer payload as the screen builds it; sessionId/itemId/durationMs are added by the session. */
-export type AnswerPayload = { inputKind: 'self' } | { inputKind: 'mcq'; optionIndex: number } | { inputKind: 'text'; text: string };
+export type AnswerPayload = { inputKind: 'self' } | { inputKind: 'mcq'; optionIndex: number } | { inputKind: 'text'; text: string } | { inputKind: 'voice'; text: string };
 
 const post = async <T>(path: string, body: unknown): Promise<Result<T>> => {
   try {

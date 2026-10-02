@@ -1,0 +1,31 @@
+/* Canvas v2 (G01 T2). Aliases locais com fallback para tokens v2 que o T1 ainda pode não ter publicado
+   (remover o fallback quando tokens.css tiver --ink, --ink-2, --border-strong, --panel-dark). */
+:root {
+  --cv-ink: var(--ink, #1a1533);
+  --cv-ink-2: var(--ink-2, #3a3558);
+  --cv-border-strong: var(--border-strong, #d9d4f0);
+  --cv-panel-dark: var(--panel-dark, #241a5c);
+  --cv-seg: #ece9f8; /* fundo do Segmented v2 */
+  --cv-chip: #f1effa; /* chip neutro / tecla */
+  --cv-line-soft: #eeebf8; /* divisor interno */
+  --cv-node-border: #d5d1e8; /* borda do nó fora da camada Lembrança */
+  --cv-edge: #8e88b5;
+}
+
+@keyframes cv-ring {
+  0% { box-shadow: inset 0 0 0 1.5px var(--state-review-border), 0 0 0 0 rgba(194, 65, 12, 0.4); }
+  70% { box-shadow: inset 0 0 0 1.5px var(--state-review-border), 0 0 0 12px rgba(194, 65, 12, 0); }
+  100% { box-shadow: inset 0 0 0 1.5px var(--state-review-border), 0 0 0 0 rgba(194, 65, 12, 0); }
+}
+/* pulse: só em nó vencido, camada Lembrança, fora do desafio (NodeCard aplica a classe). */
+.cv-pulse { animation: cv-ring 2.4s ease-out infinite; }
+
+@keyframes cv-pop {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+.cv-pop { animation: cv-pop 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cv-pulse, .cv-pop { animation: none; }
+}
