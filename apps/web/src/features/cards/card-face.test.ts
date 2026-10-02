@@ -6,8 +6,9 @@ const [concept] = sepseCards;
 const asset = '00000000-0000-4000-8000-000000000777';
 
 describe('cardFace (T6)', () => {
-  it('concept: plain-text summary of the answer', () => {
-    expect(cardFace({ ...concept!, back: '**Disfunção** orgânica' }, null)).toMatchObject({ summary: 'Disfunção orgânica', meta: null });
+  it('concept: the front (question) on the face, the answer only for the back (D-097)', () => {
+    expect(cardFace({ ...concept!, front: 'O que é *sepse*?', back: '**Disfunção** orgânica' }, null)).toMatchObject({ summary: 'O que é sepse?', answer: 'Disfunção orgânica', meta: null });
+    expect(cardFace({ ...concept!, front: null, back: 'x' }, null).summary).toBeNull();
     expect(cardFace({ ...concept!, back: null, front: null }, null).summary).toBeNull();
   });
   it('flow: step count; case: stage chips in pt-BR', () => {

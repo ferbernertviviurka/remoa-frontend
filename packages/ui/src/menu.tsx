@@ -21,7 +21,7 @@ export type MenuProps = {
 const triggerClass = {
   outline: 'min-h-11 border border-border bg-surface px-4 shadow-card text-text',
   tint: 'min-h-9 bg-primary-tint px-3 text-primary-deep gap-1.5',
-  icon: 'size-9 justify-center text-muted hover:bg-primary-tint hover:text-text',
+  icon: 'size-9 max-lg:size-11 justify-center text-muted hover:bg-primary-tint hover:text-text',
 } as const;
 
 export function Menu({ label, items, trigger = 'outline', icon, align = 'start' }: MenuProps) {

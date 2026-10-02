@@ -15,14 +15,14 @@ export function Input({ label, variant = 'field', ...rest }: InputProps) {
   const id = useId();
   if (variant === 'search') {
     return (
-      <div className="relative">
+      <div className="relative max-sm:w-full">
         <label htmlFor={id} className="sr-only">{label}</label>
         <span aria-hidden="true" className="pointer-events-none absolute left-3.5 top-3.5 text-muted"><Icon name="search" size={20} /></span>
         <input
           id={id}
           type="search"
           {...rest}
-          className={`h-12 w-[280px] max-w-full rounded-btn border border-border-strong bg-surface pl-11 pr-3.5 text-[15px] text-ink placeholder:text-muted hover:border-primary focus-visible:border-primary ${focusRing}`}
+          className={`h-12 w-[280px] max-w-full max-sm:w-full rounded-btn border border-border-strong bg-surface pl-11 pr-3.5 text-[15px] text-ink placeholder:text-muted hover:border-primary focus-visible:border-primary ${focusRing}`}
         />
       </div>
     );

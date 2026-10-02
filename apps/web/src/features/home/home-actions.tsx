@@ -10,7 +10,7 @@ export function HomeHeaderActions() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   return (
-    <div className="flex gap-3">
+    <div className="flex flex-wrap gap-3">
       <Button variant="secondary" icon={<Icon name="upload" size={20} />} onClick={() => setOpen(true)}>
         {t('shell.header.import')}
       </Button>

@@ -5,3 +5,4 @@ const meta = { title: 'Switch', component: Switch } satisfies Meta<typeof Switch
 export default meta;
 type S = StoryObj<typeof meta>;
 export const Default: S = { args: { label: 'Lembrança estimada' } };
+export const Large: S = { args: { label: 'Reduzir movimento', size: 'lg', defaultChecked: true } };

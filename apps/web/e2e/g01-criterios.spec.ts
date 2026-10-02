@@ -17,7 +17,10 @@ test('nós: <button> dentro de <article>, operáveis por teclado, foco visível;
   test.setTimeout(120_000);
   await openSepse(page, request);
   const node = page.locator('article', { hasText: 'Choque séptico' }).first();
-  await expect(node.locator('button')).toHaveCount(1);
+  // one "Selecionar" button covering the card + (D-097) the "Ver resposta" flip button, both real <button>s
+  await expect(node.locator('button')).toHaveCount(2);
+  await expect(node.getByRole('button', { name: 'Selecionar Choque séptico' })).toHaveCount(1);
+  await expect(node.getByRole('button', { name: 'Ver resposta' })).toHaveCount(1);
   const btn = page.getByRole('button', { name: 'Selecionar Choque séptico' });
   await btn.focus();
   // foco visível: outline (ou box-shadow) não nulo no botão ou no article via :focus-within

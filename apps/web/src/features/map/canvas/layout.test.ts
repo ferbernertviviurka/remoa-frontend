@@ -27,3 +27,17 @@ describe('autoLayout', () => {
     expect(pos.get('a')!.x).toBeLessThan(pos.get('b')!.x);
   });
 });
+
+describe('autoLayout with shapes (D-095)', () => {
+  it('uses each node size: a tall diamond and a wide rect do not overlap', () => {
+    const nodes = [
+      { id: 'a', width: 224, height: 224 },
+      { id: 'b', width: 232, height: 240 },
+      { id: 'c', width: 180, height: 180 },
+    ];
+    const pos = autoLayout(nodes, [{ source: 'a', target: 'b' }, { source: 'a', target: 'c' }]);
+    const box = (id: string) => ({ ...pos.get(id)!, ...nodes.find((n) => n.id === id)! });
+    const [b, c] = [box('b'), box('c')];
+    expect(b.y + b.height <= c.y || c.y + c.height <= b.y).toBe(true);
+  });
+});

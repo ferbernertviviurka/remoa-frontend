@@ -1,15 +1,18 @@
 // Auto-layout (FR-10): dagre left-to-right. Pure; returns top-left positions snapped to the 8px grid.
 import dagre from '@dagrejs/dagre';
-import type { CardType, Position } from '@remoa/contracts';
+import type { Card, Position } from '@remoa/contracts';
+import { nodeSize } from '@remoa/ui';
 import { snapPos } from './graph';
 
-/** T5: NodeCard sizes (HANDOFF rule 3). Layout uses the widest card so columns line up. */
-export const NODE_H: Record<CardType, number> = { concept: 150, case: 176, flow: 282, image: 206 };
+/** Defaults for a node of unknown size (the widest/tallest of the compact cards). */
 export const CARD_W = 248;
 export const CARD_H = 176;
 
+/** D-095/D-096: fixed size per type + shape (+ question image), the same the NodeCard draws. */
+export const sizeOf = (c: Pick<Card, 'type' | 'shape' | 'frontAssetId'>) => nodeSize(c.type, c.shape, { frontImage: !!c.frontAssetId });
+
 export function autoLayout(
-  nodes: { id: string; height?: number }[],
+  nodes: { id: string; width?: number; height?: number }[],
   edges: { source: string; target: string }[],
   origin: Position = { x: 0, y: 0 },
 ): Map<string, Position> {
@@ -17,7 +20,7 @@ export function autoLayout(
   g.setGraph({ rankdir: 'LR', nodesep: 40, ranksep: 96, marginx: 0, marginy: 0 });
   g.setDefaultEdgeLabel(() => ({}));
   const ids = new Set(nodes.map((n) => n.id));
-  for (const n of nodes) g.setNode(n.id, { width: CARD_W, height: n.height ?? CARD_H });
+  for (const n of nodes) g.setNode(n.id, { width: n.width ?? CARD_W, height: n.height ?? CARD_H });
   for (const e of edges) if (ids.has(e.source) && ids.has(e.target) && e.source !== e.target) g.setEdge(e.source, e.target);
   dagre.layout(g);
   const out = new Map<string, Position>();

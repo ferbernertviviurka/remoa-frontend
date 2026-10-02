@@ -29,3 +29,9 @@
 @media (prefers-reduced-motion: reduce) {
   .cv-pulse, .cv-pop { animation: none; }
 }
+
+/* Virar o card (D-097): 400 ms; com prefers-reduced-motion troca sem animação. */
+.cv-flip { transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .cv-flip { transition: none; }
+}

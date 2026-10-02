@@ -27,7 +27,17 @@ describe('toDraft', () => {
 describe('buildSaveInput', () => {
   it('concept: trims, empty texts become null', () => {
     const r = buildSaveInput({ ...fresh('concept'), title: ' Sepse ', back: '**Disfunção**', source: '  ' });
-    expect(r).toEqual({ ok: true, data: { type: 'concept', title: 'Sepse', front: null, back: '**Disfunção**', source: null, payload: {} } });
+    expect(r).toEqual({ ok: true, data: { type: 'concept', title: 'Sepse', shape: 'rect', front: null, frontAssetId: null, back: '**Disfunção**', source: null, payload: {} } });
+  });
+
+  it('D-095/D-096: concept keeps its shape and question image; other types are always rect', () => {
+    const r = buildSaveInput({ ...fresh('concept'), title: 'Sepse', shape: 'diamond', frontAssetId: asset });
+    expect(r.ok && [r.data.shape, r.data.frontAssetId]).toEqual(['diamond', asset]);
+    const c = fresh('case');
+    if (c.type !== 'case') throw new Error();
+    const k = buildSaveInput({ ...c, shape: 'circle', stages: { ...c.stages, diagnosis: 'Sepse' } });
+    expect(k.ok && k.data.shape).toBe('rect');
+    expect(toDraft({ id, type: 'flow', title: 'F', front: null, back: null, source: null, shape: 'hexagon', payload: {} }).shape).toBe('rect');
   });
 
   it('rejects an empty title', () => {

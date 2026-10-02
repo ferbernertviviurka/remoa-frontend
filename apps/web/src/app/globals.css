@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '@remoa/ui/tokens.css';
+@import '@remoa/ui/motion.css';
 @source "../../../../packages/ui/src";
 
 /* next/font expõe --font-bricolage/--font-instrument; os tokens esperam --font-display/--font-sans */

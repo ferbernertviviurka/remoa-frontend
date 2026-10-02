@@ -41,6 +41,21 @@ describe('NewMapView', () => {
     expect(track).toHaveBeenCalledWith('board_created', {});
   });
 
+  it('fires board_linked_to_matrix with suggested = the picked item was suggested', async () => {
+    api.mockImplementation(async (path: string) =>
+      path.startsWith('/v1/matrix/suggest') ? { ok: true, data: [items[1]] } : { ok: true, data: { id: 'new1' } },
+    );
+    render(<NewMapView items={items} initialPath="blank" />);
+    next();
+    await screen.findByRole('button', { name: 'Pneumonia' });
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /Sepse|Pneumonia/ })[0]).toHaveAccessibleName('Pneumonia')); // suggestion first
+    fireEvent.click(screen.getByRole('button', { name: 'Pneumonia' }));
+    next();
+    fireEvent.click(screen.getByRole('button', { name: 'Criar mapa' }));
+    await waitFor(() => expect(push).toHaveBeenCalled());
+    expect(track).toHaveBeenCalledWith('board_linked_to_matrix', { suggested: true });
+  });
+
   it('shows the API error and stays when create fails', async () => {
     api.mockResolvedValue({ ok: false, error: { code: 'quota_exceeded', message: 'x' } });
     render(<NewMapView items={items} initialPath="blank" />);

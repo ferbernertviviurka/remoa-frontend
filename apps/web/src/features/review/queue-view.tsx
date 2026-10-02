@@ -43,7 +43,7 @@ export function QueueView({ items, boardTitles }: { items: QueueItem[]; boardTit
   return (
     <div className="flex flex-col gap-6">
       <h1 className="font-display text-2xl font-extrabold text-text">{headline}</h1>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <Stat label={t('review.due')} value={String(due)} />
         <Stat label={t('review.new')} value={String(fresh)} />
         <Stat label={t('review.weak')} value={String(weak)} />
@@ -53,7 +53,7 @@ export function QueueView({ items, boardTitles }: { items: QueueItem[]; boardTit
           <li key={id}>
             <Card>
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <Link href={`/mapas/${id}`} className="font-semibold text-text underline">
+                <Link href={`/mapas/${id}`} className="inline-flex min-h-11 items-center font-semibold text-text underline">
                   {boardTitles[id] ?? t('review.unknownBoard')}
                 </Link>
                 <span className="text-sm text-muted">
@@ -64,7 +64,7 @@ export function QueueView({ items, boardTitles }: { items: QueueItem[]; boardTit
           </li>
         ))}
       </ul>
-      <div>
+      <div className="max-sm:[&>button]:w-full">
         {/* G01 T6: the daily session runs inside the map of its first item (and moves to other maps as the queue does) */}
         <Button
           loading={starting === 'busy'}

@@ -229,7 +229,7 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
       ) : null}
       {out.fallback ? (
         <Alert tone={out.fallback === 'quota' ? 'watch' : 'unknown'} title={t(fallbackText[out.fallback])}>
-          {out.fallback === 'quota' ? <Link href="/conta" className="font-semibold underline">{t('challenge.quotaCta')}</Link> : null}
+          {out.fallback === 'quota' ? <Link href="/precos" className="font-semibold underline">{t('challenge.quotaCta')}</Link> : null}
         </Alert>
       ) : null}
       {out.gradeLocked ? <Alert tone="review" title={t('challenge.gradeLocked')} /> : null}

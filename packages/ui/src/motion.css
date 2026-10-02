@@ -1,0 +1,37 @@
+/* Presets de movimento da conta (do <helmet><style> de Conta.dc.html). Importar depois de tokens.css.
+   Os keyframes só têm `from`: o estado final é o estilo do próprio elemento, então com a animação
+   desligada o valor final aparece direto. Só transform/opacity (exceto o anel: `.ring-dash`). */
+@keyframes slidein { from { opacity: 0; transform: translateY(14px); } }
+@keyframes fillx { from { transform: scaleX(0); } }
+@keyframes pop-in { from { opacity: 0; transform: scale(0.9); } }
+
+.slide { animation: slidein 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.fillx { transform-origin: 0 50%; animation: fillx 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.pop { animation: pop-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+/* Pulso da estrela do hero (mock: box-shadow; decorativo, aria-hidden). */
+@keyframes ringd { 0% { box-shadow: 0 0 0 0 rgba(253, 186, 116, 0.55); } 70%, 100% { box-shadow: 0 0 0 14px rgba(253, 186, 116, 0); } }
+.pulsed { animation: ringd 2.4s ease-out infinite; }
+.ring-dash { transition: stroke-dasharray 0.9s cubic-bezier(0.22, 1, 0.36, 1); }
+.switch-thumb { transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Reduzir movimento: `data-motion="reduced"` na raiz (preferência salva) ou, sem `data-motion`,
+   prefers-reduced-motion do sistema. `data-motion="full"` vence a preferência do sistema. `.calm` = trecho calmo (demo do mock). */
+[data-motion='reduced'],
+[data-motion='reduced'] *,
+[data-motion='reduced'] *::before,
+[data-motion='reduced'] *::after,
+.calm,
+.calm *,
+.calm *::before {
+  animation: none !important;
+  transition: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion]),
+  :root:not([data-motion]) *,
+  :root:not([data-motion]) *::before,
+  :root:not([data-motion]) *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

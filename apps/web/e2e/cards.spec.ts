@@ -53,8 +53,24 @@ test('cards: um de cada tipo, salva, recarrega e o mapa mostra cada tipo', async
     await editorForm(page).getByLabel('Pergunta ou dica (opcional)').fill('Qual a definição de sepse?');
     await editorForm(page).getByLabel('Resposta', { exact: true }).fill('**Disfunção orgânica** com risco de vida');
     await editorForm(page).getByLabel('Fonte (texto ou URL)').fill('Sepsis-3 (2016)');
+    // G02 / D-096: question image (same upload flow as the image card)
+    await editorForm(page).locator('input[type="file"]').setInputFiles({ name: 'q.png', mimeType: 'image/png', buffer: await pngFixture(page) });
+    await expect(editorForm(page).getByRole('img', { name: 'Imagem da pergunta de Sepse' })).toBeVisible({ timeout: 30_000 });
     await save(page);
+    // D-097: the front shows the question (and its image); the answer only on the back
+    await expect(node(page, 'Sepse')).toContainText('Qual a definição de sepse?');
+    await expect(node(page, 'Sepse')).not.toContainText('Disfunção orgânica com risco de vida');
+    await expect(node(page, 'Sepse').getByRole('img', { name: 'Imagem da pergunta de Sepse' })).toBeVisible();
+    await node(page, 'Sepse').getByRole('button', { name: 'Ver resposta' }).click();
     await expect(node(page, 'Sepse')).toContainText('Disfunção orgânica com risco de vida');
+    await node(page, 'Sepse').getByRole('button', { name: 'Ver pergunta' }).click();
+  });
+
+  await test.step('conceito em losango (D-095)', async () => {
+    await create(page, 'Conceito', 'Choque');
+    await editorForm(page).getByRole('group', { name: 'Formato no mapa' }).getByRole('button', { name: 'Losango' }).click();
+    await save(page);
+    await expect(node(page, 'Choque').locator('article')).toHaveAttribute('data-shape', 'diamond');
   });
 
   await test.step('fluxograma com 3 passos', async () => {
@@ -64,6 +80,8 @@ test('cards: um de cada tipo, salva, recarrega e o mapa mostra cada tipo', async
     await editorForm(page).getByRole('button', { name: 'Adicionar passo' }).click();
     await editorForm(page).getByLabel('Passo 3', { exact: true }).fill('Antimicrobiano');
     await save(page);
+    await page.keyboard.press('Escape'); // D-098: Esc closes the card panel (the new card may sit under it)
+    await node(page, 'Pacote').getByRole('button', { name: 'Ver resposta' }).click(); // steps are the answer: back face
     await expect(node(page, 'Pacote').getByRole('listitem')).toHaveText(['1Dosar lactato', '2Colher hemoculturas', '3Antimicrobiano']);
   });
 
@@ -102,7 +120,11 @@ test('cards: um de cada tipo, salva, recarrega e o mapa mostra cada tipo', async
 
   await test.step('recarrega: cada card mostra seu tipo', async () => {
     await page.reload();
-    await expect(node(page, 'Sepse')).toContainText('Disfunção orgânica com risco de vida');
+    await expect(node(page, 'Sepse')).toContainText('Qual a definição de sepse?');
+    await expect(node(page, 'Sepse').getByRole('img', { name: 'Imagem da pergunta de Sepse' })).toHaveAttribute('src', /^https?:/);
+    await expect(node(page, 'Choque').locator('article')).toHaveAttribute('data-shape', 'diamond');
+    await expect(node(page, 'Pacote').getByRole('listitem')).toHaveCount(0); // flipping is local: reload shows the front
+    await node(page, 'Pacote').getByRole('button', { name: 'Ver resposta' }).click();
     await expect(node(page, 'Pacote').getByRole('listitem')).toHaveCount(3);
     const caso = node(page, 'Idoso febril');
     await expect(caso.getByRole('listitem')).toHaveText(['Apresentação', 'Conduta']);

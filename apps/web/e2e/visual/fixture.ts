@@ -79,7 +79,7 @@ async function mockBoard(request: APIRequestContext, headers: Headers, userId: s
 /** Mapa "Sepse" do Editor.dc.html: 6 cards (tipos, posições, rótulos), conteúdo e estados FSRS (Choque séptico e Pacote vencem hoje a 58%/64%). */
 export async function createMockSepse(request: APIRequestContext, headers: Headers, userId: string) {
   const items = await call<{ id: string; title: string }[]>(request, headers, '/v1/matrix/items?area=CM');
-  const matrixItemId = items.find((i) => /sepse|infecto/i.test(i.title))?.id ?? null;
+  const matrixItemId = items.find((i) => /sepse/i.test(i.title))?.id ?? null;
   const { board, id } = await mockBoard(request, headers, userId, 'Sepse', [
     ['sepse', 'concept', 'Sepse', 64, 150, 0.94, 6], ['triagem', 'concept', 'Triagem', 376, 120, 0.71, 3], ['caso12', 'case', 'Caso 12', 672, 130, 0.83, 4],
     ['choque', 'concept', 'Choque séptico', 64, 380, 0.58, 0], ['pacote', 'flow', 'Pacote da 1ª hora', 368, 350, 0.64, 0], ['rx', 'image', 'Rx de tórax: foco', 672, 380],

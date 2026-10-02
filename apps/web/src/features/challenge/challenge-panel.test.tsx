@@ -173,7 +173,7 @@ describe('ChallengePanel', () => {
     expect(rating('Bom')).toBeEnabled();
     expect(screen.queryByRole('button', { name: 'Discordo da correção' })).toBeNull();
     if (fallback === 'quota') {
-      expect(screen.getByRole('link', { name: 'Ver planos' })).toHaveAttribute('href', '/conta');
+      expect(screen.getByRole('link', { name: 'Ver planos' })).toHaveAttribute('href', '/precos');
       expect(track).toHaveBeenCalledWith('paywall_viewed', { reason: 'ai_quota' });
     } else expect(track).not.toHaveBeenCalledWith('paywall_viewed', expect.anything());
   });

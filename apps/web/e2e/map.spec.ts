@@ -41,8 +41,10 @@ test('mapa: 3 cards, 2 conexões, salva sozinho e persiste; offline → online m
     // the new card is selected and shown in the panel
     await expect(panel(page).getByRole('heading', { name: 'Novo conceito' })).toBeVisible();
 
-    for (const [a, b] of [[0, 1], [0, 2]] as const)
-      await drag(page, await center(page, '.react-flow__node .react-flow__handle.source', a), await center(page, '.react-flow__node .react-flow__handle.target', b));
+    // G02: port → port, and port → the other card's body (both connect)
+    await drag(page, await center(page, '.react-flow__node .react-flow__handle.source', 0), await center(page, '.react-flow__node .react-flow__handle.target', 1));
+    await expect(page.locator('.react-flow__edge')).toHaveCount(1);
+    await drag(page, await center(page, '.react-flow__node .react-flow__handle.source', 0), await center(page, '.react-flow__node', 2));
     await expect(page.locator('.react-flow__edge')).toHaveCount(2);
     // T5: an unlabelled edge shows "+ rótulo" only while selected; the pill opens the label dialog
     await expect(page.getByRole('button', { name: 'Adicionar rótulo' })).toHaveCount(0);
@@ -62,8 +64,7 @@ test('mapa: 3 cards, 2 conexões, salva sozinho e persiste; offline → online m
     await page.reload();
     await expect(nodes(page)).toHaveCount(3);
     await expect(page.locator('.react-flow__edge')).toHaveCount(2);
-    await expect(panel(page)).toContainText(/3\s*cards/);
-    await expect(panel(page)).toContainText(/2\s*conexões/);
+    await expect(panel(page)).toHaveCount(0); // D-098: no selection, no panel
     await expect(page.getByRole('button', { name: 'Editar rótulo: causa' })).toBeVisible();
   });
 
@@ -85,11 +86,23 @@ test('mapa: 3 cards, 2 conexões, salva sozinho e persiste; offline → online m
     expect(await transforms(page)).toEqual(moved);
   });
 
+  await test.step('"Ligar dois cards": origem → destino; persiste', async () => {
+    await page.getByRole('button', { name: 'Ligar dois cards' }).click();
+    await expect(page.getByText('Clique no card de origem.')).toBeVisible();
+    await nodes(page).nth(1).getByRole('button', { name: 'Selecionar Novo conceito' }).click();
+    await expect(page.getByText('Agora clique no card de destino.')).toBeVisible();
+    await nodes(page).nth(2).getByRole('button', { name: 'Selecionar Novo conceito' }).click();
+    await expect(page.locator('.react-flow__edge')).toHaveCount(3);
+    await page.keyboard.press('Escape'); // drops the tool
+    await expect(saveStatus(page)).toHaveText('Salvo agora', { timeout: 10_000 });
+    await page.reload();
+    await expect(page.locator('.react-flow__edge')).toHaveCount(3);
+  });
+
   await test.step('camadas: Lembrança sem revisões; Estrutura conta conexões', async () => {
     await expect(nodes(page).getByText('Sem revisões ainda')).toHaveCount(3);
     await page.getByRole('button', { name: 'Estrutura' }).click();
-    await expect(nodes(page).getByText('2 conexões')).toHaveCount(1);
-    await expect(nodes(page).getByText('1 conexão', { exact: true })).toHaveCount(2);
+    await expect(nodes(page).getByText('2 conexões')).toHaveCount(3);
     await nodes(page).first().getByRole('button', { name: 'Selecionar Novo conceito' }).click();
     await expect(panel(page).getByText('Sem revisões ainda')).toBeVisible();
   });

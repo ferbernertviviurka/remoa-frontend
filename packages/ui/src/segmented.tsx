@@ -31,7 +31,7 @@ export function Segmented({ options, onValueChange, ...rest }: SegmentedProps) {
         <TG.Item
           key={o.value}
           value={o.value}
-          className={`h-[38px] px-5 text-sm ${segItem} ${pressable} ${focusRing}`}
+          className={`h-[38px] px-5 text-sm max-lg:h-11 ${segItem} ${pressable} ${focusRing}`}
         >
           {o.label}
         </TG.Item>

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PendingLink } from '@/features/shell/nav-pending';
 import type { ReactNode } from 'react';
 import type { BoardSummary, CoverageRow, HomeSummary } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
@@ -8,7 +9,7 @@ import { eyebrowDate, hourIn, salutationKey, todayIso, weekdayName } from './for
 import { GoButton, HeroActions, HomeHeaderActions } from './home-actions';
 
 export type FirstInQueue = { title: string; pct: number };
-export type HomeViewProps = { now: Date; summary: HomeSummary; boards: BoardSummary[]; coverage: CoverageRow[]; first?: FirstInQueue };
+export type HomeViewProps = { now: Date; summary: HomeSummary; boards: BoardSummary[]; coverage: CoverageRow[]; first?: FirstInQueue; queueStart?: ReactNode };
 
 const h2 = 'm-0 font-display font-extrabold';
 const panel = 'flex flex-col rounded-[28px] border border-border bg-surface';
@@ -16,9 +17,9 @@ const dayKeys = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'] as const;
 
 function Panel({ id, title, children, size = 'sm', aside }: { id: string; title: string; children: ReactNode; size?: 'sm' | 'lg'; aside?: ReactNode }) {
   return (
-    <section aria-labelledby={id} className={`${panel} ${size === 'lg' ? 'gap-[18px] px-7 py-[26px]' : 'gap-4 p-[22px]'}`}>
-      <div className="flex items-baseline justify-between">
-        <h2 id={id} className={`${h2} ${size === 'lg' ? 'text-[26px] tracking-[-0.025em]' : 'text-[22px] tracking-[-0.02em]'}`}>{title}</h2>
+    <section aria-labelledby={id} className={`${panel} ${size === 'lg' ? 'gap-[18px] px-5 py-5 md:px-7 md:py-[26px]' : 'gap-4 p-5 md:p-[22px]'}`}>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <h2 id={id} className={`${h2} ${size === 'lg' ? 'text-[22px] tracking-[-0.025em] md:text-[26px]' : 'text-[22px] tracking-[-0.02em]'}`}>{title}</h2>
         {aside}
       </div>
       {children}
@@ -73,7 +74,7 @@ function coverageByArea(rows: CoverageRow[]) {
   return [...acc].map(([area, v]) => ({ area, pct: Math.min(100, Math.round((v.cards / Math.max(1, v.target)) * 100)) }));
 }
 
-export function HomeView({ now, summary, boards, coverage, first }: HomeViewProps) {
+export function HomeView({ now, summary, boards, coverage, first, queueStart }: HomeViewProps) {
   const saudacao = t(`home.salutation.${salutationKey(hourIn(now))}`);
   const due = summary.dueToday;
   const dueBoards = boards.filter((b) => b.dueCount > 0).sort((a, b) => b.dueCount - a.dueCount);
@@ -86,7 +87,7 @@ export function HomeView({ now, summary, boards, coverage, first }: HomeViewProp
   const progressMax = summary.reviewedToday + due;
   const heroText =
     due > 0 && top
-      ? { title: t('home.reviewSummary', { boards: dueBoards.length, n: due }), description: first ? t('home.queueStart', { card: first.title, pct: first.pct }) : undefined }
+      ? { title: t('home.reviewSummary', { boards: dueBoards.length, n: due }), description: first ? t('home.queueStart', { card: first.title, pct: first.pct }) : queueStart }
       : boards.length === 0
         ? { title: t('home.noMapsTitle'), description: t('home.noMapsBody') }
         : { title: t('home.reviewEmptyTitle'), description: t('home.reviewEmptyBody') };
@@ -94,10 +95,10 @@ export function HomeView({ now, summary, boards, coverage, first }: HomeViewProp
   return (
     // -m cancela o padding do shell (p-4/md:p-6): o Hoje usa 36/48 do mock.
     <div className="-m-4 box-border flex flex-col gap-7 px-4 py-6 md:-m-6 md:px-12 md:pb-12 md:pt-9">
-      <div className="flex flex-wrap items-end justify-between gap-6">
+      <div className="flex flex-wrap items-end justify-between gap-4 md:gap-6">
         <div className="flex flex-col gap-2">
           <span className="text-xs font-bold uppercase leading-normal tracking-[.12em] text-muted">{eyebrowDate(now)}</span>
-          <h1 className="m-0 max-w-[780px] font-display text-[46px] font-extrabold leading-[1.05] tracking-[-0.035em]">{greeting}</h1>
+          <h1 className="m-0 max-w-[780px] font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.035em] md:text-[46px] md:leading-[1.05]">{greeting}</h1>
         </div>
         <HomeHeaderActions />
       </div>
@@ -122,15 +123,15 @@ export function HomeView({ now, summary, boards, coverage, first }: HomeViewProp
           </Hero>
           {recent.length > 0 ? (
             <section aria-labelledby="home-maps" className="flex flex-col gap-4">
-              <div className="flex items-baseline justify-between">
-                <h2 id="home-maps" className={`${h2} text-[26px] tracking-[-0.025em]`}>{t('home.continueFrom')}</h2>
-                <Link href="/mapas" className="font-bold text-primary-deep no-underline">{t('home.seeAll')}</Link>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+                <h2 id="home-maps" className={`${h2} text-[22px] tracking-[-0.025em] md:text-[26px]`}>{t('home.continueFrom')}</h2>
+                <Link href="/mapas" className="inline-flex min-h-11 items-center font-bold text-primary-deep no-underline">{t('home.seeAll')}</Link>
               </div>
-              <div className="grid gap-5 md:grid-cols-3">
+              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {recent.slice(0, 3).map((b) => (
                   <MapTile
                     key={b.id}
-                    as={Link}
+                    as={PendingLink}
                     href={`/mapas/${b.id}`}
                     aria-label={t('home.reviewOpenLabel', { mapa: b.title })}
                     area={t(`boards.area.${b.area}`)}
@@ -150,9 +151,9 @@ export function HomeView({ now, summary, boards, coverage, first }: HomeViewProp
               <p className="m-0 text-muted">{t('home.coverageEmpty')}</p>
             ) : (
               rows.map((r) => (
-                <div key={r.area} className="grid grid-cols-[minmax(0,210px)_minmax(0,1fr)_52px] items-center gap-4">
+                <div key={r.area} className="grid grid-cols-[minmax(0,1fr)_52px] items-center gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,210px)_minmax(0,1fr)_52px]">
                   <span className="font-semibold">{t(`boards.area.${r.area as 'CM'}`)}</span>
-                  <span className="block h-3 overflow-hidden rounded-md bg-track" role="img" aria-label={`${r.pct}%`}>
+                  <span className="order-last col-span-2 block h-3 overflow-hidden rounded-md bg-track sm:order-none sm:col-span-1" role="img" aria-label={`${r.pct}%`}>
                     <span style={{ width: `${r.pct}%` }} className="block h-3 rounded-md bg-primary" />
                   </span>
                   <span className="text-right font-display text-lg font-extrabold">{r.pct}%</span>

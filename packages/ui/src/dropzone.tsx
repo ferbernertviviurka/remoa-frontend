@@ -19,9 +19,11 @@ export type DropzoneProps = {
   file?: { name: string; meta: string } | null;
   replaceLabel?: string;
   onReplace?: () => void;
+  /** `compact` (foto de perfil): ícone solto, título 18 px, botão e depois a descrição pequena; raio 22. */
+  compact?: boolean;
 };
 
-export function Dropzone({ title, description, buttonLabel, accept, onFiles, file, replaceLabel, onReplace }: DropzoneProps) {
+export function Dropzone({ title, description, buttonLabel, accept, onFiles, file, replaceLabel, onReplace, compact }: DropzoneProps) {
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
   const labelId = useId();
@@ -34,7 +36,7 @@ export function Dropzone({ title, description, buttonLabel, accept, onFiles, fil
           <span className="text-[13px] text-muted">{file.meta}</span>
         </span>
         {replaceLabel ? (
-          <button type="button" onClick={onReplace} className={`h-10 rounded-[12px] border border-border-strong bg-surface px-3.5 text-[13px] font-bold ${focusRing}`}>
+          <button type="button" onClick={onReplace} className={`min-h-11 rounded-[12px] border border-border-strong bg-surface px-3.5 text-[13px] font-bold ${focusRing}`}>
             {replaceLabel}
           </button>
         ) : null}
@@ -46,13 +48,30 @@ export function Dropzone({ title, description, buttonLabel, accept, onFiles, fil
     setOver(false);
     if (e.dataTransfer.files.length) onFiles(e.dataTransfer.files);
   };
+  if (compact) {
+    return (
+      <div
+        onDragOver={(e) => { e.preventDefault(); setOver(true); }}
+        onDragLeave={() => setOver(false)}
+        onDrop={onDrop}
+        data-over={over || undefined}
+        className="flex flex-col items-center gap-2.5 rounded-[22px] border-2 border-dashed border-primary bg-primary-tint px-5 py-[22px] text-center data-[over=true]:bg-border"
+      >
+        <span aria-hidden="true" className="flex text-primary-deep"><Icon name="upload" size={28} /></span>
+        <span id={labelId} className="font-display text-lg font-bold">{title}</span>
+        <input ref={input} type="file" accept={accept} aria-labelledby={labelId} hidden onChange={(e) => { if (e.target.files?.length) onFiles(e.target.files); }} />
+        <Button onClick={() => input.current?.click()}>{buttonLabel}</Button>
+        <span className="text-[13px] text-muted">{description}</span>
+      </div>
+    );
+  }
   return (
     <div
       onDragOver={(e) => { e.preventDefault(); setOver(true); }}
       onDragLeave={() => setOver(false)}
       onDrop={onDrop}
       data-over={over || undefined}
-      className="flex flex-col items-center gap-3 rounded-list border-2 border-dashed border-primary bg-primary-tint px-6 py-10 text-center data-[over=true]:bg-border"
+      className="flex flex-col items-center gap-3 rounded-list border-2 border-dashed border-primary bg-primary-tint px-4 py-8 text-center sm:px-6 sm:py-10 data-[over=true]:bg-border"
     >
       <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-[18px] bg-surface text-primary-deep"><Icon name="upload" size={26} /></span>
       <span id={labelId} className="font-display text-xl font-bold">{title}</span>

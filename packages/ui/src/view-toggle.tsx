@@ -25,7 +25,7 @@ export function ViewToggle({ options, value, onValueChange, ...rest }: ViewToggl
           aria-label={o.label}
           aria-pressed={o.value === value}
           onClick={() => onValueChange(o.value)}
-          className={`h-10 w-11 ${segItem} ${focusRing}`}
+          className={`h-10 w-11 max-lg:h-11 ${segItem} ${focusRing}`}
         >
           <Icon name={o.icon} size={20} />
         </button>

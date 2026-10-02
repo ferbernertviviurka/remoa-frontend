@@ -4,18 +4,17 @@ import { memo, useState, type ReactNode } from 'react';
 import type { Board, Card, CardDetail, MapState, RetrievabilityMap, SaveCardInput } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import {
-  Button, CanvasPanel, Icon, IconButton, InspectorTabPanel, InspectorTabs, mapStateOrder, Menu, Ring, RubricList, StatePill, Tag,
+  Button, CanvasPanel, Icon, IconButton, InspectorTabPanel, InspectorTabs, Menu, RubricList, StatePill, Tag,
 } from '@remoa/ui';
 import { CardEditor } from '@/features/cards/card-editor';
 import { useCardFace } from '@/features/cards/card-face';
 import { Markdown } from '@/features/cards/markdown';
+import { useAsset } from '@/features/cards/upload';
 import { isDue } from './canvas-context';
 import { useCardDetail } from './card-detail';
 
 type Entry = RetrievabilityMap[string] | undefined;
 export type Connection = { id: string; dir: 'out' | 'in'; title: string; label: string | null };
-export type MapSummary = { cards: number; edges: number; counts: Record<MapState, number>; due: number };
-export type Coverage = { pct: number; item: string } | null;
 
 export type EditorHooks = {
   /** F02: the selected card is open in the editor inside the panel. */
@@ -30,108 +29,37 @@ type Props = EditorHooks & {
   board: Board;
   /** Challenge mode: the F04 panel (features/challenge) replaces the map/card panel. */
   challengePanel: ReactNode | null;
-  summary: MapSummary;
-  coverage: Coverage;
   card: Card | null;
   entry: Entry;
   connections: Connection[];
   endOfToday: number;
   onDeselect: () => void;
   onDelete: (cardId: string) => void;
-  /** Enter the challenge mode (`?modo=desafio`). */
-  onChallenge: () => void;
   onReviewCard: (cardId: string) => void;
 };
 
 const eyebrow = 'text-xs font-bold uppercase tracking-[.12em] text-muted';
 const h2 = 'm-0 font-display text-[27px] font-extrabold leading-[1.1] tracking-[-.025em]';
-const stateDot: Record<MapState, string> = { review: 'bg-review', watch: 'bg-watch', steady: 'bg-steady', unknown: 'bg-unknown' };
 
-/** Editor.dc.html panel (340 px, floating): map summary, or the selected card with tabs; F02 editor inside. */
+/**
+ * Editor.dc.html panel (340 px, floating): the selected card with tabs, F02 editor inside, or the challenge.
+ * D-098: only rendered with a card selected (or in the challenge); the map summary moved out (header CTA, Meus mapas).
+ */
 export const Inspector = memo(function Inspector(p: Props) {
+  if (!p.challengePanel && !p.card) return null;
   return (
     <CanvasPanel aria-label={t('editor.panelLabel')}>
-      {p.challengePanel ? (
-        p.challengePanel
-      ) : p.card ? (
-        <CardPanel key={p.card.id} {...p} card={p.card} />
-      ) : (
-        <MapPanel board={p.board} summary={p.summary} coverage={p.coverage} onChallenge={p.onChallenge} />
-      )}
+      {p.challengePanel ? p.challengePanel : p.card ? <CardPanel key={p.card.id} {...p} card={p.card} /> : null}
     </CanvasPanel>
   );
 });
 
-const challengeLabel = (due: number) => (due > 0 ? t('quiz.challengeBoard', { n: due }) : t('vocab.challengeBoard'));
 const bolt = <Icon name="bolt" size={18} />;
 const dots = (
   <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
     <circle cx="3.5" cy="8" r="1.4" /><circle cx="8" cy="8" r="1.4" /><circle cx="12.5" cy="8" r="1.4" />
   </svg>
 );
-
-function MapPanel({ board, summary, coverage, onChallenge }: Pick<Props, 'board' | 'summary' | 'coverage' | 'onChallenge'>) {
-  return (
-    <div className="box-border flex h-full flex-col gap-[18px] overflow-auto px-[22px] pb-5 pt-[22px]">
-      <div className="flex flex-col gap-1.5">
-        <span className={eyebrow}>{t('editor.mapInfo')}</span>
-        <h2 className={h2}>{board.title}</h2>
-      </div>
-      <div className="flex items-center gap-4 rounded-[22px] bg-canvas p-4">
-        {coverage ? (
-          <>
-            <span className="relative shrink-0">
-              <Ring value={coverage.pct} max={100} size={84} tone="primary" label={t('inspector.coverage', { pct: coverage.pct })} />
-              <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center font-display text-[19px] font-extrabold">
-                {t('map.zoom.percent', { n: coverage.pct })}
-              </span>
-            </span>
-            <span className="flex flex-col leading-[1.4]">
-              <span className="font-bold">{t('editor.enamed')}</span>
-              <span className="text-[13px] text-muted">{t('editor.coverageItem', { item: coverage.item })}</span>
-            </span>
-          </>
-        ) : (
-          <span className="flex flex-col leading-[1.4]">
-            <span className="font-bold">{t('editor.enamed')}</span>
-            <span className="text-[13px] text-muted">{t('editor.noMatrixItem')}</span>
-          </span>
-        )}
-      </div>
-      <div className="grid grid-cols-2 gap-2.5">
-        <Stat n={summary.cards} label={t('editor.statCards', { n: summary.cards })} />
-        <Stat n={summary.edges} label={t('editor.statEdges', { n: summary.edges })} />
-      </div>
-      <div className="flex flex-col gap-2.5">
-        <span className={eyebrow}>{t('canvas.layersLabel')}</span>
-        <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
-          {mapStateOrder.map((s) => (
-            <li key={s} className="flex items-center gap-2.5">
-              <span aria-hidden="true" className={`block size-2.5 rounded-full ${stateDot[s]}`} />
-              <span className="w-[104px] text-sm font-semibold">{t(`mapState.${s}`)}</span>
-              <span aria-hidden="true" className="block h-2 grow overflow-hidden rounded bg-(--cv-line-soft)">
-                <span className={`block h-2 ${stateDot[s]}`} style={{ width: `${summary.cards ? (summary.counts[s] * 100) / summary.cards : 0}%` }} />
-              </span>
-              <span className="w-[18px] text-right font-bold tabular-nums">{summary.counts[s]}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <span className="grow" />
-      <p className="m-0 text-[13px] leading-normal text-muted">{t('editor.emptyPanel')}</p>
-      <Button icon={bolt} onClick={onChallenge}>{challengeLabel(summary.due)}</Button>
-    </div>
-  );
-}
-
-function Stat({ n, label }: { n: number; label: string }) {
-  return (
-    <div className="rounded-2xl border border-border px-3.5 py-3">
-      <span className="block font-display text-[26px] font-extrabold leading-[1.1] tabular-nums">{n}</span>
-      <span className="text-[13px] text-muted">{label}</span>
-    </div>
-  );
-}
 
 const tabs = (['content', 'rubric', 'origin', 'history'] as const).map((id) => ({ id, label: t(`inspector.tabs.${id}`) }));
 type Tab = (typeof tabs)[number]['id'];
@@ -193,11 +121,16 @@ function CardPanel(p: Props & { card: Card }) {
 
 function Summary({ card }: { card: Card }) {
   const face = useCardFace(card);
+  const front = useAsset(card.frontAssetId);
   const text = card.type === 'concept' ? (card.back ?? card.front) : null;
-  if (text) return <Markdown text={text} />;
-  if (face.thumbnail?.src) return <img src={face.thumbnail.src} alt={face.thumbnail.alt} className="w-full rounded-[14px]" />;
-  if (face.chips?.length) return <span className="flex flex-wrap gap-1">{face.chips.map((c) => <Tag key={c} tone="unknown">{c}</Tag>)}</span>;
-  return <>{face.meta ?? t('inspector.noSummary')}</>;
+  // D-096: the question image first, then the content
+  const image = card.frontAssetId ? (
+    front ? <img src={front.urls.w800} alt={t('cards.frontImage.alt', { title: card.title })} className="mb-3 block w-full rounded-[14px]" /> : <span className="mb-3 block h-28 rounded-[14px] bg-canvas" />
+  ) : null;
+  if (text) return <>{image}<Markdown text={text} /></>;
+  if (face.thumbnail?.src) return <>{image}<img src={face.thumbnail.src} alt={face.thumbnail.alt} className="w-full rounded-[14px]" /></>;
+  if (face.chips?.length) return <>{image}<span className="flex flex-wrap gap-1">{face.chips.map((c) => <Tag key={c} tone="unknown">{c}</Tag>)}</span></>;
+  return <>{image}{face.meta ?? t('inspector.noSummary')}</>;
 }
 
 const stateBox: Record<MapState, { bg: string; fg: string; bar: string }> = {

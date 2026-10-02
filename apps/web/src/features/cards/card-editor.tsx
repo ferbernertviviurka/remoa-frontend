@@ -8,7 +8,8 @@ import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { buildSaveInput, toDraft, type Draft } from './draft';
 import { FlowSteps } from './flow-steps';
-import { ImageField } from './image-field';
+import { ImageField, QuestionImage } from './image-field';
+import { ShapePicker } from './shape-picker';
 import { Markdown } from './markdown';
 
 export type CardEditorProps = {
@@ -129,6 +130,7 @@ export function CardEditor({ card, subs, prepare, onSaved, onClose }: CardEditor
       {d.type === 'concept' ? (
         <>
           <Textarea label={t('cards.fields.front')} rows={2} value={d.front} maxLength={5000} onChange={(e) => set({ front: e.target.value })} />
+          <QuestionImage title={d.title || card.title} assetId={d.frontAssetId} onChange={(frontAssetId) => set({ frontAssetId })} />
           <Textarea label={t('cards.fields.back')} rows={4} value={d.back} maxLength={5000} onChange={(e) => set({ back: e.target.value })} />
           <p className="-mt-2 text-xs text-muted">{t('cards.fields.backHint')}</p>
           {d.back.trim() ? (
@@ -137,6 +139,17 @@ export function CardEditor({ card, subs, prepare, onSaved, onClose }: CardEditor
             </section>
           ) : null}
         </>
+      ) : null}
+
+      {d.type === 'concept' ? (
+        <>
+          <ShapePicker value={d.shape} onChange={(shape) => set({ shape })} />
+          {d.frontAssetId && d.shape !== 'rect' ? <p className="-mt-2 text-xs text-muted">{t('cards.shape.imageHint')}</p> : null}
+        </>
+      ) : null}
+
+      {d.type === 'flow' || d.type === 'case' ? (
+        <QuestionImage title={d.title || card.title} assetId={d.frontAssetId} onChange={(frontAssetId) => set({ frontAssetId })} />
       ) : null}
 
       {d.type === 'flow' ? <FlowSteps steps={d.steps} subs={subs} onChange={(steps) => set({ steps })} /> : null}

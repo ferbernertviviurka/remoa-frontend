@@ -1,12 +1,13 @@
 'use client';
 
-import Link from 'next/link';
+import { PendingLink } from '@/features/shell/nav-pending';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { Board, BoardSummary } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
 import { Button, Card, Dialog, FilterChip, Icon, Input, MapTile, Menu, StateBar, useToast, ViewToggle } from '@remoa/ui';
 import { api } from '@/lib/api';
+import { usePaywall } from '@/features/billing/paywall';
 import { fold, savedAgo } from './saved-ago';
 
 type Modal = { kind: 'rename' | 'archive'; board: BoardSummary } | null;
@@ -14,6 +15,7 @@ type Row = { b: BoardSummary; area: string; saved: string; due: { text: string; 
 
 export function BoardsView({ boards }: { boards: BoardSummary[] }) {
   const router = useRouter();
+  const paywall = usePaywall();
   const { toast } = useToast();
   const [modal, setModal] = useState<Modal>(null);
   const [name, setName] = useState('');
@@ -30,13 +32,13 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
   }, []);
 
   /** Runs a mutation; on failure shows the API error, on success refreshes the list + sidebar. */
-  async function run<T>(call: () => Promise<{ ok: true; data: T } | { ok: false; error: { code: string } }>): Promise<T | null> {
+  async function run<T>(call: () => Promise<{ ok: true; data: T } | { ok: false; error: { code: string; message?: string } }>): Promise<T | null> {
     setBusy(true);
     setError(null);
     try {
       const r = await call();
       if (!r.ok) {
-        setError(t(`errors.${r.error.code}` as StringKey));
+        if (!paywall.handle(r.error)) setError(t(`errors.${r.error.code}` as StringKey));
         return null;
       }
       router.refresh();
@@ -121,17 +123,17 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
   const dueBadge = ({ due }: Row) => (
     <span className={`rounded-pill px-2.5 py-[3px] text-[13px] font-bold ${due.tone === 'review' ? 'bg-review-bg text-review-text' : 'bg-unknown-bg text-unknown-text'}`}>{due.text}</span>
   );
-  const cols = 'grid grid-cols-[minmax(0,2.2fr)_minmax(0,1.3fr)_minmax(0,1.6fr)_90px_130px_120px] items-center gap-4';
+  const cols = 'lg:grid lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1.3fr)_minmax(0,1.6fr)_90px_130px_120px] lg:items-center lg:gap-4';
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 md:px-6 md:py-[13px]">
-      <div className="flex flex-wrap items-end justify-between gap-6">
+      <div className="flex flex-wrap items-end justify-between gap-4 md:gap-6">
         <div className="flex flex-col gap-2">
           <span className="text-xs font-bold uppercase tracking-[.12em] text-muted">{t('library.eyebrow')}</span>
-          <h1 className="font-display text-[46px] font-extrabold leading-[1.05] tracking-[-0.035em] text-ink">{t('library.title')}</h1>
+          <h1 className="font-display text-[34px] font-extrabold leading-[1.1] tracking-[-0.035em] text-ink md:text-[46px] md:leading-[1.05]">{t('library.title')}</h1>
           <p className="text-[15px] text-muted">{summary}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex w-full flex-wrap items-center gap-3 md:w-auto">
           <Input variant="search" label={t('library.searchPlaceholder')} placeholder={t('library.searchPlaceholder')} value={q} onChange={(e) => setQ(e.target.value)} />
           <ViewToggle
             aria-label={t('library.stateLabel')}
@@ -166,7 +168,7 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
           {rows.map((r) => (
             <li key={r.b.id} className="relative">
               <MapTile
-                as={Link}
+                as={PendingLink}
                 href={`/mapas/${r.b.id}`}
                 aria-label={t('boards.open', { title: r.b.title })}
                 size="md"
@@ -185,7 +187,7 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
         </ul>
       ) : (
         <div className="overflow-hidden rounded-list border border-border bg-surface">
-          <div className={`${cols} border-b border-border bg-canvas px-6 py-3.5 pr-16 text-xs font-bold uppercase tracking-[.12em] text-muted`}>
+          <div className={`${cols} hidden border-b border-border bg-canvas px-6 py-3.5 pr-16 text-xs font-bold uppercase tracking-[.12em] text-muted`}>
             <span>{t('library.columns.map')}</span>
             <span>{t('library.columns.area')}</span>
             <span>{t('library.columns.states')}</span>
@@ -196,14 +198,14 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
           <ul className="m-0 list-none p-0">
             {rows.map((r) => (
               <li key={r.b.id} className="relative border-b border-divider last:border-b-0">
-                <Link href={`/mapas/${r.b.id}`} aria-label={t('boards.open', { title: r.b.title })} className={`${cols} px-6 py-4 pr-16 text-ink no-underline hover:bg-primary-tint`}>
-                  <span className="font-display text-lg font-bold tracking-[-0.02em]">{r.b.title}</span>
+                <PendingLink href={`/mapas/${r.b.id}`} aria-label={t('boards.open', { title: r.b.title })} className={`${cols} flex min-h-14 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-4 pr-16 text-ink no-underline hover:bg-primary-tint lg:px-6`}>
+                  <span className="basis-full font-display text-lg font-bold tracking-[-0.02em] lg:basis-auto">{r.b.title}</span>
                   <span className="text-muted">{r.area}</span>
-                  <StateBar counts={r.b.stateCounts} aria-label={barLabel(r.b)} />
-                  <span className="font-bold">{r.b.cardCount}</span>
+                  <span className="order-last basis-full lg:order-none lg:basis-auto"><StateBar counts={r.b.stateCounts} aria-label={barLabel(r.b)} /></span>
+                  <span className="font-bold max-lg:hidden">{r.b.cardCount}</span>
                   <span>{dueBadge(r)}</span>
                   <span className="text-[13px] text-muted">{r.saved}</span>
-                </Link>
+                </PendingLink>
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">{menu(r.b)}</div>
               </li>
             ))}
