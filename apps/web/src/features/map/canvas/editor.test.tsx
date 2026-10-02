@@ -100,29 +100,98 @@ describe('editor v2 (T5)', () => {
     expect(nodeOf('Sepse')).toHaveTextContent('Fora da matriz do Enamed'); // fixture board has no matrix item
   });
 
-  it('painel sem seleção: resumo do mapa; com seleção: abas operáveis por teclado', async () => {
+  it('D-098: sem seleção não há painel; com seleção, abas operáveis por teclado; fechar, Esc e clique no fundo escondem', async () => {
     mount();
-    const panel = screen.getByRole('complementary', { name: 'Painel do mapa' });
-    expect(within(panel).getByText('Sobre este mapa')).toBeInTheDocument();
-    expect(within(panel).getByText('cards')).toBeInTheDocument();
+    const panel = () => screen.queryByRole('complementary', { name: 'Painel do mapa' });
+    expect(panel()).toBeNull();
 
     fireEvent.click(selectBtn('Sepse'));
-    const tabs = within(panel).getByRole('tablist', { name: 'Seções do card' });
+    const tabs = within(panel()!).getByRole('tablist', { name: 'Seções do card' });
     expect(within(tabs).getByRole('tab', { name: 'Conteúdo' })).toHaveAttribute('aria-selected', 'true');
-    expect(within(panel).getByText('Conexões · 5')).toBeInTheDocument();
+    expect(within(panel()!).getByText('Conexões · 5')).toBeInTheDocument();
 
     within(tabs).getByRole('tab', { name: 'Conteúdo' }).focus();
     key('ArrowRight');
     expect(within(tabs).getByRole('tab', { name: 'Rubrica' })).toHaveFocus();
-    await waitFor(() => expect(within(panel).getByRole('tabpanel')).toHaveTextContent('Essencial'));
+    await waitFor(() => expect(within(panel()!).getByRole('tabpanel')).toHaveTextContent('Essencial'));
     key('End');
-    expect(within(panel).getByRole('tabpanel')).toHaveTextContent('Nenhuma tentativa ainda');
+    expect(within(panel()!).getByRole('tabpanel')).toHaveTextContent('Nenhuma tentativa ainda');
     key('ArrowLeft');
-    expect(within(panel).getByRole('tabpanel')).toHaveTextContent('Marco temporal');
-    expect(within(panel).getByRole('tabpanel')).toHaveTextContent('Enamed 2026.2');
+    expect(within(panel()!).getByRole('tabpanel')).toHaveTextContent('Marco temporal');
+    expect(within(panel()!).getByRole('tabpanel')).toHaveTextContent('Enamed 2026.2');
 
-    fireEvent.click(within(panel).getByRole('button', { name: 'Fechar painel do card' }));
-    expect(within(panel).getByText('Sobre este mapa')).toBeInTheDocument();
+    fireEvent.click(within(panel()!).getByRole('button', { name: 'Fechar painel do card' }));
+    expect(panel()).toBeNull();
+
+    fireEvent.click(selectBtn('Sepse'));
+    expect(panel()).not.toBeNull();
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(panel()).toBeNull();
+
+    fireEvent.click(selectBtn('Sepse'));
+    expect(panel()).not.toBeNull();
+    fireEvent.click(document.querySelector('.react-flow__pane')!);
+    await waitFor(() => expect(panel()).toBeNull());
+  });
+
+  it('D-097: "Ver resposta" vira o card para o verso sem selecionar nem abrir o painel; "Ver pergunta" volta', async () => {
+    mount();
+    const sepse = sepseCards.find((c) => c.title === 'Sepse')!;
+    const answer = sepse.back!.replace(/[*_]/g, '').slice(0, 20);
+    const node = () => nodeOf('Sepse');
+    expect(node()).not.toHaveTextContent(answer); // the front never carries the answer
+    fireEvent.click(within(node()).getByText('Ver resposta'));
+    await waitFor(() => expect(node()).toHaveTextContent(answer));
+    expect(node()).toHaveAttribute('data-flipped', 'true');
+    expect(screen.queryByRole('complementary', { name: 'Painel do mapa' })).toBeNull();
+    expect(selectBtn('Sepse')).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(within(node()).getByText('Ver pergunta'));
+    expect(node()).not.toHaveAttribute('data-flipped');
+  });
+
+  it('Ligar dois cards: clique na origem, depois no destino, enfileira createEdge', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      mount();
+      fireEvent.click(screen.getByRole('button', { name: 'Ligar dois cards' }));
+      expect(screen.getByText('Clique no card de origem.')).toBeInTheDocument();
+      fireEvent.click(selectBtn('qSOFA'));
+      expect(screen.getByText('Agora clique no card de destino.')).toBeInTheDocument();
+      fireEvent.click(selectBtn('Lactato'));
+      expect(screen.getByText('Clique no card de origem.')).toBeInTheDocument();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5000);
+      });
+      const ids = new Map(sepseCards.map((c) => [c.title, c.id]));
+      const sent = api.mock.calls.filter((c) => c[0] === '/v1/boards/ops').flatMap((c) => JSON.parse(c[1].body).ops);
+      expect(sent).toContainEqual(expect.objectContaining({ op: 'createEdge', edge: expect.objectContaining({ fromCardId: ids.get('qSOFA'), toCardId: ids.get('Lactato'), label: null }) }));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('pinça: ctrl+roda fora do pane (sobre as camadas) e gesto do Safari dão zoom no mapa, não na página; 60–140%', async () => {
+    mount();
+    const zoom = screen.getByRole('group', { name: 'Controles de zoom' });
+    await waitFor(() => expect(zoom).toHaveTextContent(/\d+%/));
+    const start = zoom.textContent;
+    const over = screen.getByRole('button', { name: 'Estrutura' });
+    const wheel = new WheelEvent('wheel', { deltaY: -40, ctrlKey: true, bubbles: true, cancelable: true });
+    over.dispatchEvent(wheel);
+    expect(wheel.defaultPrevented).toBe(true);
+    await waitFor(() => expect(zoom.textContent).not.toBe(start));
+    const section = screen.getByRole('region', { name: /Mapa/ });
+    const gesture = (type: string, scale: number) => {
+      const e = Object.assign(new Event(type, { bubbles: true, cancelable: true }), { scale, clientX: 0, clientY: 0 });
+      section.dispatchEvent(e);
+      return e;
+    };
+    expect(gesture('gesturestart', 1).defaultPrevented).toBe(true);
+    gesture('gesturechange', 10);
+    await waitFor(() => expect(zoom).toHaveTextContent('140%'));
+    gesture('gesturestart', 1);
+    gesture('gesturechange', 0.01);
+    await waitFor(() => expect(zoom).toHaveTextContent('60%'));
   });
 
   it('⌘K abre a paleta com foco no campo; filtra; Enter executa; Esc fecha', async () => {
@@ -160,19 +229,26 @@ describe('editor v2 (T5)', () => {
   });
 
   const item = (over: Record<string, unknown>) => ({ subId: null, boardId: sepseBoard.id, grading: 'none', options: ['a', 'b', 'c', 'd'], context: { neighbors: [] }, ...over });
-  const opacityOf = (title: string) => nodeOf(title).className;
+  const focusCard = () => document.querySelector<HTMLElement>('[data-testid="focus-card"]');
 
-  it('desafio: papéis target/vizinho/apagado; o rótulo da conexão perguntada não aparece no DOM antes do /answer', async () => {
+  it('desafio (D-097): canvas desfocado num filtro só; o card em foco nítido por cima, só a frente; o rótulo perguntado não aparece no DOM antes do /answer', async () => {
     search = new URLSearchParams('modo=desafio');
     const [choque, sepse] = [sepseCards.find((c) => c.title === 'Choque séptico')!, sepseCards.find((c) => c.title === 'Sepse')!];
     startItems = [item({ id: choque.id, cardId: choque.id, cardTitle: choque.title, mode: 'edge', prompt: 'x', context: { neighbors: [], edge: { fromTitle: sepse.title, toTitle: choque.title } } })];
     mount();
     const panel = screen.getByRole('complementary', { name: 'Painel do mapa' });
     await within(panel).findByText('O que liga Sepse a Choque séptico?');
-    expect(opacityOf('Choque séptico')).toContain('opacity-100');
-    expect(opacityOf('Sepse')).toContain('opacity-50'); // the one neighbour
-    expect(opacityOf('qSOFA')).toContain('opacity-[.18]');
+    const section = screen.getByRole('region', { name: /Mapa/ });
+    expect(section).toHaveAttribute('data-focus'); // editor.css: .cv-editor[data-focus] .react-flow__viewport { filter: blur }
+    await waitFor(() => expect(focusCard()).not.toBeNull());
+    expect(focusCard()).toHaveAttribute('aria-hidden', 'true');
+    expect(focusCard()).toHaveTextContent('Choque séptico');
+    expect(document.querySelectorAll('[data-testid="focus-card"] article')).toHaveLength(1);
+    // no neighbour/dim opacity any more, and no flip anywhere: the answer side is off in the challenge
+    expect(document.querySelector('.react-flow__node article.opacity-50, .react-flow__node article.opacity-\\[\\.18\\]')).toBeNull();
+    expect(screen.queryByText('Ver resposta')).toBeNull();
     expect(document.body.textContent).not.toContain('pode evoluir para');
+    expect(choque.back && document.body.textContent).not.toContain(choque.back!.slice(0, 30));
     expect(api.mock.calls.some((c) => String(c[0]).endsWith('/answer'))).toBe(false);
   });
 
@@ -198,6 +274,8 @@ describe('editor v2 (T5)', () => {
     await screen.findByText('Qual o conceito?');
     await waitFor(() => expect(nodeOf('Conceito oculto')).toBeTruthy());
     expect(nodeOf('Conceito oculto')).not.toHaveTextContent(sepse.back!.slice(0, 30));
+    await waitFor(() => expect(focusCard()).toHaveTextContent('Conceito oculto'));
+    expect(document.body.textContent).not.toContain(sepse.back!.slice(0, 30));
     expect(document.querySelector('.react-flow__node button[aria-label="Selecionar Sepse"]')).toBeNull();
   });
 

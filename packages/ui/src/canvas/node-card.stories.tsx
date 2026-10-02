@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { NodeCard } from './node-card';
+import { useState } from 'react';
+import { NodeCard, type CardShape } from './node-card';
 import { EditorFixture } from './fixtures';
 
 const meta = { title: 'Torph/Canvas v2/NodeCard' } satisfies Meta;
@@ -57,3 +58,57 @@ export const Desafio: S = {
 /** Composição completa (Editor v2) com todos os componentes do canvas, sem React Flow. */
 export const EditorCompleto: StoryObj = { render: () => <EditorFixture />, parameters: { layout: 'fullscreen' } };
 export const DesafioCompleto: StoryObj = { render: () => <EditorFixture challenge />, parameters: { layout: 'fullscreen' } };
+
+const shapes = ['rect', 'pill', 'circle', 'diamond', 'hexagon'] as const satisfies readonly CardShape[];
+
+/** Formatos (D-095, só concept) × camadas. Contorno de diamond/hexagon em SVG; `nodeSize`/`shapeAnchor` dão tamanho e ponto de conexão. */
+export const FormatosCamadas: S = {
+  render: () => (
+    <div className="flex flex-col gap-8 p-8">
+      {(['recall', 'structure', 'coverage'] as const).map((layer, i) => (
+        <div key={layer} className="flex flex-wrap items-center gap-8">
+          {shapes.map((shape) => (
+            <NodeCard key={shape} {...base} type="concept" typeLabel="Conceito" title="Choque séptico" summary="Vasopressor se PAM < 65." shape={shape} layer={layer} state="review"
+              footer={['Revisitar · 58%', '2 conexões', 'Entra em Sepse'][i]!} />
+          ))}
+        </div>
+      ))}
+      <div className="flex flex-wrap items-center gap-8">
+        {shapes.map((shape) => (
+          <NodeCard key={shape} {...base} type="concept" typeLabel="Conceito" title="Selecionado" shape={shape} selected state="watch" footer="Acompanhar · 83%" />
+        ))}
+      </div>
+    </div>
+  ),
+};
+
+/** Imagem na pergunta (D-096): só em rect; a altura cresce (`nodeSize(type, 'rect', { frontImage: true })`). */
+export const ImagemNaPergunta: S = {
+  render: () => (
+    <div className="flex gap-6 p-6">
+      <NodeCard {...base} type="concept" typeLabel="Conceito" title="ECG: o que é?" summary="Qual o ritmo?" frontImage={{ src: null, alt: 'Imagem da pergunta' }} />
+    </div>
+  ),
+};
+
+function FlipDemo({ shape }: { shape: CardShape }) {
+  const [flipped, setFlipped] = useState(false);
+  return (
+    <div className="p-8">
+      <NodeCard {...base} type="concept" typeLabel="Conceito" title="Choque séptico" summary="Qual o vasopressor de primeira linha?" shape={shape} flipped={flipped} onFlip={() => setFlipped((f) => !f)}
+        back="Noradrenalina, se PAM < 65 após volume." flipLabel="Ver resposta" unflipLabel="Ver pergunta" />
+    </div>
+  );
+}
+/** Verso (D-097): botão real (Tab, aria-pressed) vira em 3D, 400 ms; sem animação com prefers-reduced-motion. O verso só monta virado. */
+export const FrenteVerso: S = { render: () => <div className="flex flex-wrap">{shapes.map((s) => <FlipDemo key={s} shape={s} />)}</div> };
+
+/** Foco do desafio (D-097): o testado ganha anel/sombra e só mostra a frente; o desfoque do resto é do editor (um filtro no canvas). */
+export const FocoDoDesafio: S = {
+  render: () => (
+    <div className="flex gap-6 p-6">
+      <NodeCard {...base} type="concept" typeLabel="Conceito" title="Em foco" summary="Mesmo com verso, mostra a frente." challenge="target" flipped back="resposta" flipLabel="Ver resposta" unflipLabel="Ver pergunta" />
+      <NodeCard {...base} type="concept" typeLabel="Conceito" title="Redondo em foco" shape="circle" challenge="target" />
+    </div>
+  ),
+};

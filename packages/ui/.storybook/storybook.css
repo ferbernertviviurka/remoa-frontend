@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=Instrument+Sans:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 @import '../src/tokens.css';
+@import '../src/motion.css';
 @source '../src';
 @layer base {
   body { background: var(--canvas); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 1.5; margin: 0; }

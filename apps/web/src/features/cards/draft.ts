@@ -1,11 +1,12 @@
 // Editor state per card type ⇄ SaveCardInput. Pure, so the save rules are unit-tested without React.
 import {
   caseStages, saveCardInputSchema,
-  type CardDetail, type CardMask, type CardPreview, type CaseStage, type FlowStep, type SaveCardInput,
+  type CardDetail, type CardMask, type CardPreview, type CardShape, type CaseStage, type FlowStep, type SaveCardInput,
 } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
 
-type Base = { id: string; title: string; front: string; back: string; source: string };
+/** `shape` (D-095, concept only) and `frontAssetId` (D-096, question image) are common to every type. */
+type Base = { id: string; title: string; front: string; back: string; source: string; shape: CardShape; frontAssetId: string | null };
 export type Draft = Base &
   (
     | { type: 'concept' }
@@ -21,8 +22,13 @@ const emptyStages = (): Record<CaseStage, string> => ({ presentation: '', workup
  * Detail from GET /v1/cards/:id → editable draft. A card born from a map op stores `{}` whatever its type,
  * and the API returns it unvalidated, so every payload field is read defensively (new card = defaults).
  */
-export function toDraft(card: Pick<CardDetail, 'id' | 'type' | 'title' | 'front' | 'back' | 'source'> & { payload: unknown }): Draft {
-  const base: Base = { id: card.id, title: card.title, front: card.front ?? '', back: card.back ?? '', source: card.source ?? '' };
+export function toDraft(
+  card: Pick<CardDetail, 'id' | 'type' | 'title' | 'front' | 'back' | 'source'> & Partial<Pick<CardDetail, 'shape' | 'frontAssetId'>> & { payload: unknown },
+): Draft {
+  const base: Base = {
+    id: card.id, title: card.title, front: card.front ?? '', back: card.back ?? '', source: card.source ?? '',
+    shape: card.type === 'concept' ? (card.shape ?? 'rect') : 'rect', frontAssetId: card.frontAssetId ?? null,
+  };
   const p = (card.payload ?? {}) as { steps?: unknown; caseSteps?: unknown; assetId?: unknown; masks?: unknown };
   switch (card.type) {
     case 'concept':
@@ -53,7 +59,10 @@ const orNull = (s: string) => (s.trim() ? s.trim() : null);
 
 /** Draft → request body (empty texts become null, empty case stages and notes are omitted). Not validated. */
 export function toInput(d: Draft): unknown {
-  const base = { type: d.type, title: d.title.trim(), front: orNull(d.front), back: orNull(d.back), source: orNull(d.source) };
+  const base = {
+    type: d.type, title: d.title.trim(), front: orNull(d.front), back: orNull(d.back), source: orNull(d.source),
+    shape: d.type === 'concept' ? d.shape : 'rect', frontAssetId: d.frontAssetId,
+  };
   switch (d.type) {
     case 'concept':
       return { ...base, payload: {} };

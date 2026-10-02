@@ -35,7 +35,7 @@ export const toEdge = (e: Pick<Edge, 'id' | 'fromCardId' | 'toCardId' | 'label'>
 export const heatOf = (cardId: string, map: RetrievabilityMap): MapState => map[cardId]?.state ?? 'unknown';
 
 function newCard(boardId: string, c: { id: string; type: CardType; title: string; position: Position }): Card {
-  return { ...c, boardId, front: null, back: null, source: null, status: 'draft', order: 0, reviewerId: null, updatedAt: new Date() };
+  return { ...c, boardId, shape: 'rect', frontAssetId: null, front: null, back: null, source: null, status: 'draft', order: 0, reviewerId: null, updatedAt: new Date() };
 }
 
 /** Applies ops to the local graph (same semantics as the API; idempotent). */

@@ -20,7 +20,7 @@ export function ChoiceCard({ icon, tag, title, description, selected, onSelect }
       type="button"
       aria-pressed={selected}
       onClick={onSelect}
-      className={`flex min-h-[176px] flex-col gap-2.5 rounded-review border-2 bg-surface p-5 text-left transition-[border-color,box-shadow] duration-150 ${
+      className={`flex sm:min-h-[176px] flex-col gap-2.5 rounded-review border-2 bg-surface p-5 text-left transition-[border-color,box-shadow] duration-150 ${
         selected ? 'border-primary shadow-[0_0_0_5px_var(--primary-tint)]' : 'border-border hover:border-border-strong'
       } ${focusRing}`}
     >

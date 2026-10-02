@@ -1,14 +1,16 @@
 'use client';
 
 import '@xyflow/react/dist/style.css';
+import './editor.css';
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
-  applyEdgeChanges, applyNodeChanges, Background, BackgroundVariant, ReactFlow, ReactFlowProvider, useReactFlow, useStore,
-  type Connection, type EdgeChange, type FitViewOptions, type NodeChange, type NodeMouseHandler, type ReactFlowState, type XYPosition,
+  applyEdgeChanges, applyNodeChanges, Background, BackgroundVariant, ConnectionMode, ReactFlow, ReactFlowProvider, useReactFlow, useStore,
+  type Connection, type EdgeChange, type FitViewOptions, type NodeChange, type NodeMouseHandler, type OnConnectEnd, type ReactFlowInstance, type ReactFlowState,
+  type XYPosition,
 } from '@xyflow/react';
 import {
-  MAX_CARDS_PER_BOARD, type BoardGraph, type CardDetail, type CardType, type CoverageRow, type MapOp, type MapState, type RetrievabilityMap, type SaveCardInput,
+  MAX_CARDS_PER_BOARD, type BoardGraph, type CardDetail, type CardType, type CoverageRow, type MapOp, type MatrixItem, type RetrievabilityMap, type SaveCardInput,
 } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import {
@@ -18,16 +20,18 @@ import {
 import { previewOf } from '@/features/cards/draft';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
+import { usePaywall } from '@/features/billing/paywall';
 import { CanvasContext, endOfDay, isDue, type CanvasCtx } from './canvas-context';
 import { ChallengePanel } from '@/features/challenge/challenge-panel';
 import { useChallenge, type Scope } from '@/features/challenge/provider';
+import { MatrixLinkButton } from '@/features/coverage/matrix-suggestions';
 import { CanvasHeader, type Mode } from './canvas-header';
 import { primeCardDetail } from './card-detail';
-import { CardNodeView } from './card-node';
-import { applyOps, freshen, heatOf, invertAll, patchCard, snapPos, toEdge, toNode, type CardCache, type CardNode, type Graph, type LinkEdge } from './graph';
+import { CardNodeView, FocusCard } from './card-node';
+import { applyOps, freshen, invertAll, patchCard, snapPos, toEdge, toNode, type CardCache, type CardNode, type Graph, type LinkEdge } from './graph';
 import { emptyHistory, push, redo, undo, type History } from './history';
-import { Inspector, type Connection as PanelConnection, type MapSummary } from './inspector';
-import { autoLayout, CARD_H, CARD_W, NODE_H } from './layout';
+import { Inspector, type Connection as PanelConnection } from './inspector';
+import { autoLayout, CARD_H, CARD_W, sizeOf } from './layout';
 import { LinkEdgeView } from './link-edge';
 import { quizView } from './quiz-view';
 import { createOpQueue, loadPending, type OpQueue, type QueueStatus } from './op-queue';
@@ -36,11 +40,32 @@ const nodeTypes = { card: CardNodeView };
 const edgeTypes = { link: LinkEdgeView };
 const uuid = () => crypto.randomUUID();
 const VIRTUALIZE_ABOVE = 150;
+/** Below `md` the editor is the phone layout: compact header, panel as a bottom sheet (G02). */
+const isPhone = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+type Insets = { top: number; left: number; right: number; bottom: number };
 /**
- * Keeps the cards clear of the floating controls (layer bar on top, zoom/toolbar below, 340 px panel on the right).
+ * Free area of the canvas: clear of the floating controls (layer bar on top, zoom/toolbar below) and of the card panel
+ * (340 px on the right; bottom sheet on the phone), which only exists while a card is selected (D-098).
  * A map that fits at 100% lands where the mock draws it (top 120, left 64).
  */
-const FIT: FitViewOptions = { padding: { top: '120px', left: '64px', bottom: '200px', right: '432px' }, maxZoom: 1, minZoom: ZOOM_MIN };
+function freeArea(panel: boolean, paneHeight = 0, challenge = false): Insets {
+  if (isPhone()) return { top: challenge ? 16 : 72, left: 16, right: 16, bottom: panel ? Math.round(paneHeight * 0.55) + 16 : 96 };
+  return { top: 120, left: 64, right: panel ? 432 : 64, bottom: 200 };
+}
+const fitOptions = (panel: boolean): FitViewOptions => {
+  const a = freeArea(panel, 0);
+  return { padding: { top: `${a.top}px`, left: `${a.left}px`, bottom: `${a.bottom}px`, right: `${a.right}px` }, maxZoom: 1, minZoom: ZOOM_MIN };
+};
+const clampZoom = (z: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
+/** Zoom to `k` keeping the screen point (clientX/Y) still: Safari's pinch (gesture events) and pinches over the floating pieces. */
+function zoomAt(rf: Pick<ReactFlowInstance, 'getViewport' | 'setViewport'>, el: Element, clientX: number, clientY: number, k: number) {
+  const r = el.getBoundingClientRect();
+  const { x, y, zoom } = rf.getViewport();
+  const next = clampZoom(k);
+  const px = clientX - r.left;
+  const py = clientY - r.top;
+  void rf.setViewport({ x: px - ((px - x) * next) / zoom, y: py - ((py - y) * next) / zoom, zoom: next });
+}
 type Tool = 'select' | 'move' | 'connect';
 const notSelf = (c: { source: string; target: string }) => c.source !== c.target;
 
@@ -69,9 +94,9 @@ const inDialog = (el: EventTarget | null) => el instanceof Element && !!el.close
 function initialGraph(data: BoardGraph, cache: CardCache): { graph: Graph; layout: MapOp[] } {
   const placed = data.cards.filter((c) => c.position);
   const loose = data.cards.filter((c) => !c.position);
-  const right = placed.reduce((m, c) => Math.max(m, c.position!.x + CARD_W + 96), 0);
+  const right = placed.reduce((m, c) => Math.max(m, c.position!.x + sizeOf(c).w + 96), 0);
   const pos = loose.length
-    ? autoLayout(loose.map((c) => ({ id: c.id, height: NODE_H[c.type] })), data.edges.map((e) => ({ source: e.fromCardId, target: e.toCardId })), { x: right, y: 0 })
+    ? autoLayout(loose.map((c) => ({ id: c.id, width: sizeOf(c).w, height: sizeOf(c).h })), data.edges.map((e) => ({ source: e.fromCardId, target: e.toCardId })), { x: right, y: 0 })
     : new Map<string, XYPosition>();
   const nodes = data.cards.map((c) => toNode(c, c.position ?? pos.get(c.id)!));
   const layout: MapOp[] = loose.length
@@ -92,16 +117,9 @@ export function countEdges(edges: readonly { source: string; target: string }[],
   return next;
 }
 
-/** Panel summary: cards per state and how many are due today. */
-export function summarize(nodes: readonly { id: string }[], edges: number, heat: RetrievabilityMap, endOfToday: number): MapSummary {
-  const counts: Record<MapState, number> = { review: 0, watch: 0, steady: 0, unknown: 0 };
-  let due = 0;
-  for (const n of nodes) {
-    counts[heatOf(n.id, heat)]++;
-    if (isDue(heat[n.id]?.due, endOfToday)) due++;
-  }
-  return { cards: nodes.length, edges, counts, due };
-}
+/** Cards due today (header CTA "Desafiar os N que vencem hoje"). */
+export const countDue = (nodes: readonly { id: string }[], heat: RetrievabilityMap, endOfToday: number) =>
+  nodes.reduce((n, c) => n + (isDue(heat[c.id]?.due, endOfToday) ? 1 : 0), 0);
 
 export function MapCanvas({ graph }: { graph: BoardGraph }) {
   return (
@@ -118,6 +136,7 @@ function Canvas({ data }: { data: BoardGraph }) {
   const board = data.board;
   const rf = useReactFlow<CardNode, LinkEdge>();
   const { toast } = useToast();
+  const paywall = usePaywall();
   const router = useRouter();
   const pathname = usePathname();
   const search = useSearchParams();
@@ -141,23 +160,33 @@ function Canvas({ data }: { data: BoardGraph }) {
   const [layer, setLayer] = useState<NodeLayer>('recall');
   const [retrievability, setRetrievability] = useState<RetrievabilityMap>({});
   const [coverage, setCoverage] = useState<CoverageRow | null>(null);
+  const [matrixItemId, setMatrixItemId] = useState(board.matrixItemId); // F07: set in place by a one-click link
   const [confirmDelete, setConfirmDelete] = useState<MapOp[] | null>(null);
   const [labelEdit, setLabelEdit] = useState<string | null>(null);
   const [palette, setPalette] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [tool, setToolState] = useState<Tool>('select');
   const [endOfToday] = useState(() => endOfDay());
-  const linkFrom = useRef<string | null>(null); // "Ligar" tool: first card clicked
-  const setTool = useCallback((next: Tool) => {
-    linkFrom.current = null;
-    setToolState(next);
+  const [linkFrom, setLinkFromState] = useState<string | null>(null); // "Ligar" tool: first card clicked
+  const linkFromRef = useRef<string | null>(null);
+  const setLinkFrom = useCallback((id: string | null) => {
+    linkFromRef.current = id;
+    setLinkFromState(id);
   }, []);
+  const setTool = useCallback((next: Tool) => {
+    setLinkFrom(null);
+    setToolState(next);
+  }, [setLinkFrom]);
 
   // --- autosave queue ---------------------------------------------------------
   useEffect(() => {
     const q = createOpQueue({
       boardId: board.id,
-      send: (ops) => api<{ applied: string[] }>('/v1/boards/ops', { method: 'POST', body: JSON.stringify({ ops }) }),
+      send: async (ops) => {
+        const r = await api<{ applied: string[] }>('/v1/boards/ops', { method: 'POST', body: JSON.stringify({ ops }) });
+        if (!r.ok) paywall.handle(r.error); // 402: card quota; the queue drops the batch (dropped status)
+        return r;
+      },
       onStatus: setStatus,
       storage: storage(),
       events: window,
@@ -169,7 +198,7 @@ function Canvas({ data }: { data: BoardGraph }) {
       void q.flush(); // best effort on navigation; whatever is left stays in storage for the next visit
       q.dispose();
     };
-  }, [board.id, init]);
+  }, [board.id, init, paywall]);
 
   const opened = useRef(false);
   useEffect(() => {
@@ -192,15 +221,30 @@ function Canvas({ data }: { data: BoardGraph }) {
 
   // Camada Cobertura + panel summary (D-081). Board without matrix item: nothing to fetch.
   useEffect(() => {
-    if (!board.matrixItemId) return;
+    if (!matrixItemId) return;
     let live = true;
     api<CoverageRow[]>('/v1/coverage')
-      .then((r) => live && r.ok && setCoverage(r.data.find((row) => row.matrixItemId === board.matrixItemId) ?? null))
+      .then((r) => live && r.ok && setCoverage(r.data.find((row) => row.matrixItemId === matrixItemId) ?? null))
       .catch(() => undefined);
     return () => {
       live = false;
     };
-  }, [board.matrixItemId]);
+  }, [matrixItemId]);
+
+  /** F07: one click links the map to a suggested matrix item; coverage reloads through the effect above. */
+  const linkMatrix = useCallback(
+    async (item: MatrixItem) => {
+      try {
+        const r = await api('/v1/matrix/links', { method: 'POST', body: JSON.stringify({ boardId: board.id, matrixItemId: item.id }) });
+        if (!r.ok) throw new Error(r.error.code);
+        track('board_linked_to_matrix', { suggested: true });
+        setMatrixItemId(item.id);
+      } catch {
+        toast({ title: t('editor.linkError'), tone: 'danger' });
+      }
+    },
+    [board.id, toast],
+  );
 
   // --- mutations ----------------------------------------------------------------
   /** Applies ops locally, queues them for the API and (unless undo/redo) records them in the history. */
@@ -246,7 +290,11 @@ function Canvas({ data }: { data: BoardGraph }) {
   const onCardSaved = useCallback(
     (d: CardDetail, input: SaveCardInput) => {
       primeCardDetail(d);
-      setGraph(patchCard(g.current, cache.current, d.id, { title: d.title, front: d.front, back: d.back, source: d.source, preview: d.preview ?? previewOf(input) }));
+      setGraph(
+        patchCard(g.current, cache.current, d.id, {
+          title: d.title, shape: d.shape, front: d.front, frontAssetId: d.frontAssetId, back: d.back, source: d.source, preview: d.preview ?? previewOf(input),
+        }),
+      );
     },
     [setGraph],
   );
@@ -273,7 +321,7 @@ function Canvas({ data }: { data: BoardGraph }) {
       commit([{ op: 'createCard', opId: uuid(), boardId: board.id, card: { id, type, title: t(`map.newCardTitle.${type}`), position: pos } }]);
       track('card_created', { type, origin: 'manual' });
       openCard(id);
-      if (first) void rf.fitView({ ...FIT, duration: 200 }); // RF waits for the new node to be measured
+      if (first) void rf.fitView({ ...fitOptions(true), duration: 200 }); // RF waits for the new node to be measured
     },
     [board.id, commit, openCard, rf, toast],
   );
@@ -326,16 +374,33 @@ function Canvas({ data }: { data: BoardGraph }) {
     [board.id, commit],
   );
 
+  /**
+   * G02: a drag from a port that ends on another card's body (not on its 14 px port) connects too; React Flow alone
+   * only connects within `connectionRadius` of a port. Direction follows the port the drag started from.
+   */
+  const onConnectEnd = useCallback<OnConnectEnd>(
+    (e, state) => {
+      if (state.isValid || !state.fromNode) return;
+      const pt = 'changedTouches' in e ? e.changedTouches[0] : e;
+      const el = pt ? document.elementFromPoint(pt.clientX, pt.clientY) : null;
+      const other = el?.closest<HTMLElement>('.react-flow__node')?.dataset.id;
+      if (!other || other === state.fromNode.id) return;
+      const from = state.fromNode.id;
+      onConnect(state.fromHandle?.type === 'target' ? { source: other, target: from, sourceHandle: null, targetHandle: null } : { source: from, target: other, sourceHandle: null, targetHandle: null });
+    },
+    [onConnect],
+  );
+
   const organize = useCallback(() => {
     const { nodes, edges } = g.current;
-    const pos = autoLayout(nodes.map((n) => ({ id: n.id, height: n.measured?.height ?? NODE_H[n.data.card.type] })), edges);
+    const pos = autoLayout(nodes.map((n) => ({ id: n.id, width: n.measured?.width ?? sizeOf(n.data.card).w, height: n.measured?.height ?? sizeOf(n.data.card).h })), edges);
     const moves = nodes.flatMap((n) => {
       const p = pos.get(n.id)!;
       return p.x !== n.position.x || p.y !== n.position.y ? [{ cardId: n.id, position: p }] : [];
     });
     if (!moves.length) return;
     commit([{ op: 'moveCards', opId: uuid(), boardId: board.id, moves }]);
-    requestAnimationFrame(() => void rf.fitView({ ...FIT, duration: 300 }));
+    requestAnimationFrame(() => void rf.fitView({ ...fitOptions(g.current.nodes.some((n) => n.selected)), duration: 300 }));
   }, [board.id, commit, rf]);
 
   /** Deletes cards/edges; asks first when a card still has connections (they go too). */
@@ -378,8 +443,10 @@ function Canvas({ data }: { data: BoardGraph }) {
         return;
       }
       if (isTyping(e.target) || inDialog(e.target) || confirmDelete) return;
-      if (e.key === 'Escape' && tool === 'connect') {
-        setTool('select');
+      if (e.key === 'Escape') {
+        // D-098: Esc closes the card panel (deselects); in "Ligar" it first drops the tool
+        if (tool === 'connect') setTool('select');
+        else if (g.current.nodes.some((n) => n.selected)) select(null);
       } else if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
         deleteSelection();
@@ -393,7 +460,7 @@ function Canvas({ data }: { data: BoardGraph }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [confirmDelete, deleteSelection, step, tool, setTool]);
+  }, [confirmDelete, deleteSelection, step, tool, setTool, select]);
 
   const onDoubleClick = useCallback(
     (e: MouseEvent) => {
@@ -425,18 +492,15 @@ function Canvas({ data }: { data: BoardGraph }) {
     else void queue.current?.retry();
   }, []);
 
-  /** "Ligar dois cards": click the source card, then the target. */
+  /** "Ligar dois cards": click the source card, then the target (the hint above the toolbar says which). */
   const onNodeClick = useCallback<NodeMouseHandler<CardNode>>(
     (_e, node) => {
-      const from = linkFrom.current;
-      if (!from || from === node.id) {
-        linkFrom.current = node.id;
-        return;
-      }
-      linkFrom.current = null;
+      const from = linkFromRef.current;
+      if (!from || from === node.id) return setLinkFrom(node.id);
+      setLinkFrom(null);
       onConnect({ source: from, target: node.id, sourceHandle: null, targetHandle: null });
     },
-    [onConnect],
+    [onConnect, setLinkFrom],
   );
 
   const enterChallenge = useCallback(() => setMode('challenge'), [setMode]);
@@ -446,7 +510,10 @@ function Canvas({ data }: { data: BoardGraph }) {
     (id: string) => {
       select(id);
       const n = g.current.nodes.find((x) => x.id === id);
-      if (n) void rf.setCenter(n.position.x + CARD_W / 2, n.position.y + NODE_H[n.data.card.type] / 2, { zoom: Math.max(rf.getZoom(), 1), duration: 300 });
+      if (n) {
+        const { w, h } = sizeOf(n.data.card);
+        void rf.setCenter(n.position.x + w / 2, n.position.y + h / 2, { zoom: Math.max(rf.getZoom(), 1), duration: 300 });
+      }
     },
     [rf, select],
   );
@@ -462,12 +529,16 @@ function Canvas({ data }: { data: BoardGraph }) {
     const n = currentCard ? g.current.nodes.find((x) => x.id === currentCard) : undefined;
     const pane = wrap.current?.getBoundingClientRect();
     if (!n || !pane) return;
-    const h = NODE_H[n.data.card.type];
+    const { w, h } = sizeOf(n.data.card);
     const a = rf.flowToScreenPosition(n.position);
-    const b = rf.flowToScreenPosition({ x: n.position.x + CARD_W, y: n.position.y + h });
-    // same free area as FIT: below the layers bar, above the toolbar, left of the panel
-    const visible = a.x >= pane.left + 64 && a.y >= pane.top + 120 && b.x <= pane.right - 432 && b.y <= pane.bottom - 200;
-    if (!visible) void rf.setCenter(n.position.x + CARD_W / 2 + 190, n.position.y + h / 2, { zoom: 1, duration: 300 });
+    const b = rf.flowToScreenPosition({ x: n.position.x + w, y: n.position.y + h });
+    // same free area as the fit: below the layers bar, above the toolbar, clear of the challenge panel
+    const f = freeArea(true, pane.height, true);
+    const visible = a.x >= pane.left + f.left && a.y >= pane.top + f.top && b.x <= pane.right - f.right && b.y <= pane.bottom - f.bottom;
+    if (visible) return;
+    // centre of the free area, at 100% or smaller when the card does not fit there (phone: above the sheet)
+    const k = clampZoom(Math.min(1, (pane.width - f.left - f.right) / w, (pane.height - f.top - f.bottom) / h));
+    void rf.setCenter(n.position.x + w / 2 + (f.right - f.left) / 2 / k, n.position.y + h / 2 + (f.bottom - f.top) / 2 / k, { zoom: k, duration: 300 });
   }, [currentCard, rf]);
 
   const edgeCountsRef = useRef<ReadonlyMap<string, number>>(new Map());
@@ -494,7 +565,7 @@ function Canvas({ data }: { data: BoardGraph }) {
         : [],
     [selected, graph.edges, titles],
   );
-  const summary = useMemo(() => summarize(graph.nodes, graph.edges.length, retrievability, endOfToday), [graph.nodes, graph.edges.length, retrievability, endOfToday]);
+  const due = useMemo(() => countDue(graph.nodes, retrievability, endOfToday), [graph.nodes, retrievability, endOfToday]);
 
   const commands = useMemo<CommandItem[]>(
     () => [
@@ -548,15 +619,63 @@ function Canvas({ data }: { data: BoardGraph }) {
   );
 
   const editedEdge = labelEdit ? graph.edges.find((e) => e.id === labelEdit) : undefined;
+  const panelOpen = mode === 'challenge' || !!selected; // D-098: no selection, no panel
+  const focusNode = quiz ? graph.nodes.find((n) => n.id === quiz.cardId) : undefined;
+  const [initialFit] = useState(() => fitOptions(false));
+  const fit = useCallback(() => void rf.fitView({ ...fitOptions(g.current.nodes.some((n) => n.selected)), duration: 200 }), [rf]);
+  const onPaneClick = useCallback(() => select(null), [select]);
+
+  // G02 pinch: Chrome/Firefox send a trackpad pinch as ctrl+wheel, which React Flow only hears over its own pane; over the
+  // floating pieces it zoomed the whole page. Safari sends gesture events (React Flow ignores them) and zoomed the page too.
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el) return;
+    let start = 1;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey || (e.target instanceof Element && e.target.closest('.react-flow'))) return;
+      e.preventDefault();
+      zoomAt(rf, el, e.clientX, e.clientY, rf.getZoom() * 2 ** (-e.deltaY * 0.01));
+    };
+    type Gesture = UIEvent & { scale: number; clientX: number; clientY: number };
+    const onGestureStart = (e: Event) => {
+      e.preventDefault();
+      start = rf.getZoom();
+    };
+    const onGestureChange = (e: Event) => {
+      e.preventDefault();
+      const g = e as Gesture;
+      zoomAt(rf, el, g.clientX, g.clientY, start * g.scale);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    el.addEventListener('gesturestart', onGestureStart);
+    el.addEventListener('gesturechange', onGestureChange);
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('gesturestart', onGestureStart);
+      el.removeEventListener('gesturechange', onGestureChange);
+    };
+  }, [rf]);
 
   return (
     // The shell <main> pads its children: bleed to the edges (rail on the left), full viewport height.
-    <div className="relative -m-4 flex h-[calc(100dvh-80px)] min-h-[480px] flex-col bg-canvas md:-m-6 md:h-dvh">
-      <CanvasHeader board={board} status={status} onRetry={retry} mode={mode} onMode={setMode} onPalette={() => setPalette(true)} />
+    // touch-action: the page itself never pinch-zooms here (the map does); panels still scroll.
+    <div className="relative -m-4 flex h-[calc(100dvh-80px)] min-h-[480px] flex-col bg-canvas [touch-action:pan-x_pan-y] md:-m-6 md:h-dvh">
+      <CanvasHeader
+        board={board}
+        coverage={coverage ? { pct: Math.round(coverage.coverage), item: coverage.title } : null}
+        due={due}
+        status={status}
+        onRetry={retry}
+        mode={mode}
+        onMode={setMode}
+        onPalette={() => setPalette(true)}
+      />
       <section
         ref={wrap}
         aria-label={t('map.canvasLabel', { title: board.title })}
-        className={`relative min-h-0 flex-1 overflow-hidden ${tool === 'connect' ? '[&_.react-flow__node]:cursor-crosshair' : tool === 'move' ? '[&_.react-flow__node]:cursor-grab' : ''}`}
+        data-tool={tool}
+        data-focus={focusNode ? '' : undefined}
+        className="cv-editor relative min-h-0 flex-1 overflow-hidden"
       >
         <CanvasContext.Provider value={ctx}>
           <ReactFlow<CardNode, LinkEdge>
@@ -567,10 +686,13 @@ function Canvas({ data }: { data: BoardGraph }) {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            onConnectEnd={onConnectEnd}
+            connectionMode={ConnectionMode.Loose}
             isValidConnection={notSelf}
             onDoubleClick={onDoubleClick}
             onNodeDoubleClick={onNodeDoubleClick}
             onNodeClick={tool === 'connect' ? onNodeClick : undefined}
+            onPaneClick={onPaneClick}
             nodesDraggable={tool === 'select'}
             snapToGrid
             snapGrid={[8, 8]}
@@ -580,6 +702,7 @@ function Canvas({ data }: { data: BoardGraph }) {
             multiSelectionKeyCode={['Shift', 'Meta', 'Control']}
             zoomOnDoubleClick={false}
             panOnScroll
+            zoomOnPinch
             zoomActivationKeyCode={['Meta', 'Control']}
             minZoom={ZOOM_MIN}
             maxZoom={ZOOM_MAX}
@@ -587,46 +710,69 @@ function Canvas({ data }: { data: BoardGraph }) {
             ariaLabelConfig={ariaLabelConfig}
             // only on load: an empty map fits once its first card exists (createCard)
             fitView={init.graph.nodes.length > 0}
-            fitViewOptions={FIT}
+            fitViewOptions={initialFit}
             proOptions={proOptions}
           >
             <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="var(--grid-dot)" bgColor="#fbfafe" />
           </ReactFlow>
+          {focusNode ? <FocusLayer node={focusNode} /> : null}
         </CanvasContext.Provider>
-        {/* D-0xx T5: the legend follows the layer bar (the mock's fixed left: 400px covered "Cobertura"). */}
-        <div className="pointer-events-none absolute left-5 top-5 z-10 flex items-center gap-3 [&>*]:pointer-events-auto">
+        {/* D-0xx T5: the legend follows the layer bar (the mock's fixed left: 400px covered "Cobertura"). Phone: one scrollable row. */}
+        <div
+          className={`pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center gap-3 overflow-x-auto p-4 md:right-auto md:p-5 [&>*]:pointer-events-auto [&>*]:shrink-0 ${
+            mode === 'challenge' ? 'max-md:hidden' : '' // phone challenge: the tested card needs the room above the sheet
+          }`}
+        >
           <LayerSwitch label={t('editor.layers')} options={layerOptions} value={layer} onChange={changeLayer} />
           {layer === 'recall' && mode === 'explore' ? <Legend labels={legendLabels} aria-label={t('canvas.legend')} /> : null}
         </div>
-        <div className="pointer-events-none absolute bottom-6 left-5 z-10 flex items-end gap-[23px] [&>*]:pointer-events-auto">
-          <Zoom />
-          <CanvasToolbar aria-label={t('canvas.toolbar.label')} items={tools} onSelect={onTool} />
+        {!matrixItemId && mode === 'explore' ? (
+          // F07 one-click link, top right where the panel opens (the panel covers it while a card is selected)
+          <div className="absolute right-5 top-5 z-10 hidden lg:block">
+            <MatrixLinkButton title={board.title} onPick={linkMatrix} />
+          </div>
+        ) : null}
+        {/* zoom + toolbar share one row; on the phone the row scrolls instead of overlapping (hidden under the challenge sheet) */}
+        <div
+          className={`pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col items-start gap-2 p-4 md:bottom-1 md:right-auto md:p-5 [&>*]:pointer-events-auto ${
+            mode === 'challenge' ? 'max-md:hidden' : ''
+          }`}
+        >
+          {tool === 'connect' ? (
+            <p role="status" className="m-0 rounded-pill bg-(--cv-panel-dark) px-3.5 py-2 text-[13px] font-semibold text-on-primary">
+              {linkFrom ? t('canvas.connectFrom') : t('canvas.connectStart')}
+            </p>
+          ) : null}
+          <div className="flex max-w-full items-end gap-[23px] overflow-x-auto [&>*]:shrink-0">
+            <Zoom onFit={fit} />
+            <CanvasToolbar aria-label={t('canvas.toolbar.label')} items={tools} onSelect={onTool} />
+          </div>
         </div>
-        <div className="absolute bottom-5 right-5 top-5 z-10">
-          <Inspector
-            board={board}
-            challengePanel={
-              mode === 'challenge' ? (
-                <ChallengePanel scope={scope} boardId={board.id} heat={retrievability} onExit={() => setMode('explore')} onRated={loadHeat} />
-              ) : null
-            }
-            summary={summary}
-            coverage={coverage ? { pct: Math.round(coverage.coverage), item: coverage.title } : null}
-            card={selected}
-            entry={selected ? retrievability[selected.id] : undefined}
-            connections={connections}
-            endOfToday={endOfToday}
-            editing={!!selected && editing === selected.id}
-            onEdit={openCard}
-            onClose={closeEditor}
-            onSaved={onCardSaved}
-            prepare={prepareCard}
-            onDeselect={() => select(null)}
-            onDelete={deleteCard}
-            onChallenge={enterChallenge}
-            onReviewCard={reviewCard}
-          />
-        </div>
+        {panelOpen ? (
+          // desktop: floating 340 px panel on the right; phone: bottom sheet (full width, up to 55% of the canvas)
+          <div className="absolute inset-x-0 bottom-0 z-20 h-[55%] md:inset-x-auto md:bottom-5 md:right-5 md:top-5 md:h-auto [&>aside]:max-md:w-full [&>aside]:max-md:rounded-b-none">
+            <Inspector
+              board={board}
+              challengePanel={
+                mode === 'challenge' ? (
+                  <ChallengePanel scope={scope} boardId={board.id} heat={retrievability} onExit={() => setMode('explore')} onRated={loadHeat} />
+                ) : null
+              }
+              card={selected}
+              entry={selected ? retrievability[selected.id] : undefined}
+              connections={connections}
+              endOfToday={endOfToday}
+              editing={!!selected && editing === selected.id}
+              onEdit={openCard}
+              onClose={closeEditor}
+              onSaved={onCardSaved}
+              prepare={prepareCard}
+              onDeselect={() => select(null)}
+              onDelete={deleteCard}
+              onReviewCard={reviewCard}
+            />
+          </div>
+        ) : null}
       </section>
       <CommandPalette
         open={palette}
@@ -693,8 +839,29 @@ function Canvas({ data }: { data: BoardGraph }) {
 const proOptions = { hideAttribution: true }; // D-073: attribution moved out of the canvas corner (see Pendências)
 const zoomOf = (s: ReactFlowState) => s.transform[2];
 
+/**
+ * D-097: the tested card drawn sharp over the blurred canvas, where React Flow draws it (flow → screen with the viewport
+ * transform). Re-renders on pan/zoom only while a challenge item is open. Decorative copy: the real node stays in the
+ * (blurred) canvas for keyboard and screen readers.
+ */
+const FocusLayer = memo(function FocusLayer({ node }: { node: CardNode }) {
+  const [x, y, k] = useStore(transformOf);
+  return (
+    <div
+      aria-hidden="true"
+      inert
+      data-testid="focus-card"
+      className="pointer-events-none absolute left-0 top-0 z-[5] origin-top-left"
+      style={{ transform: `translate(${node.position.x * k + x}px, ${node.position.y * k + y}px) scale(${k})` }}
+    >
+      <FocusCard node={node} />
+    </div>
+  );
+});
+const transformOf = (s: ReactFlowState) => s.transform;
+
 /** Zoom 60–140% in 10% steps (ZoomControl v2); "Ajustar" fits the map. Re-renders only on zoom change. */
-const Zoom = memo(function Zoom() {
+const Zoom = memo(function Zoom({ onFit }: { onFit: () => void }) {
   const rf = useReactFlow();
   const zoom = useStore(zoomOf);
   return (
@@ -708,7 +875,7 @@ const Zoom = memo(function Zoom() {
       canZoomIn={zoom < ZOOM_MAX - 0.001}
       onZoomOut={() => void rf.zoomTo(stepZoom(zoom, -1), { duration: 150 })}
       onZoomIn={() => void rf.zoomTo(stepZoom(zoom, 1), { duration: 150 })}
-      onFit={() => void rf.fitView({ ...FIT, duration: 200 })}
+      onFit={onFit}
     />
   );
 });

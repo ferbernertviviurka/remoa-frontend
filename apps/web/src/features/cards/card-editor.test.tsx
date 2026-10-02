@@ -68,7 +68,7 @@ describe('CardEditor: concept', () => {
     await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
     expect(prepare).toHaveBeenCalledWith(base.id);
     const [detail, input] = onSaved.mock.calls[0]!;
-    expect(input).toEqual({ type: 'concept', title: 'Sepse (Sepsis-3)', front: base.front, back: '**Disfunção** orgânica', source: 'SSC 2021', payload: {} });
+    expect(input).toEqual({ type: 'concept', title: 'Sepse (Sepsis-3)', shape: 'rect', front: base.front, frontAssetId: null, back: '**Disfunção** orgânica', source: 'SSC 2021', payload: {} });
     expect(detail.title).toBe('Sepse (Sepsis-3)');
     expect(track).toHaveBeenCalledWith('card_edited', { type: 'concept' });
     expect(onClose).toHaveBeenCalled();
@@ -230,6 +230,29 @@ describe('CardEditor: image', () => {
     return f;
   };
   const pick = (f: File) => fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [f] } });
+
+  it('G02 concept: question image (add, remove, add again) and shape picker go into the PUT (D-095, D-096)', async () => {
+    editor(base);
+    await form();
+    const group = screen.getByRole('group', { name: 'Formato no mapa' });
+    expect(within(group).getAllByRole('button')).toHaveLength(5);
+    expect(within(group).getByRole('button', { name: 'Retângulo' })).toHaveAttribute('aria-pressed', 'true');
+    pick(file('q.png', 'image/png'));
+    expect(await screen.findByRole('button', { name: 'Remover imagem' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Trocar imagem' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Remover imagem' }));
+    expect(screen.getByText('Aparece na frente do card e no desafio.')).toBeInTheDocument();
+    pick(file('q.png', 'image/png'));
+    await screen.findByRole('button', { name: 'Remover imagem' });
+    fireEvent.click(within(group).getByRole('button', { name: 'Losango' }));
+    expect(within(group).getByRole('button', { name: 'Losango' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('No mapa, a imagem da pergunta só aparece no formato Retângulo.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+    const [, input] = onSaved.mock.calls[0]!;
+    expect(input.shape).toBe('diamond');
+    expect(input.frontAssetId).toMatch(/^[0-9a-f-]{36}$/);
+  });
 
   it('rejects other formats and > 10 MB before uploading', async () => {
     editor(extra[imageId]!);

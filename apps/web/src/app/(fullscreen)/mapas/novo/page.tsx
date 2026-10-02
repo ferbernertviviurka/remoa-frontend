@@ -11,5 +11,8 @@ export const metadata: Metadata = { title: t('pages.newMap') };
 export default async function Page({ searchParams }: { searchParams: Promise<{ caminho?: string }> }) {
   const { caminho } = await searchParams;
   const r = await serverApi<MatrixItem[]>('/v1/matrix/items?area=CM');
-  return <NewMapView items={r.ok ? r.data : []} initialPath={caminho ? parsePath(caminho) : undefined} />;
+  const all = r.ok ? r.data : [];
+  // F07: groups (items with children) are headings, not link targets.
+  const items = all.filter((i) => !all.some((c) => c.parentId === i.id));
+  return <NewMapView items={items} initialPath={caminho ? parsePath(caminho) : undefined} />;
 }

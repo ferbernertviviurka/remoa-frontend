@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countEdges, summarize } from './map-canvas';
+import { countDue, countEdges } from './map-canvas';
 import { floatingEnds, labelsVisible } from './link-edge';
 import { nodeFooter } from './card-node';
 import { endOfDay, isDue } from './canvas-context';
@@ -50,14 +50,12 @@ describe('T5: dados derivados do painel', () => {
     expect(isDue('2026-10-02T00:30:00', eod)).toBe(false);
     expect(isDue(null, eod)).toBe(false);
   });
-  it('resumo: estados e vencidos', () => {
+  it('vencidos hoje (CTA do cabeçalho)', () => {
     const heat = {
       a: { r: 0.5, state: 'review' as const, due: new Date('2026-10-01T09:00:00') },
       b: { r: 0.9, state: 'steady' as const, due: new Date('2026-10-09T09:00:00') },
     };
-    expect(summarize([{ id: 'a' }, { id: 'b' }, { id: 'c' }], 2, heat, eod)).toEqual({
-      cards: 3, edges: 2, due: 1, counts: { review: 1, watch: 0, steady: 1, unknown: 1 },
-    });
+    expect(countDue([{ id: 'a' }, { id: 'b' }, { id: 'c' }], heat, eod)).toBe(1);
   });
   it('contagem de conexões mantém a referência quando nada mudou (nós não re-renderizam)', () => {
     const e = [{ source: 'a', target: 'b' }, { source: 'b', target: 'c' }];

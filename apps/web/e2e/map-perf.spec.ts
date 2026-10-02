@@ -43,16 +43,20 @@ test('200 cards: pan fps', async ({ page, request }) => {
   }).toPass({ timeout: 30_000 });
   await page.goto(`/mapas/${board}`);
   await expect(page.locator('.react-flow__node').first()).toBeVisible();
-  const panel = page.getByRole('complementary', { name: 'Painel do mapa' });
-  await expect(panel).toContainText(/200\s*cards/);
-  await expect(panel).toContainText(/199\s*conexões/);
+  // D-098: no card selected = no panel (the 200/199 summary it showed is gone); the canvas has the whole width
+  await expect(page.getByRole('complementary', { name: 'Painel do mapa' })).toHaveCount(0);
 
   const pane = (await page.locator('.react-flow__pane').boundingBox())!;
   const cx = pane.x + pane.width / 2;
   const cy = pane.y + pane.height / 2;
 
-  for (const zoom of ['fit', 'zoom-in'] as const) {
+  for (const zoom of ['fit', 'zoom-in', 'challenge'] as const) {
     if (zoom === 'zoom-in') for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'Aumentar zoom' }).click();
+    if (zoom === 'challenge') {
+      // G02 / D-097: the whole viewport under one blur filter + the sharp focus card on top, while panning
+      await page.goto(`/mapas/${board}?modo=desafio`);
+      await expect(page.locator('[data-testid="focus-card"]')).toBeVisible({ timeout: 30_000 });
+    }
     await page.waitForTimeout(500);
     await page.evaluate(() => {
       const w = window as unknown as { __frames: number[]; __run?: number };

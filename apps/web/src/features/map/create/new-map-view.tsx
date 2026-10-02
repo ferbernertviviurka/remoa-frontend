@@ -7,6 +7,8 @@ import { t, type StringKey } from '@remoa/strings';
 import { Button, ChoiceCard, ChoiceRow, Dialog, Dropzone, FilterChip, Icon, IconButton, Input, Logo, Stepper } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
+import { usePaywall } from '@/features/billing/paywall';
+import { useMatrixSuggestions } from '@/features/coverage/matrix-suggestions';
 import Link from 'next/link';
 import { MapPreview, type Path } from './map-preview';
 
@@ -23,6 +25,7 @@ type Props = { items: MatrixItem[]; initialPath?: Path };
 
 export function NewMapView({ items, initialPath }: Props) {
   const router = useRouter();
+  const paywall = usePaywall();
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [path, setPath] = useState<Path>(initialPath ?? 'pdf');
   const [itemId, setItemId] = useState<string | null>(items[0]?.id ?? null);
@@ -34,7 +37,10 @@ export function NewMapView({ items, initialPath }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const suggested = useMatrixSuggestions(step >= 1 ? name : '', 300);
   const item = items.find((i) => i.id === itemId);
+  // Suggestions (title similarity) go first in the list; the rest keep the catalog order.
+  const sortedItems = [...suggested.flatMap((s) => items.find((i) => i.id === s.id) ?? []), ...items.filter((i) => !suggested.some((s) => s.id === i.id))];
   const area = t('boards.area.CM');
   const needsFile = path === 'pdf' || path === 'anki';
   const accept = path === 'pdf' ? '.pdf' : '.apkg';
@@ -50,10 +56,11 @@ export function NewMapView({ items, initialPath }: Props) {
     try {
       const r = await api<Board>('/v1/boards', { method: 'POST', body: JSON.stringify({ title: name.trim(), area: 'CM', matrixItemId: itemId }) });
       if (!r.ok) {
-        setError(t(`errors.${r.error.code}` as StringKey));
+        if (!paywall.handle(r.error)) setError(t(`errors.${r.error.code}` as StringKey));
         return;
       }
       track('board_created', {});
+      if (itemId) track('board_linked_to_matrix', { suggested: suggested.some((s) => s.id === itemId) });
       router.push(`/mapas/${r.data.id}`);
     } catch {
       setError(t('errors.internal'));
@@ -64,7 +71,7 @@ export function NewMapView({ items, initialPath }: Props) {
 
   const heading = (title: string, desc: string) => (
     <div className="flex flex-col gap-2">
-      <h1 className="font-display text-[44px] font-extrabold leading-[1.05] tracking-[-0.035em]">{title}</h1>
+      <h1 className="font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.035em] md:text-[44px] md:leading-[1.05]">{title}</h1>
       <p className="text-base text-muted">{desc}</p>
     </div>
   );
@@ -83,10 +90,11 @@ export function NewMapView({ items, initialPath }: Props) {
 
   return (
     <div className="flex min-h-dvh bg-canvas text-ink">
-      <main className="flex min-w-0 flex-1 flex-col gap-7 px-6 pb-8 pt-[30px] md:px-14">
+      <main className="flex min-w-0 flex-1 flex-col gap-6 px-4 pb-8 pt-5 sm:px-6 sm:pt-[30px] md:gap-7 md:px-14">
         <div className="flex items-center justify-between gap-4">
-          <Link href="/" aria-label={t('pages.logoLink')} className="inline-flex no-underline">
-            <Logo size={32} withWordmark />
+          <Link href="/" aria-label={t('pages.logoLink')} className="inline-flex min-h-11 min-w-11 items-center no-underline">
+            <span className="max-sm:hidden"><Logo size={32} withWordmark /></span>
+            <span className="sm:hidden"><Logo size={32} /></span>
           </Link>
           <Stepper aria-label={t('newMap.stepsLabel')} doneLabel={t('newMap.stepDone')} current={step} steps={[t('newMap.step.one'), t('newMap.step.two'), t('newMap.step.three')]} />
           <IconButton aria-label={t('newMap.closeLabel')} variant="secondary" onClick={() => router.push('/mapas')}>
@@ -139,7 +147,7 @@ export function NewMapView({ items, initialPath }: Props) {
                 {sub(t('newMap.itemLabel'))}
                 <div role="group" aria-label={t('newMap.itemLabel')} className="-m-1 flex max-h-[240px] flex-col gap-2 overflow-y-auto p-1">
                   {items.length === 0 ? <p className="text-sm text-muted">{t('newMap.noItems')}</p> : null}
-                  {items.map((i) => (
+                  {sortedItems.map((i) => (
                     <ChoiceRow key={i.id} indicator="radio" selected={i.id === itemId} onSelect={() => pickItem(i)}>{i.title}</ChoiceRow>
                   ))}
                 </div>
@@ -195,11 +203,11 @@ export function NewMapView({ items, initialPath }: Props) {
           ) : null}
         </div>
 
-        <div className="sticky bottom-0 -mb-8 flex max-w-[660px] items-center justify-between gap-3 bg-canvas pb-8 pt-3">
+        <div className="sticky bottom-0 -mb-8 flex max-w-[660px] items-center justify-between gap-3 max-sm:flex-col-reverse max-sm:items-stretch max-sm:[&>button]:w-full bg-canvas pb-[calc(2rem+env(safe-area-inset-bottom))] pt-3">
           {step > 0 ? (
             <Button variant="secondary" size="lg" icon={<Icon name="left" size={20} />} onClick={() => setStep((step - 1) as 0 | 1)}>{t('newMap.backButton')}</Button>
           ) : (
-            <span />
+            <span className="max-sm:hidden" />
           )}
           {last ? (
             <Button
@@ -216,6 +224,7 @@ export function NewMapView({ items, initialPath }: Props) {
             <Button size="lg" disabled={!canContinue} iconEnd={<Icon name="right" size={20} />} onClick={() => setStep((step + 1) as 1 | 2)}>{t('newMap.continueButton')}</Button>
           )}
         </div>
+        <MapPreview compact path={path} step={step} name={name.trim()} area={area} item={item?.title ?? ''} />
       </main>
 
       <MapPreview path={path} step={step} name={name.trim()} area={area} item={item?.title ?? ''} />

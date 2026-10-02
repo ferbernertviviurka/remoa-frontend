@@ -27,7 +27,7 @@ export function AppRail({ logo, children, account, ...rest }: AppRailProps) {
   );
 }
 
-type LinkLike = ComponentType<{ href: string; 'aria-current'?: 'page'; className?: string; children?: ReactNode }> | 'a';
+type LinkLike = ComponentType<{ href: string; 'aria-current'?: 'page'; className?: string; children?: ReactNode; onClick?: () => void }> | 'a';
 
 export type RailItemProps = {
   icon: IconName;
@@ -61,7 +61,7 @@ export function RailItem({ icon, label, active = false, badge, badgeLabel, href,
   if (href != null) {
     const As: LinkLike = as ?? 'a';
     return (
-      <As href={href} aria-current={active ? 'page' : undefined} className={cls}>
+      <As href={href} aria-current={active ? 'page' : undefined} className={cls} {...(onClick ? { onClick } : {})}>
         {inner}
       </As>
     );
@@ -74,15 +74,28 @@ export function RailItem({ icon, label, active = false, badge, badgeLabel, href,
 }
 
 /** Conta no rodapé do trilho: círculo de 44 px --panel-dark com o ícone `user`. `aria-label` obrigatório. */
-export function RailAccount({ 'aria-label': ariaLabel, onClick }: { 'aria-label': string; onClick?: () => void }) {
+export function RailAccount({
+  'aria-label': ariaLabel,
+  onClick,
+  active = false,
+  children,
+}: {
+  'aria-label': string;
+  onClick?: () => void;
+  /** On /conta (F13 FR-1): ring around the avatar + aria-current. */
+  active?: boolean;
+  /** Avatar (photo or initials); without it, the user icon. */
+  children?: ReactNode;
+}) {
   return (
     <button
       type="button"
       aria-label={ariaLabel}
+      aria-current={active ? 'page' : undefined}
       onClick={onClick}
-      className={`flex size-11 items-center justify-center rounded-full bg-panel-dark text-on-dark ${focusRing}`}
+      className={`flex size-11 items-center justify-center rounded-full bg-panel-dark text-on-dark ${active ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : ''} ${focusRing}`}
     >
-      <Icon name="user" size={20} />
+      {children ?? <Icon name="user" size={20} />}
     </button>
   );
 }

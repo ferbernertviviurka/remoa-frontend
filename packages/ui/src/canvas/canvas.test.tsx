@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { violations } from '../test-utils';
-import { NodeCard } from './node-card';
+import { readFileSync } from 'node:fs';
+import { NodeCard, nodeSize, shapeAnchor, type CardShape, type NodeType } from './node-card';
 import { EdgeLabel } from './edge-label';
 import { LayerSwitch } from './layer-switch';
 import { Legend } from './legend';
@@ -67,6 +68,90 @@ describe('NodeCard', () => {
   it('passos do fluxograma: numerados, passo oculto', () => {
     render(<NodeCard {...node} type="flow" steps={[{ text: 'Dosar lactato' }, { text: 'Passo oculto', tone: 'hidden' }]} />);
     expect(screen.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['1Dosar lactato', '2Passo oculto']);
+  });
+});
+
+describe('NodeCard formatos, verso e foco', () => {
+  const flip = { back: 'Noradrenalina', flipLabel: 'Ver resposta', unflipLabel: 'Ver pergunta' };
+  it('classes de tamanho batem com nodeSize (todos os formatos)', () => {
+    for (const shape of ['rect', 'pill', 'circle', 'diamond', 'hexagon'] as CardShape[]) {
+      const { unmount } = render(<NodeCard {...node} shape={shape} />);
+      const { w, h } = nodeSize('concept', shape);
+      expect(screen.getByRole('article').className).toContain(`w-[${w}px] h-[${h}px]`);
+      unmount();
+    }
+    expect(nodeSize('concept', 'circle')).toEqual({ w: 180, h: 180 });
+    expect(nodeSize('concept', 'rect', { frontImage: true }).h).toBe(240);
+    expect(nodeSize('concept', 'diamond', { frontImage: true }).h).toBe(224);
+    for (const t of ['case', 'flow', 'image'] as NodeType[]) expect(nodeSize(t, 'circle')).toEqual(nodeSize(t));
+  });
+  it('shape só vale em concept; shapeAnchor toca o meio do lado', () => {
+    render(<NodeCard {...node} type="case" shape="circle" />);
+    expect(screen.getByRole('article')).toHaveAttribute('data-shape', 'rect');
+    expect(shapeAnchor('diamond', { x: 0, y: 0, w: 200, h: 100 }, 'r')).toEqual([200, 50]);
+  });
+  it('axe em cada formato', async () => {
+    for (const shape of ['pill', 'circle', 'diamond', 'hexagon'] as CardShape[]) {
+      const { container, unmount } = render(<NodeCard {...node} shape={shape} summary="x" />);
+      expect(await violations(container)).toEqual([]);
+      unmount();
+    }
+  });
+  it('conteúdo decorativo não intercepta clique; botão de seleção recebe', () => {
+    render(<NodeCard {...node} type="image" image={{ src: null, alt: 'Imagem' }} />);
+    const img = screen.getByRole('img', { name: 'Imagem' });
+    expect(img.closest('.pointer-events-none')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Selecionar Sepse' }).className).toContain('pointer-events-auto');
+  });
+  it('imagem na pergunta: placeholder e altura', () => {
+    render(<NodeCard {...node} frontImage={{ src: null, alt: 'Pergunta' }} />);
+    expect(screen.getByRole('img', { name: 'Pergunta' })).toBeInTheDocument();
+    expect(screen.getByRole('article').style.height).toBe('240px');
+  });
+  it('diamond/hexagon: contorno SVG fica atrás do conteúdo e o botão de virar fica dentro do nó', () => {
+    for (const shape of ['diamond', 'hexagon', 'circle', 'pill'] as CardShape[]) {
+      const { container, unmount } = render(<NodeCard {...node} shape={shape} {...flip} />);
+      const svg = container.querySelector('svg');
+      if (shape === 'diamond' || shape === 'hexagon') {
+        expect(svg?.getAttribute('class')).toContain('-z-10');
+        expect(svg?.parentElement?.className).toContain('isolate');
+        expect(screen.getByText('Sepse')).toBeVisible();
+      }
+      const cls = screen.getByRole('button', { name: 'Ver resposta' }).className;
+      expect(cls).toMatch(/bottom-(\d|\[\d)/u);
+      expect(cls).not.toContain('bottom-[-');
+      unmount();
+    }
+  });
+  it('sem back: sem botão de virar', () => {
+    render(<NodeCard {...node} />);
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+  });
+  it('virar por teclado: aria-pressed, rótulo, verso montado sob demanda, frente inerte', async () => {
+    const onFlip = vi.fn();
+    const { container, rerender } = render(<NodeCard {...node} {...flip} onFlip={onFlip} />);
+    expect(screen.queryByText('Noradrenalina')).toBeNull();
+    const btn = screen.getByRole('button', { name: 'Ver resposta' });
+    expect(btn).toHaveAttribute('aria-pressed', 'false');
+    await userEvent.tab();
+    await userEvent.tab();
+    expect(btn).toHaveFocus();
+    await userEvent.keyboard('{Enter}');
+    expect(onFlip).toHaveBeenCalledTimes(1);
+    rerender(<NodeCard {...node} {...flip} flipped onFlip={onFlip} />);
+    expect(screen.getByText('Noradrenalina')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ver pergunta' })).toHaveAttribute('aria-pressed', 'true');
+    expect(container.querySelectorAll('[inert]')).toHaveLength(1);
+    expect(await violations(container)).toEqual([]);
+  });
+  it('desafio target: só a frente, sem botão de virar', () => {
+    render(<NodeCard {...node} {...flip} flipped challenge="target" />);
+    expect(screen.queryByText('Noradrenalina')).toBeNull();
+    expect(screen.queryByRole('button', { name: /Ver /u })).toBeNull();
+  });
+  it('reduced-motion: .cv-flip sem transição no CSS', () => {
+    const css = readFileSync('src/canvas/canvas.css', 'utf8');
+    expect(css).toMatch(/prefers-reduced-motion: reduce\) \{\s*\.cv-flip \{ transition: none; \}/u);
   });
 });
 

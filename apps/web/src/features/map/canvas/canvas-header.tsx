@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import type { Board } from '@remoa/contracts';
 import { boardTitleSchema } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
-import { Alert, Button, Icon, InlineTitle, Kbd, Segmented, useToast } from '@remoa/ui';
+import { Alert, Button, Icon, InlineTitle, Kbd, Menu, Segmented, useToast } from '@remoa/ui';
 import { api } from '@/lib/api';
 import type { QueueStatus } from './op-queue';
 
@@ -39,7 +39,17 @@ type Props = {
   mode: Mode;
   onMode: (m: Mode) => void;
   onPalette: () => void;
+  /** F07 FR-5: "cobre X% de <item>", link to /cobertura. */
+  coverage: { pct: number; item: string } | null;
+  /** Cards due today: the CTA reads "Desafiar os N que vencem hoje" (D-098: it was the map panel's button). */
+  due: number;
 };
+
+const dots = (
+  <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+    <circle cx="3.5" cy="8" r="1.4" /><circle cx="8" cy="8" r="1.4" /><circle cx="12.5" cy="8" r="1.4" />
+  </svg>
+);
 
 const modes = [
   { value: 'explore', label: t('editor.explore') },
@@ -74,9 +84,11 @@ export const CanvasHeader = memo(function CanvasHeader(p: Props) {
   }
 
   const failed = p.status.state === 'error';
+  const challengeText = p.due > 0 ? t('quiz.challengeBoard', { n: p.due }) : t('vocab.challengeBoard');
   return (
     <>
-      <header className="flex h-[68px] shrink-0 items-center gap-3.5 border-b border-border bg-surface px-5">
+      {/* phone (G02): back, truncated title, Explorar/Desafio and the rest in a "⋯" menu */}
+      <header className="flex h-[68px] shrink-0 items-center gap-2 border-b border-border bg-surface px-3 md:gap-3.5 md:px-5">
         <Link
           href="/mapas"
           aria-label={t('editor.backToLibrary')}
@@ -85,30 +97,51 @@ export const CanvasHeader = memo(function CanvasHeader(p: Props) {
           <Icon name="left" size={20} aria-hidden="true" />
         </Link>
         {/* InlineTitle is 28 px in Torph; the mock header uses 23 px (design-system follow-up: a `size` prop). */}
-        <div className="flex min-w-0 flex-col leading-[1.2] [&_button]:py-0 [&_h1]:text-[23px] [&_h1]:leading-[1.2] [&_h1]:tracking-[-.025em] [&_input]:text-[23px] [&_input]:leading-[1.2]">
-          <span className="text-xs font-bold uppercase tracking-[.12em] text-muted">{t(`boards.area.${p.board.area}`)}</span>
+        <div className="flex min-w-0 flex-1 flex-col leading-[1.2] md:flex-none [&_button]:max-w-full [&_button]:py-0 [&_h1]:truncate [&_h1]:text-[18px] [&_h1]:leading-[1.2] [&_h1]:tracking-[-.025em] [&_input]:text-[18px] [&_input]:leading-[1.2] md:[&_h1]:text-[23px] md:[&_input]:text-[23px]">
+          <span className="truncate text-xs font-bold uppercase tracking-[.12em] text-muted">{t(`boards.area.${p.board.area}`)}</span>
           <InlineTitle value={title} inputLabel={t('map.titleLabel')} editHint={t('map.titleEdit')} maxLength={120} onSave={(v) => void save(v)} />
         </div>
-        <span role="status" className="ml-1.5 flex shrink-0 items-center gap-[7px] text-[13px] text-muted">
+        <span role="status" className="ml-1.5 hidden shrink-0 items-center gap-[7px] text-[13px] text-muted md:flex">
           <span aria-hidden="true" className={`block size-2 rounded-full ${failed || p.status.state === 'offline' ? 'bg-review' : 'bg-primary'}`} />
           {saveText(p.status, p.board.updatedAt, now)}
         </span>
-        <span className="grow" />
-        <Segmented aria-label={t('map.toolbar.mode')} options={modes} value={p.mode} onValueChange={(v) => p.onMode(v as Mode)} />
-        <span className="grow" />
-        {/* Torph Button (rule 1): the mock's trigger is regular/muted text; ours is the secondary button weight. */}
-        <Button size="sm" variant="secondary" icon={<Icon name="search" size={18} />} iconEnd={<Kbd>{t('palette.keyboardHint')}</Kbd>} onClick={p.onPalette} aria-keyshortcuts="Meta+K Control+K">
-          {t('editor.commandPalette')}
-        </Button>
-        {p.mode === 'explore' ? (
-          <Button size="sm" icon={<Icon name="bolt" size={18} />} onClick={() => p.onMode('challenge')}>
-            {t('vocab.challengeBoard')}
+        {p.coverage ? (
+          <Link href="/cobertura" className="hidden min-h-11 shrink-0 items-center truncate text-[13px] font-semibold text-primary-deep no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:inline-flex">
+            {t('editor.coversHeader', { pct: p.coverage.pct, item: p.coverage.item })}
+          </Link>
+        ) : null}
+        <span className="hidden grow md:block" />
+        <span className="shrink-0 max-md:[&_button]:h-9 max-md:[&_button]:px-3 max-md:[&_button]:text-[13px]">
+          <Segmented aria-label={t('map.toolbar.mode')} options={modes} value={p.mode} onValueChange={(v) => p.onMode(v as Mode)} />
+        </span>
+        <span className="hidden grow md:block" />
+        <span className="hidden shrink-0 items-center gap-3.5 md:flex">
+          {/* Torph Button (rule 1): the mock's trigger is regular/muted text; ours is the secondary button weight. */}
+          <Button size="sm" variant="secondary" icon={<Icon name="search" size={18} />} iconEnd={<Kbd>{t('palette.keyboardHint')}</Kbd>} onClick={p.onPalette} aria-keyshortcuts="Meta+K Control+K">
+            {t('editor.commandPalette')}
           </Button>
-        ) : (
-          <Button size="sm" variant="secondary" icon={<Icon name="close" size={18} />} onClick={() => p.onMode('explore')}>
-            {t('quiz.exit')}
-          </Button>
-        )}
+          {p.mode === 'explore' ? (
+            <Button size="sm" icon={<Icon name="bolt" size={18} />} onClick={() => p.onMode('challenge')}>
+              {challengeText}
+            </Button>
+          ) : (
+            <Button size="sm" variant="secondary" icon={<Icon name="close" size={18} />} onClick={() => p.onMode('explore')}>
+              {t('quiz.exit')}
+            </Button>
+          )}
+        </span>
+        <span className="shrink-0 md:hidden">
+          <Menu
+            trigger="icon"
+            align="end"
+            icon={dots}
+            label={t('editor.moreActions')}
+            items={[
+              { label: t('editor.commandPalette'), onSelect: p.onPalette },
+              p.mode === 'explore' ? { label: challengeText, onSelect: () => p.onMode('challenge') } : { label: t('quiz.exit'), onSelect: () => p.onMode('explore') },
+            ]}
+          />
+        </span>
       </header>
       {failed ? (
         <div className="absolute inset-x-0 top-[68px] z-20 px-5 pt-3">

@@ -9,7 +9,7 @@ export default defineConfig({
   use: { baseURL: 'http://localhost:3000' },
   webServer: [
     // API from the sibling backend repo (D-034); needs its .env (`pnpm --silent db:env > .env` there).
-    { command: 'pnpm -C ../../../remoa-backend dev', url: 'http://localhost:4000/health', reuseExistingServer: !process.env.CI },
+    { command: 'pnpm -C ../../../remoa-backend dev', url: 'http://localhost:4000/health', reuseExistingServer: !process.env.CI, env: { STRIPE: 'mock' } },
     { command: 'pnpm dev', port: 3000, reuseExistingServer: !process.env.CI },
   ],
 });

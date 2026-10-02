@@ -6,7 +6,10 @@ import { stripMarkdown } from './markdown';
 import { useAsset } from './upload';
 
 export type CardFace = {
+  /** Front (D-097): the question/hint; never the answer. */
   summary: string | null;
+  /** Concept back as plain text (the node's back face, after "Ver resposta"). */
+  answer: string | null;
   meta: string | null;
   chips: readonly string[] | undefined;
   thumbnail: { src: string | null; alt: string } | null;
@@ -17,17 +20,16 @@ const count = (n: number, one: 'cards.image.masksOne', many: 'cards.image.masks'
 export function cardFace(card: Card, thumbSrc: string | null): CardFace {
   const p = card.preview;
   switch (card.type) {
-    case 'concept': {
-      const text = card.back ?? card.front;
-      return { summary: text ? stripMarkdown(text) : null, meta: null, chips: undefined, thumbnail: null };
-    }
+    case 'concept':
+      return { summary: card.front ? stripMarkdown(card.front) : null, answer: card.back ? stripMarkdown(card.back) : null, meta: null, chips: undefined, thumbnail: null };
     case 'flow':
-      return { summary: null, meta: p?.steps ? t('cards.flow.count', { n: p.steps }) : null, chips: undefined, thumbnail: null };
+      return { summary: null, answer: null, meta: p?.steps ? t('cards.flow.count', { n: p.steps }) : null, chips: undefined, thumbnail: null };
     case 'case':
-      return { summary: null, meta: null, chips: p?.stages?.map((s) => t(`cards.case.stage.${s}`)), thumbnail: null };
+      return { summary: null, answer: null, meta: null, chips: p?.stages?.map((s) => t(`cards.case.stage.${s}`)), thumbnail: null };
     case 'image':
       return {
         summary: null,
+        answer: null,
         meta: p?.assetId ? count(p.masks ?? 0, 'cards.image.masksOne', 'cards.image.masks') : null,
         chips: undefined,
         thumbnail: { src: thumbSrc, alt: t('cards.image.alt', { title: card.title }) },

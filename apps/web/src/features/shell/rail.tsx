@@ -1,11 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { t, type StringKey } from '@remoa/strings';
-import { AppRail, Logo, RailAccount, RailItem, type IconName } from '@remoa/ui';
+import { useNavPending } from './nav-pending';
+import { AppRail, Avatar, Logo, RailAccount, RailItem, type IconName } from '@remoa/ui';
+import { initialsOf } from '@/features/account/shell/format';
 
-const items: { href: string; icon: IconName; label: StringKey }[] = [
+export const items: { href: string; icon: IconName; label: StringKey }[] = [
   { href: '/', icon: 'home', label: 'rail.home' },
   { href: '/mapas', icon: 'maps', label: 'rail.maps' },
   { href: '/revisar', icon: 'bolt', label: 'rail.review' },
@@ -14,16 +17,33 @@ const items: { href: string; icon: IconName; label: StringKey }[] = [
 ];
 
 // O middleware reescreve `/` → `/hoje` sem mudar a URL, então o Hoje aparece como `/` (ou `/hoje` em acesso direto).
-const isActive = (path: string, href: string, challenge: boolean) =>
+export const isActive = (path: string, href: string, challenge: boolean) =>
   href === '/' ? path === '/' || path === '/hoje' : challenge ? href === '/revisar' : path === href || path.startsWith(`${href}/`);
 
 /** Trilho de 88 px (D-076). `dueTotal` = badge do Revisar. */
-export function Rail({ dueTotal = 0 }: { dueTotal?: number }) {
+/** F13: who is signed in, for the avatar at the foot of the rail (null = API down, user icon). */
+export type RailIdentity = { name: string | null; email: string; color: number; src?: string } | null;
+
+export function Rail({ dueTotal = 0, account = null }: { dueTotal?: number; account?: RailIdentity }) {
+  // useSearchParams sem Suspense derruba o prerender das páginas estáticas no `next build`; o fallback é o mesmo trilho sem `modo`.
+  return (
+    <Suspense fallback={<RailView dueTotal={dueTotal} account={account} modo={null} />}>
+      <RailWithParams dueTotal={dueTotal} account={account} />
+    </Suspense>
+  );
+}
+
+function RailWithParams({ dueTotal, account }: { dueTotal: number; account: RailIdentity }) {
+  return <RailView dueTotal={dueTotal} account={account} modo={useSearchParams().get('modo')} />;
+}
+
+function RailView({ dueTotal, account, modo }: { dueTotal: number; account: RailIdentity; modo: string | null }) {
   const path = usePathname();
   const router = useRouter();
   // G01 T6: the challenge lives in the map (`/mapas/<id>?modo=desafio`) but belongs to Revisar (Desafio.dc.html)
-  const modo = useSearchParams().get('modo');
   const challenge = path.startsWith('/mapas/') && modo === 'desafio';
+  // Destaque otimista: o item clicado fica ativo na hora (estado no NavPendingProvider, que limpa ao mudar a rota).
+  const { pending, setPending } = useNavPending();
   return (
     <AppRail
       aria-label={t('pages.navLabel')}
@@ -32,7 +52,11 @@ export function Rail({ dueTotal = 0 }: { dueTotal?: number }) {
           <Logo size={36} />
         </Link>
       }
-      account={<RailAccount aria-label={t('rail.account')} onClick={() => router.push('/conta')} />}
+      account={
+        <RailAccount aria-label={t('rail.account')} active={path.startsWith('/conta')} onClick={() => router.push('/conta')}>
+          {account ? <Avatar name={account.name ?? account.email} fallback={initialsOf(account.name, account.email)} src={account.src} color={account.color} size={44} plain /> : null}
+        </RailAccount>
+      }
     >
       {items.map((i) => (
         <RailItem
@@ -41,7 +65,8 @@ export function Rail({ dueTotal = 0 }: { dueTotal?: number }) {
           href={i.href}
           icon={i.icon}
           label={t(i.label)}
-          active={isActive(path, i.href, challenge)}
+          active={pending ? pending === i.href : isActive(path, i.href, challenge)}
+          onClick={() => !isActive(path, i.href, challenge) && setPending(i.href)}
           {...(i.href === '/revisar' && dueTotal > 0 ? { badge: dueTotal, badgeLabel: t('review.badge', { n: dueTotal }) } : {})}
         />
       ))}

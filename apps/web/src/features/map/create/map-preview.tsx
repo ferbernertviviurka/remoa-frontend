@@ -23,7 +23,17 @@ const LABELS: Record<Path, ReadonlyArray<readonly [string, string]>> = {
 };
 
 /** Dark live preview (aside). `step` fades the satellites in: 0.55, 0.8, 1. */
-export function MapPreview({ path, step, name, area, item }: { path: Path; step: 0 | 1 | 2; name: string; area: string; item: string }) {
+export function MapPreview({ path, step, name, area, item, compact = false }: { path: Path; step: 0 | 1 | 2; name: string; area: string; item: string; compact?: boolean }) {
+  // Celular/tablet (< lg): a cena de 600 px não cabe; vira um resumo escuro abaixo do formulário (decorativo, o nome já está no campo).
+  if (compact) {
+    return (
+      <div aria-hidden="true" className="flex flex-col gap-1.5 rounded-[22px] bg-panel-dark px-5 py-4 text-on-dark lg:hidden">
+        <span className="text-xs font-bold uppercase tracking-[.12em] text-on-dark-muted">{t('newMap.previewLabel')}</span>
+        <span className="line-clamp-2 font-display text-xl font-extrabold leading-[1.15] tracking-[-0.02em]">{name || t('newMap.nameLabel')}</span>
+        <span className="text-sm text-on-dark-muted-2">{t(`newMap.previewSub.${path}` as StringKey)}{path === 'blank' || !item ? '' : ` · ${item}`}</span>
+      </div>
+    );
+  }
   const opacity = [0.55, 0.8, 1][step];
   const ghost = path === 'pdf';
   const sats = LABELS[path].map(([k, v], i) => {

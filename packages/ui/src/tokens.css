@@ -77,6 +77,8 @@
   --navy: #16324f;
   --apricot: #f0b78c;
   --edge: #70818d;
+  --avatar-3: #3a3558; /* cores de avatar 4 e 5 (1–3 = --primary, --primary-deep, --navy); texto branco */
+  --avatar-4: #4d3fa8;
 
   --font-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
   --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
@@ -176,6 +178,8 @@
   --shadow-float: var(--shadow-float);
   --shadow-toast: var(--shadow-toast);
   --color-edge: var(--edge);
+  --color-avatar-3: var(--avatar-3);
+  --color-avatar-4: var(--avatar-4);
   --shadow-lift: var(--shadow-lift);
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
@@ -207,8 +211,8 @@
   to { opacity: 1; }
 }
 @keyframes remoa-dialog-in {
-  from { opacity: 0; transform: translate(-50%, -46%) scale(0.96); }
-  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  from { opacity: 0; transform: translateY(4%) scale(0.96); } /* centering is the `translate` property of the element (Tailwind); a translate() here would double it */
+  to { opacity: 1; transform: none; }
 }
 @keyframes remoa-toast-in {
   from { opacity: 0; transform: translateY(14px) scale(0.98); }
@@ -238,21 +242,23 @@
 }
 .remoa-spin { animation: remoa-spin 0.7s linear infinite; }
 
+/* "full" on the root (account preference, F13) overrides the OS setting. */
 @media (prefers-reduced-motion: reduce) {
-  .pulse,
-  .pulsed,
-  .pop,
-  .remoa-overlay,
-  .remoa-dialog,
-  .remoa-sheet,
-  .remoa-toast,
-  .remoa-pop,
-  .remoa-skeleton,
-  .remoa-spin,
-  .remoa-press {
+  :root:not([data-motion="full"]) .pulse,
+  :root:not([data-motion="full"]) .pulsed,
+  :root:not([data-motion="full"]) .pop,
+  :root:not([data-motion="full"]) .remoa-overlay,
+  :root:not([data-motion="full"]) .remoa-dialog,
+  :root:not([data-motion="full"]) .remoa-sheet,
+  :root:not([data-motion="full"]) .remoa-toast,
+  :root:not([data-motion="full"]) .remoa-pop,
+  :root:not([data-motion="full"]) .remoa-skeleton,
+  :root:not([data-motion="full"]) .remoa-spin,
+  :root:not([data-motion="full"]) .remoa-press {
     animation: none !important;
   }
-  .lift { transition: none; }
-  .lift:hover { transform: none; }
-  .remoa-press { transition: none !important; }
+  :root:not([data-motion="full"]) .lift { transition: none; }
+  :root:not([data-motion="full"]) .lift:hover { transform: none; }
+  :root:not([data-motion="full"]) .remoa-press { transition: none !important; }
 }
+

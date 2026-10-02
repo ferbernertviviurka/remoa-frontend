@@ -78,3 +78,27 @@ test('axe: Editor (resumo, card, cada aba do inspetor) e paleta ⌘K', async ({ 
   await expect(page.getByRole('group', { name: /Como foi lembrar/ })).toBeVisible();
   expect(await axe(page), 'desafio: resposta revelada').toEqual([]);
 });
+
+test('axe: Preços, Conta (e confirmação de exclusão) e Paywall de mapas', async ({ page, request }) => {
+  test.setTimeout(120_000);
+  const { headers } = await signUpAndLogin(page, request);
+  await page.goto('/precos');
+  await expect(page.getByRole('table', { name: 'Comparação entre Free e Pro' })).toBeVisible();
+  expect(await axe(page), 'preços').toEqual([]);
+  await page.goto('/conta');
+  await expect(page.getByRole('button', { name: 'Exportar meus dados' })).toBeVisible();
+  expect(await axe(page), 'conta').toEqual([]);
+  await page.getByRole('button', { name: 'Excluir conta' }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  expect(await axe(page), 'conta: confirmar exclusão').toEqual([]);
+  await page.keyboard.press('Escape');
+
+  for (let i = 0; i < 3; i++) expect((await request.post('http://localhost:4000/v1/boards', { headers, data: { title: `M${i}` } })).status()).toBe(201);
+  await page.goto('/mapas/novo?caminho=blank');
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await page.getByRole('button', { name: 'Criar mapa', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('button', { name: 'Continuar no Free' })).toBeVisible();
+  expect(await axe(page), 'paywall').toEqual([]);
+});

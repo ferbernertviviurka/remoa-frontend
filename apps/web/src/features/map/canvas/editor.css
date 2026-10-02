@@ -1,0 +1,18 @@
+/*
+ * G02: rules that target React Flow's own class names. They contain "__", which Tailwind arbitrary variants turn into
+ * spaces (`[.react-flow__node:hover_&]` compiled to `.react-flow node:hover …` and never matched: the D-075 ports and
+ * the tool cursors never showed). Plain CSS here instead.
+ */
+
+/* Ports: faint at rest so they can be found, solid on hover/selection/focus and while a connection is being drawn. */
+.cv-port { opacity: 0.4; transition: opacity 0.15s; }
+.react-flow__node:hover > .cv-port,
+.react-flow__node.selected > .cv-port,
+.react-flow__node:focus-within > .cv-port,
+.react-flow.connecting .cv-port { opacity: 1; }
+
+.cv-editor[data-tool='connect'] .react-flow__node { cursor: crosshair; }
+.cv-editor[data-tool='move'] .react-flow__node { cursor: grab; }
+
+/* D-097: one blur over the whole viewport (nodes + edges) while a challenge item is open, not one filter per node. */
+.cv-editor[data-focus] .react-flow__viewport { filter: blur(5px); }
