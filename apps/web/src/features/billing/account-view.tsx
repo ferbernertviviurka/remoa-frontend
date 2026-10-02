@@ -119,7 +119,7 @@ export function AccountView({ email, ent, notice }: { email: string; ent: Entitl
                 )}
               </>
             ) : (
-              <Button onClick={() => router.push('/precos')}>{t('billing.account.subscribe')}</Button>
+              <Button onClick={() => router.push('/planos?de=account_plan')}>{t('billing.account.subscribe')}</Button>
             )}
           </div>
         </section>

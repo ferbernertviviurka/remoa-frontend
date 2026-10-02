@@ -24,10 +24,36 @@ describe('toDraft', () => {
   });
 });
 
+describe('G06: Conteúdo and images everywhere', () => {
+  it('note: title, text and image only; never a back or a rubric payload', () => {
+    const d = fresh('note');
+    expect(d.type).toBe('note');
+    const r = buildSaveInput({ ...d, title: 'Fisiopatologia', front: 'Texto **livre**', back: 'ignorado', frontAssetId: asset, backAssetId: asset });
+    expect(r).toEqual({ ok: true, data: { type: 'note', title: 'Fisiopatologia', shape: 'rect', front: 'Texto **livre**', frontAssetId: asset, backAssetId: null, back: null, source: null, payload: {} } });
+    expect(r.ok && previewOf(r.data)).toBeUndefined();
+  });
+
+  it('answer image (concept/flow/case), step and stage images round-trip; an image on an empty stage goes with it', () => {
+    const c = buildSaveInput({ ...fresh('concept'), backAssetId: asset });
+    expect(c.ok && c.data.backAssetId).toBe(asset);
+    const f = toDraft({ id, type: 'flow', title: 'F', front: null, back: null, source: null, backAssetId: asset, payload: { steps: [{ id: 'a', text: 'um', assetId: asset }, { id: 'b', text: 'dois' }] } });
+    expect(f.backAssetId).toBe(asset);
+    const fb = buildSaveInput(f);
+    expect(fb.ok && fb.data.type === 'flow' && fb.data.payload.steps).toEqual([{ id: 'a', text: 'um', assetId: asset }, { id: 'b', text: 'dois' }]);
+    const k = toDraft({ id, type: 'case', title: 'C', front: null, back: null, source: null, payload: { caseSteps: [{ stage: 'workup', text: 'ECG', assetId: asset }] } });
+    if (k.type !== 'case') throw new Error();
+    expect(k.stageAssets.workup).toBe(asset);
+    const kb = buildSaveInput({ ...k, stageAssets: { ...k.stageAssets, management: asset } }); // management has no text
+    expect(kb.ok && kb.data.type === 'case' && kb.data.payload.caseSteps).toEqual([{ stage: 'workup', text: 'ECG', assetId: asset }]);
+    const img = buildSaveInput({ ...fresh('image'), assetId: asset, backAssetId: asset } as Draft);
+    expect(img.ok && img.data.backAssetId).toBeNull(); // image cards answer with their masks
+  });
+});
+
 describe('buildSaveInput', () => {
   it('concept: trims, empty texts become null', () => {
     const r = buildSaveInput({ ...fresh('concept'), title: ' Sepse ', back: '**Disfunção**', source: '  ' });
-    expect(r).toEqual({ ok: true, data: { type: 'concept', title: 'Sepse', shape: 'rect', front: null, frontAssetId: null, back: '**Disfunção**', source: null, payload: {} } });
+    expect(r).toEqual({ ok: true, data: { type: 'concept', title: 'Sepse', shape: 'rect', front: null, frontAssetId: null, backAssetId: null, back: '**Disfunção**', source: null, payload: {} } });
   });
 
   it('D-095/D-096: concept keeps its shape and question image; other types are always rect', () => {

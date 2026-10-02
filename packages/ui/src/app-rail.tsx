@@ -13,13 +13,18 @@ import { Icon, type IconName } from './icons';
  * `badge` (número/texto no canto, laranja --review; `badgeLabel` = texto só para leitor de tela, ex.: "12 revisões vencidas").
  * Com `href` vira link (`as` troca o elemento, ex.: next/link); sem `href` é <button>.
  */
-export type AppRailProps = { 'aria-label': string; logo: ReactNode; children: ReactNode; account?: ReactNode };
+/** `logo` null/undefined = no logo box at all (F14: the navbar carries the brand on shell routes). */
+export type AppRailProps = { 'aria-label': string; logo?: ReactNode; children: ReactNode; account?: ReactNode };
 
 export function AppRail({ logo, children, account, ...rest }: AppRailProps) {
   return (
-    <nav {...rest} className="flex w-[88px] shrink-0 flex-col items-center gap-1.5 border-r border-border bg-surface pb-[18px] pt-4">
-      <div className="flex size-14 items-center justify-center rounded-[18px]">{logo}</div>
-      <span aria-hidden="true" className="h-3" />
+    <nav {...rest} className={clsx('flex w-[88px] shrink-0 flex-col items-center gap-1.5 border-r border-border bg-surface pb-[18px]', logo ? 'pt-4' : 'pt-6')}>
+      {logo ? (
+        <>
+          <div className="flex size-14 items-center justify-center rounded-[18px]">{logo}</div>
+          <span aria-hidden="true" className="h-3" />
+        </>
+      ) : null}
       {children}
       <span aria-hidden="true" className="grow" />
       {account}

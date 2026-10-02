@@ -13,6 +13,24 @@
 
 .cv-editor[data-tool='connect'] .react-flow__node { cursor: crosshair; }
 .cv-editor[data-tool='move'] .react-flow__node { cursor: grab; }
+.cv-editor[data-tool='move'] .react-flow__pane.dragging .react-flow__node { cursor: grabbing; }
+/* G04: the button covering the card takes the node's cursor (grab/grabbing from React Flow, crosshair in "Ligar"), not the
+   global button pointer: the card reads as something to drag. Controls on the card (flip = .nodrag) keep the pointer. */
+.cv-editor .react-flow__node button:not(.nodrag) { cursor: inherit; }
 
 /* D-097: one blur over the whole viewport (nodes + edges) while a challenge item is open, not one filter per node. */
 .cv-editor[data-focus] .react-flow__viewport { filter: blur(5px); }
+
+/* P-083: React Flow always marks edges `nopan`, so on touch a second finger landing on a connection was dropped by the
+   zoom filter and the pinch turned into a pan. Touch screens review, not edit (DESIGN): connections don't take touches
+   there, the touch reaches the pane. Label buttons (EdgeLabelRenderer) stay tappable. */
+@media (hover: none) and (pointer: coarse) { /* same query as the drag switch in map-canvas (G04) */
+  .cv-editor .react-flow__edge { pointer-events: none; }
+}
+
+/* D-202: resize handles on the selected card's corners (React Flow NodeResizeControl). 12 px dot, 24 px hit area. */
+.cv-editor .react-flow__resize-control.cv-resize.handle {
+  width: 12px; height: 12px; border-radius: 4px; border: 2px solid var(--surface); background: var(--primary);
+  box-shadow: 0 1px 3px rgba(36, 26, 92, 0.3); z-index: 11;
+}
+.cv-editor .react-flow__resize-control.cv-resize.handle::before { content: ''; position: absolute; inset: -6px; }

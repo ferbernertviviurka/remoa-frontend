@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
+import { signUpViaForm } from './sign-up';
 
-// Needs the backend at :4000 running with STRIPE=mock (checkout URL → /v1/stripe/mock/checkout, 302 → /conta?checkout=ok).
+// Needs the backend at :4000 running with STRIPE=mock (checkout URL → /v1/stripe/mock/checkout, 302 → /planos/sucesso?session_id= (F15, Pro dialog)).
 test('assinar, cancelar, exportar e excluir a conta', async ({ page }) => {
   test.setTimeout(120_000);
   let token = '';
@@ -9,41 +10,44 @@ test('assinar, cancelar, exportar e excluir a conta', async ({ page }) => {
     if (a && r.url().startsWith('http://localhost:4000')) token = a;
   });
 
-  await page.goto('/cadastro');
-  await page.getByLabel('E-mail').fill(`e2e-billing-${Date.now()}@remoa.test`);
-  await page.getByLabel('Senha').fill('senha-forte-123');
-  await page.getByRole('button', { name: 'Criar conta' }).click();
+  await signUpViaForm(page, `e2e-billing-${Date.now()}@remoa.test`);
   await expect(page).toHaveURL(/\/$/);
 
   await test.step('free → preços → checkout (mock) → Pro', async () => {
-    await page.goto('/conta');
-    await expect(page.getByRole('heading', { name: 'Free' }).or(page.getByText('Free', { exact: true }))).toBeVisible();
-    await page.goto('/precos');
+    await page.goto('/conta/plano');
+    await expect(page.getByRole('heading', { name: 'Free' })).toBeVisible();
+    await page.goto('/planos');
     await expect(page.getByRole('table', { name: 'Comparação entre Free e Pro' })).toBeVisible();
-    await page.getByText('Cartão', { exact: true }).click(); // card = recurring subscription (Pix is a prepaid period, D-100)
+    await page.getByRole('radio', { name: /^Cartão/ }).click(); // card = recurring subscription (Pix is a prepaid period, D-100)
     await page.getByRole('button', { name: 'Assinar o Pro' }).click();
-    await expect(page).toHaveURL(/\/conta/);
-    await expect(page.getByText('Assinatura ativada. Bem-vindo ao Pro.', { exact: true })).toBeVisible();
-    await expect(page.getByText('Pro', { exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/\/planos\/sucesso\?session_id=/);
+    await expect(page.getByRole('dialog', { name: 'Você agora é Pro.' })).toBeVisible();
+    await page.goto('/conta/plano');
+    await expect(page.getByRole('button', { name: 'Gerenciar assinatura' })).toBeVisible();
   });
 
   await test.step('cancelar → ativo até a data, sem renovar', async () => {
     await page.getByRole('button', { name: 'Cancelar assinatura' }).click();
-    await expect(page).toHaveURL(/\/conta/);
+    await expect(page).toHaveURL(/\/conta\/plano/);
     await expect(page.getByText(/não renova sozinho/)).toBeVisible();
-    await expect(page).toHaveURL(/\/conta$/); // ?portal=ok is cleared with router.replace; clicking before that lands on the old tree
+    await expect(page).toHaveURL(/\/conta\/plano$/); // ?portal=ok is cleared with router.replace; clicking before that lands on the old tree
   });
 
   await test.step('exportar baixa um JSON', async () => {
-    const download = page.waitForEvent('download');
+    await page.getByRole('link', { name: 'Dados e privacidade' }).click();
     await page.getByRole('button', { name: 'Exportar meus dados' }).click();
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Baixar' }).click();
     const file = await download;
     expect(file.suggestedFilename()).toMatch(/\.json$/);
   });
 
   await test.step('excluir → deslogado e a API responde 403', async () => {
     await page.getByRole('button', { name: 'Excluir conta' }).click();
-    await page.getByRole('dialog').getByRole('button', { name: 'Excluir minha conta' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByLabel('Digite EXCLUIR para confirmar').fill('EXCLUIR');
+    await dialog.getByRole('button', { name: 'Excluir conta' }).click();
+    await page.getByRole('button', { name: 'Sair da conta' }).click();
     await expect(page).toHaveURL(/\/$/);
     await page.goto('/hoje');
     await expect(page).toHaveURL(/\/entrar/);

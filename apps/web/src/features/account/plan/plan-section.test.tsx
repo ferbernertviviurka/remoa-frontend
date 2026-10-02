@@ -37,7 +37,7 @@ describe('PlanSection', () => {
     expect(screen.getByText('R$ 349')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Assinar o Pro' }));
     expect(track).toHaveBeenCalledWith('upgrade_clicked', { source: 'account_plan' });
-    expect(push).toHaveBeenCalledWith('/precos');
+    expect(push).toHaveBeenCalledWith('/planos?de=account_plan&periodo=anual');
   });
 
   it('pro: manage button, no offer, unlimited meters', () => {
@@ -48,9 +48,9 @@ describe('PlanSection', () => {
   });
 
   it('80% warns with "Ver o Pro"; 100% says the limit was reached', () => {
-    view(withUsage(accountFreeFixture, { boards: 3, cards: 160, ai_grades: 0, ai_generations: 0 }));
+    view(withUsage(accountFreeFixture, { boards: 2, cards: 42, ai_grades: 0, ai_generations: 0 }));
     expect(screen.getByText('Perto do limite. O Pro remove esse teto.')).toBeVisible();
-    expect(screen.getAllByText('Você chegou ao limite. O Pro remove esse teto.')).toHaveLength(1);
+    expect(screen.getAllByText('Limite atingido. O Pro remove esse teto.')).toHaveLength(1);
     fireEvent.click(screen.getAllByRole('button', { name: 'Ver o Pro' })[0]!);
     expect(track).toHaveBeenCalledWith('upgrade_clicked', { source: 'usage_nudge' });
   });

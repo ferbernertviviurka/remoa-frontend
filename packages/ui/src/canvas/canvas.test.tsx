@@ -17,6 +17,9 @@ import { RatingButton, RatingGroup } from './rating-button';
 import { CommandPalette } from './command-palette';
 import { EditorFixture } from './fixtures';
 
+// Radix Tooltip (popper) mede com ResizeObserver, ausente no jsdom
+globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} };
+
 const node = { type: 'concept', typeLabel: 'Conceito', title: 'Sepse', selectLabel: 'Selecionar Sepse', layer: 'recall', state: 'review', footer: 'Revisitar · 58%' } as const;
 
 describe('NodeCard', () => {
@@ -37,7 +40,7 @@ describe('NodeCard', () => {
     const cls = () => screen.getByRole('article').className;
     expect(cls()).toContain('w-[232px]');
     rerender(<NodeCard {...node} type="case" chips={[{ label: 'Exames', active: true }]} />);
-    expect(cls()).toContain('h-[176px]');
+    expect(cls()).toContain('h-[216px]');
     rerender(<NodeCard {...node} type="flow" steps={[{ text: 'a' }]} />);
     expect(cls()).toContain('h-[282px]');
     rerender(<NodeCard {...node} type="image" image={{ src: null, alt: 'Imagem' }} />);
@@ -190,6 +193,18 @@ describe('controles', () => {
     expect(screen.getByRole('button', { name: 'Mover o mapa' })).toHaveFocus();
     await userEvent.keyboard('{Enter}');
     expect(onSelect).toHaveBeenCalledWith('move');
+    expect(await violations(container)).toEqual([]);
+  });
+  it('CanvasToolbar: tooltip com a explicação no hover e no foco, sem title nativo, sem violações', async () => {
+    const items = [{ id: 'select', icon: 'cursor', label: 'Selecionar', hint: 'Selecionar: clique num card' }, { id: 'move', icon: 'move', label: 'Mover o mapa', hint: 'Mover o mapa: arraste o fundo' }] as const;
+    const { container } = render(<CanvasToolbar aria-label="Ferramentas" onSelect={vi.fn()} items={items} />);
+    expect(container.querySelector('[title]')).toBeNull();
+    await userEvent.hover(screen.getByRole('button', { name: 'Selecionar' }));
+    expect((await screen.findAllByText('Selecionar: clique num card')).length).toBeGreaterThan(0);
+    await userEvent.unhover(screen.getByRole('button', { name: 'Selecionar' }));
+    await userEvent.tab();
+    await userEvent.tab();
+    expect((await screen.findAllByText('Mover o mapa: arraste o fundo')).length).toBeGreaterThan(0);
     expect(await violations(container)).toEqual([]);
   });
   it('ZoomControl: limites 60–140% e Ajustar', async () => {

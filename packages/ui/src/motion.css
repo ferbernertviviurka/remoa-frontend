@@ -35,3 +35,42 @@
     transition: none !important;
   }
 }
+
+/* F15 Planos: anel que se desenha (único uso de stroke-dashoffset) e check. dasharray vem do elemento. */
+@keyframes draw { from { stroke-dashoffset: 264; } }
+@keyframes drawc { from { stroke-dashoffset: 60; } }
+.draw { stroke-dasharray: 264; animation: draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both; }
+.drawc { stroke-dasharray: 60; animation: drawc 0.5s ease 0.75s both; }
+.fillx-linear { transform-origin: 0 50%; animation: fillx 1.8s linear both; }
+
+/* F16 Marketing (landing). Só transform/opacity. */
+@keyframes mk-reveal { from { opacity: 0; transform: translateY(34px); } }
+@keyframes mk-growx { from { transform: scaleX(0); } }
+@keyframes mk-marquee { to { transform: translateX(-50%); } }
+.mk-marquee-track { animation: mk-marquee 38s linear infinite; }
+.mk-marquee-mask { -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.mk-marquee:hover .mk-marquee-track,
+.mk-marquee:focus-within .mk-marquee-track,
+.mk-marquee-track[data-paused] { animation-play-state: paused; }
+@supports (animation-timeline: view()) {
+  .mk-reveal { animation: mk-reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 45%; }
+  .mk-growx { transform-origin: 0 50%; animation: mk-growx linear both; animation-timeline: view(); animation-range: entry 10% cover 55%; }
+}
+/* Sem animation-timeline: visível por padrão; o app pode usar data-reveal="hidden" | "shown" (IntersectionObserver). */
+@supports not (animation-timeline: view()) {
+  .mk-reveal[data-reveal] { transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1) var(--mk-delay, 0ms), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) var(--mk-delay, 0ms); }
+  .mk-reveal[data-reveal='hidden'] { opacity: 0; transform: translateY(34px); }
+}
+/* Reduzir movimento: estático (a regra geral acima já zera animation/transition); faixa vira linhas sem botão. */
+[data-motion='reduced'] .mk-reveal[data-reveal='hidden'] { opacity: 1; transform: none; }
+[data-motion='reduced'] .mk-marquee-btn,
+[data-motion='reduced'] .mk-marquee-dup { display: none; }
+[data-motion='reduced'] .mk-marquee-track { width: auto; }
+[data-motion='reduced'] .mk-marquee-half { flex-wrap: wrap; justify-content: center; }
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion]) .mk-reveal[data-reveal='hidden'] { opacity: 1; transform: none; }
+  :root:not([data-motion]) .mk-marquee-btn,
+  :root:not([data-motion]) .mk-marquee-dup { display: none; }
+  :root:not([data-motion]) .mk-marquee-track { width: auto; }
+  :root:not([data-motion]) .mk-marquee-half { flex-wrap: wrap; justify-content: center; }
+}

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { accountFreeFixture, accountProFixture } from '@remoa/contracts/mocks';
+import { accountFreeFixture } from '@remoa/contracts/mocks';
 import type { AccountSnapshot } from '@remoa/contracts';
 import { ToastProvider } from '@remoa/ui';
 import { AccountProvider } from '../shell/account-context';
@@ -43,16 +43,16 @@ describe('PreferencesSection', () => {
     expect(document.documentElement.dataset.motion).toBeUndefined();
   });
 
-  it('free: stepper above 10 shows the Pro nudge instead of saving; Pro goes to 20', () => {
+  it('dark theme is listed as "Em breve" and cannot be selected; the new-cards stepper is gone', () => {
     view(accountFreeFixture);
-    fireEvent.click(screen.getByRole('button', { name: 'Aumentar cards novos por dia' }));
-    expect(screen.getByText('Free permite até 10 por dia. O Pro vai a 20.')).toBeVisible();
+    const dark = screen.getByRole('radio', { name: /Escuro/ });
+    expect(dark).toBeDisabled();
+    expect(dark).toHaveAttribute('aria-disabled', 'true');
+    expect(dark).toHaveAccessibleDescription('O tema escuro ainda não está disponível e não pode ser escolhido.');
+    expect(screen.getByText('Em breve')).toBeVisible();
+    fireEvent.click(dark);
     expect(api).not.toHaveBeenCalled();
-    cleanup();
-    api.mockResolvedValue({ ok: true, data: { ...accountProFixture.preferences, newCardsPerDay: 20 } });
-    view({ ...accountProFixture, preferences: { ...accountProFixture.preferences, newCardsPerDay: 15 } });
-    fireEvent.click(screen.getByRole('button', { name: 'Aumentar cards novos por dia' }));
-    expect(api).toHaveBeenCalledWith('/v1/account/preferences', { method: 'PATCH', body: '{"newCardsPerDay":20}' });
+    expect(screen.queryByText('Cards novos por dia')).toBeNull();
   });
 
   it('turning the reminder on reveals the hour chips', async () => {

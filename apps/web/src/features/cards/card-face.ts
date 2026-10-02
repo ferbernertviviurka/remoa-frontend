@@ -26,6 +26,8 @@ export function cardFace(card: Card, thumbSrc: string | null): CardFace {
       return { summary: null, answer: null, meta: p?.steps ? t('cards.flow.count', { n: p.steps }) : null, chips: undefined, thumbnail: null };
     case 'case':
       return { summary: null, answer: null, meta: null, chips: p?.stages?.map((s) => t(`cards.case.stage.${s}`)), thumbnail: null };
+    case 'note':
+      return { summary: card.front ? stripMarkdown(card.front) : null, answer: null, meta: null, chips: undefined, thumbnail: null };
     case 'image':
       return {
         summary: null,

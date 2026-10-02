@@ -20,7 +20,8 @@ test('visual v2: Hoje, Meus mapas, Novo mapa (3 passos) e Editor', async ({ page
   await page.goto('/');
   await expect(page.getByRole('link', { name: 'Abrir o mapa Sepse' })).toBeVisible();
   // Saudação (hora do dia) e data do eyebrow são voláteis.
-  await shot('hoje.png', [page.getByRole('heading', { level: 1 }), page.locator('h1').locator('xpath=preceding-sibling::span')]);
+  // P-082: "Sua semana" (barras por dia da semana) e "Próximas revisões" (datas relativas) mudam com o dia da execução.
+  await shot('hoje.png', [page.getByRole('heading', { level: 1 }), page.locator('h1').locator('xpath=preceding-sibling::span'), page.getByRole('region', { name: 'Sua semana' }), page.getByRole('region', { name: 'Próximas revisões' })]);
 
   await page.goto('/mapas');
   await expect(page.getByRole('link', { name: 'Sepse' }).first()).toBeVisible();

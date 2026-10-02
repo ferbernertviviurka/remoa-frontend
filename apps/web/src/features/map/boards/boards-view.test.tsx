@@ -7,10 +7,14 @@ import { BoardsView } from './boards-view';
 const push = vi.fn();
 const refresh = vi.fn();
 const api = vi.fn();
+const track = vi.fn();
+let ent: { entitlements: unknown; status: string; refresh: () => Promise<void> } = { entitlements: null, status: 'error', refresh: async () => {} };
+vi.mock('@/features/shell/entitlements', () => ({ useEntitlements: () => ent }));
+vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push, refresh }) }));
 vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
 
-const board: BoardSummary = { id: 'b1', title: 'Sepse', area: 'CM', status: 'private', updatedAt: new Date('2026-10-01T00:00:00Z'), matrixItemId: null, cardCount: 1, edgeCount: 2, dueCount: 0, stateCounts: { review: 0, watch: 0, steady: 0, unknown: 1 }, preview: { nodes: [{ x: 0.5, y: 0.5, state: 'unknown' }], edges: [] } };
+const board: BoardSummary = { id: 'b1', title: 'Sepse', area: 'CM', status: 'private', updatedAt: new Date('2026-10-01T00:00:00Z'), matrixItemId: null, access: 'owner', cardCount: 1, edgeCount: 2, dueCount: 0, stateCounts: { review: 0, watch: 0, steady: 0, unknown: 1 }, preview: { nodes: [{ x: 0.5, y: 0.5, state: 'unknown' }], edges: [] } };
 const view = (boards: BoardSummary[]) =>
   render(
     <ToastProvider closeLabel="Fechar" viewportLabel="Avisos">
@@ -26,6 +30,7 @@ async function openMenu(item: string) {
 }
 
 afterEach(() => {
+  ent = { entitlements: null, status: 'error', refresh: async () => {} };
   cleanup();
   vi.clearAllMocks();
 });
@@ -82,7 +87,7 @@ describe('BoardsView', () => {
   });
 
   it('area chips carry counts and filter; Todos restores', () => {
-    view([board, { ...board, id: 'b2', title: 'Abdome agudo', area: 'Cirurgia' as 'CM' }]);
+    view([board, { ...board, id: 'b2', title: 'Abdome agudo', area: 'CIR' }]);
     const chips = screen.getByRole('group', { name: 'Filtrar por área' });
     expect(within(chips).getByRole('button', { name: /^Todos 2$/ })).toBeTruthy();
     fireEvent.click(within(chips).getByRole('button', { name: /^Cirurgia 1$/ }));
@@ -107,5 +112,73 @@ describe('BoardsView', () => {
     view([]);
     fireEvent.click(screen.getAllByRole('button', { name: 'Novo mapa' })[0]!);
     expect(push).toHaveBeenCalledWith('/mapas/novo');
+  });
+});
+
+describe('BoardsView: Free limit (F14 FR-20/21)', () => {
+  const plan = (boards: number | null, usage: number) => {
+    ent = { status: 'ready', refresh: async () => {}, entitlements: { plan: boards === null ? 'pro' : 'free', limits: { boards }, usage: { boards: usage } } };
+  };
+  const maps = (n: number) => Array.from({ length: n }, (_, i) => ({ ...board, id: `b${i}`, title: `Mapa ${i}` }));
+  const lockCard = () => screen.queryByText('Limite do plano Free');
+
+  it('Free with 1 map: new-map card with remaining + lock card; header keeps +', () => {
+    plan(2, 1);
+    view(maps(1));
+    expect(screen.getByRole('link', { name: 'Criar um novo mapa' })).toHaveAttribute('href', '/mapas/novo');
+    expect(screen.getByText('Você ainda pode criar 1 mapa no plano Free.')).toBeInTheDocument();
+    expect(lockCard()).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Novo mapa' }));
+    expect(push).toHaveBeenCalledWith('/mapas/novo');
+  });
+
+  it('Free at the limit: only the lock card; header and CTA go to /planos with library_lock', () => {
+    plan(2, 2);
+    view(maps(2));
+    expect(screen.queryByRole('link', { name: 'Criar um novo mapa' })).toBeNull();
+    expect(screen.getByText('O Free permite até 2 mapas. Faça upgrade para criar o próximo.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Novo mapa' }));
+    expect(push).toHaveBeenCalledWith('/planos?de=library_lock');
+    expect(track).toHaveBeenCalledWith('upgrade_clicked', { source: 'library_lock' });
+    track.mockClear();
+    const cta = screen.getByRole('link', { name: 'Fazer upgrade' });
+    expect(cta).toHaveAttribute('href', '/planos?de=library_lock');
+    fireEvent.click(cta);
+    expect(track).toHaveBeenCalledWith('upgrade_clicked', { source: 'library_lock' });
+  });
+
+  it('legacy Free (3 maps, limit 2): keeps everything, cannot create', () => {
+    plan(2, 3);
+    view(maps(3));
+    expect(screen.getAllByRole('link', { name: /^Abrir Mapa/ })).toHaveLength(3);
+    expect(screen.queryByRole('link', { name: 'Criar um novo mapa' })).toBeNull();
+    expect(lockCard()).toBeInTheDocument();
+  });
+
+  it('Pro: new-map card with the default text, no lock', () => {
+    plan(null, 5);
+    view(maps(3));
+    expect(screen.getByText('Comece do zero, de um PDF ou do seu Anki.')).toBeInTheDocument();
+    expect(lockCard()).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Novo mapa' }));
+    expect(push).toHaveBeenCalledWith('/mapas/novo');
+    expect(track).not.toHaveBeenCalled();
+  });
+
+  it('entitlements unavailable: as before, no extra cards', () => {
+    view(maps(2));
+    expect(screen.queryByRole('link', { name: 'Criar um novo mapa' })).toBeNull();
+    expect(lockCard()).toBeNull();
+  });
+
+  it('extra cards only with Todos, empty search and grid view', () => {
+    plan(2, 1);
+    view(maps(1));
+    fireEvent.change(screen.getByLabelText('Buscar mapa'), { target: { value: 'mapa' } });
+    expect(lockCard()).toBeNull();
+    fireEvent.change(screen.getByLabelText('Buscar mapa'), { target: { value: '' } });
+    expect(lockCard()).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver em lista' }));
+    expect(lockCard()).toBeNull();
   });
 });

@@ -32,3 +32,10 @@ export const track: Track = (event, props) => {
 export function identify(userId: string) {
   if (token) void mixpanel().then((mp) => mp.identify(userId));
 }
+
+/** FR-19: defer tracking to browser idle so Mixpanel (lazy import) never competes with LCP. The landing must use this for `landing_viewed` and `scroll_depth`. */
+export const trackWhenIdle: Track = (event, props) => {
+  const run = () => track(event, props);
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 4000 });
+  else setTimeout(run, 2000);
+};

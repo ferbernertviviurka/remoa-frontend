@@ -10,7 +10,7 @@ export function Tooltip({ label, children }: { label: string; children: ReactEle
       <TT.Root>
         <TT.Trigger asChild>{children}</TT.Trigger>
         <TT.Portal>
-          <TT.Content sideOffset={8} className="remoa-pop z-50 rounded-tag bg-navy px-2.5 py-1.5 text-xs font-semibold text-white shadow-lift">
+          <TT.Content sideOffset={8} className="remoa-pop z-50 max-w-[300px] rounded-tag bg-navy px-2.5 py-1.5 text-xs font-semibold leading-[1.45] text-white shadow-lift">
             {label}
             <TT.Arrow className="fill-navy" />
           </TT.Content>

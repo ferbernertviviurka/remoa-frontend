@@ -35,7 +35,7 @@ export const toEdge = (e: Pick<Edge, 'id' | 'fromCardId' | 'toCardId' | 'label'>
 export const heatOf = (cardId: string, map: RetrievabilityMap): MapState => map[cardId]?.state ?? 'unknown';
 
 function newCard(boardId: string, c: { id: string; type: CardType; title: string; position: Position }): Card {
-  return { ...c, boardId, shape: 'rect', frontAssetId: null, front: null, back: null, source: null, status: 'draft', order: 0, reviewerId: null, updatedAt: new Date() };
+  return { ...c, boardId, shape: 'rect', frontAssetId: null, backAssetId: null, size: null, tags: [], front: null, back: null, source: null, status: 'draft', order: 0, reviewerId: null, updatedAt: new Date() };
 }
 
 /** Applies ops to the local graph (same semantics as the API; idempotent). */
@@ -47,6 +47,15 @@ export function applyOps(g: Graph, ops: MapOp[], cache: CardCache): Graph {
       nodes = nodes.map((n) => {
         const p = to.get(n.id);
         return p ? { ...n, position: p } : n;
+      });
+    } else if (o.op === 'resizeCards') {
+      // D-202: `size: null` = default for the type/shape
+      const to = new Map(o.sizes.map((s) => [s.cardId, s.size]));
+      nodes = nodes.map((n) => {
+        if (!to.has(n.id)) return n;
+        const card = { ...n.data.card, size: to.get(n.id)! };
+        cache.set(n.id, card);
+        return { ...n, data: { card } };
       });
     } else if (o.op === 'createCard') {
       if (nodes.some((n) => n.id === o.card.id)) continue;
@@ -66,7 +75,7 @@ export function applyOps(g: Graph, ops: MapOp[], cache: CardCache): Graph {
       for (const n of nodes) if (ids.has(n.id)) cache.set(n.id, n.data.card);
       nodes = nodes.filter((n) => !ids.has(n.id));
       edges = edges.filter((e) => !ids.has(e.source) && !ids.has(e.target));
-    } else {
+    } else if (o.op === 'deleteEdges') {
       const ids = new Set(o.edgeIds);
       edges = edges.filter((e) => !ids.has(e.id));
     }
@@ -91,6 +100,11 @@ export function invert(g: Graph, o: MapOp, newId: () => string): MapOp[] {
         return p ? [{ cardId: m.cardId, position: p }] : [];
       });
       return moves.length ? [{ ...base, op: 'moveCards', moves }] : [];
+    }
+    case 'resizeCards': {
+      const from = new Map(g.nodes.map((n) => [n.id, n.data.card.size]));
+      const sizes = o.sizes.flatMap((s) => (from.has(s.cardId) ? [{ cardId: s.cardId, size: from.get(s.cardId)! }] : []));
+      return sizes.length ? [{ ...base, op: 'resizeCards', sizes }] : [];
     }
     case 'createCard':
       return [{ ...base, op: 'deleteCards', cardIds: [o.card.id] }];

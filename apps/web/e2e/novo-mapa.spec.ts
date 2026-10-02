@@ -12,7 +12,7 @@ const toStep3 = async (page: Page) => {
 
 test('novo mapa: em branco cria e abre o editor com matrixItemId; PDF, Anki e mapa pronto não fingem gerar', async ({ page, request }) => {
   test.setTimeout(120_000);
-  await signUpAndLogin(page, request);
+  const auth = await signUpAndLogin(page, request);
   const posts: { url: string; body: Record<string, unknown> }[] = [];
   const other: string[] = [];
   page.on('request', (r) => {
@@ -22,7 +22,8 @@ test('novo mapa: em branco cria e abre o editor com matrixItemId; PDF, Anki e ma
   });
 
   // PDF e Anki: CTA só com arquivo; depois, "Em breve" sem chamada à API.
-  for (const [caminho, file, cta] of [['pdf', 'a.pdf', 'Gerar rascunho do mapa'], ['anki', 'a.apkg', 'Importar para o mapa']] as const) {
+  // (Anki deixou de ser "Em breve": F06, coberto por import.spec.ts.)
+  for (const [caminho, file, cta] of [['pdf', 'a.pdf', 'Gerar rascunho do mapa']] as const) {
     await page.goto(`/mapas/novo?caminho=${caminho}`);
     await toStep3(page);
     await expect(page.getByRole('button', { name: cta })).toBeDisabled();
@@ -46,6 +47,18 @@ test('novo mapa: em branco cria e abre o editor com matrixItemId; PDF, Anki e ma
   await expect(page.getByRole('button', { name: /Em branco/ })).toHaveAttribute('aria-pressed', 'true');
   await page.goto('/mapas/novo');
   await expect(page.getByRole('button', { name: /Do meu PDF/ })).toHaveAttribute('aria-pressed', 'true');
+
+  // ?item= (link da Cobertura): pré-seleciona o item, Em branco, passo Detalhes; id desconhecido é ignorado.
+  await page.goto('/mapas/novo?item=00000000-0000-0000-0000-000000000000');
+  await expect(page.getByRole('heading', { level: 1, name: 'Como você quer começar?' })).toBeVisible();
+  const { headers } = auth;
+  const list = (await (await request.get('http://localhost:4000/v1/matrix/items?area=CM', { headers })).json()).data as { id: string; title: string; parentId: string | null }[];
+  const leaf = list.filter((x) => !list.some((c) => c.parentId === x.id))[1]!;
+  await page.goto(`/mapas/novo?item=${leaf.id}`);
+  await expect(page.getByRole('heading', { level: 1, name: 'Sobre o que é este mapa?' })).toBeVisible();
+  await expect(page.getByLabel('Nome do mapa')).toHaveCount(1); // the slide keeps the outgoing step mounted for a moment
+  await expect(page.getByLabel('Nome do mapa')).toHaveValue(leaf.title);
+  await expect(page.getByRole('complementary', { name: 'Prévia do seu mapa' }).getByText(leaf.title).first()).toBeVisible();
 
   // Em branco: cria, vai para o editor, com o item da matriz sugerido.
   await page.goto('/mapas/novo?caminho=blank');

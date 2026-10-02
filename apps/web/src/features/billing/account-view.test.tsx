@@ -39,7 +39,7 @@ describe('AccountView', () => {
     expect(screen.getByText(`2 de ${PLAN_LIMITS.free.limits.boards}`)).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Cancelar assinatura' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Assinar o Pro' }));
-    expect(push).toHaveBeenCalledWith('/precos');
+    expect(push).toHaveBeenCalledWith('/planos?de=account_plan');
   });
 
   it('pro: next charge, unlimited usage, manage and cancel open the portal', async () => {

@@ -29,14 +29,14 @@ describe('Paywall', () => {
     expect(track).toHaveBeenCalledWith('paywall_viewed', { reason: 'boards' });
   });
 
-  it('CTA goes to /precos; "Continuar no Free" only closes', () => {
+  it('CTA goes to /planos; "Continuar no Free" only closes', () => {
     const onClose = vi.fn();
     render(<Paywall reason="cards" onClose={onClose} />);
     fireEvent.click(screen.getByRole('button', { name: 'Continuar no Free' }));
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(push).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Assinar o Pro' }));
-    expect(push).toHaveBeenCalledWith('/precos');
+    expect(push).toHaveBeenCalledWith('/planos?de=cards');
   });
 
   it('provider opens on a 402 error and closes on dismiss', () => {

@@ -91,12 +91,22 @@ describe('study choices', () => {
   it('saves on click and reverts when the server fails', async () => {
     api.mockResolvedValue(boom);
     view();
-    const group = screen.getByRole('radiogroup', { name: 'Objetivo de prova' });
+    const group = screen.getByRole('radiogroup', { name: /^Objetivo de prova: Enamed/ });
     expect(within(group).getByRole('radio', { name: 'Enamed 2027.1' })).toBeChecked();
     fireEvent.click(within(group).getByRole('radio', { name: 'Enamed 2027.2' }));
     expect(within(group).getByRole('radio', { name: 'Enamed 2027.2' })).toBeChecked(); // optimistic
     await waitFor(() => expect(within(group).getByRole('radio', { name: 'Enamed 2027.1' })).toBeChecked()); // reverted
     expect(await screen.findByText('Não conseguimos concluir agora. Tente de novo.')).toBeVisible();
+  });
+
+  it('goal groups (G06): choosing in another group moves the single selection', async () => {
+    api.mockResolvedValue({ ok: true, data: {} });
+    view();
+    const enamed = screen.getByRole('radiogroup', { name: /^Objetivo de prova: Enamed/ });
+    const residency = screen.getByRole('radiogroup', { name: /^Objetivo de prova: Resid/ });
+    fireEvent.click(within(residency).getByRole('radio', { name: 'ENARE' }));
+    expect(within(residency).getByRole('radio', { name: 'ENARE' })).toBeChecked();
+    expect(within(enamed).queryAllByRole('radio', { checked: true })).toHaveLength(0);
   });
 });
 

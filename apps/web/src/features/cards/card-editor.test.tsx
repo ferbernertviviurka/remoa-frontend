@@ -68,7 +68,7 @@ describe('CardEditor: concept', () => {
     await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
     expect(prepare).toHaveBeenCalledWith(base.id);
     const [detail, input] = onSaved.mock.calls[0]!;
-    expect(input).toEqual({ type: 'concept', title: 'Sepse (Sepsis-3)', shape: 'rect', front: base.front, frontAssetId: null, back: '**Disfunção** orgânica', source: 'SSC 2021', payload: {} });
+    expect(input).toEqual({ type: 'concept', title: 'Sepse (Sepsis-3)', shape: 'rect', front: base.front, frontAssetId: null, backAssetId: null, back: '**Disfunção** orgânica', source: 'SSC 2021', payload: {} });
     expect(detail.title).toBe('Sepse (Sepsis-3)');
     expect(track).toHaveBeenCalledWith('card_edited', { type: 'concept' });
     expect(onClose).toHaveBeenCalled();
@@ -182,10 +182,43 @@ describe('CardEditor: case', () => {
     });
   });
 
+  it('G06: each stage explains itself in a tooltip, reachable by keyboard', async () => {
+    globalThis.ResizeObserver ??= class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver; // Radix tooltip measures its arrow
+    editor(extra[caseId]!);
+    await form();
+    const help = screen.getByRole('button', { name: 'O que é Exames?' });
+    act(() => help.focus());
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(/o desafio mostra as etapas anteriores e pergunta os exames/);
+  });
+
   it('axe: no violations', async () => {
     const { container } = editor(sepseCards.find((c) => c.id === sepseCardIds.caso)!);
     await form();
     expect(await violations(container)).toEqual([]);
+  });
+});
+
+describe('CardEditor: note (Conteúdo, D-200)', () => {
+  const noteId = '00000000-0000-4000-8000-000000000903';
+  beforeEach(() => {
+    extra[noteId] = { ...base, id: noteId, type: 'note', title: 'Novo conteúdo', front: null, back: null, payload: {}, rubric: null };
+  });
+
+  it('title, text and image only: no answer, no rubric; saves type note', async () => {
+    editor(extra[noteId]!);
+    await form();
+    expect(screen.getByText(/não entra no desafio nem na revisão/)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Resposta')).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Rubrica' })).toBeNull();
+    expect(screen.getByRole('group', { name: 'Imagem da pergunta (opcional)' })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Texto'), { target: { value: 'Sepse é **disfunção** orgânica.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+    expect(onSaved.mock.calls[0]![1]).toMatchObject({ type: 'note', front: 'Sepse é **disfunção** orgânica.', back: null, backAssetId: null, payload: {} });
   });
 });
 
@@ -231,6 +264,32 @@ describe('CardEditor: image', () => {
   };
   const pick = (f: File) => fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [f] } });
 
+  const pickIn = (group: HTMLElement, f: File) => fireEvent.change(group.querySelector('input[type="file"]')!, { target: { files: [f] } });
+
+  it('G06: answer image (backAssetId) and an image on a flow step go into the PUT (D-201)', async () => {
+    editor(sepseCards.find((c) => c.id === sepseCardIds.qsofa)!); // not `base`: the mock store keeps what the PUT saved
+    await form();
+    pickIn(screen.getByRole('group', { name: 'Imagem da resposta (opcional)' }), file('a.png', 'image/png'));
+    expect(await screen.findByRole('button', { name: 'Remover imagem da resposta' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+    expect(onSaved.mock.calls[0]![1].backAssetId).toEqual(expect.any(String));
+    expect(onSaved.mock.calls[0]![1].frontAssetId).toBeNull();
+    cleanup();
+    onSaved.mockClear();
+
+    editor(sepseCards.find((c) => c.id === sepseCardIds.pacote)!);
+    await form();
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar imagem ao passo 2' }));
+    pickIn(screen.getByRole('group', { name: 'Imagem do passo 2 (opcional)' }), file('s.png', 'image/png'));
+    expect(await screen.findByRole('button', { name: 'Remover imagem do passo 2' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Trocar imagem' })).toBeInTheDocument(); // compact slot: the uploader folds back
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+    const steps = onSaved.mock.calls[0]![1].payload.steps as { assetId?: string }[];
+    expect(steps.map((x) => !!x.assetId)).toEqual([false, true, false, false, false]);
+  });
+
   it('G02 concept: question image (add, remove, add again) and shape picker go into the PUT (D-095, D-096)', async () => {
     editor(base);
     await form();
@@ -247,9 +306,11 @@ describe('CardEditor: image', () => {
     fireEvent.click(within(group).getByRole('button', { name: 'Losango' }));
     expect(within(group).getByRole('button', { name: 'Losango' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('No mapa, a imagem da pergunta só aparece no formato Retângulo.')).toBeInTheDocument();
+    await screen.findByText('Formato salvo.'); // G04: the shape saves on its own (without the unsaved image)
+    expect(onSaved.mock.calls[0]![1]).toMatchObject({ shape: 'diamond', frontAssetId: null });
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
-    await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
-    const [, input] = onSaved.mock.calls[0]!;
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(2));
+    const [, input] = onSaved.mock.calls[1]!;
     expect(input.shape).toBe('diamond');
     expect(input.frontAssetId).toMatch(/^[0-9a-f-]{36}$/);
   });
@@ -328,5 +389,58 @@ describe('CardEditor: image', () => {
     const { container } = editor(extra[imageId]!);
     await form();
     expect(await violations(container)).toEqual([]);
+  });
+});
+
+describe('CardEditor: shape autosave (G04)', () => {
+  const names = { rect: 'Retângulo', pill: 'Pílula', circle: 'Círculo', diamond: 'Losango', hexagon: 'Hexágono' } as const;
+  type S = keyof typeof names;
+  /** The contract mocks keep state between tests: start from whatever shape the server has now. */
+  const shapeEditor = async () => {
+    const onShape = vi.fn();
+    render(<CardEditor card={asCard(base)} prepare={prepare} onSaved={onSaved} onClose={onClose} onShape={onShape} />);
+    await form();
+    const group = screen.getByRole('group', { name: 'Formato no mapa' });
+    const current = (Object.keys(names) as S[]).find((k) => within(group).getByRole('button', { name: names[k] }).getAttribute('aria-pressed') === 'true')!;
+    const [a, b] = (Object.keys(names) as S[]).filter((k) => k !== current);
+    const pick = (k: S) => fireEvent.click(within(group).getByRole('button', { name: names[k] }));
+    return { onShape, current, a: a!, b: b!, pick, group };
+  };
+  const puts = () => api.mock.calls.filter(([, i]) => (i as RequestInit | undefined)?.method === 'PUT').map(([, i]) => JSON.parse(String((i as RequestInit).body)));
+
+  it('previews on the node at once and PUTs only the shape over what the server has; Cancelar keeps it', async () => {
+    const { onShape, a, pick } = await shapeEditor();
+    fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Não salvo' } });
+    pick(a);
+    expect(onShape).toHaveBeenCalledWith(base.id, a); // before the PUT answers
+    expect(await screen.findByText('Formato salvo.')).toBeInTheDocument();
+    expect(puts()).toHaveLength(1);
+    expect(puts()[0]).toMatchObject({ shape: a });
+    expect(puts()[0].title).not.toBe('Não salvo'); // the unsaved draft stays out
+    expect(onSaved).toHaveBeenCalledOnce();
+    expect(onClose).not.toHaveBeenCalled(); // the editor stays open
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(onShape).toHaveBeenCalledTimes(1); // no rollback on cancel
+  });
+
+  it('a failed PUT rolls the node and the picker back to the saved shape', async () => {
+    const { onShape, current, a, pick, group } = await shapeEditor();
+    api.mockImplementation(async (p: string, i?: RequestInit) => (i?.method === 'PUT' ? { ok: false, error: { code: 'internal', message: 'x' } } : route(p, i)));
+    pick(a);
+    expect(await screen.findByText('Não deu para salvar o formato. Voltamos ao anterior.')).toBeInTheDocument();
+    expect(onShape.mock.calls).toEqual([[base.id, a], [base.id, current]]);
+    expect(within(group).getByRole('button', { name: names[current] })).toHaveAttribute('aria-pressed', 'true');
+    expect(onSaved).not.toHaveBeenCalled();
+  });
+
+  it('quick picks: PUTs one at a time and the last pick wins; Salvar waits for them', async () => {
+    const { onShape, a, b, pick } = await shapeEditor();
+    pick(a);
+    pick(b);
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(puts().map((x) => x.shape)).toEqual([a, b, b]);
+    expect(onShape.mock.calls.map((c) => c[1])).toEqual([a, b]);
   });
 });

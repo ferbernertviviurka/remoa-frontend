@@ -4,17 +4,29 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { t } from '@remoa/strings';
 import { Button, Dialog, Icon } from '@remoa/ui';
+import { track } from '@/lib/analytics';
+import { useEntitlements } from '@/features/shell/entitlements';
+import { atBoardLimit } from './slides';
 
 /** Importar (diálogo "Em breve", D-068) e Novo mapa no topo do Hoje. */
-export function HomeHeaderActions() {
+export function HomeHeaderActions({ mapCount }: { mapCount: number }) {
   const router = useRouter();
+  const { entitlements } = useEntitlements();
+  const locked = atBoardLimit(mapCount, entitlements);
   const [open, setOpen] = useState(false);
   return (
     <div className="flex flex-wrap gap-3">
       <Button variant="secondary" icon={<Icon name="upload" size={20} />} onClick={() => setOpen(true)}>
         {t('shell.header.import')}
       </Button>
-      <Button icon={<Icon name="plus" size={20} />} onClick={() => router.push('/mapas/novo')}>
+      <Button
+        variant={locked ? 'secondary' : 'primary'}
+        icon={locked ? <Icon name="lock" size={20} /> : <Icon name="plus" size={20} />}
+        onClick={() => {
+          if (locked) track('upgrade_clicked', { source: 'header_new_map_lock' });
+          router.push(locked ? '/planos?de=header_new_map_lock' : '/mapas/novo');
+        }}
+      >
         {t('library.newMapButton')}
       </Button>
       <Dialog open={open} onOpenChange={setOpen} title={t('shell.header.importTitle')} description={t('shell.header.importBody')} closeLabel={t('common.close')} />

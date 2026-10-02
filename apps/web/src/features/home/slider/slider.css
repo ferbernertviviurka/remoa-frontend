@@ -1,0 +1,7 @@
+/* F14 FR-16: before hydration Swiper has not sized the slides; reserve the same 3/2/1 layout so CLS stays 0. */
+.map-slider { box-sizing: border-box; min-height: 336px; padding: 8px 4px 16px; margin: -8px -4px -16px; width: calc(100% + 8px); }
+.map-slider:not(.swiper-initialized) .swiper-wrapper { gap: 20px; }
+.map-slider:not(.swiper-initialized) .swiper-slide { flex: 0 0 100%; }
+@media (min-width: 700px) { .map-slider:not(.swiper-initialized) .swiper-slide { flex-basis: calc((100% - 20px) / 2); } }
+@media (min-width: 1100px) { .map-slider:not(.swiper-initialized) .swiper-slide { flex-basis: calc((100% - 40px) / 3); } }
+.map-slider .swiper-slide { height: auto; }

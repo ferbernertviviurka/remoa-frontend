@@ -2,6 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
+import { formReady } from '../sign-up';
 
 const env = (k: string) =>
   process.env[k] ?? new RegExp(`^${k}="?([^"\\n]*)"?$`, 'm').exec(readFileSync('.env.local', 'utf8'))?.[1] ?? '';
@@ -17,6 +18,7 @@ export async function signUpAndLogin(page: Page, request: APIRequestContext) {
   const token = su.access_token as string;
   await expect(async () => { // retried: a submit before hydration is a native GET
     await page.goto('/entrar');
+    await formReady(page);
     await page.getByLabel('E-mail').fill(email);
     await page.getByLabel('Senha').fill(password);
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
@@ -98,6 +100,16 @@ export async function createMockSepse(request: APIRequestContext, headers: Heade
 
 /** Hoje/Meus mapas completos: Sepse + 2 mapas menores com vencidos + tentativas nos 3 dias anteriores (semana preenchida). */
 export async function seedMock(request: APIRequestContext, headers: Headers, userId: string) {
+  // D-108: Free has 2 maps. The mock needs 3 (a legacy account keeps what it has), so create them as Pro and go back to Free.
+  psql(`insert into subscriptions (user_id, plan, status) values ('${userId}','pro','active') on conflict (user_id) do update set plan='pro'`);
+  try {
+    return await seedMockBoards(request, headers, userId);
+  } finally {
+    psql(`delete from subscriptions where user_id = '${userId}'`);
+  }
+}
+
+async function seedMockBoards(request: APIRequestContext, headers: Headers, userId: string) {
   const sepse = await createMockSepse(request, headers, userId);
   const ring = (t: string): [MockNode[], MockEdge[]] => [
     [['a', 'concept', t, 0, 0, 0.9, 5], ['b', 'concept', 'Conceito B', 300, 0, 0.6, 0], ['c', 'concept', 'Conceito C', 0, 180, 0.8, 4], ['d', 'concept', 'Conceito D', 300, 180, 0.55, 0]],

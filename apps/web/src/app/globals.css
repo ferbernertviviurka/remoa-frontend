@@ -2,6 +2,8 @@
 @import '@remoa/ui/tokens.css';
 @import '@remoa/ui/motion.css';
 @source "../../../../packages/ui/src";
+/* features/coverage was skipped by the auto-detection while `coverage` was gitignored (G08); explicit to be safe */
+@source "../features/coverage";
 
 /* next/font expõe --font-bricolage/--font-instrument; os tokens esperam --font-display/--font-sans */
 :root {

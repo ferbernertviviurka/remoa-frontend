@@ -56,7 +56,7 @@ test.describe('responsivo 390x844', () => {
     await page.goto('/');
     await expect(page.getByRole('link', { name: 'Abrir o mapa Sepse' })).toBeVisible();
     await check(page, 'hoje');
-    await shot('m-hoje.png', [page.getByRole('heading', { level: 1 }), page.locator('h1').locator('xpath=preceding-sibling::span')]);
+    await shot('m-hoje.png', [page.getByRole('heading', { level: 1 }), page.locator('h1').locator('xpath=preceding-sibling::span'), page.getByRole('region', { name: 'Sua semana' }), page.getByRole('region', { name: 'Próximas revisões' })]); // P-082
 
     // bottom-nav: mesmos destinos do trilho, badge do Revisar, sem cobrir o fim da página
     const nav = page.getByRole('navigation', { name: 'Navegação inferior' });

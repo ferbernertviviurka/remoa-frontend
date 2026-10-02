@@ -1,0 +1,29 @@
+name: Lighthouse
+on:
+  pull_request:
+    paths:
+      - 'apps/web/src/app/(marketing)/**'
+      - 'apps/web/src/features/landing/**'
+
+# Same side-by-side checkout as ci.yml (@remoa/contracts comes from remoa-backend).
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: remoa-frontend } }
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: remoa-frontend }
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/remoa-backend
+          path: remoa-backend
+          token: ${{ secrets.REMOA_BACKEND_TOKEN || github.token }}
+      - uses: pnpm/action-setup@v4
+        with: { package_json_file: remoa-frontend/package.json }
+      - uses: actions/setup-node@v4
+        with: { node-version-file: remoa-frontend/.nvmrc }
+      - run: pnpm -C ../remoa-backend i --frozen-lockfile && pnpm i --frozen-lockfile
+      - run: pnpm --filter @remoa/web build
+      # lhci starts `pnpm start` from apps/web (see .lighthouserc.json); budgets live there.
+      - run: npx -y @lhci/cli@0.14 autorun --config=.lighthouserc.json
+        working-directory: remoa-frontend/apps/web

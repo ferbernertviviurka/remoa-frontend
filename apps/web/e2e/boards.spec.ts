@@ -1,11 +1,9 @@
 import { createBlankBoard } from './create-map';
+import { signUpViaForm } from './sign-up';
 import { expect, test } from '@playwright/test';
 
 test('meus mapas: criar, renomear, duplicar e arquivar', async ({ page }) => {
-  await page.goto('/cadastro');
-  await page.getByLabel('E-mail').fill(`e2e-boards-${Date.now()}@remoa.test`);
-  await page.getByLabel('Senha').fill('senha-forte-123');
-  await page.getByRole('button', { name: 'Criar conta' }).click();
+  await signUpViaForm(page, `e2e-boards-${Date.now()}@remoa.test`);
   await expect(page).toHaveURL(/\/$/); // D-086: pós-login cai no Hoje
   await page.goto('/mapas');
 

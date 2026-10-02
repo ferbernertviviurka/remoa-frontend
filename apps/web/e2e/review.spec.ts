@@ -1,18 +1,16 @@
 import { createBlankBoard } from './create-map';
+import { signUpViaForm } from './sign-up';
 import { expect, test } from '@playwright/test';
 
 test('revisar hoje: conceitos novos aparecem na fila e nada vence ainda', async ({ page }) => {
-  await page.goto('/cadastro');
-  await page.getByLabel('E-mail').fill(`e2e-review-${Date.now()}@remoa.test`);
-  await page.getByLabel('Senha').fill('senha-forte-123');
-  await page.getByRole('button', { name: 'Criar conta' }).click();
+  await signUpViaForm(page, `e2e-review-${Date.now()}@remoa.test`);
   await expect(page).toHaveURL(/\/$/); // D-086: pós-login cai no Hoje
   await page.goto('/mapas');
   await createBlankBoard(page, 'Sepse');
   await expect(page.locator('.react-flow__pane')).toBeVisible();
 
   for (const title of ['Sepse', 'Choque séptico']) {
-    await page.getByRole('toolbar', { name: 'Ferramentas do mapa' }).getByRole('button', { name: 'Adicionar card de conceito' }).click();
+    await page.getByRole('toolbar', { name: 'Ferramentas do mapa' }).getByRole('button', { name: 'Adicionar Pergunta e Resposta' }).click();
     const form = page.getByRole('complementary', { name: 'Painel do mapa' }).getByRole('form');
     await form.getByLabel('Título').fill(title);
     await form.getByRole('button', { name: 'Salvar' }).click();

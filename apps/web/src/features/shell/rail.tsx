@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { t, type StringKey } from '@remoa/strings';
 import { useNavPending } from './nav-pending';
+import { showNavbar } from './navbar';
 import { AppRail, Avatar, Logo, RailAccount, RailItem, type IconName } from '@remoa/ui';
 import { initialsOf } from '@/features/account/shell/format';
 
@@ -48,12 +49,14 @@ function RailView({ dueTotal, account, modo }: { dueTotal: number; account: Rail
     <AppRail
       aria-label={t('pages.navLabel')}
       logo={
-        <Link href="/" aria-label={t('pages.logoLink')}>
-          <Logo size={36} />
-        </Link>
+        showNavbar(path) ? null : (
+          <Link href="/" aria-label={t('pages.logoLink')}>
+            <Logo size={36} />
+          </Link>
+        )
       }
       account={
-        <RailAccount aria-label={t('rail.account')} active={path.startsWith('/conta')} onClick={() => router.push('/conta')}>
+        showNavbar(path) ? null : <RailAccount aria-label={t('rail.account')} active={path.startsWith('/conta')} onClick={() => router.push('/conta')}>
           {account ? <Avatar name={account.name ?? account.email} fallback={initialsOf(account.name, account.email)} src={account.src} color={account.color} size={44} plain /> : null}
         </RailAccount>
       }

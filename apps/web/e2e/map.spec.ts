@@ -1,11 +1,9 @@
 import { createBlankBoard } from './create-map';
+import { signUpViaForm } from './sign-up';
 import { expect, test, type Page } from '@playwright/test';
 
 async function signUpAndCreateBoard(page: Page, title: string) {
-  await page.goto('/cadastro');
-  await page.getByLabel('E-mail').fill(`e2e-map-${Date.now()}@remoa.test`);
-  await page.getByLabel('Senha').fill('senha-forte-123');
-  await page.getByRole('button', { name: 'Criar conta' }).click();
+  await signUpViaForm(page, `e2e-map-${Date.now()}@remoa.test`);
   await expect(page).toHaveURL(/\/$/); // D-086: pós-login cai no Hoje
   await page.goto('/mapas');
   await createBlankBoard(page, title);

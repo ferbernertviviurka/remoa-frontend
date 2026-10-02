@@ -5,6 +5,7 @@ import { clsx } from 'clsx';
 import { focusRing } from '../button';
 import { Icon } from '../icons';
 import { toneClasses } from '../tone';
+import { Tag } from '../tag';
 
 export type AnswerMode = 'write' | 'options' | 'speak';
 
@@ -35,7 +36,8 @@ export type QuestionPanelProps = {
   options: readonly { id: string; key: string; text: string }[];
   selectedOption: string | null;
   onSelectOption: (id: string) => void;
-  voice?: { recordLabel: string; transcript?: string; note: string; onRecord: () => void };
+  /** `soonLabel` (D-203): botão de gravar desabilitado + Tag "Em breve", sem transcrição (ignora `transcript`/`onRecord`). */
+  voice?: { recordLabel: string; soonLabel?: string; transcript?: string; note: string; onRecord?: () => void };
   checkLabel: string;
   canCheck: boolean;
   onCheck: () => void;
@@ -44,6 +46,7 @@ export type QuestionPanelProps = {
 
 export function QuestionPanel(p: QuestionPanelProps) {
   const areaId = useId();
+  const voiceId = useId();
   return (
     <div className="flex h-full min-h-0 flex-col text-(--cv-ink)">
       <div className="flex flex-col gap-3 border-b border-border px-5 pb-3.5 pt-5">
@@ -112,11 +115,19 @@ export function QuestionPanel(p: QuestionPanelProps) {
             ) : null}
             {p.mode === 'speak' && p.voice ? (
               <div className="flex flex-col items-center gap-3 rounded-[20px] bg-canvas p-5 text-center">
-                <button type="button" aria-label={p.voice.recordLabel} onClick={p.voice.onRecord} className={`flex size-[68px] cursor-pointer items-center justify-center rounded-full bg-primary text-on-primary ${focusRing}`}>
+                <button
+                  type="button"
+                  aria-label={p.voice.recordLabel}
+                  aria-disabled={p.voice.soonLabel ? true : undefined}
+                  aria-describedby={p.voice.soonLabel ? voiceId : undefined}
+                  onClick={p.voice.soonLabel ? undefined : p.voice.onRecord}
+                  className={clsx('flex size-[68px] items-center justify-center rounded-full bg-primary text-on-primary', focusRing, p.voice.soonLabel ? 'cursor-not-allowed opacity-50' : 'cursor-pointer')}
+                >
                   <Icon name="mic" size={28} />
                 </button>
-                {p.voice.transcript ? <span className="font-semibold">{p.voice.transcript}</span> : null}
-                <span className="text-[13px] text-muted">{p.voice.note}</span>
+                {p.voice.soonLabel ? <Tag tone="brand">{p.voice.soonLabel}</Tag> : null}
+                {!p.voice.soonLabel && p.voice.transcript ? <span className="font-semibold">{p.voice.transcript}</span> : null}
+                <span id={voiceId} className="text-[13px] text-muted">{p.voice.soonLabel ? `${p.voice.soonLabel}. ` : ''}{p.voice.note}</span>
               </div>
             ) : null}
             <button

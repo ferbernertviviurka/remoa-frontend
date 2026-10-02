@@ -53,7 +53,7 @@ describe('NewMapView', () => {
     next();
     fireEvent.click(screen.getByRole('button', { name: 'Criar mapa' }));
     await waitFor(() => expect(push).toHaveBeenCalled());
-    expect(track).toHaveBeenCalledWith('board_linked_to_matrix', { suggested: true });
+    expect(track).toHaveBeenCalledWith('board_linked_to_matrix', { count: 1, suggestedCount: 1 });
   });
 
   it('shows the API error and stays when create fails', async () => {
@@ -88,7 +88,8 @@ describe('NewMapView', () => {
     expect(screen.getByText('apostila.pdf')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Gerar rascunho do mapa' }));
     expect(await screen.findByRole('dialog', { name: 'Em breve' })).toBeTruthy();
-    expect(api).not.toHaveBeenCalled();
+    // Only the debounced matrix suggestion (F07) may have fired; nothing was generated or imported.
+    expect(api.mock.calls.filter(([path]) => !String(path).includes('/v1/matrix/suggest'))).toHaveLength(0);
   });
 
   it('mapa pronto path: nothing to pick yet, CTA disabled', () => {
@@ -103,5 +104,34 @@ describe('NewMapView', () => {
     next();
     fireEvent.change(screen.getByLabelText('Nome do mapa'), { target: { value: 'Choque' } });
     expect(within(screen.getByLabelText('Prévia do seu mapa')).getAllByText('Choque').length).toBeGreaterThan(0);
+  });
+});
+
+describe('NewMapView: painel explicativo', () => {
+  it('trocar a alternativa troca título, passos e limites (via TextMorph) e o painel nunca inventa número', () => {
+    render(<NewMapView items={items} initialPath="pdf" />);
+    const panel = () => [...document.querySelectorAll('h2[torph-root] [torph-sr]')].map((e) => e.textContent); // TextMorph keeps the real text in torph-sr
+    expect(panel()).toContain('Do PDF ao rascunho');
+    expect(screen.getAllByText(/Gerações de mapa por mês: 1 no Free, 20 no Pro/).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: /Do meu Anki/ }));
+    expect(panel()).toContain('Do Anki para o mapa');
+    expect(screen.getAllByText(/Até 5\.000 cards por importação no Free e 20\.000 no Pro/).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: /De um mapa pronto/ }));
+    expect(panel()).toContain('Mapas prontos e revisados');
+    expect(screen.getAllByText(/Ainda não disponível/).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: /Em branco/ }));
+    expect(panel()).toContain('Comece do zero');
+  });
+
+  it('measured paragraphs: one TextMorph per line once the container can be measured', () => {
+    const ctx = { font: '', measureText: (x: string) => ({ width: x.length * 8 }) };
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx as unknown as CanvasRenderingContext2D);
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({ width: 200 } as DOMRect);
+    render(<NewMapView items={items} initialPath="blank" />);
+    const lines = [...document.querySelectorAll('li p [torph-root]')];
+    expect(lines.length).toBeGreaterThan(3); // 3 steps, each wrapped in >= 1 line (200 px / 8 px = 25 chars)
+    fireEvent.click(screen.getByRole('button', { name: /Do meu PDF/ }));
+    expect(document.querySelector('li p')?.textContent).toContain('PDF');
+    vi.restoreAllMocks();
   });
 });

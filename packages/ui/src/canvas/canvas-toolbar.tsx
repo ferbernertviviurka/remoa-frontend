@@ -1,14 +1,15 @@
 'use client';
 
 import { clsx } from 'clsx';
+import { Tooltip } from '../tooltip';
 import { Icon, type IconName } from '../icons';
 import './canvas.css';
 
-export type ToolbarItem = { id: string; icon: IconName; label: string; pressed?: boolean; disabled?: boolean } | { separator: true };
+export type ToolbarItem = { id: string; icon: IconName; label: string; hint?: string; pressed?: boolean; disabled?: boolean } | { separator: true };
 
 /**
  * CanvasToolbar: barra de ferramentas escura (`--panel-dark`, raio 22) com `role="toolbar"`. Cada ferramenta é um botão 44×44
- * só-ícone: `label` vira aria-label e title. `pressed` marca a ferramenta ativa (aria-pressed, fundo branco 20%).
+ * só-ícone: `label` vira aria-label; `hint` (nome + explicação curta) abre num Tooltip no hover e no foco (sem title nativo). `pressed` marca a ferramenta ativa (aria-pressed, fundo branco 20%).
  * `{ separator: true }` desenha o divisor. Setas esquerda/direita movem o foco entre as ferramentas. Texto por props.
  */
 export type CanvasToolbarProps = {
@@ -30,17 +31,16 @@ export function CanvasToolbar({ 'aria-label': ariaLabel, items, onSelect }: Canv
         e.preventDefault();
         btns[(i + (e.key === 'ArrowRight' ? 1 : btns.length - 1)) % btns.length]?.focus();
       }}
-      className="inline-flex items-center gap-1 rounded-[22px] bg-(--cv-panel-dark) p-2 shadow-[0_18px_44px_rgba(36,26,92,.35)]"
+      className="inline-flex items-center gap-1 rounded-[22px] bg-(--cv-panel-dark) p-2"
     >
       {items.map((it, i) =>
         'separator' in it ? (
           <span key={`sep${i}`} aria-hidden="true" className="mx-1.5 h-[26px] w-px bg-white/20" />
         ) : (
+          <Tooltip key={it.id} label={it.hint ?? it.label}>
           <button
-            key={it.id}
             type="button"
             aria-label={it.label}
-            title={it.label}
             aria-pressed={!!it.pressed}
             disabled={it.disabled}
             onClick={() => onSelect(it.id)}
@@ -52,6 +52,7 @@ export function CanvasToolbar({ 'aria-label': ariaLabel, items, onSelect }: Canv
           >
             <Icon name={it.icon} size={22} />
           </button>
+          </Tooltip>
         ),
       )}
     </div>

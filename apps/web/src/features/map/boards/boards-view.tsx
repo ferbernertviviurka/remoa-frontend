@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { Board, BoardSummary } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
-import { Button, Card, Dialog, FilterChip, Icon, Input, MapTile, Menu, StateBar, useToast, ViewToggle } from '@remoa/ui';
+import { Button, Card, Dialog, FilterChip, Icon, Input, LockedSlideCard, MapTile, Menu, NewMapSlideCard, StateBar, useToast, ViewToggle } from '@remoa/ui';
 import { api } from '@/lib/api';
+import { track } from '@/lib/analytics';
+import { useEntitlements } from '@/features/shell/entitlements';
 import { usePaywall } from '@/features/billing/paywall';
 import { fold, savedAgo } from './saved-ago';
 
@@ -26,6 +28,14 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
   const [view, setView] = useState('grid');
   const [area, setArea] = useState('all');
   const [q, setQ] = useState('');
+  const { entitlements, refresh } = useEntitlements();
+  useEffect(() => void refresh(), [refresh]); // maps created/archived elsewhere change usage.boards; the shell copy is only the layout's first read
+  // F14 FR-20/21 (D-108/D-112): null limit = unlimited; no entitlements (error) = behave as before, no lock.
+  const max = entitlements?.limits.boards ?? null;
+  const left = entitlements && max !== null ? Math.max(0, max - entitlements.usage.boards) : null;
+  const free = left !== null;
+  const canCreate = left === null || left > 0;
+  const locked = free && !canCreate;
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(id);
@@ -91,6 +101,10 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
   };
   const errorText = error ? <p role="alert" className="text-xs font-semibold text-review">{error}</p> : null;
   const goNew = () => router.push('/mapas/novo');
+  const goUpgrade = () => {
+    track('upgrade_clicked', { source: 'library_lock' });
+    router.push('/planos?de=library_lock');
+  };
 
   const areas = [...new Set(boards.map((b) => b.area))];
   const key = fold(q.trim());
@@ -144,7 +158,7 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
               { value: 'list', label: t('library.viewList'), icon: 'list' },
             ]}
           />
-          <Button icon={<Icon name="plus" size={20} />} onClick={goNew}>{t('library.newMapButton')}</Button>
+          <Button variant={locked ? 'secondary' : 'primary'} icon={locked ? <Icon name="lock" size={20} /> : <Icon name="plus" size={20} />} onClick={locked ? goUpgrade : goNew}>{t('library.newMapButton')}</Button>
         </div>
       </div>
 
@@ -184,6 +198,39 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
               <div className="absolute right-6 top-6 rounded-btn bg-surface/85">{menu(r.b)}</div>
             </li>
           ))}
+          {area === 'all' && !key && entitlements ? (
+            <>
+              {canCreate ? (
+                <li>
+                  <NewMapSlideCard
+                    as={PendingLink}
+                    href="/mapas/novo"
+                    aria-label={t('home.slider.newCard.aria')}
+                    title={t('home.slider.newCard.title')}
+                    text={free ? t('home.slider.newCard.freeRemaining', { n: left }) : t('home.slider.newCard.text')}
+                  />
+                </li>
+              ) : null}
+              {free ? (
+                <li>
+                  <LockedSlideCard
+                    title={t('home.slider.lockedCard.title')}
+                    text={t('home.slider.lockedCard.text', { max: max ?? 0 })}
+                    cta={
+                      <PendingLink
+                        href="/planos?de=library_lock"
+                        onClick={() => track('upgrade_clicked', { source: 'library_lock' })}
+                        className="flex items-center justify-center gap-2 rounded-[13px] bg-primary text-sm font-bold text-on-primary no-underline"
+                      >
+                        <Icon name="sparkle" size={16} />
+                        {t('nav.upgradeButton')}
+                      </PendingLink>
+                    }
+                  />
+                </li>
+              ) : null}
+            </>
+          ) : null}
         </ul>
       ) : (
         <div className="overflow-hidden rounded-list border border-border bg-surface">

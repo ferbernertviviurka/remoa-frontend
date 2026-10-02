@@ -46,6 +46,7 @@ export function SecuritySection() {
 }
 
 function PasswordCard({ onChanged }: { onChanged: () => void }) {
+  const { account, setAccount } = useAccount();
   const { toast } = useToast();
   const online = useOnline();
   const [open, setOpen] = useState(false);
@@ -76,6 +77,7 @@ function PasswordCard({ onChanged }: { onChanged: () => void }) {
     setBusy(false);
     if (r.ok) {
       track('password_changed', { strength: strength.label });
+      setAccount((p) => ({ ...p, passwordChangedAt: new Date() }));
       toast({ title: t('account.security.saved') });
       reset(false);
       onChanged();
@@ -90,10 +92,11 @@ function PasswordCard({ onChanged }: { onChanged: () => void }) {
     );
   }
 
-  // ponytail: the snapshot carries no "last password change" instant (contract change request); the line is hidden until it does.
+  const changedAt = account.passwordChangedAt;
   return (
     <SectionCard
       title={t('account.security.passwordTitle')}
+      body={changedAt ? t('account.security.passwordChanged', { when: relative(changedAt) }) : undefined}
       action={
         <Button type="button" variant="secondary" size="sm" aria-expanded={open} aria-controls="sec-pw-form" onClick={() => reset(!open)}>
           {open ? t('account.security.passwordCancel') : t('account.security.passwordChange')}

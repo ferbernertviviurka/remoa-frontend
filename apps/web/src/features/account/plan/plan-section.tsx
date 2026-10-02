@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { TextMorph } from 'torph/react';
 import { PLAN_LIMITS, PRICES_BRL, usageRows, type QuotaKey, type RedirectUrl, type UsageRow } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { Alert, Button, Icon, Segmented, UsageMeter, UsageWarning, useToast } from '@remoa/ui';
@@ -10,6 +11,10 @@ import { api } from '@/lib/api';
 import { formatBRL, formatDate } from '@/features/billing/format';
 import { SectionCard } from '../shared/section-card';
 import { useAccount } from '../shell/account-context';
+
+const Morph = ({ children, as = 'span' }: { children: string; as?: 'span' | 'p' }) => (
+  <TextMorph as={as} locale="pt-BR" duration={320} ease="cubic-bezier(0.19, 1, 0.22, 1)" respectReducedMotion>{children}</TextMorph>
+);
 
 type Period = 'monthly' | 'annual';
 const nextMonth = () => {
@@ -46,7 +51,8 @@ export function PlanSection() {
 
   const upgrade = (source: 'account_plan' | 'usage_nudge') => {
     track('upgrade_clicked', { source });
-    router.push('/precos'); // D-105: the checkout (period, Pix/card) lives on /precos
+    // D-180: every upgrade converges on /planos; the period chosen here carries over.
+    router.push(`/planos?de=${source}${source === 'account_plan' && period === 'annual' ? '&periodo=anual' : ''}`);
   };
 
   async function portal(cancel: boolean) {
@@ -109,7 +115,7 @@ export function PlanSection() {
           {pro ? (
             <>
               <p className="m-0 max-w-[360px]">{t('account.plan.proText', { pdf: PLAN_LIMITS.pro.limits.ai_generations, date: renewal ?? '' })}</p>
-              {renewal ? <p className="m-0 text-sm">{t(ent.cancelAtPeriodEnd ? 'billing.account.cancelsAt' : 'billing.account.renewsAt', { date: renewal })}</p> : null}
+              {renewal && ent.cancelAtPeriodEnd ? <p className="m-0 text-sm">{t('billing.account.cancelsAt', { date: renewal })}</p> : null} {/* the active state already reads "Renova em …" in proText, as in the mock */}
               <div className="mt-auto flex flex-wrap gap-2">
                 <Button variant="outline-light" loading={busy === 'portal'} onClick={() => void portal(false)}>{t('account.plan.manage')}</Button>
                 {ent.cancelAtPeriodEnd ? null : <Button variant="outline-light" loading={busy === 'cancel'} onClick={() => void portal(true)}>{t('billing.account.cancel')}</Button>}
@@ -134,11 +140,11 @@ export function PlanSection() {
               />
             </div>
             <p className="m-0 flex items-baseline gap-1.5">
-              <span className="font-display text-[40px] font-extrabold leading-none tracking-[-0.03em]">{price}</span>
-              <span className="font-semibold text-muted">{t(period === 'monthly' ? 'billing.pricing.perMonth' : 'billing.pricing.perYear', { price: '' })}</span>
+              <span className="font-display text-[40px] font-extrabold leading-none tracking-[-0.03em] tabular-nums"><Morph>{price}</Morph></span>
+              <span className="font-semibold text-muted"><Morph>{t(period === 'monthly' ? 'billing.pricing.perMonth' : 'billing.pricing.perYear', { price: '' })}</Morph></span>
             </p>
-            <p className="-mt-2 m-0 text-[13px] text-muted">
-              {period === 'monthly' ? t('account.plan.monthlyNote') : t('account.plan.annualNote', { price: formatBRL(PRICES_BRL.annual / 12) })}
+            <p className="-mt-2 m-0 min-h-[2.6em] text-[13px] text-muted tabular-nums">
+              <Morph>{period === 'monthly' ? t('account.plan.monthlyNote') : t('account.plan.annualNote', { price: formatBRL(PRICES_BRL.annual / 12) })}</Morph>
             </p>
             <ul className="m-0 flex list-none flex-col gap-2 p-0 text-sm">
               {perks.map((p) => (

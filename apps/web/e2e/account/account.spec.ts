@@ -1,6 +1,6 @@
 // F13 / G03 T13: jornadas da Minha conta. Precisa do backend em :4000 com STRIPE=mock (como o billing.spec).
 import { expect, test } from '@playwright/test';
-import { accountUser, API, PASSWORD, psql, secondSession } from './fixture';
+import { accountUser, API, PASSWORD, psql, secondSession, signUpApi } from './fixture';
 
 // 64x64 PNG listrado (gerado uma vez; sharp/canvas do navegador recortam e recodificam).
 const PNG = Buffer.from(
@@ -11,7 +11,7 @@ const PNG = Buffer.from(
 test.describe('Minha conta', () => {
   test('foto: subir, recortar e ver no hero e na linha Foto', async ({ page, request }) => {
     test.setTimeout(120_000);
-    await accountUser(page, request);
+    const { email } = await accountUser(page, request);
     await page.goto('/conta/perfil');
     await page.getByRole('button', { name: 'Adicionar foto' }).click();
     const dialog = page.getByRole('dialog', { name: 'Foto de perfil' });
@@ -24,10 +24,10 @@ test.describe('Minha conta', () => {
     // Otimista: o hero troca na hora e a linha Foto acompanha, sem recarregar.
     await expect(page.getByRole('region', { name: 'Resumo do perfil' }).locator('img')).toBeVisible();
     await expect(page.getByRole('region', { name: 'Resumo do perfil' }).getByText('Perfil 60% completo')).toBeVisible();
-    // O trilho mostra a foto no botão "Minha conta" (o diálogo chama router.refresh()).
-    await expect(page.getByRole('link', { name: 'Minha conta' }).or(page.getByRole('button', { name: 'Minha conta' })).locator('img')).toBeVisible();
+    // O avatar da navbar (link "Minha conta") mostra a foto (o diálogo chama router.refresh()).
+    await expect(page.getByRole('banner').getByRole('link', { name: 'Minha conta' }).locator('img')).toBeVisible();
     // Persistiu no servidor: avatar_key gravada.
-    await expect.poll(() => psql(`select avatar_key is not null from profiles where user_id = (select id from auth.users order by created_at desc limit 1)`)).toBe('t');
+    await expect.poll(() => psql(`select avatar_key is not null from profiles where user_id = (select id from auth.users where email = '${email}')`)).toBe('t');
   });
 
   test('foto: arquivo inválido mostra erro e não fecha o diálogo', async ({ page, request }) => {
@@ -63,27 +63,27 @@ test.describe('Minha conta', () => {
     await page.goto('/conta/seguranca');
     // Dispositivos: a sessão do iPhone aparece e some ao encerrar (a atual não tem botão).
     const devices = page.getByRole('list', { name: 'Lista de dispositivos' });
-    // 3 sessões: a do cadastro por API, a deste navegador (atual, sem botão) e a do iPhone.
-    await expect(devices.getByRole('listitem')).toHaveCount(3);
-    await devices.getByRole('button', { name: /Encerrar sessão em .*iPhone/ }).click();
+    // 2 sessões: a deste navegador (atual, sem botão) e a do iPhone.
     await expect(devices.getByRole('listitem')).toHaveCount(2);
-    await expect(devices.getByRole('button', { name: /iPhone/ })).toHaveCount(0);
+    await devices.getByRole('button', { name: /Encerrar sessão em .*Safari/ }).click();
+    await expect(devices.getByRole('listitem')).toHaveCount(1);
+    await expect(devices.getByRole('button', { name: /Safari/ })).toHaveCount(0);
     expect((await request.get(`${API}/v1/account/me`, { headers: asOther })).status()).toBe(401);
 
     // Senha: formulário recolhido; medidor comunica por texto; salvar só com tudo válido.
     const again = await secondSession(request, u.email);
     await page.getByRole('button', { name: 'Alterar senha' }).click();
-    await page.getByLabel('Senha atual').fill(PASSWORD);
-    await page.getByLabel('Nova senha').fill('curta');
-    await expect(page.getByText('Fraca')).toBeVisible();
-    await page.getByLabel('Nova senha').fill('outra-senha-forte-456');
-    await expect(page.getByText('Forte')).toBeVisible();
+    await page.getByLabel('Senha atual', { exact: true }).fill(PASSWORD);
+    await page.getByLabel('Nova senha', { exact: true }).fill('curta');
+    await expect(page.getByText('Fraca', { exact: true })).toBeVisible();
+    await page.getByLabel('Nova senha', { exact: true }).fill('outra-senha-forte-456');
+    await expect(page.getByText('Forte', { exact: true })).toBeVisible();
     await page.getByLabel('Confirmar nova senha').fill('diferente');
     await expect(page.getByText('As senhas ainda não coincidem.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Salvar nova senha' })).toBeDisabled();
     await page.getByLabel('Confirmar nova senha').fill('outra-senha-forte-456');
     await page.getByRole('button', { name: 'Salvar nova senha' }).click();
-    await expect(page.getByText('Senha alterada. Encerramos os outros dispositivos.')).toBeVisible();
+    await expect(page.getByText('Senha alterada. Encerramos os outros dispositivos.', { exact: true })).toBeVisible();
     expect((await request.get(`${API}/v1/account/me`, { headers: { authorization: `Bearer ${again.token}` } })).status()).toBe(401);
     // A sessão atual continua valendo.
     await page.reload();
@@ -101,11 +101,11 @@ test.describe('Minha conta', () => {
     await expect(page.getByRole('switch', { name: 'Lembrete diário por e-mail' })).toBeChecked();
   });
 
-  test('cards novos por dia: Free não passa de 10 e mostra o aviso do Pro', async ({ page, request }) => {
+  test('tema Escuro aparece como Em breve e desabilitado; sem Cards novos por dia', async ({ page, request }) => {
     await accountUser(page, request);
     await page.goto('/conta/preferencias');
-    await page.getByRole('button', { name: 'Aumentar cards novos por dia' }).click();
-    await expect(page.getByText('Free permite até 10 por dia. O Pro vai a 20.')).toBeVisible();
+    await expect(page.getByRole('radio', { name: /Escuro/ })).toBeDisabled();
+    await expect(page.getByText('Cards novos por dia')).toHaveCount(0);
   });
 
   test('exportar baixa um JSON', async ({ page, request }) => {
@@ -140,13 +140,14 @@ test.describe('Minha conta', () => {
     await accountUser(page, request);
     await page.goto('/conta/plano');
     await expect(page.getByRole('button', { name: 'Assinar o Pro' })).toBeVisible();
-    await expect(page.getByText('0 de 20')).toBeVisible();
+    await expect(page.getByText('0 de 20', { exact: true })).toBeVisible();
     await page.getByRole('radio', { name: 'Anual' }).click();
     await expect(page.getByText(/R\$ 349/)).toBeVisible();
-    await page.goto('/precos');
-    await page.getByText('Cartão', { exact: true }).click();
+    await page.goto('/planos');
+    await page.getByRole('radio', { name: /^Cartão/ }).click();
     await page.getByRole('button', { name: 'Assinar o Pro' }).click();
-    await expect(page).toHaveURL(/\/conta/);
+    await expect(page).toHaveURL(/\/planos\/sucesso/);
+    await expect(page.getByRole('dialog', { name: 'Você agora é Pro.' })).toBeVisible();
     await page.goto('/conta/plano');
     await expect(page.getByRole('button', { name: 'Gerenciar assinatura' })).toBeVisible();
     await expect(page.getByText('Ilimitado').first()).toBeVisible();
@@ -160,5 +161,20 @@ test.describe('Minha conta', () => {
     await expect(page).not.toHaveURL(/\/conta/);
     await page.goto('/conta/perfil');
     await expect(page).toHaveURL(/\/entrar/);
+  });
+
+  test('segurança: usuário A não encerra a sessão nem lê os dados de B; validação recusa entrada ruim', async ({ request }) => {
+    const mk = async () => {
+      const email = `e2e-rls-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@remoa.test`;
+      const t = (await signUpApi(request, email)).access_token as string;
+      return { authorization: `Bearer ${t}` };
+    };
+    const [a, b] = [await mk(), await mk()];
+    const sessionsB = (await (await request.get(`${API}/v1/account/sessions`, { headers: b })).json()).data as { id: string }[];
+    expect((await request.delete(`${API}/v1/account/sessions/${sessionsB[0]!.id}`, { headers: a })).status()).toBe(404);
+    expect((await request.get(`${API}/v1/account/sessions`, { headers: b })).status()).toBe(200); // B continua de pé
+    expect((await request.get(`${API}/v1/account/me`)).status()).toBe(401);
+    expect((await request.patch(`${API}/v1/account/profile`, { headers: a, data: { name: '<script>' } })).status()).toBe(422);
+    expect((await request.post(`${API}/v1/account/password`, { headers: a, data: { currentPassword: 'x', newPassword: 'curta' } })).status()).toBe(422);
   });
 });

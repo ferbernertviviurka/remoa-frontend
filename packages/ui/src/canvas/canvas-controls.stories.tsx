@@ -27,9 +27,9 @@ export const Barra: S = {
   render: function Render() {
     const [tool, setTool] = useState('select');
     const tools = [
-      { id: 'select', icon: 'cursor', label: 'Selecionar' }, { id: 'move', icon: 'move', label: 'Mover o mapa' }, { separator: true },
+      { id: 'select', icon: 'cursor', label: 'Selecionar', hint: 'Selecionar: clique num card para ver e editar.' }, { id: 'move', icon: 'move', label: 'Mover o mapa', hint: 'Mover o mapa: arraste o fundo.' }, { separator: true },
       { id: 'card', icon: 'plus', label: 'Adicionar card de conceito' }, { id: 'flow', icon: 'flow', label: 'Adicionar fluxograma' }, { id: 'image', icon: 'image', label: 'Adicionar imagem' }, { id: 'case', icon: 'case', label: 'Adicionar caso clínico' }, { separator: true },
-      { id: 'link', icon: 'link', label: 'Ligar cards' }, { id: 'tidy', icon: 'tidy', label: 'Organizar o mapa' },
+      { id: 'link', icon: 'link', label: 'Ligar cards', hint: 'Ligar cards: arraste de um card para outro.' }, { id: 'tidy', icon: 'tidy', label: 'Organizar o mapa' },
     ] as const;
     return <div className="p-6"><CanvasToolbar aria-label="Ferramentas do mapa" onSelect={setTool} items={tools.map((t) => ('id' in t ? { ...t, pressed: t.id === tool } : t))} /></div>;
   },

@@ -1,4 +1,5 @@
 import { createBlankBoard } from './create-map';
+import { signUpViaForm } from './sign-up';
 import { expect, test, type Page } from '@playwright/test';
 
 const inspector = (page: Page) => page.getByRole('complementary', { name: 'Painel do mapa' });
@@ -18,10 +19,7 @@ const center = async (page: Page, selector: string, i: number) => {
 
 test('desafiar este mapa no editor: autoavaliação, opções, conexão oculta e resumo', async ({ page }) => {
   test.setTimeout(180_000);
-  await page.goto('/cadastro');
-  await page.getByLabel('E-mail').fill(`e2e-challenge-${Date.now()}@remoa.test`);
-  await page.getByLabel('Senha').fill('senha-forte-123');
-  await page.getByRole('button', { name: 'Criar conta' }).click();
+  await signUpViaForm(page, `e2e-challenge-${Date.now()}@remoa.test`);
   await expect(page).toHaveURL(/\/$/); // D-086: pós-login cai no Hoje
   await page.goto('/mapas');
   await createBlankBoard(page, 'Sepse');
@@ -29,7 +27,7 @@ test('desafiar este mapa no editor: autoavaliação, opções, conexão oculta e
 
   await test.step('conceitos, fluxograma de 3 passos e uma conexão com rótulo', async () => {
     for (const [title, back] of [['Sepse', 'Disfunção orgânica por resposta desregulada à infecção'], ['Choque séptico', 'Sepse com hipotensão e lactato alto']]) {
-      await tool(page, 'Adicionar card de conceito');
+      await tool(page, 'Adicionar Pergunta e Resposta');
       await expect(form(page)).toBeVisible();
       await form(page).getByLabel('Título').fill(title!);
       await form(page).getByLabel('Resposta', { exact: true }).fill(back!);

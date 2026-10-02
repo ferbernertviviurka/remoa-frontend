@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { AnswerOutput, ChallengeItemPublic, Result } from '@remoa/contracts';
 import { graderVerdictFixture, mocks, preview, resetMocks, fixtureUserId } from '@remoa/contracts/mocks';
 import { ChallengePanel } from './challenge-panel';
@@ -173,7 +173,7 @@ describe('ChallengePanel', () => {
     expect(rating('Bom')).toBeEnabled();
     expect(screen.queryByRole('button', { name: 'Discordo da correção' })).toBeNull();
     if (fallback === 'quota') {
-      expect(screen.getByRole('link', { name: 'Ver planos' })).toHaveAttribute('href', '/precos');
+      expect(screen.getByRole('link', { name: 'Ver planos' })).toHaveAttribute('href', '/planos?de=ai_quota');
       expect(track).toHaveBeenCalledWith('paywall_viewed', { reason: 'ai_quota' });
     } else expect(track).not.toHaveBeenCalledWith('paywall_viewed', expect.anything());
   });
@@ -291,54 +291,17 @@ describe('ChallengePanel', () => {
     await screen.findByText('RESPOSTA-SECRETA');
   });
 
-  describe('Falar (D-091)', () => {
-    afterEach(() => {
-      delete (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
-    });
-
-    it('Web Speech: interim text, final transcript lands in the editable answer, /answer gets inputKind voice', async () => {
-      const user = userEvent.setup();
-      let rec: { onresult: (e: unknown) => void; onend: () => void; lang: string } | null = null;
-      (window as unknown as Record<string, unknown>).webkitSpeechRecognition = class {
-        lang = '';
-        interimResults = false;
-        continuous = false;
-        onresult: (e: unknown) => void = () => undefined;
-        onend: () => void = () => undefined;
-        onerror = null;
-        constructor() {
-          rec = { onresult: (e) => this.onresult(e), onend: () => this.onend(), lang: '' };
-          Object.defineProperty(rec, 'lang', { get: () => this.lang });
-        }
-        start() {}
-        stop() {
-          this.onend();
-        }
-      };
-      overrides.answer = async (b) => (b.inputKind === 'voice' ? ans({ verdict: graderVerdictFixture, suggestedGrade: 'good' }) : mocks.answer(fixtureUserId, b as never));
-      await toTextItem(user);
-      await user.click(screen.getByRole('button', { name: 'Falar' }));
-      expect(screen.getByText(/não grava nem guarda áudio/)).toBeVisible();
-      await user.click(screen.getByRole('button', { name: 'Falar a resposta' }));
-      expect(rec!.lang).toBe('pt-BR');
-      await act(async () => rec!.onresult({ results: [Object.assign([{ transcript: 'disfunção orgânica' }], { isFinal: false })] }));
-      expect(screen.getByText('disfunção orgânica')).toBeVisible(); // interim shown as the transcript
-      await user.click(screen.getByRole('button', { name: 'Parar de ouvir' }));
-      const field = (await screen.findByLabelText('Sua resposta')) as HTMLTextAreaElement;
-      expect(field.value).toBe('disfunção orgânica'); // editable before correcting
-      await user.type(field, ' grave');
-      await user.click(screen.getByRole('button', { name: 'Corrigir resposta' }));
-      await screen.findByText('Quase lá');
-      expect(calls.answer!.at(-1)).toMatchObject({ inputKind: 'voice', text: 'disfunção orgânica grave' });
-    });
-
-    it('no SpeechRecognition: the tab stays, says so and switches to Escrever', async () => {
-      const user = userEvent.setup();
-      await toTextItem(user);
-      await user.click(screen.getByRole('button', { name: 'Falar' }));
-      expect(screen.getByText(/não transcreve voz/)).toBeVisible();
-      await user.click(screen.getByRole('button', { name: 'Escrever a resposta' }));
-      expect(screen.getByLabelText('Sua resposta')).toBeVisible();
-    });
+  it('Falar (D-203): the record button is disabled with "Em breve"; nothing is transcribed', async () => {
+    const user = userEvent.setup();
+    await toTextItem(user);
+    const sent = calls.answer?.length ?? 0;
+    await user.click(screen.getByRole('button', { name: 'Falar' }));
+    const rec = screen.getByRole('button', { name: 'Falar a resposta' });
+    expect(rec).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByText('Em breve')).toBeVisible();
+    expect(screen.getByText(/ainda não está disponível/)).toBeVisible();
+    await user.click(rec);
+    expect(screen.queryByLabelText('Sua resposta')).toBeNull(); // still in Falar, no transcript, nothing sent
+    expect(calls.answer?.length ?? 0).toBe(sent);
   });
 });
