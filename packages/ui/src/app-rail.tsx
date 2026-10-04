@@ -2,7 +2,7 @@
 
 import type { ComponentType, ReactNode } from 'react';
 import { clsx } from 'clsx';
-import { focusRing } from './button';
+import { focusRing } from './button-styles';
 import { Icon, type IconName } from './icons';
 
 /**

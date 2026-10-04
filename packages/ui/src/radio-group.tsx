@@ -2,7 +2,7 @@
 
 import { useId } from 'react';
 import * as RR from '@radix-ui/react-radio-group';
-import { focusRing } from './button';
+import { focusRing } from './button-styles';
 
 /** Escolha única com rótulo de grupo. */
 export function RadioGroup({

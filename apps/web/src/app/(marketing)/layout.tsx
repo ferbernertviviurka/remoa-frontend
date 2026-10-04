@@ -2,23 +2,17 @@ import type { ReactNode } from 'react';
 import { t } from '@remoa/strings';
 import { Logo, SiteFooter } from '@remoa/ui';
 import { landingFlags } from '@/features/landing/flags';
-import { LandingHeader } from '@/features/landing/shell';
-import type { AccountSnapshot } from '@remoa/contracts';
-import { getUser } from '@/server/auth/session';
-import { serverApi } from '@/lib/api/server';
+import { LandingHeader } from '@/features/landing/shell/landing-header'; // direct: the shell barrel would ship WaitlistCta too (D-535)
 
 const skip = 'sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:flex focus:min-h-11 focus:items-center focus:rounded-[14px] focus:bg-primary focus:px-4 focus:font-bold focus:text-on-primary';
 
-export default async function MarketingLayout({ children }: { children: ReactNode }) {
+// D-534: no session read here (it made `/` dynamic); the header swaps to "Abrir o app" + avatar on the client (D-320).
+export default function MarketingLayout({ children }: { children: ReactNode }) {
   const { launchPhase } = landingFlags();
-  const user = await getUser();
-  // Avatar is a nicety: a failing /me just hides it.
-  const me = user ? await serverApi<AccountSnapshot>('/v1/account/me').then((r) => (r.ok ? r.data : null)).catch(() => null) : null;
-  const account = me && { name: me.profile.name, email: me.email, color: me.profile.avatarColor, src: me.avatarUrls?.small };
   return (
     <>
       <a href="#conteudo" className={skip}>{t('landing.nav.skipLink')}</a>
-      <LandingHeader phase={launchPhase} signedIn={!!user} account={account} />
+      <LandingHeader phase={launchPhase} />
       <main id="conteudo" className="relative overflow-x-clip pt-[76px]">{children}</main>
       <SiteFooter
         brand={<Logo size={30} withWordmark />}

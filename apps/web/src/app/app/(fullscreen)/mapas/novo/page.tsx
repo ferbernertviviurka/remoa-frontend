@@ -12,8 +12,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ c
   const { caminho, item } = await searchParams;
   const r = await serverApi<MatrixItem[]>('/v1/matrix/items?area=CM');
   const all = r.ok ? r.data : [];
-  // F07: groups (items with children) are headings, not link targets.
-  const items = all.filter((i) => !all.some((c) => c.parentId === i.id));
-  const init = parseInitial(caminho, item, items);
-  return <NewMapView items={items} initialPath={init.path} initialItemId={init.itemId} initialStep={init.step} />;
+  // F07: groups (items with children) are headings, not link targets; the picker gets them to label the leaves (F17 FR-5).
+  const init = parseInitial(caminho, item, all.filter((i) => !all.some((c) => c.parentId === i.id)));
+  return <NewMapView items={all} initialPath={init.path} initialItemId={init.itemId} initialStep={init.step} />;
 }

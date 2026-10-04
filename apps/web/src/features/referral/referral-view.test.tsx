@@ -9,6 +9,8 @@ import { ReferralView } from './referral-view';
 import { ReferralProvider } from './reward/referral-provider';
 
 vi.mock('@/lib/api', () => ({ api: vi.fn() }));
+let pending = false;
+vi.mock('@/features/shell/entitlements', () => ({ useEntitlements: () => ({ entitlements: { referralPending: pending }, status: 'ready', refresh: async () => {} }) }));
 vi.mock('@/lib/analytics', () => ({ track: vi.fn() }));
 vi.mock('next/link', () => ({ default: ({ href, children, ...r }: { href: string; children: React.ReactNode }) => <a href={href} {...r}>{children}</a> }));
 
@@ -29,7 +31,7 @@ async function open(summary: ReferralSummary = referralSummaryFixtures.inProgres
   await screen.findByRole('heading', { name: t('referral.link.title') });
 }
 
-beforeEach(() => { localStorage.clear(); vi.mocked(track).mockClear(); apiMock.mockReset(); });
+beforeEach(() => { pending = false; localStorage.clear(); vi.mocked(track).mockClear(); apiMock.mockReset(); });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); });
 
 describe('/app/indicar', () => {
@@ -172,5 +174,19 @@ describe('/app/indicar', () => {
     vi.mocked(track).mockClear();
     await act(async () => { await vi.advanceTimersByTimeAsync(30_000); });
     expect(track).not.toHaveBeenCalledWith('referral_reward_seen', {});
+  });
+
+  it('fora da página: consulta a cada 30 s só com referralPending (D-494)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    current = referralSummaryFixtures.inProgress;
+    serve();
+    render(<ReferralProvider>{null}</ReferralProvider>);
+    await act(async () => { await vi.advanceTimersByTimeAsync(31_000); });
+    expect(apiMock).not.toHaveBeenCalled();
+    cleanup();
+    pending = true;
+    render(<ReferralProvider>{null}</ReferralProvider>);
+    await act(async () => { await vi.advanceTimersByTimeAsync(31_000); });
+    expect(apiMock.mock.calls.filter(([p]) => p === '/v1/referral/summary').length).toBeGreaterThanOrEqual(2);
   });
 });

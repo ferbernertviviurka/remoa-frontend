@@ -101,6 +101,16 @@ describe('LandingHeader (D-320)', () => {
   });
 });
 
+describe('hasSessionCookie (D-534)', () => {
+  test('only the Supabase auth cookie (plain or chunked) counts', async () => {
+    const { hasSessionCookie } = await import('./landing-header');
+    expect(hasSessionCookie('')).toBe(false);
+    expect(hasSessionCookie('remoa-motion=full; sb-abc-auth-token-code-verifier=x')).toBe(false);
+    expect(hasSessionCookie('sb-127-auth-token=base64-x')).toBe(true);
+    expect(hasSessionCookie('a=1; sb-abc-auth-token.0=x; sb-abc-auth-token.1=y')).toBe(true);
+  });
+});
+
 describe('landing_cta_clicked (D-370)', () => {
   const sent = () => window.__remoaEvents?.filter((e) => e.event === 'landing_cta_clicked').map((e) => e.props);
   test('header: waitlist/create, signin and open_app carry location + cta', async () => {

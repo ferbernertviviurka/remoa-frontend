@@ -1,10 +1,15 @@
-<!doctype html>
+import { t } from '@remoa/strings';
+
+// F09 FR-6: static-looking offline page served at /offline.html (the service worker precaches it). Built from @remoa/strings so no text lives outside the dictionary (D-505).
+export const dynamic = 'force-static';
+
+const html = `<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#6D5BD0" />
-    <title>Remoa</title>
+    <title>${t('common.appName')}</title>
     <style>
       body {
         margin: 0;
@@ -50,32 +55,32 @@
   </head>
   <body>
     <main id="empty">
-      <h1>Sem conexão</h1>
-      <p>Abra o Remoa online uma vez para carregar a revisão. As respostas que você já começou sincronizam quando a rede voltar.</p>
+      <h1>${t('offline.emptyTitle')}</h1>
+      <p>${t('offline.emptyBody')}</p>
     </main>
     <main id="review" hidden>
-      <h1>Revisão neste aparelho</h1>
+      <h1>${t('offline.reviewTitle')}</h1>
       <p id="count"></p>
       <h2 id="title"></h2>
       <p id="prompt"></p>
       <div id="compose">
-        <label id="text-label">Resposta
+        <label id="text-label">${t('offline.answerLabel')}
           <textarea id="text"></textarea>
         </label>
         <div id="options"></div>
-        <button type="button" id="send">Corrigir resposta</button>
+        <button type="button" id="send">${t('offline.send')}</button>
       </div>
       <div id="rate" hidden>
-        <p>Sem conexão. A resposta ficou neste aparelho e a correção por IA acontece quando a rede voltar.</p>
-        <button type="button" data-grade="again">Não lembrei</button>
-        <button type="button" data-grade="hard" class="secondary">Difícil</button>
-        <button type="button" data-grade="good" class="secondary">Bom</button>
-        <button type="button" data-grade="easy" class="secondary">Fácil</button>
+        <p>${t('offline.rateNote')}</p>
+        <button type="button" data-grade="again">${t('offline.again')}</button>
+        <button type="button" data-grade="hard" class="secondary">${t('offline.hard')}</button>
+        <button type="button" data-grade="good" class="secondary">${t('offline.good')}</button>
+        <button type="button" data-grade="easy" class="secondary">${t('offline.easy')}</button>
       </div>
     </main>
     <main id="done" hidden>
-      <h1>Respostas neste aparelho</h1>
-      <p>Elas sobem quando a rede voltar. A correção por IA acontece só então.</p>
+      <h1>${t('offline.doneTitle')}</h1>
+      <p>${t('offline.doneBody')}</p>
     </main>
     <script>
       window.addEventListener('online', () => location.reload());
@@ -203,3 +208,8 @@
     </script>
   </body>
 </html>
+`;
+
+export function GET() {
+  return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } });
+}

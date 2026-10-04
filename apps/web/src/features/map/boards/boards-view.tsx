@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { Board, BoardSummary } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
-import { Button, Card, Dialog, FilterChip, Icon, Input, LockedSlideCard, MapTile, Menu, NewMapSlideCard, StateBar, useToast, ViewToggle } from '@remoa/ui';
+import { Button, Card, Dialog, FilterChip, Icon, Input, LockedSlideCard, MapTile, Menu, NewMapSlideCard, Pill, StateBar, useToast, ViewToggle } from '@remoa/ui';
 import { api } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import { useEntitlements } from '@/features/shell/entitlements';
@@ -133,6 +133,14 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
       ]}
     />
   );
+  /** FR-19: shown only when the map is not "Só eu". */
+  const accessBadge = (b: BoardSummary) =>
+    b.access === 'owner' ? null : (
+      <Pill tone={b.access === 'password' ? 'watch' : 'brand'}>
+        <Icon name={b.access === 'password' ? 'lock' : 'link'} size={14} aria-hidden="true" />
+        <span className="ml-1.5">{t(`boardsAccess.${b.access}`)}</span>
+      </Pill>
+    );
   const barLabel = (b: BoardSummary) => t('boards.stateBarLabel', b.stateCounts);
   const dueBadge = ({ due }: Row) => (
     <span className={`rounded-pill px-2.5 py-[3px] text-[13px] font-bold ${due.tone === 'review' ? 'bg-review-bg text-review-text' : 'bg-unknown-bg text-unknown-text'}`}>{due.text}</span>
@@ -196,6 +204,7 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
                 saved={t('library.saved', { time: r.saved })}
               />
               <div className="absolute right-6 top-6 rounded-btn bg-surface/85">{menu(r.b)}</div>
+              <div className="pointer-events-none absolute left-6 top-6">{accessBadge(r.b)}</div>
             </li>
           ))}
           {area === 'all' && !key && entitlements ? (
@@ -246,7 +255,7 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
             {rows.map((r) => (
               <li key={r.b.id} className="relative border-b border-divider last:border-b-0">
                 <PendingLink href={`/app/mapas/${r.b.id}`} aria-label={t('boards.open', { title: r.b.title })} className={`${cols} flex min-h-14 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-4 pr-16 text-ink no-underline hover:bg-primary-tint lg:px-6`}>
-                  <span className="basis-full font-display text-lg font-bold tracking-[-0.02em] lg:basis-auto">{r.b.title}</span>
+                  <span className="basis-full font-display text-lg font-bold tracking-[-0.02em] lg:basis-auto">{r.b.title} {accessBadge(r.b)}</span>
                   <span className="text-muted">{r.area}</span>
                   <span className="order-last basis-full lg:order-none lg:basis-auto"><StateBar counts={r.b.stateCounts} aria-label={barLabel(r.b)} /></span>
                   <span className="font-bold max-lg:hidden">{r.b.cardCount}</span>

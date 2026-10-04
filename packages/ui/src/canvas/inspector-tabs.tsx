@@ -2,7 +2,7 @@
 
 import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { clsx } from 'clsx';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 
 /**
  * InspectorTabs: abas do painel do card (Conteúdo / Rubrica / Origem / Histórico). `role="tablist"` com tab ativa

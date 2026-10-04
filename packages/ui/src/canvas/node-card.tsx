@@ -4,9 +4,8 @@ import { memo, useEffect, useId, useState, type ReactNode } from 'react';
 import { clsx } from 'clsx';
 import type { MapState } from '../state';
 import { anchor, type Rect, type Side, type Point } from './route';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 import { Icon } from '../icons';
-import { Tooltip } from '../tooltip';
 import './canvas.css';
 
 export type NodeType = 'concept' | 'case' | 'flow' | 'image' | 'note';
@@ -250,18 +249,27 @@ export function CaseStageList({ stages }: { stages: readonly CaseStage[] }) {
 
 const filledOf = (st: CaseStage) => st.filled ?? !!st.text?.trim();
 
-/** Etapas Apresentação · Exames · Diagnóstico · Conduta em grade 2×2 (rótulo inteiro, sem corte). Cada etapa é um botão (seleciona o card) com Tooltip (hint). */
+/** Etapas Apresentação · Exames · Diagnóstico · Conduta em grade 2×2 (rótulo inteiro, sem corte). Cada etapa é um botão (seleciona o card) com dica em CSS (hint). */
 function CaseTrail({ stages, onSelect }: { stages: readonly CaseStage[]; onSelect?: () => void }) {
   const uid = useId();
+  const [active, setActive] = useState<string | null>(null);
+  const [dismissed, setDismissed] = useState<string | null>(null);
+  // WCAG 1.4.13: Esc fecha a dica sem mexer no foco nem no ponteiro (vale para hover e foco).
+  useEffect(() => {
+    if (!active) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setDismissed(active); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [active]);
+  const leave = () => { setActive(null); setDismissed(null); };
   return (
     <ol className="pointer-events-auto relative m-0 grid shrink-0 list-none grid-cols-2 gap-x-2 gap-y-1 p-0">
       {stages.map((st, i) => {
         const filled = filledOf(st);
         const hid = `${uid}-${st.key}`;
         return (
-          <li key={st.key} className="min-w-0">
-            <Tooltip label={st.hint}>
-              <button
+          <li key={st.key} data-dismissed={dismissed === hid} onPointerEnter={() => setActive(hid)} onPointerLeave={leave} onFocus={() => setActive(hid)} onBlur={leave} className="group/tip relative min-w-0">
+            <button
                 type="button"
                 data-filled={filled}
                 aria-describedby={hid}
@@ -272,9 +280,9 @@ function CaseTrail({ stages, onSelect }: { stages: readonly CaseStage[]; onSelec
                   {filled ? <Icon name="check" size={13} /> : i + 1}
                 </span>
                 <span className={clsx('whitespace-nowrap text-xs font-semibold', filled ? 'text-primary-deep' : 'text-muted')}>{st.label}</span>
-              </button>
-            </Tooltip>
-            <span id={hid} className="sr-only">{st.hint}</span>
+            </button>
+            {/* Dica em CSS (D-558): sem Radix Tooltip/Popper no bundle da landing. aria-describedby aponta para ela (visibility:hidden tira do leitor de tela, mas o describedby continua valendo); aparece no hover e no foco, Esc fecha; fica dentro do card (D-560) para o overflow não cortar. */}
+            <span id={hid} role="tooltip" className={clsx('pointer-events-none absolute z-50 w-max max-w-[200px] rounded-tag bg-navy px-2.5 py-1.5 text-xs font-semibold leading-[1.45] text-white opacity-0 invisible shadow-lift transition-[opacity,visibility] duration-150 group-hover/tip:visible group-hover/tip:opacity-100 group-focus-within/tip:visible group-focus-within/tip:opacity-100 group-data-[dismissed=true]/tip:invisible group-data-[dismissed=true]/tip:opacity-0', i < 2 ? 'top-full mt-1' : 'bottom-full mb-1', i % 2 ? 'right-0' : 'left-0')}>{st.hint}</span>
           </li>
         );
       })}

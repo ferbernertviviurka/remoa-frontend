@@ -25,7 +25,6 @@ test('meus mapas: limite Free de 2 mapas', async ({ page, request }) => {
   await page.getByRole('button', { name: /Em branco/ }).click();
   await page.getByRole('button', { name: 'Continuar' }).click();
   await page.getByLabel('Nome do mapa').fill('Segundo');
-  await page.getByRole('button', { name: 'Continuar' }).click();
   await page.getByRole('button', { name: 'Criar mapa', exact: true }).click();
   await expect(page).toHaveURL(/\/mapas\/[0-9a-f-]{36}$/);
   await page.goto('/app/mapas');

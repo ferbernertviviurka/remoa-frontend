@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ApkgSummary, Entitlements, FieldMapping, ImportProgress, ImportReport, Result } from '@remoa/contracts';
+import type { ApkgSummary, Entitlements, ExistingBoard, FieldMapping, ImportBoardInput, ImportProgress, ImportReport, Result } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
@@ -14,7 +14,7 @@ export type AnkiState =
   | { kind: 'idle' }
   | { kind: 'uploading'; pct: number }
   | { kind: 'inspecting' }
-  | { kind: 'preview'; key: string; summary: ApkgSummary; plan: Plan; maxCards: number | null }
+  | { kind: 'preview'; key: string; summary: ApkgSummary; plan: Plan; maxCards: number | null; submitError?: string }
   | { kind: 'importing'; progress: ImportProgress | null }
   | { kind: 'done'; report: ImportReport }
   | { kind: 'error'; message: string };
@@ -22,12 +22,13 @@ export type AnkiState =
 export const POLL_MS = 1000;
 const post = <T,>(path: string, body: unknown) => api<T>(path, { method: 'POST', body: JSON.stringify(body) });
 
-/** idle → uploading → inspecting → preview → importing → done | error (F06 FR-3/FR-7). */
+/** idle → uploading → inspecting → preview → importing → done | error (F06 FR-3/FR-7; F17: `confirm` sends the "Sobre o mapa" board, D-500). */
 export function useAnkiImport() {
   const paywall = usePaywall();
   const [state, setState] = useState<AnkiState>({ kind: 'idle' });
   const alive = useRef(true);
   const run = useRef(0); // bumps on reset so a stale poll stops
+  const adjusted = useRef(false); // F17 FR-9: opened "Ajustar importação" at least once
   useEffect(() => {
     alive.current = true;
     return () => {
@@ -39,6 +40,7 @@ export function useAnkiImport() {
   const start = useCallback(
     async (file: File) => {
       const id = ++run.current;
+      adjusted.current = false;
       set({ kind: 'uploading', pct: 0 });
       try {
         const sign = await post<{ url: string; key: string }>('/v1/imports/anki/sign', { sizeBytes: file.size });
@@ -58,41 +60,66 @@ export function useAnkiImport() {
 
   const setPlan = useCallback((plan: Plan) => setState((s) => (s.kind === 'preview' ? { ...s, plan } : s)), []);
 
-  const confirm = useCallback(async () => {
-    if (state.kind !== 'preview') return;
-    const { key, summary, plan } = state;
-    const id = ++run.current;
-    set({ kind: 'importing', progress: null });
-    try {
-      const started = await post<{ importId: string }>('/v1/imports/anki', { key, plan: { ...plan, estimatedCards: estimate(summary, plan.deckIds) } });
-      if (!started.ok) {
-        if (paywall.handle(started.error)) return set(state); // back to the preview; the paywall dialog is open
-        return set({ kind: 'error', message: started.error.message || t('errors.internal') });
-      }
-      for (;;) {
-        const p = await api<ImportProgress>(`/v1/imports/${started.data.importId}`);
+  /** F17 FR-9: first opening of "Ajustar importação" is tracked once per file. */
+  const markAdjusted = useCallback(() => {
+    if (adjusted.current) return;
+    adjusted.current = true;
+    track('anki_import_adjust_opened', {});
+  }, []);
+
+  /** F17 FR-11: own active board with the same normalised title, or null (also on error: never block the import on this check). */
+  const findExisting = useCallback(async (title: string) => {
+    const r = await api<ExistingBoard>(`/v1/imports/anki/existing?title=${encodeURIComponent(title)}`).catch(() => null);
+    return r?.ok ? r.data.board : null;
+  }, []);
+
+  const confirm = useCallback(
+    async (board: ImportBoardInput, meta: { suggestedCount: number }) => {
+      if (state.kind !== 'preview') return;
+      const { key, summary, plan } = state;
+      const id = ++run.current;
+      set({ kind: 'importing', progress: null });
+      try {
+        const started = await post<{ importId: string }>('/v1/imports/anki', { key, plan: { ...plan, estimatedCards: estimate(summary, plan.deckIds) }, board });
+        if (!started.ok) {
+          if (paywall.handle(started.error)) return set({ ...state, submitError: undefined }); // the paywall dialog is open
+          // 409/422 and friends: back to "Sobre o mapa" with the message, nothing lost
+          return set({ ...state, submitError: started.error.message || t('errors.internal') });
+        }
+        for (;;) {
+          const p = await api<ImportProgress>(`/v1/imports/${started.data.importId}`);
+          if (run.current !== id) return;
+          if (!p.ok) return set({ kind: 'error', message: p.error.message || t('errors.internal') });
+          if (p.data.status === 'failed') return set({ kind: 'error', message: p.data.error && p.data.error !== 'stalled' ? p.data.error : t('import.errors.failed') });
+          if (p.data.status === 'done') break;
+          set({ kind: 'importing', progress: p.data });
+          await new Promise((r) => setTimeout(r, POLL_MS));
+        }
+        const rep: Result<ImportReport> = await api<ImportReport>(`/v1/imports/${started.data.importId}/report`);
         if (run.current !== id) return;
-        if (!p.ok) return set({ kind: 'error', message: p.error.message || t('errors.internal') });
-        if (p.data.status === 'failed') return set({ kind: 'error', message: p.data.error && p.data.error !== 'stalled' ? p.data.error : t('import.errors.failed') });
-        if (p.data.status === 'done') break;
-        set({ kind: 'importing', progress: p.data });
-        await new Promise((r) => setTimeout(r, POLL_MS));
+        if (!rep.ok) return set({ kind: 'error', message: rep.error.message || t('errors.internal') });
+        const r = rep.data;
+        const target = board.target && board.target !== 'new' ? 'existing' : 'new';
+        const items = board.matrixItemIds?.length ?? 0;
+        track('anki_imported', {
+          decks: plan.deckIds.length, cards: r.imported, media: summary.mediaCount, durationMs: r.durationMs, skipped: r.skippedDuplicate + r.skippedEmpty + r.missingMedia,
+          area: board.area ?? 'CM', matrixItems: items, access: board.access ?? 'owner', adjusted: adjusted.current, target,
+        });
+        if (items > 0) track('board_linked_to_matrix', { count: items, suggestedCount: meta.suggestedCount });
+        if (target === 'new' && board.access && board.access !== 'owner') track('board_access_changed', { from: 'owner', to: board.access, source: 'create' });
+        set({ kind: 'done', report: r });
+      } catch {
+        set({ kind: 'error', message: t('errors.internal') });
       }
-      const rep: Result<ImportReport> = await api<ImportReport>(`/v1/imports/${started.data.importId}/report`);
-      if (run.current !== id) return;
-      if (!rep.ok) return set({ kind: 'error', message: rep.error.message || t('errors.internal') });
-      const r = rep.data;
-      track('anki_imported', { decks: plan.deckIds.length, cards: r.imported, media: summary.mediaCount, durationMs: r.durationMs, skipped: r.skippedDuplicate + r.skippedEmpty + r.missingMedia, area: 'CM', matrixItems: 0, access: 'owner', adjusted: false, target: 'new' });
-      set({ kind: 'done', report: r });
-    } catch {
-      set({ kind: 'error', message: t('errors.internal') });
-    }
-  }, [state, paywall, set]);
+    },
+    [state, paywall, set],
+  );
 
   const reset = useCallback(() => {
     run.current++;
+    adjusted.current = false;
     setState({ kind: 'idle' });
   }, []);
 
-  return { state, start, setPlan, confirm, reset };
+  return { state, start, setPlan, confirm, findExisting, markAdjusted, reset };
 }

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import * as RD from '@radix-ui/react-dialog';
-import { focusRing, pressable } from './button';
+import { focusRing, pressable } from './button-styles';
 
 /**
  * Dialog modal. Controlado (open/onOpenChange) ou com `trigger` (elemento que abre).

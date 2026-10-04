@@ -65,10 +65,10 @@ describe('AccountView', () => {
     expect(screen.getByText(/continua ativo até 22 de novembro de 2026/)).toBeVisible();
   });
 
-  it('?checkout=ok toasts, tracks subscription_started once and clears the URL', () => {
+  it('?checkout=ok toasts, clears the URL (subscription_started now comes from the webhook, D-509)', async () => {
     view(pro, 'checkout');
-    expect(screen.getByText('Assinatura ativada. Bem-vindo ao Pro.')).toBeVisible();
-    expect(track).toHaveBeenCalledWith('subscription_started', {});
+    expect(await screen.findByText('Assinatura ativada. Bem-vindo ao Pro.')).toBeVisible();
+    expect(track).not.toHaveBeenCalledWith('subscription_started', {});
     expect(replace).toHaveBeenCalledWith('/app/conta');
   });
 

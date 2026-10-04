@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { t } from '@remoa/strings/landing';
-import { Button, Empty } from '@remoa/ui';
+import { Empty, buttonVariants, focusRing } from '@remoa/ui';
 
 export default function ErrorBoundary({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
@@ -14,7 +14,8 @@ export default function ErrorBoundary({ error, reset }: { error: Error & { diges
           description={error.digest ? `${t('boundary.body')} ${t('boundary.ref', { id: error.digest })}` : t('boundary.body')}
           action={
             <>
-              <Button onClick={reset}>{t('boundary.retry')}</Button>
+              {/* D-560: botão simples com os estilos do Button; o Button traz o Torph (~11 KB) para toda rota, pois este boundary vai em todas. */}
+              <button type="button" onClick={reset} className={`inline-flex min-h-12 items-center rounded-btn px-5 font-display text-[15px] ${buttonVariants.primary} ${focusRing}`}>{t('boundary.retry')}</button>
               <Link href="/app/mapas" className="inline-flex min-h-[46px] items-center rounded-btn px-4 font-display text-sm font-bold text-primary-deep">
                 {t('boundary.home')}
               </Link>

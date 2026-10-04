@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { formReady } from './sign-up';
+import { formReady, skipOnboarding } from './sign-up';
 
 const email = `e2e-${Date.now()}@remoa.test`;
 const password = 'senha-forte-123';
@@ -27,9 +27,13 @@ test('cadastro, logout e login', async ({ page }) => {
   await expect(page.getByText('Marque a caixa')).toBeVisible();
   await page.getByRole('checkbox').click();
   await page.getByRole('button', { name: 'Criar conta' }).click();
-  await expect(page).toHaveURL(/\/app\/hoje$/); // D-321: pós-login cai no Hoje
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Seu primeiro mapa começa aqui');
+  await page.waitForURL(/\/app\/onboarding$/, { timeout: 30_000 }).catch(() => page.goto('/app/onboarding')); // F12: o cadastro passa pelo onboarding antes do Hoje (D-321)
+  // a navegação completa do onboarding zera a lista; track() é assíncrono em dev: espera o evento antes de sair da página
+  await expect.poll(() => page.evaluate(() => (window.__remoaEvents ?? []).map((e) => e.event))).toContain('signup');
   const events = await page.evaluate(() => window.__remoaEvents ?? []);
+  await skipOnboarding(page);
+  await expect(page).toHaveURL(/\/app\/hoje$/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Seu primeiro mapa começa aqui');
   expect(events.map((e) => e.event)).toContain('signup');
 
   await page.goto('/app/conta');

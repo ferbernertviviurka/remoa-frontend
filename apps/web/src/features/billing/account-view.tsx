@@ -31,7 +31,6 @@ export function AccountView({ email, ent, notice }: { email: string; ent: Entitl
   useEffect(() => {
     if (!notice || announced.current) return;
     announced.current = true;
-    if (notice === 'checkout') track('subscription_started', {});
     toast({ title: t(notice === 'checkout' ? 'billing.account.checkoutOk' : 'billing.account.portalOk') });
     router.replace('/app/conta'); // so a refresh doesn't announce (and track) it again
   }, [notice, router, toast]);
@@ -42,7 +41,6 @@ export function AccountView({ email, ent, notice }: { email: string; ent: Entitl
     try {
       const r = await api<RedirectUrl>('/v1/billing/portal', { method: 'POST', body: JSON.stringify(cancel ? { cancel: true } : {}) });
       if (r.ok) {
-        if (cancel) track('subscription_canceled', {});
         return void window.location.assign(r.data.url);
       }
     } catch {

@@ -2,7 +2,8 @@
 
 import { useId, useState, type ReactNode } from 'react';
 import * as RD from '@radix-ui/react-dialog';
-import { Button, fieldControl, focusRing } from '../button';
+import { Button } from '../button';
+import { fieldControl, focusRing } from '../button-styles';
 import { useReturnFocus } from '../return-focus';
 
 /**

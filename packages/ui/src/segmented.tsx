@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import * as TG from '@radix-ui/react-toggle-group';
-import { focusRing, pressable } from './button';
+import { focusRing, pressable } from './button-styles';
 
 export const segTrack = 'inline-flex gap-1 rounded-[16px] bg-track p-1';
 export const segItem = 'inline-flex items-center justify-center rounded-[12px] text-muted data-[state=on]:bg-surface data-[state=on]:text-primary-deep aria-[current=page]:bg-surface aria-[current=page]:text-primary-deep aria-pressed:bg-surface aria-pressed:text-primary-deep font-bold transition-colors duration-150';

@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { vi } from 'vitest';
@@ -162,11 +162,12 @@ describe('PlanCards', () => {
     const annual = screen.getByRole('button', { name: /Anual/ });
     expect(monthly).toHaveAttribute('aria-pressed', 'true');
     const sr = () => [...container.querySelectorAll('[torph-sr]')].map((e) => e.textContent);
-    expect(sr().some((x) => /39,00/.test(x ?? ''))).toBe(true);
+    expect(container.textContent).toMatch(/39,00/); // texto simples até o usuário chegar perto do seletor (D-560)
+    expect(container.querySelector('[torph-sr]')).toBeNull();
     expect(container.querySelector('[class*="translate-x-0"]')).not.toBeNull();
     await userEvent.click(annual);
     expect(annual).toHaveAttribute('aria-pressed', 'true');
-    expect(sr().some((x) => /349,00/.test(x ?? ''))).toBe(true);
+    await waitFor(() => expect(sr().some((x) => /349,00/.test(x ?? ''))).toBe(true)); // Torph carrega sob demanda
     expect(sr()).toContain('/ano');
     expect(container.querySelector('[class*="translate-x-full"]')).not.toBeNull();
     expect(screen.getByText('-25%')).toBeInTheDocument();

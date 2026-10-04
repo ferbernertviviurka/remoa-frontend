@@ -10,7 +10,7 @@ import {
   type XYPosition,
 } from '@xyflow/react';
 import {
-  CARD_SIZE_MAX, CARD_SIZE_MIN, MAX_CARDS_PER_BOARD, type BoardGraph, type CardDetail, type CardShape, type CardSize, type CardType, type CoverageRow, type MapOp, type MatrixItem, type RetrievabilityMap, type SaveCardInput,
+  CARD_SIZE_MAX, CARD_SIZE_MIN, MAX_CARDS_PER_BOARD, type BoardGraph, type CardDetail, type CardShape, type CardStudyAction, type CardStudyState, type CardSize, type CardType, type CoverageRow, type MapOp, type MatrixItem, type RetrievabilityMap, type SaveCardInput,
 } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import {
@@ -245,6 +245,15 @@ function Canvas({ data }: { data: BoardGraph }) {
     };
   }, [board.id]);
   useEffect(() => loadHeat(), [loadHeat]);
+
+  /** F03 FR-9: suspended flag on the node/cache; "reiniciar" drops the FSRS state, so the heat is reloaded. Not a map op. */
+  const onCardStudy = useCallback(
+    (st: CardStudyState, action: CardStudyAction) => {
+      setGraph(patchCard(g.current, cache.current, st.cardId, { suspendedAt: st.suspendedAt }));
+      if (action === 'reset') loadHeat();
+    },
+    [setGraph, loadHeat],
+  );
 
   // Camada Cobertura + panel summary (D-081). Board without matrix item: nothing to fetch.
   useEffect(() => {
@@ -902,6 +911,7 @@ function Canvas({ data }: { data: BoardGraph }) {
               onDelete={deleteCard}
               onReviewCard={reviewCard}
               onResetSize={resetSize}
+              onStudy={onCardStudy}
             />
         </div>
       </section>

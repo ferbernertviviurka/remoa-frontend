@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from 'react';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 import { Logo } from '../logo';
 
 type LinkLike = ComponentType<{ href: string; 'aria-label'?: string; className?: string; children?: ReactNode }> | 'a';

@@ -1,17 +1,13 @@
 // F09 FR-2 / FR-3: phone review at 360×740. The map is a list; the challenge is one question, with the answer field.
-import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { psql } from './db';
 import { signUpAndLogin } from './visual/fixture';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
-function psql(sql: string) {
-  const db = process.env.DATABASE_URL ?? /DATABASE_URL="?([^"\n]*)/.exec(readFileSync('../../../remoa-backend/.env', 'utf8'))?.[1] ?? '';
-  execFileSync('psql', [db, '-q', '-c', sql]);
-}
-
-test.use({ viewport: { width: 360, height: 740 }, hasTouch: true, colorScheme: 'light' });
+// Viewport and browser come from the `pixel-5` / `iphone-12` projects (playwright.config.ts); a desktop project would not be a phone.
+test.use({ colorScheme: 'light' });
+test.skip(({ isMobile }) => !isMobile, 'phone-only spec');
 
 test('revisão no celular: lista sem canvas, uma pergunta, campo e notas', async ({ page, request }) => {
   test.setTimeout(120_000);
@@ -47,9 +43,16 @@ test('revisão no celular: lista sem canvas, uma pergunta, campo e notas', async
   await expect(field).toBeVisible();
   await page.getByRole('button', { name: 'Falar' }).click();
   await expect(field).toBeVisible();
+  // D-507 (supersedes D-203): voice is live where the browser has speech recognition; elsewhere the mic is off and says so.
+  const hasSpeech = await page.evaluate(() => 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
   const mic = page.getByRole('button', { name: 'Falar a resposta' });
-  const soon = page.getByText('Responder falando ainda não está disponível');
-  await expect(mic.or(soon)).toBeVisible();
+  if (hasSpeech) {
+    await expect(mic).toBeEnabled();
+    await expect(page.getByText('O áudio não é enviado.')).toBeVisible();
+  } else {
+    await expect(mic).toBeDisabled();
+    await expect(page.getByText('Responder falando ainda não está disponível')).toBeVisible();
+  }
   await field.fill('disfunção orgânica');
   await page.getByRole('button', { name: 'Corrigir resposta' }).click();
 

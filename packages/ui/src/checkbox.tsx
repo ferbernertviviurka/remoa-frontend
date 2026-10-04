@@ -1,11 +1,11 @@
 'use client';
 
-import { useId, type ComponentProps } from 'react';
+import { useId, type ComponentProps, type ReactNode } from 'react';
 import * as RC from '@radix-ui/react-checkbox';
-import { focusRing } from './button';
+import { focusRing } from './button-styles';
 
-/** Checkbox com rótulo (`label` obrigatório). Controlado (checked/onCheckedChange) ou não (defaultChecked). */
-export type CheckboxProps = Omit<ComponentProps<typeof RC.Root>, 'className' | 'id' | 'children' | 'asChild'> & { label: string };
+/** Checkbox com rótulo (`label` obrigatório; ReactNode permite links no texto). Controlado (checked/onCheckedChange) ou não (defaultChecked). */
+export type CheckboxProps = Omit<ComponentProps<typeof RC.Root>, 'className' | 'id' | 'children' | 'asChild'> & { label: ReactNode };
 
 export function Checkbox({ label, ...rest }: CheckboxProps) {
   const id = useId();
@@ -22,7 +22,7 @@ export function Checkbox({ label, ...rest }: CheckboxProps) {
           </svg>
         </RC.Indicator>
       </RC.Root>
-      <label htmlFor={id} className="text-sm text-text">{label}</label>
+      <label htmlFor={id} className="text-sm text-text [&_a]:underline">{label}</label>
     </div>
   );
 }

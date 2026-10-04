@@ -1,7 +1,9 @@
 import { httpErrorBodySchema, type Result } from '@remoa/contracts';
 import { readResultStream } from './sse';
 
-export const apiBase = () => process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+import { apiBase } from './base';
+
+export { apiBase };
 
 /**
  * Calls the backend API (`/v1/*`). HTTP errors come back as `{ ok: false, error }`;

@@ -144,9 +144,9 @@ describe('PlansView', () => {
     expect(track).toHaveBeenCalledWith('faq_opened', { index: 2 });
   });
 
-  it('?cancelado=1: toast, checkout_canceled once, query cleared', () => {
+  it('?cancelado=1: toast, checkout_canceled once, query cleared', async () => {
     view({ canceled: true });
-    expect(screen.getByText('Pagamento cancelado. Nada foi cobrado.')).toBeInTheDocument();
+    expect(await screen.findByText('Pagamento cancelado. Nada foi cobrado.')).toBeInTheDocument();
     expect(track).toHaveBeenCalledWith('checkout_canceled', {});
     expect(replace).toHaveBeenCalledWith('/app/planos');
   });

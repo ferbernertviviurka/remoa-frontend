@@ -7,6 +7,12 @@ describe('event context', () => {
     sessionStorage.clear();
   });
 
+  it('sends the area of any grande área, not only CM', async () => {
+    rememberBoard('11111111-1111-4111-8111-111111111111', 'GO');
+    track('progress_viewed', {});
+    await vi.waitFor(() => expect(window.__remoaEvents?.[0]?.props).toMatchObject({ area: 'GO' }));
+  });
+
   it('adds boardId and area only while a map is open', async () => {
     rememberBoard('11111111-1111-4111-8111-111111111111', 'CM');
     track('progress_viewed', {});

@@ -16,6 +16,7 @@ export async function signUpAndLogin(page: Page, request: APIRequestContext) {
   const signup = await request.post(`${SUPABASE}/auth/v1/signup`, { headers: { apikey: ANON }, data: { email, password } });
   const su = await signup.json();
   const token = su.access_token as string;
+  await request.post(`${API}/v1/onboarding/complete`, { headers: { authorization: `Bearer ${token}` } }).catch(() => undefined); // F12: skip the onboarding redirect
   await expect(async () => { // retried: a submit before hydration is a native GET
     await page.goto('/entrar');
     await formReady(page);

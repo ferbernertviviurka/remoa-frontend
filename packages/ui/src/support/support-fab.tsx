@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 import { Icon } from '../icons';
 
 /**

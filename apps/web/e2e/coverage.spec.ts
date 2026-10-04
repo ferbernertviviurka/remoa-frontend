@@ -23,7 +23,7 @@ test('cobertura: estado vazio, mapa ligado aparece na tabela e no cabeçalho do 
 
   const items = (await (await request.get(`${API}/v1/matrix/items?area=CM`, { headers })).json()).data as Item[];
   const item = items.find((i) => i.parentId)!; // a topic, not a group heading
-  const created = await request.post(`${API}/v1/boards`, { headers, data: { title: item.title, area: 'CM', matrixItemId: item.id } });
+  const created = await request.post(`${API}/v1/boards`, { headers, data: { title: item.title, area: 'CM', matrixItemIds: [item.id] } });
   const boardId = (await created.json()).data.id as string;
 
   await page.goto('/app/cobertura');
@@ -67,7 +67,7 @@ test('lacunas: ligar um mapa que já tenho move o tema para Em andamento', async
   const items = (await (await request.get(`${API}/v1/matrix/items?area=CM`, { headers })).json()).data as Item[];
   const first = items.find((i) => i.parentId)!;
   const other = items.find((i) => i.parentId && i.id !== first.id)!;
-  await request.post(`${API}/v1/boards`, { headers, data: { title: first.title, area: 'CM', matrixItemId: first.id } });
+  await request.post(`${API}/v1/boards`, { headers, data: { title: first.title, area: 'CM', matrixItemIds: [first.id] } });
   await request.post(`${API}/v1/boards`, { headers, data: { title: 'Meu mapa solto', area: 'CM' } });
 
   await page.goto('/app/cobertura');

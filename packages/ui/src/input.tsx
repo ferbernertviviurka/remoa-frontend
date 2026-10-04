@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, type ComponentProps } from 'react';
-import { fieldControl, focusRing } from './button';
+import { fieldControl, focusRing } from './button-styles';
 import { Icon } from './icons';
 
 /**

@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
-import { cookies } from 'next/headers';
 import { t } from '@remoa/strings';
 import { Bricolage_Grotesque, Instrument_Sans } from 'next/font/google';
 import { DevEventDiagnostics } from '@/features/shell/dev-event-diagnostics';
@@ -17,10 +16,9 @@ export const metadata: Metadata = { metadataBase: new URL(siteUrl), title: t('co
 // viewport-fit=cover: sem isso env(safe-area-inset-*) vale 0 e a bottom-nav fica sob a barra home do iPhone.
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover' };
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
-  const motion = (await cookies()).get('remoa-motion')?.value; // F13 FR-14: reduced | full | absent (system)
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR" data-motion={motion === 'reduced' || motion === 'full' ? motion : undefined} className={`${display.variable} ${body.variable}`} suppressHydrationWarning>
+    <html lang="pt-BR" className={`${display.variable} ${body.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>

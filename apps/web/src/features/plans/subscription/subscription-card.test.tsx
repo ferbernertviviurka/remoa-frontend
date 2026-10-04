@@ -66,7 +66,7 @@ describe('SubscriptionCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Mudar para o anual' }));
     await waitFor(() => expect(refresh).toHaveBeenCalled());
     expect(track).toHaveBeenCalledWith('plans_annual_switch_clicked', {});
-    expect(screen.getByText('Pronto: você está no plano anual.')).toBeVisible();
+    expect(await screen.findByText('Pronto: você está no plano anual.')).toBeVisible();
   });
 
   it('switch-annual redirect: goes to the url', async () => {

@@ -1,5 +1,5 @@
 import { Icon, type IconName } from '../icons';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 
 export type ShareChannel = 'whatsapp' | 'telegram' | 'email' | 'more';
 const icon: Record<ShareChannel, IconName> = { whatsapp: 'chat', telegram: 'send', email: 'mail', more: 'share' };

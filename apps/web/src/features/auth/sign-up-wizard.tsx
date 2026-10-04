@@ -20,6 +20,16 @@ type Values = { email: string; password: string; name: string; stage: Stage | nu
 type Errs = Partial<Record<'email' | 'password' | 'name' | 'consent' | 'general', string>>;
 
 /** `referred`: there is an `rf` cookie (FR-15 shows the consent line; FR-16 attributes right after sign-up). */
+const ext = { target: '_blank', rel: 'noopener noreferrer' } as const;
+/** P-0xx: the consent text links to /termos and /privacidade (new tab); the string keeps {terms}/{privacy} placeholders. */
+const consentLabel = t('auth.review.consent', { terms: '\u0001T', privacy: '\u0001P' })
+  .split(/(\u0001[TP])/)
+  .map((part, i) =>
+    part === '\u0001T' ? <a key={i} href="/termos" {...ext}>{t('auth.review.consentTerms')}</a>
+    : part === '\u0001P' ? <a key={i} href="/privacidade" {...ext}>{t('auth.review.consentPrivacy')}</a>
+    : part,
+  );
+
 export function SignUpWizard({ next, referred = false }: { next?: string; referred?: boolean }) {
   const router = useRouter();
   const target = safeNext(next);
@@ -163,7 +173,7 @@ export function SignUpWizard({ next, referred = false }: { next?: string; referr
             {row(t('auth.review.stageRow'), stageOptions().find((o) => o.value === v.stage)?.label ?? '')}
             {row(t('auth.review.goalRow'), goalGroups().flatMap((g) => g.options).find((o) => o.value === v.goal)?.label ?? '')}
           </dl>
-          <Checkbox label={t('auth.review.consent')} checked={v.consent} onCheckedChange={(c) => set('consent', c === true)} aria-describedby={errs.consent ? 'su-consent-err' : undefined} />
+          <Checkbox label={consentLabel} checked={v.consent} onCheckedChange={(c) => set('consent', c === true)} aria-describedby={errs.consent ? 'su-consent-err' : undefined} />
           <FieldError id="su-consent-err">{errs.consent}</FieldError>
           {referred ? <p className="m-0 text-sm text-muted">{t('referral.consent.nameVisibility')}</p> : null}
         </div>

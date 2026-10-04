@@ -153,7 +153,8 @@ test('4. caso clínico: a etapa explica o que é por tooltip, pelo teclado; pain
   await page.keyboard.press('Tab');
   await page.keyboard.press('Tab'); // the second stage of the trail: Exames
   await expect(card.getByRole('button', { name: /Exames/ })).toBeFocused();
-  await expect(page.getByRole('tooltip')).toContainText('pergunta os exames');
+  await expect(card.getByRole('button', { name: /Exames/ })).toHaveAccessibleDescription(/pergunta os exames/);
+  await expect(card.getByRole('tooltip').filter({ hasText: 'pergunta os exames' })).toHaveCSS('opacity', '1'); // dica CSS (D-558) ligada pelo foco
   await expect(card.getByRole('button', { name: /Exames/ })).toHaveAttribute('data-filled', 'true');
   await expect(card.getByRole('button', { name: /Diagnóstico/ })).toHaveAttribute('data-filled', 'false');
   await shot(page, 'g06-caso-tooltip');
@@ -163,7 +164,7 @@ test('4. caso clínico: a etapa explica o que é por tooltip, pelo teclado; pain
   await expect(aside).toHaveAttribute('data-state', 'open');
   await expect(panel(page).getByRole('heading', { level: 2, name: 'Caso sepse' })).toBeFocused(); // focus lands once it has opened
   await panel(page).getByRole('button', { name: 'O que é Diagnóstico?' }).focus();
-  await expect(page.getByRole('tooltip')).toContainText('pergunta o diagnóstico');
+  await expect(page.getByRole('tooltip').filter({ hasText: 'pergunta o diagnóstico' }).last()).toBeVisible();
   await page.keyboard.press('Escape'); // closes the tooltip
   await page.locator('.react-flow__pane').click({ position: { x: 700, y: 600 } });
   await expect(aside).toHaveAttribute('data-state', 'closed');

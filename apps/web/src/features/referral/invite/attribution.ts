@@ -1,6 +1,7 @@
 import { REFERRAL_COOKIE, REFERRAL_LIMITS, normalizeReferralCode, type AttributionResult, type ReferralInvitePublic } from '@remoa/contracts';
 import { headers } from 'next/headers';
 import { apiFetch } from '@/lib/api';
+import { clientIpHeaders } from '@/lib/api/client-ip';
 
 export const REFERRAL_COOKIE_OPTIONS = {
   httpOnly: true,
@@ -14,17 +15,16 @@ export { REFERRAL_COOKIE };
 /**
  * D-399: these calls run on the Next server, so without this the API sees one IP for every visitor: the 30/min public lookup
  * limit becomes global (invite pages turn "invalid" and lose the cookie under a WhatsApp burst) and every attribution looks
- * like the same IP + user agent to the weak fraud signal. Same forwarding as the F17 unlock action.
+ * like the same IP + user agent to the weak fraud signal. The IP goes as the trusted pair (D-537), same as the F17 unlock action.
  */
 async function visitor(): Promise<Record<string, string>> {
+  let ua: string | null = null;
   try {
-    const h = await headers();
-    const ip = h.get('x-forwarded-for') ?? h.get('x-real-ip');
-    const ua = h.get('user-agent');
-    return { ...(ip ? { 'x-forwarded-for': ip } : {}), ...(ua ? { 'user-agent': ua } : {}) };
+    ua = (await headers()).get('user-agent');
   } catch {
-    return {}; // outside a request (tests)
+    // outside a request (tests)
   }
+  return { ...(await clientIpHeaders()), ...(ua ? { 'user-agent': ua } : {}) };
 }
 
 /** GET /v1/public/referral/:code. Any failure (malformed, unknown, API down) is "invalid": the page falls back to the neutral version. */

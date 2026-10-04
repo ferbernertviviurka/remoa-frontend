@@ -102,6 +102,8 @@ export const editor = {
   suggestLink: 'Ligar a {item}',
   linkError: 'Não foi possível ligar o mapa ao item.',
   coversHeader: 'cobre {pct}% de {item}',
+  coversShort: 'cobre {pct}%',
+  coversMenu: 'Cobertura: {pct}% de {item}',
   cardMenu: 'Mais ações de {title}',
   // G02
   moreActions: 'Mais ações do mapa',

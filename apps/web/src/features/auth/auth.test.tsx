@@ -103,6 +103,12 @@ describe('SignUpWizard', () => {
     click('Criar conta');
     expect(screen.getByRole('alert').textContent).toMatch(/Marque a caixa/);
     expect(signUp).not.toHaveBeenCalled();
+    for (const [name, href] of [['Termos de uso', '/termos'], ['Política de Privacidade', '/privacidade']] as const) {
+      const a = screen.getByRole('link', { name });
+      expect(a).toHaveAttribute('href', href);
+      expect(a).toHaveAttribute('target', '_blank');
+      expect(a.getAttribute('rel')).toContain('noopener');
+    }
     fireEvent.click(screen.getByRole('checkbox'));
     click('Criar conta');
     await waitFor(() => expect(push).toHaveBeenCalledWith('/app/mapas'));

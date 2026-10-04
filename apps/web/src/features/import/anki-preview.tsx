@@ -2,19 +2,18 @@
 
 import type { ApkgSummary, FieldMapping } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
-import { Alert, Button, Card, Checkbox, Select, Tag } from '@remoa/ui';
-import { applyMapping, estimate } from './plan';
+import { Card, Checkbox, Select, Tag } from '@remoa/ui';
+import { applyMapping } from './plan';
 import type { Plan } from './use-anki-import';
 
 const DERIVE = '__derive';
 const NONE = '__none';
 type Kind = ApkgSummary['noteTypes'][number]['kind'];
 
-type Props = { summary: ApkgSummary; plan: Plan; maxCards: number | null; onChange: (plan: Plan) => void; onBack: () => void; onConfirm: () => void };
+type Props = { summary: ApkgSummary; plan: Plan; onChange: (plan: Plan) => void };
 
-/** F06 FR-3: decks → mapa/colunas, note types → card type + fields, 5-row sample that follows the field selects. */
-export function AnkiPreview({ summary, plan, maxCards, onChange, onBack, onConfirm }: Props) {
-  const total = estimate(summary, plan.deckIds);
+/** F06 FR-3 inside F17 "Ajustar importação" (FR-9): decks → colunas, note types → card type + fields, 5-row sample that follows the field selects. */
+export function AnkiPreview({ summary, plan, onChange }: Props) {
   // Toggling a deck toggles its sub decks too: the server imports the whole subtree of every selected deck.
   const toggleDeck = (id: string, on: boolean) => {
     const name = summary.decks.find((d) => d.id === id)?.name ?? '';
@@ -25,13 +24,6 @@ export function AnkiPreview({ summary, plan, maxCards, onChange, onBack, onConfi
 
   return (
     <div className="flex flex-col gap-6">
-      <div role="group" aria-label={t('import.countsLabel')} className="flex flex-wrap gap-2">
-        <Tag>{t('import.counts.decks', { n: summary.decks.length })}</Tag>
-        <Tag>{t('import.counts.cards', { n: summary.cardCount })}</Tag>
-        <Tag>{t('import.counts.media', { n: summary.mediaCount })}</Tag>
-      </div>
-      {maxCards != null && total > maxCards ? <Alert tone="watch" title={t('import.capTitle')} role="alert">{t('import.cap', { n: total, max: maxCards })}</Alert> : null}
-
       <section className="flex flex-col gap-3" aria-labelledby="import-decks">
         <h2 id="import-decks" className="font-display text-lg font-bold">{t('import.decks.title')}</h2>
         <Card>
@@ -43,7 +35,7 @@ export function AnkiPreview({ summary, plan, maxCards, onChange, onBack, onConfi
               return (
                 <li key={d.id} style={{ paddingLeft: depth * 20 }} className="flex flex-wrap items-center justify-between gap-2">
                   <Checkbox label={`${short} (${d.noteCount})`} checked={plan.deckIds.includes(d.id)} onCheckedChange={(v) => toggleDeck(d.id, v === true)} />
-                  <span className="text-xs text-muted">{depth === 0 ? t('import.decks.root', { name: short }) : t('import.decks.sub')}</span>
+                  <span className="text-xs text-muted">{depth === 0 ? t('import.decks.root') : t('import.decks.sub')}</span>
                 </li>
               );
             })}
@@ -96,10 +88,6 @@ export function AnkiPreview({ summary, plan, maxCards, onChange, onBack, onConfi
         })}
       </section>
 
-      <div className="flex items-center justify-between gap-3 max-sm:flex-col-reverse max-sm:items-stretch max-sm:[&>button]:w-full">
-        <Button variant="secondary" size="lg" onClick={onBack}>{t('import.back')}</Button>
-        <Button size="lg" disabled={plan.deckIds.length === 0} onClick={onConfirm}>{t('import.confirm', { n: total })}</Button>
-      </div>
     </div>
   );
 }

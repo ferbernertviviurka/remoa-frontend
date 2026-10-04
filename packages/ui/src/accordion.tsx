@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import * as RA from '@radix-ui/react-accordion';
-import { focusRing } from './button';
+import { focusRing } from './button-styles';
 
 /** Lista expansível. Um item aberto por vez. */
 export function Accordion({ items }: { items: ReadonlyArray<{ value: string; title: string; content: ReactNode }> }) {

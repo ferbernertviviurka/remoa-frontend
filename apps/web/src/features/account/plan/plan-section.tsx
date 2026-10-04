@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PLAN_LIMITS, PRICES_BRL, usageRows, type QuotaKey, type RedirectUrl, type UsageRow } from '@remoa/contracts';
+import { PLAN_LIMITS, formatBRL as formatCents, usageRows, type PriceBook, type QuotaKey, type RedirectUrl, type UsageRow } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { Alert, Button, Icon, Morph, Segmented, UsageMeter, UsageWarning, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
-import { formatBRL, formatDate } from '@/features/billing/format';
+import { formatDate } from '@/features/billing/format';
 import { SectionCard } from '../shared/section-card';
 import { useAccount } from '../shell/account-context';
 
@@ -34,13 +34,24 @@ export function PlanSection() {
   const [period, setPeriod] = useState<Period>('monthly');
   const [busy, setBusy] = useState<'portal' | 'cancel' | null>(null);
   const [error, setError] = useState(false);
+  // P-094: same source as /app/planos (GET /v1/billing/prices, centavos); no hard-coded fallback.
+  const [prices, setPrices] = useState<PriceBook | null>(null);
+  useEffect(() => {
+    if (pro) return;
+    let alive = true;
+    Promise.resolve(api<PriceBook>('/v1/billing/prices'))
+      .then((r) => alive && r.ok && setPrices(r.data))
+      .catch(() => undefined); // price stays "unavailable"; upgrade still goes to /app/planos
+    return () => {
+      alive = false;
+    };
+  }, [pro]);
   const announced = useRef(false);
   const notice = params.get('checkout') === 'ok' ? 'checkout' : params.get('portal') === 'ok' ? 'portal' : null;
 
   useEffect(() => {
     if (!notice || announced.current) return;
     announced.current = true;
-    if (notice === 'checkout') track('subscription_started', {});
     toast({ title: t(notice === 'checkout' ? 'billing.account.checkoutOk' : 'billing.account.portalOk') });
     router.replace('/app/conta/plano'); // so a refresh doesn't announce (and track) it again
   }, [notice, router, toast]);
@@ -57,7 +68,6 @@ export function PlanSection() {
     try {
       const r = await api<RedirectUrl>('/v1/billing/portal', { method: 'POST', body: JSON.stringify(cancel ? { cancel: true } : {}) });
       if (r.ok) {
-        if (cancel) track('subscription_canceled', {});
         return void window.location.assign(r.data.url);
       }
     } catch {
@@ -68,7 +78,7 @@ export function PlanSection() {
   }
 
   const renewal = ent.renewsAt ? formatDate(ent.renewsAt) : null;
-  const price = formatBRL(PRICES_BRL[period]).replace(/,00$/, '');
+  const price = prices ? formatCents(prices[period].amount).replace(/,00$/, '') : t('account.plan.priceUnavailable');
   const perks = [
     t('account.plan.perks.unlimited'),
     t('account.plan.perks.ai'),
@@ -142,7 +152,7 @@ export function PlanSection() {
               <span className="font-semibold text-muted"><Morph>{t(period === 'monthly' ? 'billing.pricing.perMonth' : 'billing.pricing.perYear', { price: '' })}</Morph></span>
             </p>
             <p className="-mt-2 m-0 min-h-[2.6em] text-[13px] text-muted tabular-nums">
-              <Morph>{period === 'monthly' ? t('account.plan.monthlyNote') : t('account.plan.annualNote', { price: formatBRL(PRICES_BRL.annual / 12) })}</Morph>
+              <Morph>{period === 'monthly' ? t('account.plan.monthlyNote') : t('account.plan.annualNote', { price: prices ? formatCents(Math.round(prices.annual.amount / 12)) : '' })}</Morph>
             </p>
             <ul className="m-0 flex list-none flex-col gap-2 p-0 text-sm">
               {perks.map((p) => (

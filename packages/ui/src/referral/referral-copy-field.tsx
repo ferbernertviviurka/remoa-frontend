@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { Icon } from '../icons';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 
 /** Resultado do copiar: `clipboard` (API), `selection` (alternativa: texto selecionado + execCommand) ou `denied` (nada funcionou; o texto fica selecionado). */
 export type CopyResult = 'clipboard' | 'selection' | 'denied';

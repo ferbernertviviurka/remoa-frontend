@@ -2,7 +2,7 @@
 
 import { useId, useState, type ReactNode } from 'react';
 import { Icon } from '../icons';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 
 export type QuestionItem = { id: string; question: string; answer: ReactNode };
 export type QuestionAccordionProps = {

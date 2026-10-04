@@ -9,7 +9,7 @@ import {
   type KeyboardEvent,
 } from 'react';
 import * as Popover from '@radix-ui/react-popover';
-import { focusRing } from './button';
+import { focusRing } from './button-styles';
 import { Icon } from './icons';
 
 // ---------------------------------------------------------------------------
@@ -342,7 +342,7 @@ export function Combobox({
                 onKeyDown={handleKeyDown}
                 onFocus={() => setOpen(true)}
                 placeholder={value.length === 0 ? placeholder : undefined}
-                className={`min-w-[120px] flex-1 bg-transparent text-base font-semibold text-ink placeholder:font-normal placeholder:text-muted outline-none ${focusRing}`}
+                className={`min-h-11 min-w-[120px] flex-1 bg-transparent text-base font-semibold text-ink placeholder:font-normal placeholder:text-muted outline-none ${focusRing}`}
               />
             </div>
           </Popover.Anchor>

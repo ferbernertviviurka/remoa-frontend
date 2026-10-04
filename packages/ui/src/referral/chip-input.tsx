@@ -2,7 +2,7 @@
 
 import { useId, useState, type KeyboardEvent } from 'react';
 import { Icon } from '../icons';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

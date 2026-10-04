@@ -8,7 +8,7 @@ import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { usePaywall } from '@/features/billing/paywall';
 
-type Seed = { id: string; title: string; area: string; temporalMark: string | null };
+type Seed = { id: string; title: string; area: string; temporalMark: string | null; reviewerName?: string | null; reviewerCrm?: string | null; approvedAt?: string | null };
 
 function areaLabel(area: string) {
   switch (area) {
@@ -64,7 +64,12 @@ export function SeedsView() {
               <li key={s.id} className="flex items-center justify-between gap-3 rounded-3xl border border-border bg-surface p-4">
                 <span>
                   <span className="block font-semibold">{s.title}</span>
-                  <span className="text-sm text-muted">{s.temporalMark}</span>
+                  <span className="block text-sm text-muted">{s.temporalMark}</span>
+                  {s.reviewerName && s.reviewerCrm ? (
+                    <span className="block text-sm text-muted">
+                      {t('editorial.provenance', { name: s.reviewerName, crm: s.reviewerCrm, date: s.approvedAt ? new Date(s.approvedAt).toLocaleDateString('pt-BR') : '—' })}
+                    </span>
+                  ) : null}
                 </span>
                 <Button size="sm" onClick={() => void copy(s.id)}>{t('editorial.copy')}</Button>
               </li>

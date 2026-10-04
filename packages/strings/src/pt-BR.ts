@@ -1,4 +1,5 @@
 import { account } from './account';
+import { offline } from './offline';
 import { nav } from './nav';
 import { plan } from './plan';
 import { plans } from './plans';
@@ -7,17 +8,23 @@ import { referral } from './referral';
 import { support } from './support';
 import { admin } from './admin';
 import { f17 } from './f17';
+import { legal } from './legal';
+import { onboarding, cardStudy } from './onboarding';
 import { mapState, challengeMode, challenge, editor, canvas, quiz, boundary } from './landing-shared';
 
 export const ptBR = {
   account,
+  offline,
   nav,
   plan,
   plans,
   landing,
   referral,
+  legal,
   support,
   admin,
+  onboarding,
+  cardStudy,
   // F17 — Importador Anki v2 (T1)
   ...f17,
   common: {
@@ -186,8 +193,8 @@ export const ptBR = {
     serverCounts: 'O número final conta notas e pode ser menor: duplicatas e notas vazias são ignoradas.',
     cap: 'Este arquivo tem {n} cards e o seu plano importa até {max} por vez. No plano gratuito, uma importação acima do limite é recusada. Assine o Pro para importar arquivos maiores.',
     capTitle: 'Acima do limite do plano',
-    decks: { title: 'Baralhos', root: 'vira o mapa “{name}”', sub: 'vira coluna e “Fonte” do card', check: 'Importar o baralho {name}' },
-    rules: 'Cada nota vira um card. Lacunas (cloze) viram conceitos com [...]. Oclusão de imagem vira card de imagem com máscaras. Um mapa com o mesmo nome é reaproveitado e duplicatas são ignoradas.',
+    decks: { title: 'Baralhos', root: 'vira coluna do mapa', sub: 'vira coluna e “Fonte” do card', check: 'Importar o baralho {name}' },
+    rules: 'Cada nota vira um card. Lacunas (cloze) viram conceitos com [...]. Oclusão de imagem vira card de imagem com máscaras. Todos os baralhos entram no mesmo mapa; se já existir um mapa com esse nome, você escolhe entre importar nele (duplicatas são ignoradas) ou criar outro.',
     noteTypes: { title: 'Tipos de nota', count: '{n, plural, one {# nota} other {# notas}}' },
     kind: { basic: 'Básico', cloze: 'Lacunas (cloze)', image_occlusion: 'Oclusão de imagem', other: 'Outro' },
     field: { cardType: 'Vira card do tipo', title: 'Título', front: 'Frente', back: 'Verso', deriveTitle: 'Derivar da frente', none: 'Nenhum' },
@@ -251,6 +258,8 @@ export const ptBR = {
     generating: '{stage}… {n}%',
     generatingLabel: 'Progresso da geração do mapa',
     pdfUnreadable: 'Não foi possível ler este PDF. Envie um arquivo com texto selecionável.',
+    pdfTooLarge: 'O PDF passa de 10 MB. Envie um arquivo menor ou divida o material.',
+    pdfInvalid: 'Este arquivo não é um PDF. Escolha um arquivo .pdf.',
     generateTimeout: 'A geração passou de 10 minutos e foi interrompida. A cota foi devolvida.',
     stage: { ocr: 'Lendo o PDF', extract: 'Extraindo conceitos', layout: 'Organizando o mapa' },
     previewLabel: 'Prévia do seu mapa',
@@ -273,8 +282,8 @@ export const ptBR = {
         lead: 'Importe o arquivo .apkg e seus cards viram um mapa que você liga e edita.',
         s1: 'No Anki, exporte o baralho como .apkg com “Support older Anki versions” marcado.',
         s2: 'Cada nota vira um card. O cloze mantém as lacunas; a oclusão de imagem vira card de imagem com máscaras.',
-        s3: 'Você vê o que será importado, confirma e acompanha o relatório. Sub-baralhos viram colunas.',
-        gets: 'Um mapa por baralho, com as imagens. O agendamento do Anki não é trazido: a repetição espaçada começa do zero.',
+        s3: 'Você dá nome ao mapa, confere o resumo e importa. Os baralhos viram colunas.',
+        gets: 'Um mapa só, com os baralhos como colunas e as imagens. O agendamento do Anki não é trazido: a repetição espaçada começa do zero.',
         limit: 'Até {free} cards por importação no Free e {pro} no Pro. As tags do Anki não entram.',
         status: 'Disponível agora.',
       },
@@ -414,6 +423,14 @@ export const ptBR = {
     diffOut: 'Saiu: {text}',
     diffIn: 'Entrou: {text}',
     diffSame: 'A rubrica está igual à versão anterior.',
+    crmPlaceholder: '123456-SP',
+    onlyReviewer: 'Só o revisor médico assina.',
+    crmRequired: 'Informe seu CRM para assinar decisões.',
+    crmRequiredLink: 'Informar CRM',
+    crmFormat: 'Formato do CRM: número e UF, como 123456-SP.',
+    stateChanged: 'Este item já foi decidido ou mudou. A fila foi atualizada.',
+    publishPending: 'Ainda há {n, plural, one {# card} other {# cards}} em rascunho. Aprove a fila antes de publicar.',
+    provenance: 'Revisado por {name}, CRM {crm}, em {date}',
   },
   shell: {
     nav: {
@@ -511,7 +528,9 @@ export const ptBR = {
       stageRow: 'Momento',
       goalRow: 'Objetivo',
       empty: 'Não informado',
-      consent: 'Concordo com os Termos de uso e com o tratamento dos meus dados conforme a LGPD.',
+      consent: 'Concordo com os {terms} e a {privacy}, e com o tratamento dos meus dados conforme a LGPD.',
+      consentTerms: 'Termos de uso',
+      consentPrivacy: 'Política de Privacidade',
       consentRequired: 'Marque a caixa para criar a conta.',
     },
     magicLink: 'Enviar link mágico',

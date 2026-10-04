@@ -23,13 +23,13 @@ describe('shouldCacheShell', () => {
   });
 
   it('the offline page queues the last session in the same shape the app flushes', () => {
-    const html = readFileSync('public/offline.html', 'utf8');
+    const html = readFileSync('src/app/offline.html/route.ts', 'utf8');
     expect(html).toContain('remoa-last-session');
     expect(html).toContain('remoa-offline-answers');
     expect(html).toContain("enqueue('answer'");
     expect(html).toContain("enqueue('rate'");
     expect(html).toContain("enqueue('finish'");
-    expect(html).toContain('Sem conexão');
+    expect(html).toContain("t('offline.emptyTitle')"); // text comes from @remoa/strings (D-505)
     expect(html).toContain("addEventListener('online'");
   });
 

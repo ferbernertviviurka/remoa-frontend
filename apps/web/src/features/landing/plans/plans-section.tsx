@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { annualDiscountPercent, monthlyEquivalent, planDefinition } from '@remoa/contracts';
+import type { planDefinition } from '@remoa/contracts';
 import type { LandingPriceBook } from '../shell/pricebook';
 import { strings, t } from '@remoa/strings/landing';
 import { PlanCards, Section, formatBRL, type PlanCardPeriod } from '@remoa/ui';
@@ -13,9 +13,12 @@ import type { LandingFlags } from '../flags';
 const num = (n: number | null) => (n ?? 0).toLocaleString('pt-BR');
 
 export type PlansSectionProps = { priceBook: LandingPriceBook; flags: Pick<LandingFlags, 'launchPhase' | 'betaFounder' | 'approvedContent'> };
+type PlanLimits = ReturnType<typeof planDefinition>;
+/** Computed on the server by `PlansSection` (plans.tsx), so this client island does not ship `@remoa/contracts` + zod (D-535). */
+export type PlanFacts = { free: PlanLimits; pro: PlanLimits; discountPercent: number; monthlyEquivalent: number };
 
 /** Planos (FR-12): limites de `planDefinition`, preços do `priceBook` (centavos), nenhum número fixo aqui. */
-export function PlansSection({ priceBook, flags }: PlansSectionProps) {
+export function PlansSectionView({ priceBook, flags, facts }: PlansSectionProps & { facts: PlanFacts }) {
   const [period, setPeriod] = useState<PlanCardPeriod>('monthly');
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -28,10 +31,8 @@ export function PlansSection({ priceBook, flags }: PlansSectionProps) {
     return () => io.disconnect();
   }, []);
 
-  const free = planDefinition('free');
-  const pro = planDefinition('pro');
+  const { free, pro, discountPercent: pct } = facts;
   const annual = period === 'annual';
-  const pct = annualDiscountPercent(priceBook);
   const open = flags.launchPhase === 'open';
   const href = open ? '/cadastro' : '#cta';
 
@@ -65,7 +66,7 @@ export function PlansSection({ priceBook, flags }: PlansSectionProps) {
             { name: t('landing.plans.pro.name'), dark: true, features: proFeatures,
               price: { amount: (annual ? priceBook.annual.amount : priceBook.monthly.amount) / 100, currency: 'BRL' },
               cadence: t(annual ? 'landing.plans.cadence.annual' : 'landing.plans.cadence.monthly'),
-              note: annual ? t('landing.plans.notes.annual', { price: formatBRL(monthlyEquivalent(priceBook) / 100) }) : t('landing.plans.notes.monthly'),
+              note: annual ? t('landing.plans.notes.annual', { price: formatBRL(facts.monthlyEquivalent / 100) }) : t('landing.plans.notes.monthly'),
               badge: flags.betaFounder ? t('landing.plans.pro.founder') : undefined,
               cta: <Link href={href} onClick={trackCta('plans_pro', open ? 'create' : 'waitlist')} className="bg-on-dark text-panel-dark">{open ? t('landing.plans.cta.pro') : t('landing.plans.cta.waitlist')}</Link> },
             ...(priceBook.lifetime ? [{ name: t('landing.plans.founder.name'), features: founderFeatures, description: t('landing.plans.founder.description'),

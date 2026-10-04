@@ -1,5 +1,5 @@
 import { Icon } from '../icons';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 
 export interface ReferralHeroProps {
   eyebrow: string;

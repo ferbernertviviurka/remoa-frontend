@@ -16,6 +16,15 @@ type Item = {
   answerText: string | null; verdict: 'correct' | 'partial' | 'incorrect' | null; feedback: string | null; criticalError: boolean;
 };
 type Queue = { items: Item[]; total: number; boards: { id: string; title: string }[]; reviewer: { name: string | null; crm: string | null } };
+type ApiError = { code: string; message: string };
+type Notice = 'onlyReviewer' | 'crmRequired' | 'stateChanged' | 'ownCard';
+/** Rule 6 responses (D-495..D-499) → one specific message. */
+function noticeOf(e: ApiError): Notice | null {
+  if (e.code === 'forbidden') return e.message === 'own card' ? 'ownCard' : 'onlyReviewer';
+  if (e.code === 'validation' && e.message === 'reviewer_crm_required') return 'crmRequired';
+  if (e.code === 'conflict') return 'stateChanged';
+  return null;
+}
 type Draft = { id: string; title: string };
 type Metrics = { submitted: number; overridden: number; agreement: number | null };
 
@@ -35,7 +44,9 @@ export function EditorialView() {
   const [boards, setBoards] = useState<{ id: string; title: string }[]>([]);
   const [crm, setCrm] = useState('');
   const [crmNote, setCrmNote] = useState(false);
-  const [ownCard, setOwnCard] = useState(false);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const [crmFormat, setCrmFormat] = useState(false);
+  const [pending, setPending] = useState<number | null>(null);
   const crmLoaded = useRef(false);
 
   async function loadQueue(nextFlag = flag, nextBoard = board) {
@@ -63,8 +74,12 @@ export function EditorialView() {
       body: JSON.stringify({ reviewItemId, outcome, note: note || null, ...(outcome === 'rubric_adjusted' && rubricPoints.length ? { rubricPoints } : {}) }),
     });
     if (r.ok) {
+      setNotice(null);
       track('dispute_resolved', { outcome });
       await loadQueue();
+    } else {
+      setNotice(noticeOf(r.error));
+      if (r.error.code === 'conflict') await loadQueue();
     }
   }
 
@@ -81,20 +96,30 @@ export function EditorialView() {
       body: JSON.stringify({ reviewItemId, decision, note: note || null, ...(decision === 'approved' && rubricPoints.length ? { rubricPoints } : {}) }),
     });
     if (r.ok) {
-      setOwnCard(false);
+      setNotice(null);
       if (decision === 'approved') track('card_approved', {});
       await loadQueue();
-    } else if (!r.ok && r.error.code === 'forbidden') setOwnCard(true);
+    } else {
+      setNotice(noticeOf(r.error));
+      if (r.error.code === 'conflict') await loadQueue();
+    }
   }
 
   async function saveCrm() {
     setCrmNote(false);
-    const r = await api('/v1/editorial/crm', { method: 'POST', body: JSON.stringify({ crm }) });
-    if (r.ok) setCrmNote(true);
+    setCrmFormat(false);
+    const r = await api<{ crm: string | null }>('/v1/editorial/crm', { method: 'POST', body: JSON.stringify({ crm }) });
+    if (r.ok) {
+      setCrmNote(true);
+      setCrm(r.data.crm ?? '');
+      setNotice((n) => (n === 'crmRequired' ? null : n));
+    } else if (r.error.code === 'validation') setCrmFormat(true);
+    else setNotice(noticeOf(r.error));
   }
 
   async function publish(boardId: string, title: string) {
     setBlocked(false);
+    setNotice(null);
     const temporalMark = edition.trim();
     if (!temporalMark) {
       setMarkMissing(true);
@@ -102,8 +127,15 @@ export function EditorialView() {
     }
     setMarkMissing(false);
     const r = await api('/v1/editorial/publish', { method: 'POST', body: JSON.stringify({ boardId, changelog: changelog.trim() || title, temporalMark }) });
-    if (!r.ok) setBlocked(true);
-    else {
+    if (!r.ok) {
+      const n = noticeOf(r.error);
+      if (n) setNotice(n);
+      else {
+        setBlocked(true);
+        const q = await api<Queue>(`/v1/editorial/queue?board=${boardId}`);
+        setPending(q.ok ? q.data.total : null);
+      }
+    } else {
       track('version_published', {});
       setDrafts((cur) => cur.filter((d) => d.id !== boardId));
     }
@@ -116,10 +148,11 @@ export function EditorialView() {
       <div className="flex flex-wrap items-end gap-2">
         <label className="flex min-w-48 flex-col gap-1 text-sm font-semibold">
           {t('editorial.crm')}
-          <input value={crm} onChange={(e) => { setCrm(e.target.value); setCrmNote(false); }} className="h-11 rounded-xl border border-border bg-surface px-3" />
+          <input id="editorial-crm" value={crm} placeholder={t('editorial.crmPlaceholder')} aria-invalid={crmFormat} onChange={(e) => { setCrm(e.target.value); setCrmNote(false); setCrmFormat(false); }} className="h-11 rounded-xl border border-border bg-surface px-3" />
         </label>
         <Button size="sm" variant="secondary" onClick={() => void saveCrm()}>{t('editorial.crmSave')}</Button>
       </div>
+      {crmFormat ? <p role="alert" className="m-0 text-sm font-semibold text-review">{t('editorial.crmFormat')}</p> : null}
       {crmNote ? <p className="m-0 text-sm text-muted">{t('editorial.crmSaved')}</p> : null}
       {metrics ? (
         <p className="m-0 text-sm text-muted">
@@ -132,7 +165,12 @@ export function EditorialView() {
         {t('editorial.note')}
         <input value={note} onChange={(e) => setNote(e.target.value)} className="h-11 rounded-xl border border-border bg-surface px-3" />
       </label>
-      {ownCard ? <p role="alert" className="m-0 text-sm font-semibold text-review">{t('editorial.ownCard')}</p> : null}
+      {notice ? (
+        <p role="alert" className="m-0 text-sm font-semibold text-review">
+          {t(`editorial.${notice}`)}
+          {notice === 'crmRequired' ? <> <a href="#editorial-crm" className="text-primary-deep">{t('editorial.crmRequiredLink')}</a></> : null}
+        </p>
+      ) : null}
       <label className="flex flex-col gap-1 text-sm font-semibold">
         {t('editorial.changelog')}
         <input value={changelog} onChange={(e) => setChangelog(e.target.value)} className="h-11 rounded-xl border border-border bg-surface px-3" />
@@ -142,7 +180,7 @@ export function EditorialView() {
         <input value={edition} onChange={(e) => { setEdition(e.target.value); setMarkMissing(false); }} className="h-11 rounded-xl border border-border bg-surface px-3" />
       </label>
       {markMissing ? <p role="alert" className="m-0 text-sm font-semibold text-review">{t('editorial.publishMark')}</p> : null}
-      {blocked ? <p role="alert" className="m-0 text-sm font-semibold text-review">{t('editorial.publishBlocked')}</p> : null}
+      {blocked ? <p role="alert" className="m-0 text-sm font-semibold text-review">{pending ? t('editorial.publishPending', { n: pending }) : t('editorial.publishBlocked')}</p> : null}
       <ul className="m-0 flex list-none flex-col gap-2 p-0">
         {drafts.map((d) => (
           <li key={d.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-4 py-3">

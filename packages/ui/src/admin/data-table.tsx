@@ -1,7 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Button, focusRing } from '../button';
+import { Button } from '../button';
+import { focusRing } from '../button-styles';
 import { Icon } from '../icons';
 import { SkeletonBlock } from '../skeleton';
 

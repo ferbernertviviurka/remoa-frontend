@@ -142,7 +142,7 @@ test.describe('Minha conta', () => {
     await expect(page.getByRole('button', { name: 'Assinar o Pro' })).toBeVisible();
     await expect(page.getByText('0 de 20', { exact: true })).toBeVisible();
     await page.getByRole('radio', { name: 'Anual' }).click();
-    await expect(page.getByText(/R\$ 349/)).toBeVisible();
+    await expect(page.getByText(/R\$\s349/).first()).toBeVisible();
     await page.goto('/app/planos');
     await page.getByRole('radio', { name: /^Cartão/ }).click();
     await page.getByRole('button', { name: 'Assinar o Pro' }).click();

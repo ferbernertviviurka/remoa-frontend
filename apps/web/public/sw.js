@@ -1,5 +1,5 @@
-const SHELL = ['/', '/app/revisar', '/app/hoje', '/app/mapas'];
-const SHELL_CACHE = 'remoa-shell-v6';
+const SHELL = ['/', '/app/revisar', '/app/m/revisar', '/app/hoje', '/app/mapas'];
+const SHELL_CACHE = 'remoa-shell-v7';
 const START_PATH = '/app/hoje'; // manifest start_url (G11)
 const OFFLINE_DOCUMENT = '/offline.html';
 
@@ -39,8 +39,9 @@ self.addEventListener('fetch', (event) => {
           if (res.ok && samePath) await cache.put(url.pathname, res.clone());
           return res;
         } catch {
-          if (url.pathname === START_PATH) return (await cache.match(OFFLINE_DOCUMENT)) ?? (await cache.match(START_PATH)) ?? Response.error();
-          return (await cache.match(url.pathname)) ?? Response.error();
+          // D-505: the cached Next page cannot hydrate offline (chunks are not cached), so every shell path answers with the offline review page, which reads the local queue.
+          if (url.pathname === '/') return (await cache.match(url.pathname)) ?? (await cache.match(OFFLINE_DOCUMENT)) ?? Response.error();
+          return (await cache.match(OFFLINE_DOCUMENT)) ?? (await cache.match(START_PATH)) ?? Response.error();
         }
       }),
     );

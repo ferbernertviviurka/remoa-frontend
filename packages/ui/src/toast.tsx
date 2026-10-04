@@ -1,9 +1,8 @@
 'use client';
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
-import * as RT from '@radix-ui/react-toast';
-import { focusRing, pressable } from './button';
-import { Icon } from './icons';
+import { createContext, lazy, Suspense, useCallback, useRef, useContext, useMemo, useState, type ReactNode } from 'react';
+
+const ToastHost = lazy(() => import('./toast-host'));
 
 /**
  * Toast. Envolva o app em <ToastProvider closeLabel viewportLabel>, use `useToast().toast({title, description?, tone?})`.
@@ -15,32 +14,22 @@ const Ctx = createContext<{ toast: (t: ToastInput) => void } | null>(null);
 
 export function ToastProvider({ children, closeLabel, viewportLabel }: { children: ReactNode; closeLabel: string; viewportLabel: string }) {
   const [items, setItems] = useState<Item[]>([]);
-  const toast = useCallback((t: ToastInput) => setItems((l) => [...l, { ...t, id: Date.now() + l.length }]), []);
+  const toast = useCallback((t: ToastInput) => { if (!hostReady.current) setSaid(`${[t.title, t.description].filter(Boolean).join('. ')}.`); setItems((l) => [...l, { ...t, id: Date.now() + l.length }]); }, []);
+  const close = useCallback((id: number) => setItems((l) => l.filter((x) => x.id !== id)), []);
+  // Região viva mínima, sempre montada (D-560): o host Radix só monta com o 1º toast e os leitores perdiam esse anúncio.
+  // Depois que o host existe, ele anuncia sozinho e a região para (sem fala dobrada).
+  const [said, setSaid] = useState('');
+  const hostReady = useRef(false);
   const value = useMemo(() => ({ toast }), [toast]);
   return (
     <Ctx.Provider value={value}>
-      <RT.Provider label={viewportLabel}>
-        {children}
-        {items.map((i) => (
-          <RT.Root
-            key={i.id}
-            onOpenChange={(o) => { if (!o) setItems((l) => l.filter((x) => x.id !== i.id)); }}
-            className={`remoa-toast relative flex items-center gap-3 rounded-[16px] bg-ink py-3 pl-[18px] pr-3 text-[14px] font-semibold text-surface shadow-toast ${i.tone === 'danger' ? 'ring-2 ring-review-on-dark' : ''}`}
-          >
-            <div className="min-w-0 flex-1">
-              <RT.Title>{i.title}</RT.Title>
-              {i.description ? <RT.Description className="mt-0.5 text-xs font-normal opacity-80">{i.description}</RT.Description> : null}
-            </div>
-            <RT.Close
-              aria-label={closeLabel}
-              className={`flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-white/10 text-surface hover:bg-white/20 ${pressable} ${focusRing}`}
-            >
-              <Icon name="close" size={16} />
-            </RT.Close>
-          </RT.Root>
-        ))}
-        <RT.Viewport className="fixed bottom-4 right-4 z-50 flex w-[min(92vw,360px)] max-w-[360px] flex-col gap-2" />
-      </RT.Provider>
+      {children}
+      <div aria-live="polite" className="sr-only">{said}</div>
+      {items.length > 0 ? (
+        <Suspense fallback={null}>
+          <ToastHost onReady={() => { hostReady.current = true; }} items={items} onClose={close} closeLabel={closeLabel} viewportLabel={viewportLabel} />
+        </Suspense>
+      ) : null}
     </Ctx.Provider>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-/** F13 FR-14: null = follow prefers-reduced-motion (no attribute, no cookie). The cookie lets the root layout apply it at SSR. */
+/** F13 FR-14: null = follow prefers-reduced-motion (no attribute, no cookie). The cookie lets the inline theme script apply it before paint (D-534). */
 export function applyMotion(reduce: boolean | null) {
   const el = document.documentElement;
   if (reduce === null) {

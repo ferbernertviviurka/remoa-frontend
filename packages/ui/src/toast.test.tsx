@@ -17,6 +17,14 @@ describe('Toast', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Fechar' }));
     expect(screen.queryByText('Salvo')).not.toBeInTheDocument();
   });
+  it('o 1º toast é anunciado pela região viva sempre montada', async () => {
+    const { container } = render(ui);
+    const live = container.querySelector('[aria-live="polite"]')!;
+    expect(live).toBeEmptyDOMElement();
+    await userEvent.click(screen.getByText('Disparar'));
+    expect(live).toHaveTextContent('Salvo. ok.'); // síncrono, antes do host lazy
+    await screen.findByText('Salvo');
+  });
   it('sem violações axe', async () => {
     const { container } = render(ui);
     await userEvent.click(screen.getByText('Disparar'));

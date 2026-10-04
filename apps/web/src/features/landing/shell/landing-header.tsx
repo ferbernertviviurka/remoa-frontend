@@ -6,6 +6,8 @@ import { t } from '@remoa/strings/landing';
 import { trackCta } from '../analytics';
 import { Avatar, Logo, SiteHeader } from '@remoa/ui';
 import { initialsOf } from '@/features/account/shell/format';
+import { apiBase } from '@/lib/api/base';
+import type { AccountSnapshot } from '@remoa/contracts';
 import type { LaunchPhase } from '../flags';
 
 const ANCHORS = [
@@ -17,24 +19,56 @@ const ANCHORS = [
 
 const btn = 'inline-flex min-h-11 items-center justify-center rounded-[14px] px-4 text-[15px] font-bold no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
 
-/** FR-2: sticky header; active anchor = the last section whose top crossed the upper third of the viewport (P1). */
+/** FR-2: sticky header; active anchor = the last section whose top crossed the upper quarter of the viewport (P1). */
 export type HeaderAccount = { name: string | null; email: string; color?: number; src?: string };
 
+/** Supabase SSR session cookie (`sb-<ref>-auth-token`, maybe chunked `.0`/`.1`); not httpOnly. */
+export const hasSessionCookie = (cookie: string) => /(?:^|;\s*)sb-[^=;]*-auth-token(?:\.\d+)?=/.test(cookie);
+
+/**
+ * D-534: the landing is static, so the session is read here. Visitors without the Supabase cookie never load supabase-js;
+ * with it, the client is imported lazily, and a failing /me only hides the avatar.
+ */
+function useSignedIn() {
+  const [state, setState] = useState<{ signedIn: boolean; account: HeaderAccount | null }>({ signedIn: false, account: null });
+  useEffect(() => {
+    if (!hasSessionCookie(document.cookie)) return;
+    let alive = true;
+    void (async () => {
+      const { createClient } = await import('@/lib/supabase/client');
+      const token = (await createClient().auth.getSession()).data.session?.access_token;
+      if (!token || !alive) return;
+      setState({ signedIn: true, account: null });
+      // Plain fetch, not `apiFetch` (D-535: keeps zod out of the landing bundle).
+      const r = await fetch(`${apiBase()}/v1/account/me`, { headers: { authorization: `Bearer ${token}` } }).then((x) => (x.ok ? (x.json() as Promise<{ data?: AccountSnapshot }>) : null)).catch(() => null);
+      const me = r?.data;
+      if (!alive || !me) return;
+      setState({ signedIn: true, account: { name: me.profile.name, email: me.email, color: me.profile.avatarColor, src: me.avatarUrls?.small } });
+    })();
+    return () => { alive = false; };
+  }, []);
+  return state;
+}
+
 /** `signedIn` (D-320): who already has a session gets one CTA back into the app instead of "Entrar", plus the avatar (links to the account). */
-export function LandingHeader({ phase, signedIn = false, account }: { phase: LaunchPhase; signedIn?: boolean; account?: HeaderAccount | null }) {
+export function LandingHeader({ phase, signedIn: signedInProp = false, account: accountProp }: { phase: LaunchPhase; signedIn?: boolean; account?: HeaderAccount | null }) {
+  const session = useSignedIn();
+  const signedIn = signedInProp || session.signedIn;
+  const account = accountProp ?? session.account;
   const [active, setActive] = useState('');
   useEffect(() => {
-    const els = ANCHORS.map(([id]) => document.getElementById(id)).filter((e): e is HTMLElement => !!e);
-    if (!els.length || typeof IntersectionObserver === 'undefined') return;
-    // The observer only wakes us up when a section crosses the band; the choice is the last section whose top passed the line.
+    // Re-queried on every pick: lazy islands (D-535) swap the section nodes after load, so cached elements would go stale.
+    let queued = false;
     const pick = () => {
+      queued = false;
       const line = 92 + window.innerHeight * 0.25;
-      setActive([...els].reverse().find((e) => e.getBoundingClientRect().top <= line && e.getBoundingClientRect().bottom > line)?.id ?? '');
+      const els = ANCHORS.map(([id]) => document.getElementById(id)).filter((e): e is HTMLElement => !!e);
+      setActive(els.reverse().find((e) => e.getBoundingClientRect().top <= line && e.getBoundingClientRect().bottom > line)?.id ?? '');
     };
-    const io = new IntersectionObserver(pick, { rootMargin: '-92px 0px -70% 0px', threshold: [0, 1] });
-    els.forEach((e) => io.observe(e));
+    const onScroll = () => { if (!queued) { queued = true; requestAnimationFrame(pick); } };
+    window.addEventListener('scroll', onScroll, { passive: true });
     pick();
-    return () => io.disconnect();
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   return (

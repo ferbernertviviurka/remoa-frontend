@@ -1,7 +1,7 @@
 'use client';
 
 import * as RR from '@radix-ui/react-radio-group';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 
 /**
  * ChoiceChip: grupo de chips de escolha única (radiogroup; setas movem a escolha). `label` = nome do grupo.

@@ -1,4 +1,4 @@
-import { render, screen, within, waitFor } from '@testing-library/react';
+import { render, screen, within, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { readFileSync } from 'node:fs';
 import { violations } from '../test-utils';
@@ -43,7 +43,7 @@ describe('NodeCard G06', () => {
     expect(screen.getByRole('img', { name: 'Foto A' })).toBeInTheDocument();
     expect(await violations(container)).toEqual([]);
   });
-  it('caso: etapas com Tooltip por foco e resumo só fora do desafio', async () => {
+  it('caso: etapas com dica CSS por foco e resumo só fora do desafio', async () => {
     const { container, rerender } = render(<NodeCard {...node} type="case" caseStages={stages} size={{ w: 320, h: 300 }} />);
     expect(screen.getByText('Febre e hipotensão')).toBeInTheDocument();
     const exames = screen.getByRole('button', { name: 'Exames' });
@@ -53,15 +53,27 @@ describe('NodeCard G06', () => {
     await userEvent.tab(); // Apresentação
     await userEvent.tab(); // Exames
     expect(exames).toHaveFocus();
-    expect(await screen.findByRole('tooltip')).toHaveTextContent('Achados de exames.');
+    expect(exames).toHaveAccessibleDescription('Achados de exames.');
     expect(await violations(container)).toEqual([]);
     rerender(<NodeCard {...node} type="case" caseStages={stages} size={{ w: 320, h: 300 }} challenge="target" />);
     expect(screen.queryByText('Febre e hipotensão')).toBeNull();
   });
-  it('caso: tooltip abre no hover', async () => {
+  it('caso: dica ligada por aria-describedby', async () => {
     render(<NodeCard {...node} type="case" caseStages={stages} />);
-    await userEvent.hover(screen.getByRole('button', { name: 'Apresentação' }));
-    expect(await screen.findByRole('tooltip')).toHaveTextContent('Dados iniciais do caso.');
+    expect(screen.getByRole('button', { name: 'Apresentação' })).toHaveAccessibleDescription('Dados iniciais do caso.');
+    expect(screen.getAllByRole('tooltip')).toHaveLength(2); // visibilidade por CSS (hover/foco)
+  });
+  it('caso: Esc fecha a dica sem tirar o foco', async () => {
+    render(<NodeCard {...node} type="case" caseStages={stages} />);
+    const b = screen.getByRole('button', { name: 'Apresentação' });
+    act(() => b.focus());
+    expect(b).toHaveFocus();
+    const li = b.closest('li')!;
+    expect(li).toHaveAttribute('data-dismissed', 'false');
+    await userEvent.keyboard('{Escape}');
+    expect(li).toHaveAttribute('data-dismissed', 'true');
+    expect(b).toHaveFocus();
+    expect(b).toHaveAccessibleDescription('Dados iniciais do caso.');
   });
   it('verso com backImage só monta virado', () => {
     const p = { ...node, back: 'Resp', backImage: { src: null, alt: 'Img resp' }, flipLabel: 'Ver resposta', unflipLabel: 'Ver pergunta' } as const;

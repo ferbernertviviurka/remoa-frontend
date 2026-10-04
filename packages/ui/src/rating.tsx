@@ -1,6 +1,6 @@
 'use client';
 
-import { pressable, focusRing } from './button';
+import { pressable, focusRing } from './button-styles';
 
 const grades = ['again', 'hard', 'good', 'easy'] as const;
 export type Grade = (typeof grades)[number];

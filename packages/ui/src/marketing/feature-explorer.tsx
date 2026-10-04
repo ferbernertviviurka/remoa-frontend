@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type ElementType, type KeyboardEvent, type ReactNode } from 'react';
 import { Icon } from '../icons';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 import { useControlled } from './use-controlled';
 
 export type FeatureItem = {

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { PLAN_LIMITS, annualDiscountPercent, type PublicPriceBook } from '@remoa/contracts';
 import { strings } from '@remoa/strings';
 
@@ -39,7 +39,7 @@ describe('PlansSection', () => {
     expect(track).toHaveBeenCalledWith('pricing_toggled', { period: 'annual' });
   });
 
-  it('Mensal/Anual: preço, período e nota trocam via Torph; com movimento reduzido a troca é direta', () => {
+  it('Mensal/Anual: preço, período e nota trocam via Torph; com movimento reduzido a troca é direta', async () => {
     const mm = (reduce: boolean) => vi.stubGlobal('matchMedia', (q: string) => ({ matches: reduce && q.includes('reduce'), media: q, addEventListener() {}, removeEventListener() {} }));
     // com movimento reduzido o Torph não monta: o texto é o do próprio DOM
     const sr = (c: HTMLElement) => (c.querySelector('[torph-root]') ? [...c.querySelectorAll('[torph-sr]')].map((e) => e.textContent) : [c.textContent]);
@@ -47,7 +47,10 @@ describe('PlansSection', () => {
       mm(reduce);
       const { container, unmount } = render(<PlansSection priceBook={book} flags={flags} />);
       expect(sr(container).some((x) => x?.includes(strings.landing.plans.cadence.monthly))).toBe(true);
-      fireEvent.click(screen.getByRole('button', { name: new RegExp(strings.landing.plans.period.annual) }));
+      const annualBtn = screen.getByRole('button', { name: new RegExp(strings.landing.plans.period.annual) });
+      fireEvent.pointerEnter(annualBtn); // a mão chega perto do seletor: o Torph passa a baixar (D-560)
+      fireEvent.click(annualBtn);
+      await waitFor(() => expect(container.querySelector('[torph-root]') === null).toBe(reduce), { timeout: 5000 }); // Torph carrega sob demanda (D-560)
       expect(sr(container).some((x) => x?.includes(strings.landing.plans.cadence.annual))).toBe(true);
       expect(sr(container).some((x) => /349/.test(x ?? ''))).toBe(true);
       expect(sr(container).some((x) => /por mês/.test(x ?? ''))).toBe(true);

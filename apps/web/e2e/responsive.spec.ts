@@ -94,7 +94,9 @@ test.describe('responsivo 390x844', () => {
     await page.getByRole('button', { name: 'Continuar' }).click();
     await check(page, 'novo mapa 2');
     await dump(page, 'novo2');
+    await page.goto('/app/mapas/novo?caminho=blank');
     await page.getByRole('button', { name: 'Continuar' }).click();
+    await expect(page.getByLabel('Nome do mapa')).toBeVisible();
     await check(page, 'novo mapa 3');
     await dump(page, 'novo3');
 

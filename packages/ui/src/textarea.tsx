@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, type ComponentProps } from 'react';
-import { fieldControl, focusRing } from './button';
+import { fieldControl, focusRing } from './button-styles';
 
 /** Textarea com rótulo visível (`label` obrigatório, ligado por id). Sem variantes. */
 export type TextareaProps = Omit<ComponentProps<'textarea'>, 'className' | 'id'> & { label: string };

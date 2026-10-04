@@ -5,7 +5,8 @@ import type { ReferralSummary } from '@remoa/contracts';
 import { api } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import { friendName } from '../format';
-import { newlyQualified, qualifiedIds, readHint, readSeen, writeHint, writeSeen } from './new-rewards';
+import { useEntitlements } from '@/features/shell/entitlements';
+import { clearLegacyHint, newlyQualified, qualifiedIds, readSeen, writeSeen } from './new-rewards';
 import { RewardNotice } from './reward-notice';
 
 export const POLL_MS = 30_000;
@@ -24,12 +25,10 @@ type Ctx = {
   /** Nome de quem acabou de criar o primeiro mapa (aviso aberto) e como fechar. */
   notice: string | null;
   dismissNotice: () => void;
-  /** O usuário compartilhou o link: vale consultar o summary também fora da página (D-413). */
-  markShared: () => void;
 };
 
 const noop = async () => {};
-const ReferralContext = createContext<Ctx>({ summary: null, status: 'idle', reload: noop, watch: () => () => {}, pulse: false, notice: null, dismissNotice: () => {}, markShared: () => {} });
+const ReferralContext = createContext<Ctx>({ summary: null, status: 'idle', reload: noop, watch: () => () => {}, pulse: false, notice: null, dismissNotice: () => {} });
 export const useReferral = () => useContext(ReferralContext);
 
 /**
@@ -41,20 +40,18 @@ export function ReferralProvider({ children }: { children: ReactNode }) {
   const [summary, setSummary] = useState<ReferralSummary | null>(null);
   const [status, setStatus] = useState<Status>('idle');
   const [watchers, setWatchers] = useState(0);
-  const [hint, setHint] = useState(false);
+  const pending = useEntitlements().entitlements?.referralPending === true;
   const [notice, setNotice] = useState<string | null>(null);
   const [pulse, setPulse] = useState(false);
   const have = useRef(false);
   const pulseTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  useEffect(() => setHint(readHint()), []);
+  useEffect(clearLegacyHint, []);
   useEffect(() => () => clearTimeout(pulseTimer.current), []);
 
   const apply = useCallback((next: ReferralSummary) => {
     const fresh = newlyQualified(readSeen(), next);
     writeSeen(qualifiedIds(next));
-    // D-413: pendente = alguém ainda não criou o primeiro mapa. Sem amigos não mexe (o hint de "compartilhou" vale).
-    if (next.friends.length > 0) writeHint(next.friends.some((f) => f.status !== 'qualified'));
     if (fresh.length > 0) {
       setNotice(friendName(fresh[0]!));
       setPulse(true);
@@ -81,7 +78,7 @@ export function ReferralProvider({ children }: { children: ReactNode }) {
     [apply],
   );
 
-  const enabled = watchers > 0 || hint;
+  const enabled = watchers > 0 || pending;
   useEffect(() => {
     if (!enabled) return;
     void load(watchers === 0);
@@ -98,11 +95,10 @@ export function ReferralProvider({ children }: { children: ReactNode }) {
     setWatchers((n) => n + 1);
     return () => setWatchers((n) => n - 1);
   }, []);
-  const markShared = useCallback(() => { writeHint(true); setHint(true); }, []);
   const reload = useCallback(() => load(false), [load]);
 
   const dismissNotice = useCallback(() => setNotice(null), []);
-  const value = useMemo(() => ({ summary, status, reload, watch, pulse, notice, dismissNotice, markShared }), [summary, status, reload, watch, pulse, notice, dismissNotice, markShared]);
+  const value = useMemo(() => ({ summary, status, reload, watch, pulse, notice, dismissNotice }), [summary, status, reload, watch, pulse, notice, dismissNotice]);
   return (
     <ReferralContext.Provider value={value}>
       {children}

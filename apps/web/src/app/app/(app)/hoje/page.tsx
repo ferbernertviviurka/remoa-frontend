@@ -5,6 +5,7 @@ import type {
   QueueItem,
   RetrievabilityMap,
   BoardGraph,
+  OnboardingState,
 } from "@remoa/contracts";
 import { Suspense } from "react";
 import { t } from "@remoa/strings";
@@ -50,10 +51,11 @@ async function QueueStart({
 
 export default async function Page() {
   const first = firstInQueue().catch(() => undefined); // dispara já, em paralelo com o resto
-  const [home, boards, coverage] = await Promise.all([
+  const [home, boards, coverage, onboarding] = await Promise.all([
     serverApi<HomeSummary>("/v1/home"),
     serverApi<BoardSummary[]>("/v1/boards"),
     serverApi<CoverageRow[]>("/v1/coverage"),
+    serverApi<OnboardingState>("/v1/onboarding"),
   ]);
   if (!home.ok)
     return <EmptyState title={t("pages.home")} body={t("home.loadError")} />;
@@ -63,6 +65,7 @@ export default async function Page() {
       summary={home.data}
       boards={data(boards, [])}
       coverage={data(coverage, [])}
+      checklist={onboarding.ok ? onboarding.data.checklist : []}
       queueStart={
         <Suspense
           fallback={<SkeletonBlock width={300} height={14} radius={7} />}

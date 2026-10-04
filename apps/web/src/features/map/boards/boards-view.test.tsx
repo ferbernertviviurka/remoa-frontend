@@ -36,6 +36,14 @@ afterEach(() => {
 });
 
 describe('BoardsView', () => {
+  it('FR-19: shows the access badge only when the map is not "Só eu"', () => {
+    view([board, { ...board, id: 'b2', title: 'Choque', access: 'password' }, { ...board, id: 'b3', title: 'Lactato', access: 'public' }]);
+    expect(screen.getByText('Privado')).toBeInTheDocument();
+    expect(screen.getByText('Público')).toBeInTheDocument();
+    expect(screen.queryByText('Só eu')).not.toBeInTheDocument();
+  });
+
+
   it('archives after confirmation and restores with Desfazer', async () => {
     api.mockResolvedValue({ ok: true, data: board });
     view([board]);

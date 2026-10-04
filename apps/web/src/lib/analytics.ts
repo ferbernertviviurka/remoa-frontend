@@ -12,11 +12,12 @@ const token = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN;
 let loaded: Promise<typeof import('mixpanel-browser').default> | undefined;
 const mixpanel = () =>
   (loaded ??= import('mixpanel-browser').then(({ default: mp }) => {
-    mp.init(token!);
+    mp.init(token!, { property_blacklist: ['$current_url', '$referrer', '$initial_referrer'] }); // P-238: /m/<token> e ?next= nunca vão ao Mixpanel
     return mp;
   }));
 
-const APP_VERSION = '0.0.0';
+// D-505: next.config.ts copies package.json's version into NEXT_PUBLIC_APP_VERSION at build.
+const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.0.0';
 const PLAN_KEY = 'remoa-plan';
 const BOARD_KEY = 'remoa-board';
 

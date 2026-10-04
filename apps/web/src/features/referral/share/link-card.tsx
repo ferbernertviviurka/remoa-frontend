@@ -5,14 +5,12 @@ import { t } from '@remoa/strings';
 import { Textarea } from '@remoa/ui';
 import { ReferralCopyField, ShareChannels, type CopyResult, type ShareChannel } from '@remoa/ui';
 import { track } from '@/lib/analytics';
-import { useReferral } from '../reward/referral-provider';
 import { InviteByEmail } from './invite-by-email';
 import { shareUrl, withLink } from './share-url';
 import { useMessage } from './use-message';
 
 /** FR-4 a FR-7: cartão do link (copiar), mensagem editável, canais de compartilhamento e convite por e-mail. */
 export function LinkCard({ link, invitesLeftToday, onSent }: { link: string; invitesLeftToday: number; onSent: () => void }) {
-  const { markShared } = useReferral();
   const { message, edit, restore, max } = useMessage(link);
   const [copiedMore, setCopiedMore] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -21,12 +19,10 @@ export function LinkCard({ link, invitesLeftToday, onSent }: { link: string; inv
   const onCopy = (result: CopyResult) => {
     if (result === 'denied') return;
     track('referral_link_copied', {});
-    markShared();
   };
 
   async function share(channel: ShareChannel) {
     track('referral_share_clicked', { channel });
-    markShared();
     if (channel === 'whatsapp' || channel === 'telegram') return void window.open(shareUrl(channel, { message, link, subject }), '_blank', 'noopener,noreferrer');
     if (channel === 'email') return void (window.location.href = shareUrl('email', { message, link, subject }));
     const text = withLink(message, link);

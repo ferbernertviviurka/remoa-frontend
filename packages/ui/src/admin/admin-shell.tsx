@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, type ComponentType, type ReactNode } from 'react';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 import { Icon, type IconName } from '../icons';
 import { Logo } from '../logo';
 

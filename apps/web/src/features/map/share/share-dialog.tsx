@@ -185,7 +185,7 @@ export function ShareDialog({ board, open, onOpenChange }: Props) {
           {/* Access segmented */}
           <div className="flex flex-col gap-2">
             <Segmented
-              aria-label={t('boardsAccess.owner')}
+              aria-label={t('newMapAbout.accessLabel')}
               options={accessOptions}
               value={access}
               onValueChange={handleAccessChange}

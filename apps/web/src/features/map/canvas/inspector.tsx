@@ -1,10 +1,10 @@
 'use client';
 
 import { memo, useState, type ReactNode } from 'react';
-import type { Board, Card, CardDetail, CardShape, MapState, RetrievabilityMap, SaveCardInput } from '@remoa/contracts';
+import type { Board, Card, CardDetail, CardShape, CardStudyAction, CardStudyState, MapState, RetrievabilityMap, SaveCardInput } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import {
-  Button, CanvasPanel, Icon, IconButton, InspectorTabPanel, InspectorTabs, Menu, RubricList, StatePill, StepTimeline, type NodeStep,
+  Button, CanvasPanel, Dialog, Icon, IconButton, InspectorTabPanel, InspectorTabs, Menu, RubricList, StatePill, StepTimeline, type NodeStep,
 } from '@remoa/ui';
 import { CaseStageHelp } from '@/features/cards/case-stage-help';
 import { CardEditor } from '@/features/cards/card-editor';
@@ -46,6 +46,8 @@ type Props = EditorHooks & {
   onReviewCard: (cardId: string) => void;
   /** D-202: card menu "Restaurar tamanho padrão" (only while the card has a size of its own). */
   onResetSize: (cardId: string) => void;
+  /** F03 FR-9: after suspend/unsuspend/reset the map patches the card (suspendedAt) and, on reset, reloads the heat. */
+  onStudy: (state: CardStudyState, action: CardStudyAction) => void;
 };
 
 const eyebrow = 'text-xs font-bold uppercase tracking-[.12em] text-muted';
@@ -89,6 +91,15 @@ function CardPanel(p: Props & { card: Card }) {
   const reviewed = !!entry && state !== 'unknown';
   const pill = reviewed ? t('canvas.footer.recall', { state: t(`mapState.${state}`), pct: Math.round(entry.r * 100) }) : t('canvas.footer.none');
   const note = card.type === 'note';
+  const suspended = !!card.suspendedAt;
+  const [resetOpen, setResetOpen] = useState(false);
+  const [studyFailed, setStudyFailed] = useState(false);
+  async function study(action: CardStudyAction) {
+    setStudyFailed(false);
+    const r = await api<CardStudyState>(`/v1/review/cards/${card.id}/${action}`, { method: 'POST' }).catch(() => null);
+    if (r?.ok) p.onStudy(r.data, action);
+    else setStudyFailed(true);
+  }
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex flex-col gap-2.5 px-5 pb-3.5 pt-5">
@@ -103,6 +114,12 @@ function CardPanel(p: Props & { card: Card }) {
               items={[
                 { label: t('cards.edit'), onSelect: () => p.onEdit(card.id) },
                 ...(card.size ? [{ label: t('editor.resetSize'), onSelect: () => p.onResetSize(card.id) }] : []),
+                ...(note
+                  ? []
+                  : [
+                      { label: t(suspended ? 'cardStudy.unsuspend' : 'cardStudy.suspend'), onSelect: () => void study(suspended ? 'unsuspend' : 'suspend') },
+                      { label: t('cardStudy.reset'), onSelect: () => setResetOpen(true) },
+                    ]),
                 { label: t('map.card.delete'), tone: 'danger' as const, onSelect: () => p.onDelete(card.id) },
               ]}
             />
@@ -114,9 +131,18 @@ function CardPanel(p: Props & { card: Card }) {
         <h2 className={h2}>{card.title}</h2>
         <AiDraftTag card={card} />
         {note ? null : <span className="flex"><StatePill state={state} label={pill} /></span>}
+        {suspended ? <p role="status" className="m-0 text-sm text-muted">{t('cardStudy.suspendedNote')}</p> : null}
+        {studyFailed ? <p role="alert" className="m-0 text-sm font-semibold text-review">{t('cardStudy.error')}</p> : null}
       </div>
+      <Dialog open={resetOpen} onOpenChange={setResetOpen} title={t('cardStudy.resetTitle')} description={t('cardStudy.resetBody')} closeLabel={t('cardStudy.resetClose')}>
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={() => setResetOpen(false)}>{t('cardStudy.resetCancel')}</Button>
+          <Button onClick={() => { setResetOpen(false); void study('reset'); }}>{t('cardStudy.resetConfirm')}</Button>
+        </div>
+      </Dialog>
       {p.editing ? (
         <div className="min-h-0 grow overflow-auto border-t border-border px-5 py-[18px]">
+          {card.status === 'approved' ? <p className="mb-3 mt-0 text-sm text-muted">{t('cardStudy.sealNote')}</p> : null}
           <CardEditor card={card} subs={entry?.subs} prepare={p.prepare} onSaved={p.onSaved} onClose={p.onClose} onShape={p.onShape} />
         </div>
       ) : (

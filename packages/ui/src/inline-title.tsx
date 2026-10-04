@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, type KeyboardEvent } from 'react';
-import { focusRing } from './button';
+import { focusRing } from './button-styles';
 
 /**
  * InlineTitle: h1 (Manrope 800 28) editável no lugar. Em repouso é `<h1><button>` sem borda de input

@@ -1,7 +1,7 @@
 import type { ComponentType, ReactNode } from 'react';
 import { GraphPreview, type GraphPreviewProps } from './graph-preview';
 import { StateBar, type StateBarProps } from './state-bar';
-import { focusRing } from './button';
+import { focusRing } from './button-styles';
 
 /**
  * MapTile: cartão de mapa (Hoje: "Continue de onde parou"; Meus mapas). Raio 26, borda 1 px, padding 14, classe `lift` (sobe 3 px no hover).

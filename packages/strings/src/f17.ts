@@ -8,7 +8,7 @@ export const f17 = {
   newMapAbout: {
     // Títulos do passo
     title: 'Sobre o mapa',
-    desc: 'Preencha as informações do seu mapa antes de importar.',
+    desc: 'Dê um nome, escolha a área e quem pode acessar. Você muda o nome e o acesso depois.',
 
     // Campos do formulário
     nameLabel: 'Nome do mapa',
@@ -108,6 +108,17 @@ export const f17 = {
   },
 
   /** Diálogo "Compartilhar" no editor (FR-12). */
+  /** FR-21: "Propriedades do mapa". */
+  mapProps: {
+    menu: 'Propriedades do mapa',
+    title: 'Propriedades do mapa',
+    desc: 'Nome, grande área, itens da matriz e acesso.',
+    save: 'Salvar',
+    saved: 'Propriedades salvas',
+    areaWarning: 'Ao mudar a área, os itens da matriz de outras áreas serão removidos deste mapa.',
+    error: 'Não foi possível salvar tudo. Tente de novo.',
+  },
+
   share: {
     title: 'Compartilhar',
     headerButton: 'Compartilhar',

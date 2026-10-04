@@ -1,5 +1,5 @@
 /** Cache name shared with public/sw.js. Bump it when the precache contents change. */
-export const SHELL_CACHE = 'remoa-shell-v6';
+export const SHELL_CACHE = 'remoa-shell-v7';
 /** PWA start_url. A logged-out visit redirects, so install stores the offline page under this path. */
 export const START_PATH = '/app/hoje';
 export const OFFLINE_DOCUMENT = '/offline.html';

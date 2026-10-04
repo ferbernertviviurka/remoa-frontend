@@ -9,6 +9,7 @@ import { t, type StringKey } from '@remoa/strings';
 import { Alert, Button, Icon, InlineTitle, Kbd, Menu, Segmented, useToast } from '@remoa/ui';
 import { api } from '@/lib/api';
 // F17 T7: ShareDialog (FR-12) — loaded only when the board is private and not a seed.
+import { MapPropertiesDialog } from '@/features/map/properties/map-properties-dialog';
 import { ShareDialog } from '@/features/map/share/share-dialog';
 import type { QueueStatus } from './op-queue';
 
@@ -67,6 +68,7 @@ export const CanvasHeader = memo(function CanvasHeader(p: Props) {
   const now = useNow(30_000);
   // F17 T7 (FR-12): share dialog state — only for owner boards (status=private, not seed/archived).
   const [shareOpen, setShareOpen] = useState(false);
+  const [propsOpen, setPropsOpen] = useState(false);
   const canShare = p.board.status === 'private' && !p.board.archivedAt;
 
   async function save(input: string) {
@@ -111,9 +113,15 @@ export const CanvasHeader = memo(function CanvasHeader(p: Props) {
           {saveText(p.status, p.board.updatedAt, now)}
         </span>
         {p.coverage ? (
-          <Link href="/app/cobertura" className="hidden min-h-11 min-w-24 max-w-[22rem] shrink items-center truncate text-[13px] font-semibold text-primary-deep no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:inline-flex">
-            {t('editor.coversHeader', { pct: p.coverage.pct, item: p.coverage.item })}
-          </Link>
+          <>
+            {/* P-050b: full text from lg, compact chip md–lg, "⋯" menu item below md */}
+            <Link href="/app/cobertura" className="hidden min-h-11 min-w-24 max-w-[22rem] shrink items-center truncate text-[13px] font-semibold text-primary-deep no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:inline-flex">
+              {t('editor.coversHeader', { pct: p.coverage.pct, item: p.coverage.item })}
+            </Link>
+            <Link href="/app/cobertura" aria-label={t('editor.coversHeader', { pct: p.coverage.pct, item: p.coverage.item })} className="hidden min-h-11 shrink-0 items-center text-[13px] font-semibold text-primary-deep no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:inline-flex lg:hidden">
+              {t('editor.coversShort', { pct: p.coverage.pct })}
+            </Link>
+          </>
         ) : null}
         <span className="hidden grow md:block" />
         <span className="shrink-0 max-md:[&_button]:h-9 max-md:[&_button]:px-3 max-md:[&_button]:text-[13px]">
@@ -131,6 +139,7 @@ export const CanvasHeader = memo(function CanvasHeader(p: Props) {
               {t('share.headerButton')}
             </Button>
           ) : null}
+          {canShare ? <Menu trigger="icon" align="end" icon={dots} label={t('editor.moreActions')} items={[{ label: t('mapProps.menu'), onSelect: () => setPropsOpen(true) }]} /> : null}
           {p.mode === 'explore' ? (
             <Button size="sm" icon={<Icon name="bolt" size={18} />} onClick={() => p.onMode('challenge')}>
               {challengeText}
@@ -149,7 +158,8 @@ export const CanvasHeader = memo(function CanvasHeader(p: Props) {
             label={t('editor.moreActions')}
             items={[
               { label: t('editor.commandPalette'), onSelect: p.onPalette },
-              ...(canShare ? [{ label: t('share.headerButton'), onSelect: () => setShareOpen(true) }] : []),
+              ...(p.coverage ? [{ label: t('editor.coversMenu', { pct: p.coverage.pct, item: p.coverage.item }), onSelect: () => router.push('/app/cobertura') }] : []),
+              ...(canShare ? [{ label: t('share.headerButton'), onSelect: () => setShareOpen(true) }, { label: t('mapProps.menu'), onSelect: () => setPropsOpen(true) }] : []),
               p.mode === 'explore' ? { label: challengeText, onSelect: () => p.onMode('challenge') } : { label: t('quiz.exit'), onSelect: () => p.onMode('explore') },
             ]}
           />
@@ -157,7 +167,10 @@ export const CanvasHeader = memo(function CanvasHeader(p: Props) {
       </header>
       {/* F17 T7 (FR-12): ShareDialog — mounted conditionally to avoid loading share state on every page load. */}
       {canShare ? (
-        <ShareDialog board={p.board} open={shareOpen} onOpenChange={setShareOpen} />
+        <>
+          <ShareDialog board={p.board} open={shareOpen} onOpenChange={setShareOpen} />
+          <MapPropertiesDialog board={p.board} open={propsOpen} onOpenChange={setPropsOpen} />
+        </>
       ) : null}
       {failed ? (
         <div className="absolute inset-x-0 top-[68px] z-20 px-5 pt-3">

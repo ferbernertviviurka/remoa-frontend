@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { focusRing, pressable } from '../button';
+import { focusRing, pressable } from '../button-styles';
 import { Icon } from '../icons';
 
 /**

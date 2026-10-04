@@ -37,8 +37,10 @@ test('axe: Hoje, Meus mapas e Novo mapa (3 passos)', async ({ page, request }) =
   expect(await axe(page), 'novo 1').toEqual([]);
   await page.getByRole('button', { name: 'Continuar' }).click();
   expect(await axe(page), 'novo 2').toEqual([]);
+  await page.goto('/app/mapas/novo?caminho=blank');
   await page.getByRole('button', { name: 'Continuar' }).click();
-  expect(await axe(page), 'novo 3').toEqual([]);
+  await expect(page.getByLabel('Nome do mapa')).toBeVisible();
+  expect(await axe(page), 'novo 3 (Sobre o mapa)').toEqual([]);
 });
 
 test('axe: Editor (resumo, card, cada aba do inspetor) e paleta ⌘K', async ({ page, request }) => {
@@ -97,7 +99,7 @@ test('axe: Preços, Conta (e confirmação de exclusão) e Paywall de mapas', as
   for (let i = 0; i < PLAN_LIMITS.free.limits.boards; i++) expect((await request.post('http://localhost:4000/v1/boards', { headers, data: { title: `M${i}` } })).status()).toBe(201);
   await page.goto('/app/mapas/novo?caminho=blank');
   await page.getByRole('button', { name: 'Continuar' }).click();
-  await page.getByRole('button', { name: 'Continuar' }).click();
+  await page.getByLabel('Nome do mapa').fill('Terceiro');
   await page.getByRole('button', { name: 'Criar mapa', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('button', { name: 'Continuar no Free' })).toBeVisible();

@@ -64,7 +64,7 @@ test('Pix pendente: aguardando, Pro inativo; após pix-confirm vira sucesso', as
   await expect(page).toHaveURL(/\/planos\/sucesso/);
   await expect(page.getByRole('heading', { name: 'Estamos aguardando a confirmação do Pix' })).toBeVisible();
   expect((await (await request.get(`${API}/v1/billing/entitlements`, { headers })).json()).data.plan).toBe('free');
-  expect((await events(page)).map((e: { event: string }) => e.event)).toContain('checkout_pending_pix');
+  await expect.poll(async () => (await events(page)).map((e: { event: string }) => e.event)).toContain('checkout_pending_pix'); // track() é assíncrono em dev
 
   const c = await request.get(`${API}/v1/stripe/mock/pix-confirm?session=${session}`);
   expect(c.status()).toBe(200);
@@ -79,7 +79,7 @@ test('cancelar volta a /planos?cancelado=1 com aviso', async ({ page, request })
   await expect(page).toHaveURL(/\/planos/);
   await expect(page.getByText('Pagamento cancelado. Nada foi cobrado.', { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/planos$/); // replace() limpa a query
-  expect((await events(page)).map((e: { event: string }) => e.event)).toContain('checkout_canceled');
+  await expect.poll(async () => (await events(page)).map((e: { event: string }) => e.event)).toContain('checkout_canceled'); // track() é assíncrono em dev
 });
 
 test('assinante: gestão, troca para o anual e portal', async ({ page, request }) => {

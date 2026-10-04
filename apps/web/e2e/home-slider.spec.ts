@@ -77,6 +77,7 @@ test('Pro com 6 mapas: setas, teclado, contador, CLS 0 e axe', async ({ page, re
   await next.click();
   await expect(region.getByText('2–4 de 6')).toBeVisible();
   await expect(prev).toBeEnabled();
+  await region.locator('.swiper').evaluate((el) => el.scrollIntoView({ block: 'center' })); // Swiper Keyboard onlyInViewport: o checklist de ativação (D-527) empurra o carrossel para baixo da dobra
   await region.locator('.swiper').focus();
   await page.keyboard.press('ArrowRight');
   await expect(region.getByText('3–5 de 6')).toBeVisible();

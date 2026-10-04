@@ -11,11 +11,11 @@ export function parsePath(v: string | undefined): Path {
   return v === 'pdf' || v === 'anki' || v === 'blank' ? v : v === 'pronto' || v === 'seed' ? 'seed' : 'blank';
 }
 
-/** Server-safe: `?caminho=` wins for the path; a valid `?item=` (a selectable matrix item) pre-selects it, defaults to "Em branco" and starts on step 2. A ready map (`seed`) opens on the list. Unknown ids are ignored. */
+/** Server-safe: `?caminho=` wins for the path; a valid `?item=` (a selectable matrix item) pre-selects it, defaults to "Em branco" and opens on "Sobre o mapa". A ready map (`seed`) opens on the list. Unknown ids are ignored. */
 export function parseInitial(caminho: string | undefined, item: string | undefined, items: ReadonlyArray<{ id: string }>): { path?: Path; itemId?: string; step: 0 | 1 | 2 } {
   const itemId = item && items.some((i) => i.id === item) ? item : undefined;
   const path = caminho ? parsePath(caminho) : itemId ? 'blank' : undefined;
-  const step = path === 'seed' ? 2 : itemId ? 1 : 0;
+  const step = path === 'seed' || itemId ? 1 : 0; // F17: the seed list and "Sobre o mapa" (Em branco) are both step 2 of 2
   return { path, itemId, step };
 }
 

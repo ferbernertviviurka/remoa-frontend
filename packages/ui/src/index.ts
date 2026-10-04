@@ -1,4 +1,5 @@
-export * from './button';
+export { Button, type ButtonProps } from './button';
+export { buttonVariants, focusRing, pressable, fieldControl } from './button-styles'; // D-535: lets optimizePackageImports skip button.tsx
 export * from './morph';
 export * from './icon-button';
 export * from './input';
@@ -48,20 +49,22 @@ export * from './view-toggle';
 export * from './stepper';
 export * from './choice-card';
 export * from './dropzone';
-// Canvas v2 (G01 T2).
-export {
-  NodeCard, nodeSize, NODE_SIZE, FRONT_IMAGE_EXTRA, shapeAnchor, type CardShape, type NodeCardProps, type NodeType, type NodeLayer, type NodeChallengeRole, type NodeChip, type NodeStep, type NodeImage, type CaseStage, StepTimeline, CaseStageList,
-  route, routePoints, anchor, MAX_RADIUS, type Side, type Rect, type Point, type Route,
-  EdgeLabel, type EdgeLabelProps,
-  LayerSwitch, type LayerSwitchProps, Legend, type LegendProps,
-  CanvasToolbar, type CanvasToolbarProps, type ToolbarItem,
-  ZoomControl, type ZoomControlProps, stepZoom, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP,
-  InspectorTabs, InspectorTabPanel, type InspectorTabsProps, RubricList, type RubricListProps,
-  QuestionPanel, type QuestionPanelProps, type AnswerMode,
-  VerdictBox, type VerdictBoxProps,
-  RatingButton, RatingGroup, type RatingButtonProps,
-  CanvasPanel, CommandPalette, type CommandPaletteProps, type CommandItem,
-} from './canvas';
+// Canvas v2 (G01 T2). Per-file (D-535): `optimizePackageImports` stops at a sub-barrel, so `from './canvas'` made the
+// landing ship every canvas component (Dialog, Tooltip, Popper...) for the 4 its hero uses.
+export { NodeCard, nodeSize, NODE_SIZE, FRONT_IMAGE_EXTRA, shapeAnchor, type CardShape, type NodeCardProps, type NodeType, type NodeLayer, type NodeChallengeRole, type NodeChip, type NodeStep, type NodeImage, type CaseStage, StepTimeline, CaseStageList } from './canvas/node-card';
+export { route, routePoints, anchor, MAX_RADIUS, type Side, type Rect, type Point, type Route } from './canvas/route';
+export { EdgeLabel, type EdgeLabelProps } from './canvas/edge-label';
+export { LayerSwitch, type LayerSwitchProps } from './canvas/layer-switch';
+export { Legend, type LegendProps } from './canvas/legend';
+export { CanvasToolbar, type CanvasToolbarProps, type ToolbarItem } from './canvas/canvas-toolbar';
+export { ZoomControl, type ZoomControlProps, stepZoom, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP } from './canvas/zoom-control';
+export { InspectorTabs, InspectorTabPanel, type InspectorTabsProps } from './canvas/inspector-tabs';
+export { RubricList, type RubricListProps } from './canvas/rubric-list';
+export { QuestionPanel, type QuestionPanelProps, type AnswerMode } from './canvas/question-panel';
+export { VerdictBox, type VerdictBoxProps } from './canvas/verdict-box';
+export { RatingButton, RatingGroup, type RatingButtonProps } from './canvas/rating-button';
+export { CanvasPanel } from './canvas/canvas-panel';
+export { CommandPalette, type CommandPaletteProps, type CommandItem } from './canvas/command-palette';
 // Conta (F13).
 export * from './account';
 // Navbar e carrossel (F14).

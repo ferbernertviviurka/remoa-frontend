@@ -41,4 +41,10 @@ describe('SeedsView', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Algo deu errado do nosso lado. Tente de novo.');
     expect(screen.queryByText('Os mapas prontos aparecem aqui quando a revisão editorial publicar a primeira edição.')).toBeNull();
   });
+
+  it('shows the reviewer name, CRM and date', async () => {
+    api.mockResolvedValue({ ok: true, data: [{ id: '1', title: 'Sepse', area: 'CM', temporalMark: 'Enamed 2026.2', reviewerName: 'Ana Lima', reviewerCrm: '123456-SP', approvedAt: '2026-09-01T12:00:00Z' }] });
+    render(<SeedsView />);
+    expect(await screen.findByText('Revisado por Ana Lima, CRM 123456-SP, em 01/09/2026')).toBeVisible();
+  });
 });

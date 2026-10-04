@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import { focusRing } from './button';
+import { focusRing } from './button-styles';
 
 /**
  * FilterChip: chip de filtro/escolha, 44 px, 999 de raio, borda 1,5 px, 14 px/700. `pressed` vira `aria-pressed`

@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, useState, type ReactNode } from 'react';
-import { focusRing, pressable } from '../button';
+import { focusRing, pressable } from '../button-styles';
 import { Icon } from '../icons';
 import { Switch } from '../switch';
 import { StatusPill, type StatusTone } from './status-pill';

@@ -1,8 +1,7 @@
 import type { ReferralFriend, ReferralSummary } from '@remoa/contracts';
 
-/** Só no navegador (FR-5/FR-12): quais indicações qualificadas o usuário já viu, e se vale consultar o summary fora da página. */
+/** Só no navegador (FR-5/FR-12): quais indicações qualificadas o usuário já viu. */
 const SEEN_KEY = 'remoa:referral-seen';
-const HINT_KEY = 'remoa:referral-pending';
 
 const read = (k: string) => {
   try { return localStorage.getItem(k); } catch { return null; }
@@ -31,6 +30,5 @@ export function newlyQualified(seen: ReadonlySet<string> | null, s: Pick<Referra
   return s.friends.filter((f) => f.status === 'qualified' && !seen.has(f.id));
 }
 
-/** Consulta fora da página só com indicação pendente ou depois de compartilhar (D-413). */
-export const readHint = () => read(HINT_KEY) === '1';
-export const writeHint = (on: boolean) => write(HINT_KEY, on ? '1' : '0');
+/** D-494: o sinal local foi trocado por `entitlements.referralPending`; limpa a chave antiga. */
+export const clearLegacyHint = () => { try { localStorage.removeItem('remoa:referral-pending'); } catch { /* sem armazenamento */ } };

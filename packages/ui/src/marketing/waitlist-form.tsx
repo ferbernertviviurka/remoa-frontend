@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, type FormEvent } from 'react';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 
 export type WaitlistState = 'idle' | 'submitting' | 'error' | 'success';
 export type WaitlistValues = { email: string; segment: string; honeypot: string };

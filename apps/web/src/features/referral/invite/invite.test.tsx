@@ -44,7 +44,8 @@ describe('claimInvite (cookie rf)', () => {
 });
 
 describe('IP/UA do visitante (D-399)', () => {
-  it('lookup e atribuição repassam x-forwarded-for e user-agent à API (limite por IP e sinal fraco não ficam globais)', async () => {
+  it('lookup e atribuição repassam o IP (par confiável, D-537) e user-agent à API (limite por IP e sinal fraco não ficam globais)', async () => {
+    vi.stubEnv('PROXY_SHARED_SECRET', 's3cret');
     fetchMock.mockResolvedValue(reply({ ok: true, data: { valid: true, code: CODE, inviterFirstName: null } }));
     await claimInvite(CODE);
     jar.set('rf', CODE);
@@ -52,10 +53,13 @@ describe('IP/UA do visitante (D-399)', () => {
     await attributeReferral();
     for (const [, init] of fetchMock.mock.calls) {
       const h = new Headers(init.headers);
-      expect(h.get('x-forwarded-for')).toBe('200.1.2.3');
+      expect(h.get('x-remoa-client-ip')).toBe('200.1.2.3');
+      expect(h.get('x-remoa-proxy-secret')).toBe('s3cret');
+      expect(h.get('x-forwarded-for')).toBeNull(); // D-537: the API ignores a bare XFF
       expect(h.get('user-agent')).toBe('Mozilla/5.0 test');
     }
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    vi.unstubAllEnvs();
   });
 });
 

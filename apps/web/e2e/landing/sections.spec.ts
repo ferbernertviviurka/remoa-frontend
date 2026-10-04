@@ -1,4 +1,5 @@
 // F16 / T3: Problema, Como funciona, Recursos (explorer) e E tem mais.
+import { gotoLanding } from './ready';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
@@ -8,7 +9,7 @@ test.describe('desktop', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
   test('tabs: arrows, Home/End and automatic activation', async ({ page }) => {
-    await page.goto(URL);
+    await gotoLanding(page, URL);
     await page.waitForLoadState('networkidle'); // keys before hydration are lost
     const tabs = page.locator('#recursos').getByRole('tab');
     await expect(tabs).toHaveCount(6);
@@ -24,7 +25,7 @@ test.describe('desktop', () => {
   });
 
   test('images: lazy with dimensions; axe; screenshot of #recursos', async ({ page }) => {
-    await page.goto(URL);
+    await gotoLanding(page, URL);
     const imgs = page.locator('img[src^="/landing/"]');
     for (const img of await imgs.all()) {
       await expect(img).toHaveAttribute('loading', 'lazy');
@@ -44,7 +45,7 @@ test.describe('mobile', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test('explorer is an accordion at 390 px, no horizontal scroll', async ({ page }) => {
-    await page.goto(URL);
+    await gotoLanding(page, URL);
     const section = page.locator('#recursos');
     await expect(section.getByRole('tab')).toHaveCount(0);
     const heads = section.getByRole('button', { expanded: true });

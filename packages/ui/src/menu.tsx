@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import * as RM from '@radix-ui/react-dropdown-menu';
-import { focusRing, pressable } from './button';
+import { focusRing, pressable } from './button-styles';
 
 /**
  * Menu (Radix dropdown: setas, Esc, typeahead). `label` = texto do gatilho OU, com `icon`, o aria-label do gatilho.

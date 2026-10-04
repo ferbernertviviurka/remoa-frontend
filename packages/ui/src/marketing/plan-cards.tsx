@@ -1,10 +1,10 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Reveal } from './reveal';
 import { Icon } from '../icons';
-import { focusRing } from '../button';
-import { Morph } from '../morph';
+import { focusRing } from '../button-styles';
+import { LazyMorph } from '../morph-lazy';
 
 export type PlanCardPeriod = 'monthly' | 'annual';
 export type PlanCardPlan = {
@@ -42,9 +42,11 @@ export function formatBRL(amount: number, currency: 'BRL' = 'BRL') {
  */
 export function PlanCards({ period, onPeriodChange, periodLabels, periodGroupLabel, plans, discountLabel }: PlanCardsProps) {
   const annual = period === 'annual';
+  const [armed, setArmed] = useState(false); // D-560: o Torph só baixa quando o usuário chega perto do seletor
+  const arm = () => setArmed(true);
   const opt = (p: PlanCardPeriod, on: boolean) => `relative flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-[15px] border-0 bg-transparent text-[15px] font-bold transition-colors duration-[250ms] ${on ? 'text-ink' : 'text-muted'} ${focusRing}`;
   return (
-    <div className="flex flex-col gap-8 md:gap-11">
+    <div className="flex flex-col gap-8 md:gap-11" onPointerEnter={arm} onFocusCapture={arm} onTouchStart={arm}>
       <div role="group" aria-label={periodGroupLabel} className="relative flex h-[58px] w-full max-w-[320px] shrink-0 self-start rounded-[19px] bg-track p-1 md:self-end">
         <span aria-hidden="true" className={`absolute top-1 left-1 h-[50px] w-[calc(50%-4px)] rounded-[15px] bg-surface shadow-[0_6px_16px_rgba(36,26,92,0.14)] transition-transform duration-[400ms] ease-[cubic-bezier(.22,1,.36,1)] ${annual ? 'translate-x-full' : 'translate-x-0'}`} />
         <button type="button" aria-pressed={!annual} onClick={() => onPeriodChange('monthly')} className={opt('monthly', !annual)}>{periodLabels.monthly}</button>
@@ -65,11 +67,11 @@ export function PlanCards({ period, onPeriodChange, periodLabels, periodGroupLab
                     {p.badge ? <span className="rounded-full bg-on-dark px-3.5 py-1 text-[13px] font-extrabold text-panel-dark">{p.badge}</span> : null}
                   </div>
                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                    <span className="inline-block font-display text-[48px] leading-none font-extrabold tracking-[-0.04em] tabular-nums md:text-[56px]"><Morph>{formatBRL(p.price.amount, p.price.currency)}</Morph></span>
-                    <span className={`text-[17px] font-semibold ${p.dark ? 'text-on-dark-muted' : 'text-muted'}`}><Morph>{p.cadence}</Morph></span>
+                    <span className="inline-block font-display text-[48px] leading-none font-extrabold tracking-[-0.04em] tabular-nums md:text-[56px]"><LazyMorph armed={armed}>{formatBRL(p.price.amount, p.price.currency)}</LazyMorph></span>
+                    <span className={`text-[17px] font-semibold ${p.dark ? 'text-on-dark-muted' : 'text-muted'}`}><LazyMorph armed={armed}>{p.cadence}</LazyMorph></span>
                   </div>
                   {p.description ? <span className={`text-[15px] ${p.dark ? 'text-on-dark-muted-2' : 'text-muted'}`}>{p.description}</span> : null}
-                  {p.note ? <span aria-live="polite" className={`text-[15px] ${p.dark ? 'text-on-dark-muted-2' : 'text-muted'}`}><Morph>{p.note}</Morph></span> : null}
+                  {p.note ? <span aria-live="polite" className={`text-[15px] ${p.dark ? 'text-on-dark-muted-2' : 'text-muted'}`}><LazyMorph armed={armed}>{p.note}</LazyMorph></span> : null}
                 </div>
                 <ul className="m-0 flex list-none flex-col gap-3 p-0">
                   {p.features.map((f) => (

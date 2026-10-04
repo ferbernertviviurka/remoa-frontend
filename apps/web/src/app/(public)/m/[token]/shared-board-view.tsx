@@ -35,6 +35,19 @@ function Disclaimer() {
   );
 }
 
+const INTENT_KEY = 'remoa-copy-intent';
+/** Reads the pending copy intent, or sets/clears it (sessionStorage: this tab only). */
+function copyIntent(set?: string | null): string | null {
+  try {
+    if (set === undefined) return sessionStorage.getItem(INTENT_KEY);
+    if (set) sessionStorage.setItem(INTENT_KEY, set);
+    else sessionStorage.removeItem(INTENT_KEY);
+  } catch {
+    /* private mode: no auto-copy, the button still works */
+  }
+  return null;
+}
+
 export function SharedBoardView({ board, token }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -50,7 +63,8 @@ export function SharedBoardView({ board, token }: Props) {
 
   // FR-15: if `?copiar=1` is present (returning from login), auto-copy once
   useEffect(() => {
-    if (searchParams.get('copiar') === '1' && !didAutoCopy.current) {
+    // D-544: only the tab that clicked "Copiar" before the login copies on return; a `?copiar=1` link from someone else does not.
+    if (searchParams.get('copiar') === '1' && !didAutoCopy.current && copyIntent() === token) {
       didAutoCopy.current = true;
       void handleCopy();
     }
@@ -59,8 +73,10 @@ export function SharedBoardView({ board, token }: Props) {
 
   async function handleCopy() {
     setCopying(true);
+    copyIntent(token);
     startTransition(async () => {
-      const result = await copyBoardAction(token);
+      const result = await copyBoardAction(token); // no session: redirects to the login and the intent survives
+      copyIntent(null);
       setCopying(false);
       if (!result.ok) {
         if (result.error === 'quota_exceeded') {
@@ -79,27 +95,6 @@ export function SharedBoardView({ board, token }: Props) {
       track('board_copied_from_link', { access: board.access, cards: board.cardCount, blockedByQuota: false });
       router.push(`/app/mapas/${result.boardId}`);
     });
-  }
-
-  // If the owner is viewing their own board, show "open in editor" instead of copy
-  if (board.ownBoardId) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <Disclaimer />
-        <header className="flex items-center justify-between border-b border-border bg-surface px-5 py-3">
-          <span className="text-sm font-bold text-muted">{t(`boards.area.${board.area}`)}</span>
-          <span className="text-sm font-semibold text-muted">
-            {t('sharedMap.cardCount', { n: board.cardCount })}
-          </span>
-          <Button size="sm" onClick={() => router.push(`/app/mapas/${board.ownBoardId}`)}>
-            {t('importReport.open')}
-          </Button>
-        </header>
-        <div className="relative flex-1" style={{ minHeight: 400 }}>
-          <SharedCanvas board={board} />
-        </div>
-      </div>
-    );
   }
 
   const isCopying = copying || isPending;

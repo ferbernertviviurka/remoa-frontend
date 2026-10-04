@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 
 /**
  * PeriodToggle (F15 FR-2): Mensal/Anual com marcador branco que desliza (`transform` 400 ms). Grupo de botões com `aria-pressed`.

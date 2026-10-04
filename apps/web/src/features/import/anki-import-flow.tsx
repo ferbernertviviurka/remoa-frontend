@@ -2,13 +2,13 @@
 
 import { t } from '@remoa/strings';
 import { Alert, Button, Card, Progress, Spinner } from '@remoa/ui';
-import { AnkiPreview } from './anki-preview';
+import { AnkiImportSummary } from './anki-import-summary';
 import type { AnkiState, Plan } from './use-anki-import';
 
-type Props = { state: Exclude<AnkiState, { kind: 'idle' }>; onPlan: (plan: Plan) => void; onConfirm: () => void; onReset: () => void; onOpen: (boardId: string) => void };
+type Props = { state: Exclude<AnkiState, { kind: 'idle' }>; onPlan: (plan: Plan) => void; onAdjustOpened: () => void; onReset: () => void; onOpen: (boardId: string) => void };
 
-/** Everything after the file is chosen: upload/inspect, preview, progress, report (F06 FR-3, FR-7). */
-export function AnkiImportFlow({ state, onPlan, onConfirm, onReset, onOpen }: Props) {
+/** Everything after the file is chosen: upload/inspect, summary (F17 FR-8), progress, report with one "Abrir mapa" (FR-18). The CTA lives in the page footer. */
+export function AnkiImportFlow({ state, onPlan, onAdjustOpened, onReset, onOpen }: Props) {
   switch (state.kind) {
     case 'uploading':
       return (
@@ -25,7 +25,7 @@ export function AnkiImportFlow({ state, onPlan, onConfirm, onReset, onOpen }: Pr
         </div>
       );
     case 'preview':
-      return <AnkiPreview summary={state.summary} plan={state.plan} maxCards={state.maxCards} onChange={onPlan} onBack={onReset} onConfirm={onConfirm} />;
+      return <AnkiImportSummary summary={state.summary} plan={state.plan} maxCards={state.maxCards} onPlan={onPlan} onAdjustOpened={onAdjustOpened} />;
     case 'importing': {
       const p = state.progress;
       return (
@@ -57,13 +57,11 @@ export function AnkiImportFlow({ state, onPlan, onConfirm, onReset, onOpen }: Pr
               ))}
             </dl>
           </Card>
-          <div className="flex flex-wrap gap-2">
-            {r.boardIds.map((id, i) => (
-              <Button key={id} size="lg" variant={i === 0 ? 'primary' : 'secondary'} onClick={() => onOpen(id)}>
-                {r.boardIds.length === 1 ? t('import.report.open') : t('import.report.openN', { n: i + 1 })}
-              </Button>
-            ))}
-          </div>
+          {r.boardIds[0] ? (
+            <div>
+              <Button size="lg" onClick={() => onOpen(r.boardIds[0]!)}>{t('importReport.open')}</Button>
+            </div>
+          ) : null}
         </div>
       );
     }

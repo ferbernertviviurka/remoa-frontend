@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 import { ProgressTimeline, type ProgressTimelineProps } from './progress-tracker';
 import { statusStyle, type ReferralStatus } from './status';
 

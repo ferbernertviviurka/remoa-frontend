@@ -32,25 +32,32 @@ function routes(over: Record<string, unknown> = {}) {
     if (path === '/v1/imports/anki') return { ok: true, data: { importId: 'i1' } };
     if (path === '/v1/imports/i1') return { ok: true, data: { importId: 'i1', status: 'done', processed: 5, total: 5, error: null } };
     if (path === '/v1/imports/i1/report') return { ok: true, data: report };
+    if (path.startsWith('/v1/imports/anki/existing')) return { ok: true, data: { board: path.includes('Velho') ? { id: 'b0', title: 'Velho' } : null } };
     return { ok: false, error: { code: 'not_found', message: path } };
   });
 }
 
 const open = vi.fn();
+const found = vi.fn();
+const board = { title: 'Sepse', area: 'CM', matrixItemIds: ['m1', 'm2'], access: 'public', target: 'new' } as const;
 function Harness() {
   const a = useAnkiImport();
   return (
     <>
       <button onClick={() => void a.start(new File(['x'], 'a.apkg'))}>go</button>
-      {a.state.kind !== 'idle' ? <AnkiImportFlow state={a.state} onPlan={a.setPlan} onConfirm={() => void a.confirm()} onReset={a.reset} onOpen={open} /> : null}
+      <button onClick={() => void a.confirm({ ...board, matrixItemIds: [...board.matrixItemIds] }, { suggestedCount: 1 })}>confirm</button>
+      <button onClick={() => void a.findExisting('Velho').then(found)}>existing</button>
+      {a.state.kind === 'preview' && a.state.submitError ? <p>{a.state.submitError}</p> : null}
+      {a.state.kind !== 'idle' ? <AnkiImportFlow state={a.state} onPlan={a.setPlan} onAdjustOpened={a.markAdjusted} onReset={a.reset} onOpen={open} /> : null}
     </>
   );
 }
 const toPreview = async () => {
   render(<Harness />);
   fireEvent.click(screen.getByText('go'));
-  await screen.findByText('Tipos de nota');
+  await screen.findByTestId('import-summary');
 };
+const adjust = () => fireEvent.click(screen.getByRole('button', { name: 'Ajustar importação' }));
 
 afterEach(() => {
   cleanup();
@@ -58,43 +65,82 @@ afterEach(() => {
 });
 
 describe('Anki import', () => {
-  it('preview: decks, mapping rules, cap warning, and the sample follows the title field', async () => {
+  it('summary (FR-8): one card, cap alert, 3 examples, no field select until "Ajustar importação" opens', async () => {
     routes();
     await toPreview();
-    expect(screen.getByText('vira o mapa “Clínica”')).toBeTruthy();
-    expect(screen.getByText('vira coluna e “Fonte” do card')).toBeTruthy();
+    expect(screen.getByTestId('import-summary').textContent).toBe('5 cards · 1 imagem · 2 baralhos (viram colunas)');
     expect(screen.getByRole('alert').textContent).toContain('até 3');
+    expect(screen.getByText('Critério de sepse')).toBeTruthy(); // example front
+    expect(screen.queryByText('Tipos de nota')).toBeNull();
+    expect(screen.queryByRole('combobox')).toBeNull();
+    adjust();
+    expect(await screen.findByText('Tipos de nota')).toBeTruthy();
+    expect(track).toHaveBeenCalledWith('anki_import_adjust_opened', {});
+    adjust();
+    adjust();
+    expect(track.mock.calls.filter((c) => c[0] === 'anki_import_adjust_opened')).toHaveLength(1);
+  });
+
+  it('adjust (FR-9): decks are columns, the sample follows the title field, unchecking lowers N', async () => {
+    routes();
+    await toPreview();
+    adjust();
+    expect(await screen.findByText('vira coluna do mapa')).toBeTruthy();
     const table = screen.getByRole('table', { name: 'Amostra de Basic' });
     expect(table.textContent).toContain('Critério de sepse'); // derived title
     fireEvent.keyDown(screen.getByRole('combobox', { name: /^Título/ }), { key: 'Enter' });
     fireEvent.click(await screen.findByRole('option', { name: 'Tema' }));
     await waitFor(() => expect(screen.getByRole('table', { name: 'Amostra de Basic' }).querySelector('tbody td')?.textContent).toBe('Sepse-3'));
+    fireEvent.click(screen.getByRole('checkbox', { name: /^Clínica \(/ })); // the server imports a deck's whole subtree
+    expect(screen.getByTestId('import-summary').textContent).toContain('0 card ·');
   });
 
-  it('import: posts the plan, shows the report and fires anki_imported', async () => {
+  it('confirm (FR-10): posts the plan and the board, one "Abrir mapa", anki_imported with the F17 props', async () => {
     routes();
     await toPreview();
-    fireEvent.click(screen.getByRole('checkbox', { name: /^Clínica \(/ })); // parent off: sub decks too
+    adjust();
+    fireEvent.click(await screen.findByRole('checkbox', { name: /^Clínica \(/ })); // parent off: sub decks too
     fireEvent.click(screen.getByRole('checkbox', { name: /Sepse/ }));
-    fireEvent.click(screen.getByRole('button', { name: /Importar 3 cards/ }));
+    fireEvent.click(screen.getByText('confirm'));
     await screen.findByText('Relatório da importação');
     const body = JSON.parse((api.mock.calls.find((c) => c[0] === '/v1/imports/anki')![1] as RequestInit).body as string);
     expect(body.plan.deckIds).toEqual(['d2']);
     expect(body.plan.estimatedCards).toBe(3);
     expect(body.plan.mappings[0]).toMatchObject({ noteTypeId: 'n1', front: 'Front', back: 'Back', title: null });
-    expect(track).toHaveBeenCalledWith('anki_imported', { decks: 1, cards: 4, media: 1, durationMs: 2500, skipped: 2, area: 'CM', matrixItems: 0, access: 'owner', adjusted: false, target: 'new' });
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir o mapa' }));
+    expect(body.board).toEqual(board);
+    expect(track).toHaveBeenCalledWith('anki_imported', { decks: 1, cards: 4, media: 1, durationMs: 2500, skipped: 2, area: 'CM', matrixItems: 2, access: 'public', adjusted: true, target: 'new' });
+    expect(track).toHaveBeenCalledWith('board_linked_to_matrix', { count: 2, suggestedCount: 1 });
+    expect(track).toHaveBeenCalledWith('board_access_changed', { from: 'owner', to: 'public', source: 'create' });
+    expect(screen.getAllByRole('button', { name: /Abrir/ })).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir mapa' }));
     expect(open).toHaveBeenCalledWith('b1');
   });
 
-  it('402 quota_exceeded opens the paywall and keeps the preview', async () => {
+  it('402 quota_exceeded opens the paywall and keeps the summary', async () => {
     const err = { code: 'quota_exceeded', message: 'cards' };
     routes({ '/v1/imports/anki': { ok: false, error: err } });
     handle.mockReturnValue(true);
     await toPreview();
-    fireEvent.click(screen.getByRole('button', { name: /Importar 5 cards/ }));
+    fireEvent.click(screen.getByText('confirm'));
     await waitFor(() => expect(handle).toHaveBeenCalledWith(err));
-    expect(screen.getByText('Tipos de nota')).toBeTruthy();
+    expect(screen.getByTestId('import-summary')).toBeTruthy();
+  });
+
+  it('422 on start goes back to the summary with the server message (nothing lost)', async () => {
+    routes({ '/v1/imports/anki': { ok: false, error: { code: 'validation', message: 'Item de outra área' } } });
+    handle.mockReturnValue(false);
+    await toPreview();
+    fireEvent.click(screen.getByText('confirm'));
+    expect(await screen.findByText('Item de outra área')).toBeTruthy();
+    expect(screen.getByTestId('import-summary')).toBeTruthy();
+  });
+
+  it('findExisting returns the own board with the same name (FR-11)', async () => {
+    routes();
+    render(<Harness />);
+    fireEvent.click(screen.getByText('existing'));
+    await waitFor(() => expect(found).toHaveBeenCalledWith({ id: 'b0', title: 'Velho' }));
+    expect(api).toHaveBeenCalledWith('/v1/imports/anki/existing?title=Velho');
   });
 
   it('inspect 422 shows the server message', async () => {

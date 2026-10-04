@@ -3,7 +3,7 @@
 import { useId, useRef, useState, type DragEvent } from 'react';
 import { Button } from './button';
 import { Icon } from './icons';
-import { focusRing } from './button';
+import { focusRing } from './button-styles';
 
 /**
  * Dropzone: área de envio do Novo mapa. Sem `file`: caixa tracejada (2 px --primary, raio 26, fundo tint) com ícone, `title`, `description` e o botão `buttonLabel`;
