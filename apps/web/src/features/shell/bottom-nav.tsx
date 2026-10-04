@@ -7,14 +7,19 @@ import { Icon } from '@remoa/ui';
 import { useNavPending } from './nav-pending';
 import { isActive, items } from './rail';
 
-/** Mesmos destinos do trilho (rail.tsx `items`) + Conta. `dueTotal` = badge do Revisar. Altura 64 px + safe-area; o `main` reserva o mesmo espaço (app-shell). */
+/** Destinos do celular (F09): Revisar, Mapas, Enamed e Loja, mais Conta. Progresso fica no cabeçalho. */
+const mobileHrefs = ['/revisar', '/mapas', '/cobertura', '/loja'] as const;
+const mobileItems = [
+  ...mobileHrefs.map((href) => items.find((i) => i.href === href)!),
+  { href: '/conta', icon: 'user' as const, label: 'rail.account' as const },
+];
+
 export function BottomNav({ dueTotal = 0 }: { dueTotal?: number }) {
   const path = usePathname();
   const { pending, setPending } = useNavPending();
-  const all = [...items, { href: '/conta', icon: 'user' as const, label: 'rail.account' as const }];
   return (
     <nav aria-label={t('shell.bottomNav.label')} className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
-      {all.map((i) => {
+      {mobileItems.map((i) => {
         const active = pending ? pending === i.href : isActive(path, i.href, false);
         const badge = i.href === '/revisar' && dueTotal > 0;
         return (
@@ -23,7 +28,7 @@ export function BottomNav({ dueTotal = 0 }: { dueTotal?: number }) {
             href={i.href}
             aria-current={active ? 'page' : undefined}
             onClick={() => !isActive(path, i.href, false) && setPending(i.href)}
-            className={`relative flex min-h-16 min-w-0 flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold no-underline ${active ? 'text-primary-deep' : 'text-muted'}`}
+            className={`relative flex min-h-[72px] min-w-0 flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold no-underline ${active ? 'text-primary-deep' : 'text-muted'}`}
           >
             <Icon name={i.icon} size={22} />
             <span className="max-w-full truncate px-0.5">{i.href === '/conta' ? t('shell.bottomNav.account') : t(i.label)}</span>

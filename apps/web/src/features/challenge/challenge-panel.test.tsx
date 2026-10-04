@@ -291,17 +291,46 @@ describe('ChallengePanel', () => {
     await screen.findByText('RESPOSTA-SECRETA');
   });
 
-  it('Falar (D-203): the record button is disabled with "Em breve"; nothing is transcribed', async () => {
+  it('Falar without speech support keeps the answer field and hides the microphone', async () => {
     const user = userEvent.setup();
+    overrides.answer = async () => ans({ verdict: graderVerdictFixture, suggestedGrade: 'good' });
     await toTextItem(user);
-    const sent = calls.answer?.length ?? 0;
     await user.click(screen.getByRole('button', { name: 'Falar' }));
-    const rec = screen.getByRole('button', { name: 'Falar a resposta' });
-    expect(rec).toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getByText('Em breve')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Falar a resposta' })).toBeNull();
+    expect(screen.queryByText('Em breve')).toBeNull();
     expect(screen.getByText(/ainda não está disponível/)).toBeVisible();
-    await user.click(rec);
-    expect(screen.queryByLabelText('Sua resposta')).toBeNull(); // still in Falar, no transcript, nothing sent
-    expect(calls.answer?.length ?? 0).toBe(sent);
+    await user.type(screen.getByLabelText('Sua resposta'), 'noradrenalina');
+    await user.click(screen.getByRole('button', { name: 'Corrigir resposta' }));
+    await waitFor(() => expect(calls.answer?.at(-1)).toMatchObject({ inputKind: 'text', text: 'noradrenalina' }));
+  });
+
+  it('Falar puts the transcript in the field and sends it as voice', async () => {
+    class Fake {
+      lang = '';
+      interimResults = false;
+      onresult: ((ev: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null = null;
+      onerror: (() => void) | null = null;
+      onend: (() => void) | null = null;
+      start() {
+        this.onresult?.({ results: [[{ transcript: 'noradrenalina' }]] });
+        this.onend?.();
+      }
+      stop() {}
+    }
+    (window as unknown as { SpeechRecognition: typeof Fake }).SpeechRecognition = Fake;
+    const user = userEvent.setup();
+    overrides.answer = async () => ans({ verdict: graderVerdictFixture, suggestedGrade: 'good' });
+    try {
+      await toTextItem(user);
+      await user.click(screen.getByRole('button', { name: 'Falar' }));
+      await user.click(screen.getByRole('button', { name: 'Falar a resposta' }));
+      const field = screen.getByLabelText('Sua resposta') as HTMLTextAreaElement;
+      expect(field.value).toBe('noradrenalina');
+      await user.click(screen.getByRole('button', { name: 'Corrigir resposta' }));
+      await waitFor(() => expect(calls.answer?.at(-1)).toMatchObject({ inputKind: 'voice', text: 'noradrenalina' }));
+      expect(track).toHaveBeenCalledWith('voice_used', { success: true });
+    } finally {
+      delete (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition;
+    }
   });
 });

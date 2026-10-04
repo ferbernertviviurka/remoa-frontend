@@ -18,7 +18,7 @@ describe('landing sections', () => {
     fireEvent.click(tabs[4]!);
     expect(screen.getByAltText(strings.landing.featureAlts.fsrs).getAttribute('loading')).toBe('lazy');
     expect(screen.getByText('Imagem da plataforma: lembrança estimada')).toBeTruthy();
-    expect(window.__remoaEvents).toContainEqual({ event: 'feature_tab_selected', props: { feature: 'fsrs', platform: 'web' } });
+    expect(window.__remoaEvents).toContainEqual({ event: 'feature_tab_selected', props: { feature: 'fsrs', platform: 'web', plan: 'free', appVersion: '0.0.0' } });
   });
 
   test('problem, how, more render all their texts', () => {

@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import type { BoardGraph } from '@remoa/contracts';
 import { serverApi } from '@/lib/api/server';
-import { LazyMapCanvas } from '@/features/map/canvas/lazy-canvas';
+import { MapSurface } from '@/features/map/canvas/map-surface';
 
 export default async function MapPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -10,5 +10,5 @@ export default async function MapPage({ params }: { params: Promise<{ id: string
     if (r.error.code === 'not_found' || r.error.code === 'validation') notFound();
     throw new Error(r.error.message);
   }
-  return <LazyMapCanvas graph={r.data} />;
+  return <MapSurface graph={r.data} />;
 }

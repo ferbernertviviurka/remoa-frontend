@@ -68,7 +68,7 @@ describe('WaitlistCta', () => {
     const ok = await screen.findByRole('status');
     await waitFor(() => expect(document.activeElement).toBe(ok));
     expect(post).toHaveBeenCalledWith({ email: 'a@b.co', segment: 'y5_6', variant: '29', honeypot: '' });
-    expect(window.__remoaEvents).toContainEqual({ event: 'waitlist_joined', props: { segment: 'y5_6', variant: '29', platform: 'web' } });
+    expect(window.__remoaEvents).toContainEqual({ event: 'waitlist_joined', props: { segment: 'y5_6', variant: '29', platform: 'web', plan: 'free', appVersion: '0.0.0' } });
     fireEvent.click(screen.getByRole('button', { name: strings.landing.waitlist.success.alternate }));
     expect((screen.getByLabelText(strings.landing.waitlist.email.label) as HTMLInputElement).value).toBe('');
   });

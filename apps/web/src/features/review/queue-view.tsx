@@ -7,6 +7,7 @@ import type { QueueItem } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { Alert, Button, Card, Stat } from '@remoa/ui';
 import { track } from '@/lib/analytics';
+import { rememberQueue } from './queue-cache';
 import { useChallenge } from '@/features/challenge/provider';
 import { EmptyState } from '@/features/shell/empty-state';
 
@@ -22,7 +23,8 @@ export function QueueView({ items, boardTitles }: { items: QueueItem[]; boardTit
 
   useEffect(() => {
     track('queue_opened', { due, new: fresh, weak });
-  }, [due, fresh, weak]);
+    void rememberQueue({ items, boardTitles });
+  }, [due, fresh, weak, items]);
 
   if (items.length === 0) {
     return (

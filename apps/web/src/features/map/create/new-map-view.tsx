@@ -2,11 +2,12 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import type { Board, MatrixItem } from '@remoa/contracts';
+import type { Board, BoardGenerationProgress, MatrixItem } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
-import { Button, ChoiceCard, ChoiceRow, Dialog, Dropzone, FilterChip, Icon, IconButton, Input, Logo, Stepper } from '@remoa/ui';
+import { Button, ChoiceCard, ChoiceRow, Dialog, Dropzone, FilterChip, Icon, IconButton, Input, Logo, Progress, Stepper } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
+import { createClient } from '@/lib/supabase/client';
 import { usePaywall } from '@/features/billing/paywall';
 import { useMatrixSuggestions } from '@/features/coverage/matrix-suggestions';
 import Link from 'next/link';
@@ -23,7 +24,7 @@ const PATHS: ReadonlyArray<{ id: Path; icon: 'file' | 'archive' | 'book' | 'plus
 const AREAS = ['CM', 'CIR', 'GO', 'PED', 'MP'] as const;
 const OPTS = { pdf: ['flows', 'rubrics'] } as const;
 
-type Props = { items: MatrixItem[]; initialPath?: Path; initialItemId?: string; initialStep?: 0 | 1 };
+type Props = { items: MatrixItem[]; initialPath?: Path; initialItemId?: string; initialStep?: 0 | 1 | 2 };
 
 export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 }: Props) {
   const router = useRouter();
@@ -41,9 +42,17 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
   const [touched, setTouched] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [opts, setOpts] = useState<Record<string, boolean>>({ flows: true, rubrics: true });
+  const [seeds, setSeeds] = useState<{ id: string; title: string; temporalMark: string | null }[] | null>(null);
   const [soon, setSoon] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<number | null>(null);
+  const [stage, setStage] = useState<'ocr' | 'extract' | 'layout' | null>(null);
+
+  useEffect(() => {
+    if (path !== 'seed') return;
+    void Promise.resolve(api<{ id: string; title: string; temporalMark: string | null }[]>('/v1/editorial/seeds')).then((r) => setSeeds(r?.ok ? r.data : []));
+  }, [path]);
 
   const suggested = useMatrixSuggestions(step >= 1 ? name : '', 300);
   const item = items.find((i) => i.id === itemId);
@@ -57,6 +66,66 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
     setItemId(i.id);
     if (!touched) setName(i.title);
   };
+
+  async function generatePdf() {
+    if (!file) return;
+    setBusy(true);
+    setError(null);
+    setProgress(0);
+    setStage('ocr');
+    const started = Date.now();
+    const open = (boardId: string, cards: number, edges: number) => {
+      track('board_generated_from_pdf', { pages: 1, cards, edges, durationMs: Date.now() - started });
+      router.push(`/mapas/${boardId}`);
+    };
+    try {
+      const { data } = await createClient().auth.getSession();
+      const token = data.session?.access_token;
+      const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+      const res = await fetch(`${base}/v1/ai/generate-pdf?title=${encodeURIComponent(name.trim() || file.name.replace(/\.pdf$/i, ''))}`, {
+        method: 'POST',
+        headers: { authorization: token ? `Bearer ${token}` : '', 'content-type': 'application/pdf' },
+        body: file,
+      });
+      const body = (await res.json()) as { ok: true; data: { boardId?: string | null; jobId?: string; cards?: number; edges?: number } } | { ok: false; error: { code: string; message?: string } };
+      if (!body.ok) {
+        if (!paywall.handle(body.error)) setError(body.error.message === 'pdf_unreadable' ? t('newMap.pdfUnreadable') : t('errors.internal'));
+        return;
+      }
+      if (body.data.boardId && !body.data.jobId) {
+        open(body.data.boardId, body.data.cards ?? 0, body.data.edges ?? 0);
+        return;
+      }
+      if (!body.data.jobId) {
+        setError(t('errors.internal'));
+        return;
+      }
+      for (;;) {
+        const job = await api<BoardGenerationProgress & { cards?: number; edges?: number }>(`/v1/ai/jobs/${body.data.jobId}`);
+        if (!job.ok) {
+          setError(t('errors.internal'));
+          return;
+        }
+        setProgress(job.data.progress);
+        setStage(job.data.stage === 'ocr' || job.data.stage === 'layout' ? job.data.stage : 'extract');
+        if (job.data.status === 'done' && job.data.boardId) {
+          open(job.data.boardId, job.data.cards ?? 0, job.data.edges ?? 0);
+          return;
+        }
+        if (job.data.status === 'failed') {
+          if (job.data.error === 'ai_generations') paywall.handle({ code: 'quota_exceeded', message: 'ai_generations' });
+          else setError(job.data.error === 'pdf_unreadable' ? t('newMap.pdfUnreadable') : t('errors.internal'));
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+    } catch {
+      setError(t('errors.internal'));
+    } finally {
+      setBusy(false);
+      setProgress(null);
+    }
+  }
 
   async function create() {
     setBusy(true);
@@ -75,6 +144,16 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
     } finally {
       setBusy(false);
     }
+  }
+
+  async function copySeed(boardId: string) {
+    setError(null);
+    const r = await api<{ id: string }>('/v1/editorial/copy', { method: 'POST', body: JSON.stringify({ boardId }) });
+    if (r.ok) {
+      track('board_created', {});
+      track('seed_board_copied', {});
+      router.push(`/mapas/${r.data.id}`);
+    } else if (!paywall.handle(r.error)) setError(t('errors.internal'));
   }
 
   const heading = (title: string, desc: string) => (
@@ -204,12 +283,34 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
                   ) : null}
                 </>
               ) : null}
-              {path === 'seed' ? <p role="status" className="rounded-[22px] border border-border bg-surface px-[22px] py-4 text-muted">{t('newMap.seedSoon')}</p> : null}
+              {path === 'seed' ? (
+                seeds && seeds.length > 0 ? (
+                  <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                    {seeds.map((s) => (
+                      <li key={s.id} className="flex items-center justify-between gap-3 rounded-[22px] border border-border bg-surface px-[22px] py-4">
+                        <span>
+                          <span className="block font-semibold">{s.title}</span>
+                          {s.temporalMark ? <span className="text-sm text-muted">{s.temporalMark}</span> : null}
+                        </span>
+                        <Button size="sm" onClick={() => void copySeed(s.id)}>{t('editorial.copy')}</Button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p role="status" className="rounded-[22px] border border-border bg-surface px-[22px] py-4 text-muted">{t('newMap.seedSoon')}</p>
+                )
+              ) : null}
               {path === 'blank' ? (
                 <div className="flex flex-col gap-0.5 rounded-[22px] border border-border bg-surface px-[22px] py-1.5">
                   {row(t('newMap.nameLabel'), name)}
                   {row(t('newMap.areaLabel'), area)}
                   {row(t('newMap.itemLabel'), item?.title ?? '—', true)}
+                </div>
+              ) : null}
+              {progress != null ? (
+                <div className="flex flex-col gap-2">
+                  <p role="status" className="m-0 text-sm font-semibold">{t('newMap.generating', { stage: t(`newMap.stage.${stage ?? 'extract'}`), n: progress })}</p>
+                  <Progress aria-label={t('newMap.generatingLabel')} value={progress} />
                 </div>
               ) : null}
               {error ? <p role="alert" className="text-sm font-semibold text-review">{error}</p> : null}
@@ -223,20 +324,20 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
           ) : (
             <span className="max-sm:hidden" />
           )}
-          {last ? (
+          {last && path !== 'seed' ? (
             <Button
               size="lg"
               disabled={!canFinish}
               loading={busy}
               loadingLabel={t('common.loading')}
               iconEnd={path === 'blank' ? <Icon name="right" size={20} /> : undefined}
-              onClick={() => (path === 'blank' ? void create() : path === 'anki' && file ? void anki.start(file) : setSoon(true))}
+              onClick={() => (path === 'blank' ? void create() : path === 'anki' && file ? void anki.start(file) : path === 'pdf' && file ? void generatePdf() : setSoon(true))}
             >
               {cta}
             </Button>
-          ) : (
+          ) : !last ? (
             <Button size="lg" disabled={!canContinue} iconEnd={<Icon name="right" size={20} />} onClick={() => setStep((step + 1) as 1 | 2)}>{t('newMap.continueButton')}</Button>
-          )}
+          ) : null}
         </div>}
         <MapPreview compact path={path} step={step} name={name.trim()} area={area} item={item?.title ?? ''} />
       </main>

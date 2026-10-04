@@ -15,7 +15,8 @@ export type AnswerMode = 'write' | 'options' | 'speak';
  * ativo e o botão de corrigir (`canCheck` falso = desabilitado). Com `result` (VerdictBox + RatingGroup + "Discordo"…) ele
  * substitui o formulário e a pergunta continua. Controlado: o chamador guarda `mode`, `answer`, `selectedOption`.
  * A resposta canônica nunca entra aqui antes de `result` (o servidor só devolve após a correção). Texto todo por props.
- * `voice` (modo Falar): botão de gravar 68 px, transcrição e o aviso de descarte do áudio.
+ * `voice` (modo Falar): botão de gravar 68 px e o aviso de descarte do áudio. Sem `soonLabel`, a transcrição
+ * fica no campo (`answer`) para conferir. Sem `onRecord`, o botão some e o campo permanece.
  */
 export type QuestionPanelProps = {
   eyebrow: string;
@@ -36,7 +37,7 @@ export type QuestionPanelProps = {
   options: readonly { id: string; key: string; text: string }[];
   selectedOption: string | null;
   onSelectOption: (id: string) => void;
-  /** `soonLabel` (D-203): botão de gravar desabilitado + Tag "Em breve", sem transcrição (ignora `transcript`/`onRecord`). */
+  /** `soonLabel`: botão desabilitado + Tag, sem campo. Sem `onRecord`, o botão some e o campo fica. */
   voice?: { recordLabel: string; soonLabel?: string; transcript?: string; note: string; onRecord?: () => void };
   checkLabel: string;
   canCheck: boolean;
@@ -82,12 +83,43 @@ export function QuestionPanel(p: QuestionPanelProps) {
                 </button>
               ))}
             </div>
-            {p.mode === 'write' ? (
+            {p.mode === 'speak' && p.voice?.soonLabel ? (
+              <div className="flex flex-col items-center gap-3 rounded-[20px] bg-canvas p-5 text-center">
+                <button
+                  type="button"
+                  aria-label={p.voice.recordLabel}
+                  aria-disabled="true"
+                  aria-describedby={voiceId}
+                  className={clsx('flex size-[68px] cursor-not-allowed items-center justify-center rounded-full bg-primary text-on-primary opacity-50', focusRing)}
+                >
+                  <Icon name="mic" size={28} />
+                </button>
+                <Tag tone="brand">{p.voice.soonLabel}</Tag>
+                <span id={voiceId} className="text-[13px] text-muted">{p.voice.soonLabel}. {p.voice.note}</span>
+              </div>
+            ) : null}
+            {p.mode === 'speak' && p.voice && !p.voice.soonLabel ? (
+              <div className="flex flex-col items-center gap-3 text-center">
+                {p.voice.onRecord ? (
+                  <button
+                    type="button"
+                    aria-label={p.voice.recordLabel}
+                    onClick={p.voice.onRecord}
+                    className={clsx('flex size-[68px] cursor-pointer items-center justify-center rounded-full bg-primary text-on-primary', focusRing)}
+                  >
+                    <Icon name="mic" size={28} />
+                  </button>
+                ) : null}
+                <span id={voiceId} className="text-[13px] text-muted">{p.voice.note}</span>
+              </div>
+            ) : null}
+            {p.mode === 'write' || (p.mode === 'speak' && !p.voice?.soonLabel) ? (
               <div className="flex flex-col gap-2">
                 <label htmlFor={areaId} className="text-sm font-bold">{p.answerLabel}</label>
                 <textarea
                   id={areaId}
                   rows={3}
+                  aria-describedby={p.mode === 'speak' && p.voice && !p.voice.soonLabel ? voiceId : undefined}
                   value={p.answer}
                   onChange={(e) => p.onAnswerChange(e.target.value)}
                   className={`box-border w-full resize-none rounded-[14px] border-[1.5px] border-(--cv-border-strong) bg-surface px-3.5 py-3 text-[15px] leading-[1.45] ${focusRing}`}
@@ -111,23 +143,6 @@ export function QuestionPanel(p: QuestionPanelProps) {
                     </button>
                   );
                 })}
-              </div>
-            ) : null}
-            {p.mode === 'speak' && p.voice ? (
-              <div className="flex flex-col items-center gap-3 rounded-[20px] bg-canvas p-5 text-center">
-                <button
-                  type="button"
-                  aria-label={p.voice.recordLabel}
-                  aria-disabled={p.voice.soonLabel ? true : undefined}
-                  aria-describedby={p.voice.soonLabel ? voiceId : undefined}
-                  onClick={p.voice.soonLabel ? undefined : p.voice.onRecord}
-                  className={clsx('flex size-[68px] items-center justify-center rounded-full bg-primary text-on-primary', focusRing, p.voice.soonLabel ? 'cursor-not-allowed opacity-50' : 'cursor-pointer')}
-                >
-                  <Icon name="mic" size={28} />
-                </button>
-                {p.voice.soonLabel ? <Tag tone="brand">{p.voice.soonLabel}</Tag> : null}
-                {!p.voice.soonLabel && p.voice.transcript ? <span className="font-semibold">{p.voice.transcript}</span> : null}
-                <span id={voiceId} className="text-[13px] text-muted">{p.voice.soonLabel ? `${p.voice.soonLabel}. ` : ''}{p.voice.note}</span>
               </div>
             ) : null}
             <button

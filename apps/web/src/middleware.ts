@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-const protectedPrefixes = ['/hoje', '/mapas', '/revisar', '/cobertura', '/loja', '/conta', '/m', '/editorial'];
+const protectedPrefixes = ['/hoje', '/mapas', '/revisar', '/cobertura', '/loja', '/conta', '/m', '/editorial', '/progresso'];
 // F17: `/m/<token>` (43 caracteres base64url) é a página pública do link; `/m/revisar` (F09) segue protegido.
 const isSharedBoardPath = (path: string) => /^\/m\/[A-Za-z0-9_-]{43}\/?$/.test(path);
 const isProtected = (path: string) =>
@@ -40,5 +40,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|sw\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)'],
 };

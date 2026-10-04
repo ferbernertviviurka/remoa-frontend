@@ -60,7 +60,10 @@ test.describe('responsivo 390x844', () => {
 
     // bottom-nav: mesmos destinos do trilho, badge do Revisar, sem cobrir o fim da página
     const nav = page.getByRole('navigation', { name: 'Navegação inferior' });
-    for (const n of ['Hoje', 'Mapas', 'Revisar', 'Enamed', 'Loja', 'Conta']) await expect(nav.getByRole('link', { name: new RegExp(n) })).toBeVisible();
+    for (const n of ['Mapas', 'Revisar', 'Enamed', 'Loja', 'Conta']) await expect(nav.getByRole('link', { name: new RegExp(n) })).toBeVisible();
+    await expect(nav.getByRole('link', { name: /Hoje/ })).toHaveCount(0);
+    await expect(page.locator('header').getByRole('link', { name: 'Remoa, ir para Hoje' })).toBeVisible();
+    await expect(page.locator('header').getByRole('link', { name: 'Progresso' })).toBeVisible();
     await expect(nav.getByRole('link', { name: /Revisar/ })).toHaveAccessibleName(/\d/);
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const last = await page.evaluate(() => {

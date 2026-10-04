@@ -10,6 +10,8 @@ import { track } from '@/lib/analytics';
 import type { AnswerPayload } from './client';
 import { Occlusion } from './occlusion';
 import { MAX_SKIPS, useChallenge, type Scope } from './provider';
+import { useSpeech } from './speech';
+import { countSession } from '@/features/shell/pwa';
 import { Summary } from './summary';
 
 const grades = ['again', 'hard', 'good', 'easy'] as const;
@@ -17,7 +19,20 @@ const letters = ['A', 'B', 'C', 'D'];
 const fallbackText = { no_rubric: 'challenge.fallbackNoRubric', grader_error: 'challenge.fallbackGraderError', quota: 'challenge.fallbackQuota' } as const;
 const subjectOf = { next_step: 'step', case: 'stage', occlusion: 'region', edge: 'card', hidden_card: 'card' } as const;
 
-const voiceSoon = { recordLabel: t('quiz.voiceRecord'), soonLabel: t('quiz.voiceSoon'), note: t('quiz.voiceSoonNote') };
+function SpeakFeedback({ text }: { text: string }) {
+  useEffect(() => {
+    if (typeof speechSynthesis === 'undefined') return;
+    const reduced = document.documentElement.dataset.motion === 'reduced' || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) return;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'pt-BR';
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utterance);
+    return () => speechSynthesis.cancel();
+  }, [text]);
+  return null;
+}
+
 
 function interval(days: number) {
   const n = Math.round(days);
@@ -45,6 +60,9 @@ export function ChallengePanel({ scope, boardId, heat, onExit, onRated }: Props)
   useEffect(() => {
     if (elsewhere) router.replace(`/mapas/${elsewhere}?modo=desafio&sessao=diaria`, { scroll: false });
   }, [elsewhere, router]);
+  useEffect(() => {
+    if (s.phase === 'done') countSession();
+  }, [s.phase]);
 
   const loading = (
     <div role="status" aria-label={t('challenge.loading')} className="p-5">
@@ -98,9 +116,15 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
   const modes = [...(canWrite || selfOnly ? [{ value: 'write' as const, label: t('challenge.write') }] : []), ...(canPick ? [{ value: 'options' as const, label: t('challenge.options') }] : []), ...(canWrite ? [{ value: 'speak' as const, label: t('quiz.speak') }] : [])];
   const [mode, setMode] = useState<AnswerMode>(modes[0]!.value);
   const [text, setText] = useState('');
+  const speech = useSpeech(
+    (value) => { setText(value); setFromVoice(true); track('voice_used', { success: true }); },
+    () => track('voice_used', { success: false }),
+  );
+  const [fromVoice, setFromVoice] = useState(false);
   const [picked, setPicked] = useState<string | null>(null);
   const [busy, setBusy] = useState<Busy>(null);
   const [answered, setAnswered] = useState<{ out: AnswerOutput; kind: AnswerPayload['inputKind'] } | null>(null);
+  const [live, setLive] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [skipLimit, setSkipLimit] = useState(false);
   const [dispute, setDispute] = useState<'idle' | 'busy' | 'done' | 'error'>('idle');
@@ -122,17 +146,19 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
     if (busy || answered) return;
     setBusy(p.inputKind);
     setError(null);
-    const r = await ch.answer(item, p, Math.round(performance.now() - start.current));
+    setLive('');
+    const r = await ch.answer(item, p, Math.round(performance.now() - start.current), (chunk) => setLive((prev) => prev + chunk));
     setBusy(null);
     if (r.ok) setAnswered({ out: r.data, kind: p.inputKind });
     else setError(t('challenge.answerError'));
   }
   const showWrite = mode === 'write';
-  const submitText = () => text.trim() && void submit({ inputKind: 'text', text: text.trim() });
+  const submitText = () => text.trim() && void submit({ inputKind: fromVoice ? 'voice' : 'text', text: text.trim() });
   const submitPick = () => picked !== null && void submit({ inputKind: 'mcq', optionIndex: Number(picked) });
   const reveal = () => void submit({ inputKind: 'self' });
-  const check = () => (selfOnly ? reveal() : showWrite ? submitText() : submitPick());
-  const canCheck = !busy && (selfOnly || (mode === 'speak' ? false : showWrite ? !!text.trim() : picked !== null));
+  const spoken = mode === 'speak';
+  const check = () => (selfOnly ? reveal() : showWrite || spoken ? submitText() : submitPick());
+  const canCheck = !busy && (selfOnly || (showWrite || spoken ? !!text.trim() : picked !== null));
 
   async function rate(g: Grade) {
     if (!answered || busy || (answered.out.gradeLocked && g !== 'again')) return;
@@ -163,7 +189,7 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
       const h = latest.current;
       if (e.repeat) return; // a held Enter must not reveal and then confirm the suggested grade
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-        if (answered || !showWrite) return;
+        if (answered || (!showWrite && !spoken)) return;
         e.preventDefault();
         return void (text.trim() && h.check());
       }
@@ -172,8 +198,8 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
       if (e.key >= '1' && e.key <= '4' && answered) return void h.rate(grades[Number(e.key) - 1]!);
       if (e.key === 'Enter' && !el.closest('button, a, [role="radio"]')) {
         if (answered) return void (answered.out.suggestedGrade && h.rate(answered.out.suggestedGrade));
-        if (!selfOnly && showWrite && text.trim()) return h.check();
-        if (!selfOnly && !showWrite && picked !== null) return h.check();
+        if (!selfOnly && (showWrite || spoken) && text.trim()) return h.check();
+        if (!selfOnly && !showWrite && !spoken && picked !== null) return h.check();
         h.reveal();
       }
     }
@@ -192,8 +218,11 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
 
   const resultNode = out ? (
     <div ref={result} tabIndex={-1} className="flex flex-col gap-4 outline-none">
-      {answered.kind === 'text' ? (
+      {answered.kind === 'text' || answered.kind === 'voice' ? (
         <p className="m-0 text-sm text-muted"><strong>{t('challenge.yourAnswer')}:</strong> {text}</p>
+      ) : null}
+      {answered.kind === 'voice' && v ? (
+        <SpeakFeedback text={v.feedback ? `${t(`challenge.verdict.title.${v.verdict}`)}. ${v.feedback}` : t(`challenge.verdict.title.${v.verdict}`)} />
       ) : null}
       <div className="rounded-[14px] bg-primary-tint px-4 py-3 text-primary-deep">
         <p className="m-0 text-xs font-bold uppercase tracking-[.13em]">{t('challenge.canonical')}</p>
@@ -246,6 +275,16 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
           <Occlusion image={item.context.image} />
         </div>
       ) : null}
+      {item.context.neighbors.length ? (
+        <ul aria-label={t('challenge.context')} className="m-0 flex max-h-36 shrink-0 list-none flex-col gap-1.5 overflow-auto border-b border-border px-5 py-3">
+          {item.context.neighbors.map((n) => (
+            <li key={`${n.title}-${n.label ?? ''}`} className="rounded-xl bg-canvas px-3 py-2 text-sm">
+              <span className="font-semibold">{n.title}</span>
+              {n.label ? <span className="ml-2 text-muted">{n.label}</span> : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {stages?.length ? (
         <ul aria-label={t('challenge.stagesLabel')} className="m-0 flex max-h-40 shrink-0 list-none flex-col gap-1.5 overflow-auto border-b border-border p-0 px-5 py-3">
           {stages.map((x, i) => (
@@ -267,7 +306,7 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
           modeLabel={t('challenge.answerMode')}
           modes={modes}
           mode={mode}
-          onModeChange={setMode}
+          onModeChange={(m) => { setMode(m); if (m !== 'speak') setFromVoice(false); }}
           answerLabel={t('challenge.textLabel')}
           answer={text}
           onAnswerChange={setText}
@@ -275,16 +314,18 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
           options={(item.options ?? []).map((o, i) => ({ id: String(i), key: letters[i]!, text: o }))}
           selectedOption={picked}
           onSelectOption={setPicked}
-          checkLabel={busy === 'text' || busy === 'voice' ? t('challenge.grading') : selfOnly ? t('challenge.reveal') : showWrite ? t('challenge.submitText') : t('challenge.submitOption')}
+          checkLabel={busy === 'text' || busy === 'voice' ? t('challenge.grading') : selfOnly ? t('challenge.reveal') : showWrite || spoken ? t('challenge.submitText') : t('challenge.submitOption')}
           canCheck={canCheck}
           onCheck={check}
-          // D-203: "Falar" stays visible with the record button disabled and "Em breve"; no Web Speech transcription until F09
-          voice={voiceSoon}
+          voice={speech.supported
+            ? { recordLabel: t('quiz.voiceRecord'), note: t('quiz.voiceNote'), onRecord: () => { if (!speech.start()) track('voice_used', { success: false }); } }
+            : { recordLabel: t('quiz.voiceRecord'), note: t('quiz.voiceSoonNote') }}
           result={resultNode}
         />
       </div>
       {!out ? (
         <div className="flex shrink-0 flex-col gap-1.5 border-t border-border px-5 py-3">
+          {live && !out ? <p role="status" className="m-0 text-sm">{live}</p> : null}
           {error ? <Alert tone="review" role="alert" title={error} /> : null}
           {item.grading === 'none' ? <p className="m-0 text-xs text-muted">{t('challenge.noRubricBody')}</p> : null}
           <div className="flex gap-2">

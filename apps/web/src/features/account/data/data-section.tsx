@@ -6,6 +6,7 @@ import { t } from '@remoa/strings';
 import { Alert, Button, DangerCard, Dialog, Icon, Input, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
+import { createClient } from '@/lib/supabase/client';
 import { formatDate } from '@/features/billing/format';
 import { SectionCard } from '../shared/section-card';
 import { useAccount } from '../shell/account-context';
@@ -43,6 +44,29 @@ function ExportCard() {
       setError(t('account.data.exportError'));
     }
     setBusy(false);
+  }
+
+  async function downloadAttempts() {
+    try {
+      const { data } = await createClient().auth.getSession();
+      const token = data.session?.access_token;
+      const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+      const res = await fetch(`${base}/v1/reports/attempts.csv`, { headers: token ? { authorization: `Bearer ${token}` } : {} });
+      if (!res.ok) {
+        toast({ title: t('account.data.exportError'), tone: 'danger' });
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'tentativas.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: t('account.data.exportDownloaded') });
+    } catch {
+      toast({ title: t('account.data.exportError'), tone: 'danger' });
+    }
   }
 
   function download() {
@@ -85,6 +109,9 @@ function ExportCard() {
           <Button variant="secondary" icon={<Icon name="download" size={18} />} disabled={!online} onClick={() => void start()}>{t('account.data.exportStart')}</Button>
         </div>
       )}
+      <div className="flex">
+        <Button variant="secondary" icon={<Icon name="download" size={18} />} disabled={!online} onClick={() => void downloadAttempts()}>{t('account.data.attemptsCsv')}</Button>
+      </div>
       {online ? null : <Alert tone="watch" title={t('account.offline')} />}
     </SectionCard>
   );
