@@ -43,7 +43,7 @@ test.describe('desktop 1440x900', () => {
     test.setTimeout(120_000);
     const { userId, headers } = await signUpAndLogin(page, request);
     const board = await createMockSepse(request, headers, userId);
-    await page.goto(`/mapas/${board}`);
+    await page.goto(`/app/mapas/${board}`);
     await expect(page.locator('.react-flow__node')).toHaveCount(6);
     await page.waitForTimeout(800); // fitView
     const z0 = await zoomOf(page);
@@ -68,7 +68,7 @@ test.describe('desktop 1440x900', () => {
     await expect.poll(() => zoomOf(page)).toBeLessThan(z1 - 0.05);
     expect(await pageScale(page)).toEqual(before);
     const z = await zoomOf(page);
-    expect(z).toBeGreaterThanOrEqual(0.6 - 0.001);
+    expect(z).toBeGreaterThanOrEqual(0.1 - 0.001);
     expect(z).toBeLessThanOrEqual(1.4 + 0.001);
   });
 
@@ -76,7 +76,7 @@ test.describe('desktop 1440x900', () => {
     test.setTimeout(120_000);
     const { userId, headers } = await signUpAndLogin(page, request);
     await createMockSepse(request, headers, userId);
-    await page.goto('/mapas');
+    await page.goto('/app/mapas');
     const link = page.getByRole('link', { name: 'Sepse' }).first();
     await expect(link).toBeVisible();
     await page.waitForLoadState('networkidle');
@@ -107,7 +107,7 @@ test.describe('desktop 1440x900', () => {
     test.setTimeout(120_000);
     const { userId, headers } = await signUpAndLogin(page, request);
     const board = await createMockSepse(request, headers, userId);
-    await page.goto(`/mapas/${board}`);
+    await page.goto(`/app/mapas/${board}`);
     await expect(page.locator('.react-flow__node')).toHaveCount(6);
     await expect(panel(page)).toHaveCount(0);
     await node(page, 'Choque séptico').getByRole('button', { name: 'Selecionar Choque séptico' }).click();
@@ -129,7 +129,7 @@ test.describe('desktop 1440x900', () => {
     test.setTimeout(180_000);
     const { headers } = await signUpAndLogin(page, request);
     const board = await shapesBoard(request, headers);
-    await page.goto(`/mapas/${board}`);
+    await page.goto(`/app/mapas/${board}`);
     await expect(page.locator('.react-flow__node')).toHaveCount(5);
     await page.waitForTimeout(800);
     for (const [title, shape] of SHAPES) {
@@ -183,7 +183,7 @@ test.describe('desktop 1440x900', () => {
       const page = await ctx.newPage();
       try {
         const { headers } = await signUpAndLogin(page, request);
-        await page.goto(`/mapas/${await shapesBoard(request, headers)}`);
+        await page.goto(`/app/mapas/${await shapesBoard(request, headers)}`);
         await expect(page.locator('.react-flow__node')).toHaveCount(5);
         const n = node(page, 'Rect');
         await n.getByRole('button', { name: 'Ver resposta' }).click();
@@ -201,7 +201,7 @@ test.describe('desktop 1440x900', () => {
     test.setTimeout(240_000);
     const { userId, headers } = await signUpAndLogin(page, request);
     const board = await createMockSepse(request, headers, userId);
-    await page.goto(`/mapas/${board}?modo=desafio`);
+    await page.goto(`/app/mapas/${board}?modo=desafio`);
     await expect(page.getByRole('button', { name: /Revelar resposta|Corrigir resposta/ }).first()).toBeVisible();
     const answers = ['Vasopressor para PAM', 'Disfunção orgânica grave', 'SIRS, NEWS2']; // case stages before the hidden one are context, not asserted
     // next_step: the steps before the hidden one are context; at least one of the 5 must be missing from the DOM
@@ -263,7 +263,7 @@ test.describe('celular 390x844 (toque)', () => {
     test.setTimeout(120_000);
     const { userId, headers } = await signUpAndLogin(page, request);
     const board = await createMockSepse(request, headers, userId);
-    await page.goto(`/mapas/${board}`);
+    await page.goto(`/app/mapas/${board}`);
     await expect(page.locator('.react-flow__node')).toHaveCount(6);
     await page.waitForTimeout(800);
     const z0 = await zoomOf(page);
@@ -281,7 +281,7 @@ test.describe('celular 390x844 (toque)', () => {
     test.setTimeout(240_000);
     const { userId, headers } = await signUpAndLogin(page, request);
     const board = await createMockSepse(request, headers, userId);
-    await page.goto(`/mapas/${board}`);
+    await page.goto(`/app/mapas/${board}`);
     await expect(page.locator('.react-flow__node')).toHaveCount(6);
     await expect(panel(page)).toHaveCount(0);
     await node(page, 'Choque séptico').getByRole('button', { name: 'Selecionar Choque séptico' }).click();
@@ -295,7 +295,7 @@ test.describe('celular 390x844 (toque)', () => {
     await page.keyboard.press('Escape');
     await expect(panel(page)).toHaveCount(0);
 
-    await page.goto(`/mapas/${board}?modo=desafio`);
+    await page.goto(`/app/mapas/${board}?modo=desafio`);
     await expect(page.getByRole('button', { name: /Revelar resposta|Corrigir resposta/ }).first()).toBeVisible();
     await page.waitForTimeout(500);
     await expect(page.getByTestId('focus-card')).toBeAttached();

@@ -33,10 +33,10 @@ export function HeroSection({ h1, flags }: { h1: H1Variant; flags: LandingFlags 
           <span className="flex text-primary"><Icon name="sparkle" size={18} /></span>
           {t('landing.hero.tag')}
         </span>
-        <h1 id="hero-title" className="hx-in m-0 max-w-[1060px] font-display text-[44px] font-extrabold leading-[1.02] tracking-[-.04em] text-ink md:text-[64px] lg:text-[80px]" style={d(0.1)}>
+        <h1 id="hero-title" className="hx-in hx-lcp m-0 max-w-[1060px] font-display text-[44px] font-extrabold leading-[1.02] tracking-[-.04em] text-ink md:text-[64px] lg:text-[80px]" style={d(0.1)}>
           <Title text={t(`landing.hero.h1.${h1}`)} />
         </h1>
-        <p className="hx-in m-0 max-w-[740px] text-[17px] leading-normal text-muted md:text-[21px]" style={d(0.25)}>{t('landing.hero.subtitle')}</p>
+        <p className="hx-in hx-lcp m-0 max-w-[740px] text-[17px] leading-normal text-muted md:text-[21px]" style={d(0.25)}>{t('landing.hero.subtitle')}</p>
         <HeroCtas launchPhase={flags.launchPhase} />
         <span className="hx-in text-sm text-muted" style={d(0.4)}>{t('landing.hero.microcopy')}</span>
       </div>

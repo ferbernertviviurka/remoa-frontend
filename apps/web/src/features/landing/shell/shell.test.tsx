@@ -88,3 +88,37 @@ describe('WaitlistCta', () => {
     expect(screen.queryByLabelText(strings.landing.waitlist.email.label)).toBeNull();
   });
 });
+
+describe('LandingHeader (D-320)', () => {
+  test('signed out: Entrar + sign-up; signed in: one CTA back into /app', async () => {
+    const { LandingHeader } = await import('./landing-header');
+    const { rerender } = render(<LandingHeader phase="open" />);
+    expect(screen.getAllByRole('link', { name: strings.landing.nav.signIn })[0]?.getAttribute('href')).toBe('/entrar');
+    expect(screen.queryByRole('link', { name: strings.landing.nav.openApp })).toBeNull();
+    rerender(<LandingHeader phase="open" signedIn />);
+    expect(screen.getAllByRole('link', { name: strings.landing.nav.openApp })[0]?.getAttribute('href')).toBe('/app');
+    expect(screen.queryByRole('link', { name: strings.landing.nav.signIn })).toBeNull();
+  });
+});
+
+describe('landing_cta_clicked (D-370)', () => {
+  const sent = () => window.__remoaEvents?.filter((e) => e.event === 'landing_cta_clicked').map((e) => e.props);
+  test('header: waitlist/create, signin and open_app carry location + cta', async () => {
+    const { LandingHeader } = await import('./landing-header');
+    const { rerender } = render(<LandingHeader phase="waitlist" />);
+    fireEvent.click(screen.getAllByRole('link', { name: strings.landing.nav.createMap })[0]!);
+    fireEvent.click(screen.getAllByRole('link', { name: strings.landing.nav.signIn })[0]!);
+    rerender(<LandingHeader phase="open" signedIn />);
+    fireEvent.click(screen.getAllByRole('link', { name: strings.landing.nav.openApp })[0]!);
+    await waitFor(() => expect(sent()).toEqual([
+      { location: 'header', cta: 'waitlist', platform: 'web' },
+      { location: 'header', cta: 'signin', platform: 'web' },
+      { location: 'header', cta: 'open_app', platform: 'web' },
+    ]));
+  });
+  test('final: open phase sign-up link', async () => {
+    render(<WaitlistCta phase="open" variant={null} />);
+    fireEvent.click(screen.getByRole('link', { name: strings.landing.ctaSection.primary }));
+    await waitFor(() => expect(sent()).toEqual([{ location: 'final', cta: 'create', platform: 'web' }]));
+  });
+});

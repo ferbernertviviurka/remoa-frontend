@@ -55,14 +55,14 @@ describe('CoverageView', () => {
   it('priority gaps link to Novo mapa; groups list every topic with state text, weakest first, and open-map links', () => {
     render(ui());
     expect(screen.getByText(/2 de 4 temas sem mapa/)).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'Criar mapa para Pneumonia' })[0]).toHaveAttribute('href', '/mapas/novo?item=b');
+    expect(screen.getAllByRole('link', { name: 'Criar mapa para Pneumonia' })[0]).toHaveAttribute('href', '/app/mapas/novo?item=b');
     const infecto = screen.getByRole('group', { name: 'Infectologia' });
     expect(within(infecto).getAllByRole('listitem').map((li) => /Pneumonia|Sepse/.exec(li.textContent ?? '')?.[0])).toEqual(['Pneumonia', 'Sepse']);
     const sepse = within(infecto).getByText('Sepse').closest('li')!;
     expect(within(sepse).getByText('Em andamento')).toBeInTheDocument();
     expect(within(sepse).getByText('60%')).toBeInTheDocument();
     expect(within(sepse).getByText('lembrança 72%')).toBeInTheDocument();
-    expect(within(sepse).getByRole('link', { name: 'Abrir mapa de Sepse' })).toHaveAttribute('href', '/mapas/b1');
+    expect(within(sepse).getByRole('link', { name: 'Abrir mapa de Sepse' })).toHaveAttribute('href', '/app/mapas/b1');
     const pn = within(infecto).getByText('Pneumonia').closest('li')!;
     expect(within(pn).getByText('Sem mapa')).toBeInTheDocument();
     expect(within(pn).getByRole('button', { name: 'Ligar um mapa que já tenho a Pneumonia' })).toBeInTheDocument();
@@ -115,6 +115,6 @@ describe('CoverageView', () => {
     expect(within(list).getAllByRole('listitem')).toHaveLength(3);
     expect(within(list).getAllByRole('listitem')[0]).toHaveTextContent('Cardiologia');
     expect(screen.getAllByRole('button', { name: /^Ligar um mapa que já tenho a / })).toHaveLength(3);
-    expect(screen.getByRole('link', { name: 'Meus mapas' })).toHaveAttribute('href', '/mapas');
+    expect(screen.getByRole('link', { name: 'Meus mapas' })).toHaveAttribute('href', '/app/mapas');
   });
 });

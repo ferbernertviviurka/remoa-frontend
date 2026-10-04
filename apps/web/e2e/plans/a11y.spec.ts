@@ -16,7 +16,7 @@ test('axe: Free com aviso, anual com cupom e overlay "Abrindo o pagamento seguro
   test.setTimeout(150_000);
   const { headers } = await planUser(page, request);
   await makeBoards(request, headers, 2);
-  await page.goto('/planos');
+  await page.goto('/app/planos');
   await expect(page.getByRole('table', { name: 'Comparação entre Free e Pro' })).toBeVisible();
   expect(await axe(page), 'free').toEqual([]);
 
@@ -42,7 +42,7 @@ test('axe: Pro (assinante) e sucesso', async ({ page, request }) => {
   test.setTimeout(150_000);
   const { headers } = await planUser(page, request);
   await subscribe(request, headers, 'monthly', 'card');
-  await page.goto('/planos');
+  await page.goto('/app/planos');
   await expect(page.getByRole('heading', { level: 1, name: 'Você está no Pro.' })).toBeVisible();
   expect(await axe(page), 'pro').toEqual([]);
 
@@ -56,12 +56,12 @@ test('axe: Pro (assinante) e sucesso', async ({ page, request }) => {
 test('teclado: período, forma de pagamento, cupom e FAQ; aria-live só com o total final; alvos >= 44 px', async ({ page, request }) => {
   test.setTimeout(120_000);
   await planUser(page, request);
-  await page.goto('/planos');
+  await page.goto('/app/planos');
   await page.waitForLoadState('networkidle');
   const s = summaryOf(page);
 
   // aria-live: um só trecho no resumo e ele diz o total final, nunca um quadro da animação
-  const live = s.locator('[aria-live]');
+  const live = s.locator('[aria-live] [torph-sr]');
   await expect(live).toHaveCount(1);
   await expect(live).toHaveText('R$ 39,00');
 
@@ -125,12 +125,12 @@ for (const mode of ['sistema', 'preferência'] as const) {
     const { headers } = await planUser(page, request);
     await makeBoards(request, headers, 2);
     if (mode === 'preferência') {
-      await page.goto('/conta/preferencias');
+      await page.goto('/app/conta/preferencias');
       await page.getByRole('switch', { name: 'Reduzir movimento' }).click();
       await expect(page.locator('html')).toHaveAttribute('data-motion', 'reduced');
       await page.waitForTimeout(800); // PATCH + cookie
     }
-    await page.goto('/planos');
+    await page.goto('/app/planos');
     await expect(page.getByRole('table', { name: 'Comparação entre Free e Pro' })).toBeVisible();
     if (mode === 'preferência') await expect(page.locator('html')).toHaveAttribute('data-motion', 'reduced');
     expect(await noAnimation(page), 'matriz, barras e cabeçalho').toEqual([]);
@@ -143,7 +143,7 @@ for (const mode of ['sistema', 'preferência'] as const) {
       if (el) new MutationObserver(() => (window as unknown as { __frame: (v: string) => void }).__frame(el.textContent ?? '')).observe(el, { childList: true, characterData: true, subtree: true });
     });
     await page.getByRole('radio', { name: /Anual/ }).or(page.getByRole('button', { name: /Anual/ })).first().click();
-    await expect(summaryOf(page).locator('[aria-live]')).toHaveText('R$ 349,00');
+    await expect(summaryOf(page).locator('[aria-live]').first()).toHaveText('R$ 349,00');
     await page.waitForTimeout(600);
     expect(frames.filter((f) => f.replace(/\s/g, ' ') !== 'R$ 349,00')).toEqual([]);
     expect(await noAnimation(page), 'após alternar o período').toEqual([]);

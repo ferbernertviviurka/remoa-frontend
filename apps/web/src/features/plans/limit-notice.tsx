@@ -4,7 +4,7 @@ import { LimitBanner } from '@remoa/ui';
 
 /** First of boards/cards at >= 80% of its limit (boards first), or null. Only meaningful for Free. */
 export function limitHit(e: Entitlements | null): { key: 'boards' | 'cards'; used: number; limit: number } | null {
-  if (!e || e.plan === 'pro') return null;
+  if (!e || e.plan !== 'free') return null;
   for (const key of ['boards', 'cards'] as const) {
     const limit = e.limits[key];
     if (limit !== null && e.usage[key] >= limit * 0.8) return { key, used: e.usage[key], limit };

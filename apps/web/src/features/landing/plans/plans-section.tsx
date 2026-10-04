@@ -2,16 +2,17 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { annualDiscountPercent, monthlyEquivalent, planDefinition, type PublicPriceBook } from '@remoa/contracts';
-import { strings, t } from '@remoa/strings';
+import { annualDiscountPercent, monthlyEquivalent, planDefinition } from '@remoa/contracts';
+import type { LandingPriceBook } from '../shell/pricebook';
+import { strings, t } from '@remoa/strings/landing';
 import { PlanCards, Section, formatBRL, type PlanCardPeriod } from '@remoa/ui';
 import { track } from '@/lib/analytics';
+import { trackCta } from '../analytics';
 import type { LandingFlags } from '../flags';
-import { plansCopy } from './copy';
 
 const num = (n: number | null) => (n ?? 0).toLocaleString('pt-BR');
 
-export type PlansSectionProps = { priceBook: PublicPriceBook; flags: Pick<LandingFlags, 'launchPhase' | 'betaFounder' | 'approvedContent'> };
+export type PlansSectionProps = { priceBook: LandingPriceBook; flags: Pick<LandingFlags, 'launchPhase' | 'betaFounder' | 'approvedContent'> };
 
 /** Planos (FR-12): limites de `planDefinition`, preços do `priceBook` (centavos), nenhum número fixo aqui. */
 export function PlansSection({ priceBook, flags }: PlansSectionProps) {
@@ -47,8 +48,10 @@ export function PlansSection({ priceBook, flags }: PlansSectionProps) {
   const vars = { pdfMaps: num(pro.ai_generations), ankiCardsProto: num(pro.anki_import_cards), dailyNewCardsPro: num(pro.new_cards_per_day) };
   const proFeatures = (flags.approvedContent && proStrings.featuresApproved ? proStrings.featuresApproved : proStrings.features).map((f) => f.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? vars[k as keyof typeof vars] : m)));
 
+  const founderFeatures = [...strings.landing.plans.founder.features];
+
   return (
-    <Section id="planos" tone="surface" eyebrow={plansCopy.eyebrow} title={t('landing.plans.title')}>
+    <Section id="planos" tone="surface" eyebrow={t('landing.plans.eyebrow')} title={t('landing.plans.title')}>
       <div ref={ref} className="flex flex-col gap-8">
         <PlanCards
           period={period}
@@ -57,14 +60,18 @@ export function PlansSection({ priceBook, flags }: PlansSectionProps) {
           periodGroupLabel={t('landing.plans.periodGroupLabel')}
           discountLabel={pct > 0 ? `-${pct}%` : undefined}
           plans={[
-            { name: t('landing.plans.free.name'), price: { amount: 0, currency: 'BRL' }, cadence: '', description: plansCopy.freeDescription, features: freeFeatures,
-              cta: <Link href={href} className="border-[1.5px] border-border-strong bg-surface text-ink">{plansCopy.freeCta}</Link> },
+            { name: t('landing.plans.free.name'), price: { amount: 0, currency: 'BRL' }, cadence: '', description: t('landing.plans.free.description'), features: freeFeatures,
+              cta: <Link href={href} onClick={trackCta('plans_free', open ? 'create' : 'waitlist')} className="border-[1.5px] border-border-strong bg-surface text-ink">{t('landing.plans.cta.free')}</Link> },
             { name: t('landing.plans.pro.name'), dark: true, features: proFeatures,
               price: { amount: (annual ? priceBook.annual.amount : priceBook.monthly.amount) / 100, currency: 'BRL' },
-              cadence: annual ? '/ano' : '/mês',
-              note: annual ? plansCopy.noteAnnual(formatBRL(monthlyEquivalent(priceBook) / 100)) : plansCopy.noteMonthly,
+              cadence: t(annual ? 'landing.plans.cadence.annual' : 'landing.plans.cadence.monthly'),
+              note: annual ? t('landing.plans.notes.annual', { price: formatBRL(monthlyEquivalent(priceBook) / 100) }) : t('landing.plans.notes.monthly'),
               badge: flags.betaFounder ? t('landing.plans.pro.founder') : undefined,
-              cta: <Link href={href} className="bg-surface text-panel-dark">{open ? plansCopy.proCtaOpen : plansCopy.proCtaWaitlist}</Link> },
+              cta: <Link href={href} onClick={trackCta('plans_pro', open ? 'create' : 'waitlist')} className="bg-on-dark text-panel-dark">{open ? t('landing.plans.cta.pro') : t('landing.plans.cta.waitlist')}</Link> },
+            ...(priceBook.lifetime ? [{ name: t('landing.plans.founder.name'), features: founderFeatures, description: t('landing.plans.founder.description'),
+              price: { amount: priceBook.lifetime.amount / 100, currency: 'BRL' as const }, // one-time: independent of the monthly/annual toggle
+              cadence: t('landing.plans.cadence.founder'), note: t('landing.plans.notes.founder'),
+              cta: <Link href={href} onClick={trackCta('plans_founder', open ? 'create' : 'waitlist')} className="border-[1.5px] border-border-strong bg-surface text-ink">{open ? t('landing.plans.cta.founder') : t('landing.plans.cta.waitlist')}</Link> }] : []),
           ]}
         />
         <p className="m-0 text-center text-[15px] text-muted">{t('landing.plans.footer')}</p>

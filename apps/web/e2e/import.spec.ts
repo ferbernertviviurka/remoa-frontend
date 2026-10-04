@@ -14,7 +14,7 @@ const axe = async (page: Page) => {
   return r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`);
 };
 const toPreview = async (page: Page) => {
-  await page.goto('/mapas/novo?caminho=anki');
+  await page.goto('/app/mapas/novo?caminho=anki');
   await page.getByRole('button', { name: 'Continuar' }).click();
   await page.getByRole('button', { name: 'Continuar' }).click();
   await page.locator('input[type=file]').setInputFiles(resolve('e2e/fixtures/basic.apkg'));

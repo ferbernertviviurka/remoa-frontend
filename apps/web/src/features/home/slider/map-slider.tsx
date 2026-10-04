@@ -47,7 +47,7 @@ export function MapSlider({ maps }: { maps: BoardSummary[] }) {
   const [nav, setNav] = useState({ begin: true, end: false, locked: false, index: 0, perView: 3 });
   const slides = buildMapSlides({ maps, entitlements });
   const sync = (s: SwiperType) => setNav({ begin: s.isBeginning, end: s.isEnd, locked: s.isLocked, index: s.activeIndex, perView: Number(s.params.slidesPerView) || 1 });
-  const upgrade = (source: 'map_slider_lock') => { track('upgrade_clicked', { source }); router.push('/planos?de=map_slider_lock'); };
+  const upgrade = (source: 'map_slider_lock') => { track('upgrade_clicked', { source }); router.push('/app/planos?de=map_slider_lock'); };
   const total = slides.length;
   const counter = total > 3 ? t('home.slider.counter', { from: nav.index + 1, to: Math.min(nav.index + nav.perView, total), total }) : undefined;
 
@@ -65,7 +65,7 @@ export function MapSlider({ maps }: { maps: BoardSummary[] }) {
             nextDisabled={nav.end || nav.locked}
             counter={counter}
           />
-          <Link href="/mapas" className="inline-flex min-h-11 items-center font-bold text-primary-deep no-underline">{t('home.slider.viewAll')}</Link>
+          <Link href="/app/mapas" className="inline-flex min-h-11 items-center font-bold text-primary-deep no-underline">{t('home.slider.viewAll')}</Link>
         </div>
       </div>
       <Swiper
@@ -99,7 +99,7 @@ export function MapSlider({ maps }: { maps: BoardSummary[] }) {
             {s.kind === 'map' ? (
               <MapSlideCard
                 as={PendingLink}
-                href={`/mapas/${s.board.id}`}
+                href={`/app/mapas/${s.board.id}`}
                 aria-label={t('home.reviewOpenLabel', { mapa: s.board.title })}
                 area={t(`boards.area.${s.board.area}`)}
                 title={s.board.title}
@@ -112,7 +112,7 @@ export function MapSlider({ maps }: { maps: BoardSummary[] }) {
             ) : s.kind === 'new' ? (
               <NewMapSlideCard
                 as={PendingLink}
-                href="/mapas/novo"
+                href="/app/mapas/novo"
                 aria-label={t('home.slider.newCard.aria')}
                 title={t('home.slider.newCard.title')}
                 text={s.remaining === null ? t('home.slider.newCard.text') : t('home.slider.newCard.freeRemaining', { n: s.remaining })}

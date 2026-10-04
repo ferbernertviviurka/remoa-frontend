@@ -173,7 +173,7 @@ describe('ChallengePanel', () => {
     expect(rating('Bom')).toBeEnabled();
     expect(screen.queryByRole('button', { name: 'Discordo da correção' })).toBeNull();
     if (fallback === 'quota') {
-      expect(screen.getByRole('link', { name: 'Ver planos' })).toHaveAttribute('href', '/planos?de=ai_quota');
+      expect(screen.getByRole('link', { name: 'Ver planos' })).toHaveAttribute('href', '/app/planos?de=ai_quota');
       expect(track).toHaveBeenCalledWith('paywall_viewed', { reason: 'ai_quota' });
     } else expect(track).not.toHaveBeenCalledWith('paywall_viewed', expect.anything());
   });
@@ -241,8 +241,8 @@ describe('ChallengePanel', () => {
     await screen.findByRole('heading', { name: 'Sessão concluída' });
     expect(screen.getByText('Acertos').nextSibling).toHaveTextContent('2');
     expect(screen.getByText('Erros').nextSibling).toHaveTextContent('1');
-    expect(screen.getByRole('link', { name: /Abrir no mapa/ })).toHaveAttribute('href', expect.stringMatching(/^\/mapas\//));
-    expect(screen.getByRole('link', { name: 'Voltar para Revisar hoje' })).toHaveAttribute('href', '/revisar');
+    expect(screen.getByRole('link', { name: /Abrir no mapa/ })).toHaveAttribute('href', expect.stringMatching(/^\/app\/mapas\//));
+    expect(screen.getByRole('link', { name: 'Voltar para Revisar hoje' })).toHaveAttribute('href', '/app/revisar');
     expect(track).toHaveBeenCalledWith('challenge_finished', expect.objectContaining({ correct: 2, wrong: 1 }));
 
     await user.click(screen.getByRole('button', { name: 'Mais 5' }));
@@ -272,7 +272,7 @@ describe('ChallengePanel', () => {
   it('daily queue: an item from another map moves the editor there, keeping the session', async () => {
     shape = (x) => x.slice(0, 2).map((i) => ({ ...i, boardId: 'outro-mapa' }));
     mount({ kind: 'daily' });
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/mapas/outro-mapa?modo=desafio&sessao=diaria', { scroll: false }));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/app/mapas/outro-mapa?modo=desafio&sessao=diaria', { scroll: false }));
     expect(calls.start![0]).toMatchObject({ kind: 'daily' });
     expect(calls.start).toHaveLength(1);
   });

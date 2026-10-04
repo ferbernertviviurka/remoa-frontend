@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import {
+  normalizeReferralCode,
   magicLinkInputSchema as magicSchema,
   signInInputSchema as signInSchema,
   signUpInputSchema as signUpSchema,
@@ -62,12 +63,14 @@ export async function sendMagicLink(input: MagicLinkInput): Promise<AuthResult> 
   return error ? fromSupabase(error) : { ok: true };
 }
 
-export async function signInWithGoogle(input?: { next?: string }): Promise<AuthResult> {
+/** `rf` = invite code (F18, D-383): rides in the `redirectTo` because Supabase's own `state` is not ours. Malformed codes are dropped. */
+export async function signInWithGoogle(input?: { next?: string; rf?: string }): Promise<AuthResult> {
   if (process.env.NEXT_PUBLIC_AUTH_GOOGLE !== '1') return fail('forbidden', 'google sign-in disabled');
+  const rf = input?.rf ? normalizeReferralCode(input.rf) : null;
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(safeNext(input?.next))}` },
+    options: { redirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(safeNext(input?.next))}${rf ? `&rf=${rf}` : ''}` },
   });
   if (error) return fromSupabase(error);
   redirect(data.url); // throws NEXT_REDIRECT on success
@@ -75,6 +78,7 @@ export async function signInWithGoogle(input?: { next?: string }): Promise<AuthR
 
 export async function signOut(): Promise<AuthResult> {
   const supabase = await createClient();
-  const { error } = await supabase.auth.signOut();
+  // D-320: 'local' encerra só este aparelho; o padrão 'global' derrubava a sessão em todos ("Encerrar os outros" fica em /app/conta/seguranca).
+  const { error } = await supabase.auth.signOut({ scope: 'local' });
   return error ? fromSupabase(error) : { ok: true };
 }

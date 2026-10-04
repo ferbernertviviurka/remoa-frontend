@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { t } from '@remoa/strings';
 import { Card, Constellation, Logo } from '@remoa/ui';
@@ -10,6 +11,9 @@ const nodes = [
   { x: 310, y: 240, size: 16, state: 'steady' as const },
 ];
 const edges = [[0, 1], [0, 2], [0, 3], [0, 4]] as const;
+
+// G11 (D-359): sign-in/sign-up are not search landing pages; noindex keeps them out of results, follow keeps link equity.
+export const metadata: Metadata = { robots: { index: false, follow: true } };
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (

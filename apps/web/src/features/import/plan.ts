@@ -1,5 +1,4 @@
 import type { ApkgSummary, FieldMapping } from '@remoa/contracts';
-import type { Plan } from './use-anki-import';
 
 type NoteType = ApkgSummary['noteTypes'][number];
 export type Preview = { title: string; front: string; back: string };

@@ -146,21 +146,32 @@ describe('PlanCards', () => {
       />
     );
   }
+  it('três cartões: preço único não muda com o período e a grade vira 3 colunas', async () => {
+    const { container } = render(
+      <PlanCards
+        period="monthly" onPeriodChange={() => {}} periodLabels={{ monthly: 'Mensal', annual: 'Anual' }} periodGroupLabel="Período"
+        plans={['Free', 'Pro', 'Founder'].map((name) => ({ name, price: { amount: 599.9, currency: 'BRL' as const }, cadence: 'pagamento único', features: ['x'], cta: <a href="#cta">Ir</a> }))}
+      />,
+    );
+    expect(screen.getAllByRole('article')).toHaveLength(3);
+    expect(container.querySelector('[class*="lg:grid-cols-3"]')).not.toBeNull();
+  });
   it('alterna o período, move o marcador e troca o preço', async () => {
     const { container } = render(<Host />);
     const monthly = screen.getByRole('button', { name: 'Mensal' });
     const annual = screen.getByRole('button', { name: /Anual/ });
     expect(monthly).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByText(/39,00/)).toHaveClass('pop');
+    const sr = () => [...container.querySelectorAll('[torph-sr]')].map((e) => e.textContent);
+    expect(sr().some((x) => /39,00/.test(x ?? ''))).toBe(true);
     expect(container.querySelector('[class*="translate-x-0"]')).not.toBeNull();
     await userEvent.click(annual);
     expect(annual).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByText(/349,00/)).toBeInTheDocument();
-    expect(screen.getByText('/ano')).toBeInTheDocument();
+    expect(sr().some((x) => /349,00/.test(x ?? ''))).toBe(true);
+    expect(sr()).toContain('/ano');
     expect(container.querySelector('[class*="translate-x-full"]')).not.toBeNull();
     expect(screen.getByText('-25%')).toBeInTheDocument();
     expect(screen.getByRole('article', { name: 'Pro' }).className).toContain('bg-panel-dark');
-    expect(screen.getByText('nota')).toHaveAttribute('aria-live', 'polite');
+    expect(container.querySelector('[aria-live="polite"]')).toHaveTextContent('nota');
     expect(await violations(container)).toEqual([]);
   });
 });

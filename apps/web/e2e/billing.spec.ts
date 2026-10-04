@@ -11,18 +11,18 @@ test('assinar, cancelar, exportar e excluir a conta', async ({ page }) => {
   });
 
   await signUpViaForm(page, `e2e-billing-${Date.now()}@remoa.test`);
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/app\/hoje$/);
 
   await test.step('free → preços → checkout (mock) → Pro', async () => {
-    await page.goto('/conta/plano');
+    await page.goto('/app/conta/plano');
     await expect(page.getByRole('heading', { name: 'Free' })).toBeVisible();
-    await page.goto('/planos');
+    await page.goto('/app/planos');
     await expect(page.getByRole('table', { name: 'Comparação entre Free e Pro' })).toBeVisible();
     await page.getByRole('radio', { name: /^Cartão/ }).click(); // card = recurring subscription (Pix is a prepaid period, D-100)
     await page.getByRole('button', { name: 'Assinar o Pro' }).click();
     await expect(page).toHaveURL(/\/planos\/sucesso\?session_id=/);
     await expect(page.getByRole('dialog', { name: 'Você agora é Pro.' })).toBeVisible();
-    await page.goto('/conta/plano');
+    await page.goto('/app/conta/plano');
     await expect(page.getByRole('button', { name: 'Gerenciar assinatura' })).toBeVisible();
   });
 
@@ -49,7 +49,7 @@ test('assinar, cancelar, exportar e excluir a conta', async ({ page }) => {
     await dialog.getByRole('button', { name: 'Excluir conta' }).click();
     await page.getByRole('button', { name: 'Sair da conta' }).click();
     await expect(page).toHaveURL(/\/$/);
-    await page.goto('/hoje');
+    await page.goto('/app/hoje');
     await expect(page).toHaveURL(/\/entrar/);
     const res = await page.request.get('http://localhost:4000/v1/billing/entitlements', { headers: { authorization: token } });
     // Sign-out revokes this session (401) before the deleted-account check (403, covered in the API's account.test.ts) is reached.

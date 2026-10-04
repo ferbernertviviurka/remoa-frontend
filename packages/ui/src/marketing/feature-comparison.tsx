@@ -4,7 +4,8 @@ import { Icon } from '../icons';
 export type FeatureComparisonRow = { feature: string; cells: [ReactNode, ReactNode, ReactNode] };
 export type FeatureComparisonProps = {
   caption: string;
-  columns: [string, string, string];
+  /** Cabeçalhos das colunas de dados (texto ou nó, ex.: logo + nome). */
+  columns: [ReactNode, ReactNode, ReactNode];
   rows: FeatureComparisonRow[];
   /** Coluna destacada (0 = primeira coluna de dados, a do Remoa). */
   highlightColumn?: number;
@@ -16,26 +17,29 @@ export type FeatureComparisonProps = {
 
 /**
  * Tabela semântica de comparação (`<table>` + `<th scope>`), coluna destacada com a cor da marca.
- * No celular a tabela rola na horizontal dentro de uma região focável (`tabindex=0`) com rótulo.
+ * No celular a tabela vai de ponta a ponta (sai do respiro da `Section`, sem cantos nem bordas laterais) e rola na horizontal
+ * dentro de uma região focável (`tabindex=0`) com rótulo; a coluna de recursos recua 16 px para alinhar com o texto da página.
  * Células: use `CompareMark` para o ícone (tem texto para leitor de tela).
  */
 export function FeatureComparison({ caption, columns, rows, highlightColumn = 0, scrollLabel, featureHeader }: FeatureComparisonProps) {
   return (
-    <div role="region" aria-label={scrollLabel} tabIndex={0} className="overflow-x-auto rounded-[34px] border border-border bg-surface px-3 pb-3 pt-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:px-6">
+    <div role="region" aria-label={scrollLabel} tabIndex={0} className="-mx-4 overflow-x-auto border-y border-border bg-surface pb-3 pt-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:mx-0 md:rounded-[34px] md:border md:px-6">
       <table className="w-full min-w-[640px] border-separate border-spacing-0 text-left">
         <caption className="sr-only">{caption}</caption>
         <thead>
           <tr>
-            <th scope="col" className="h-16 p-0 pl-1.5 align-bottom text-left text-sm font-bold text-muted"><span className={featureHeader ? 'pb-4' : 'sr-only'}>{featureHeader ?? caption}</span></th>
+            <th scope="col" className="h-16 p-0 pl-4 align-bottom md:pl-1.5 text-left text-sm font-bold text-muted"><span className={featureHeader ? 'pb-4' : 'sr-only'}>{featureHeader ?? caption}</span></th>
             {columns.map((c, i) => (
-              <th key={c} scope="col" className={`w-[19%] ${i === highlightColumn ? 'rounded-t-[18px] bg-primary font-display text-xl font-extrabold text-on-primary' : 'pb-4 align-bottom font-bold text-muted'}`}>{c}</th>
+              <th key={i} scope="col" className={`w-[19%] text-center ${i === highlightColumn ? 'rounded-t-[18px] bg-primary align-middle font-display text-xl font-extrabold text-on-primary' : 'pb-4 align-bottom font-bold text-muted'}`}>
+                <span className="inline-flex items-center justify-center gap-2">{c}</span>
+              </th>
             ))}
           </tr>
         </thead>
         <tbody>
           {rows.map((r) => (
             <tr key={r.feature}>
-              <th scope="row" className="h-[62px] border-t border-divider pl-1.5 text-left text-base font-semibold text-ink">{r.feature}</th>
+              <th scope="row" className="h-[62px] border-t border-divider pl-4 pr-3 text-left md:pl-1.5 md:pr-0 text-base font-semibold text-ink">{r.feature}</th>
               {r.cells.map((cell, i) => (
                 <td key={i} className={`h-[62px] border-t border-divider text-center ${i === highlightColumn ? 'bg-primary-tint' : ''}`}>
                   <span className="flex items-center justify-center">{cell}</span>

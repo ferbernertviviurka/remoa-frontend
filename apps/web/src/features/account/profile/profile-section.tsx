@@ -146,7 +146,7 @@ export function ProfileSection() {
     if (!campo) return;
     if (campo === 'nome') setNameOpen(true);
     if (campo === 'objetivo') studyRef.current?.querySelector<HTMLElement>('[role="radio"]')?.focus();
-    window.history.replaceState(null, '', '/conta/perfil');
+    window.history.replaceState(null, '', '/app/conta/perfil');
   }, [campo]);
 
   useEffect(() => {

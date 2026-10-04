@@ -3,10 +3,10 @@
 import { focusRing } from '../button';
 import { Icon } from '../icons';
 
-export const ZOOM_MIN = 0.6;
+export const ZOOM_MIN = 0.1;
 export const ZOOM_MAX = 1.4;
 export const ZOOM_STEP = 0.1;
-/** Próximo zoom (arredondado a 2 casas, preso a 60–140%). */
+/** Próximo zoom (arredondado a 2 casas, preso a 10–140%). */
 export function stepZoom(zoom: number, dir: 1 | -1): number {
   return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round((zoom + dir * ZOOM_STEP) * 100) / 100));
 }

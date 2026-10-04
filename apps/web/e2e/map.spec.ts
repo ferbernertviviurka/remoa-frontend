@@ -4,8 +4,8 @@ import { expect, test, type Page } from '@playwright/test';
 
 async function signUpAndCreateBoard(page: Page, title: string) {
   await signUpViaForm(page, `e2e-map-${Date.now()}@remoa.test`);
-  await expect(page).toHaveURL(/\/$/); // D-086: pós-login cai no Hoje
-  await page.goto('/mapas');
+  await expect(page).toHaveURL(/\/app\/hoje$/); // D-321: pós-login cai no Hoje
+  await page.goto('/app/mapas');
   await createBlankBoard(page, title);
   await expect(page.locator('.react-flow__pane')).toBeVisible();
 }

@@ -9,7 +9,7 @@ import type { CSSProperties, ReactNode } from 'react';
  */
 export function Reveal({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
   return (
-    <div className="mk-reveal" data-reveal-target="" style={{ '--mk-delay': `${delay}ms` } as CSSProperties}>
+    <div className="mk-reveal h-full" data-reveal-target="" style={{ '--mk-delay': `${delay}ms` } as CSSProperties}>
       {children}
     </div>
   );

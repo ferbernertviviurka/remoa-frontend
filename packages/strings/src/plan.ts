@@ -12,6 +12,10 @@ export const plan = {
       text: 'Mapas, cards e correções sem teto.',
       manage: 'Gerenciar assinatura',
     },
+    founder: {
+      title: 'Você é Founder',
+      text: 'Acesso vitalício, IA ilimitada e as novidades primeiro.',
+    },
     meters: {
       aiCorrections: 'Correções hoje',
       pdf: 'PDFs neste mês',

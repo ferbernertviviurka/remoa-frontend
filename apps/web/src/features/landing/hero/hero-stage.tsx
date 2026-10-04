@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
-import { strings, t } from '@remoa/strings';
+import { strings, t } from '@remoa/strings/landing';
 import { CanvasPanel, EdgeLabel, Icon, LayerSwitch, NodeCard, QuestionPanel, VerdictBox, anchor, route, type MapState, type Rect, type Side } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import type { LandingFlags } from '../flags';
@@ -141,6 +141,7 @@ function Panel({ approved }: { approved: boolean }) {
         progressLabel={t('challenge.progressLabel')}
         chips={chips}
         question={t('landing.hero.map.question')}
+        questionAs="p"
         modeLabel={t('challenge.answerMode')}
         modes={modes}
         mode="write"
@@ -207,7 +208,8 @@ export function HeroStage({ flags }: { flags: Pick<LandingFlags, 'approvedConten
     <div className="mx-auto w-full max-w-[1280px] px-4 md:px-10" style={{ marginTop: 56 }}>
       <style href="remoa-hero" precedence="default">{HERO_CSS}</style>
       <div
-        key={run}
+        // first play (0 → 1) keeps the SSR nodes: remounting them made a post-hydration LCP candidate (G11/D-356, LCP 3,5 s)
+        key={Math.max(run, 1)}
         ref={ref}
         role="img"
         aria-label={t('landing.hero.stageAria')}

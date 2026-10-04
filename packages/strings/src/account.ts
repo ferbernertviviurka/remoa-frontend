@@ -224,6 +224,7 @@ export const account = {
     title: 'Seu plano',
     manage: 'Gerenciar assinatura',
     freeText: 'Tudo para começar: {boards} mapas, {cards} cards e {ai} correções por IA por dia.',
+    founderText: 'Acesso vitalício: mapas, cards, correções por IA e mapas de PDF sem limite, e as novidades primeiro.',
     proText: 'Mapas e cards ilimitados, correções por IA ilimitadas e {pdf} mapas gerados de PDF por mês. Renova em {date}.',
     pastDue: 'Não conseguimos cobrar a sua assinatura. Atualize o pagamento para não perder o acesso.',
     offerTitle: 'Pro',

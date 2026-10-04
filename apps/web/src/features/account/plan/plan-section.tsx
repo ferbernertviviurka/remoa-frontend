@@ -2,19 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { TextMorph } from 'torph/react';
 import { PLAN_LIMITS, PRICES_BRL, usageRows, type QuotaKey, type RedirectUrl, type UsageRow } from '@remoa/contracts';
 import { t } from '@remoa/strings';
-import { Alert, Button, Icon, Segmented, UsageMeter, UsageWarning, useToast } from '@remoa/ui';
+import { Alert, Button, Icon, Morph, Segmented, UsageMeter, UsageWarning, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { formatBRL, formatDate } from '@/features/billing/format';
 import { SectionCard } from '../shared/section-card';
 import { useAccount } from '../shell/account-context';
-
-const Morph = ({ children, as = 'span' }: { children: string; as?: 'span' | 'p' }) => (
-  <TextMorph as={as} locale="pt-BR" duration={320} ease="cubic-bezier(0.19, 1, 0.22, 1)" respectReducedMotion>{children}</TextMorph>
-);
 
 type Period = 'monthly' | 'annual';
 const nextMonth = () => {
@@ -31,7 +26,8 @@ const meta: Record<QuotaKey, { label: string; masc: boolean }> = {
 export function PlanSection() {
   const { account } = useAccount();
   const ent = account.entitlements;
-  const pro = ent.plan === 'pro';
+  const founder = ent.plan === 'founder';
+  const pro = ent.plan !== 'free';
   const router = useRouter();
   const params = useSearchParams();
   const { toast } = useToast();
@@ -46,13 +42,13 @@ export function PlanSection() {
     announced.current = true;
     if (notice === 'checkout') track('subscription_started', {});
     toast({ title: t(notice === 'checkout' ? 'billing.account.checkoutOk' : 'billing.account.portalOk') });
-    router.replace('/conta/plano'); // so a refresh doesn't announce (and track) it again
+    router.replace('/app/conta/plano'); // so a refresh doesn't announce (and track) it again
   }, [notice, router, toast]);
 
   const upgrade = (source: 'account_plan' | 'usage_nudge') => {
     track('upgrade_clicked', { source });
     // D-180: every upgrade converges on /planos; the period chosen here carries over.
-    router.push(`/planos?de=${source}${source === 'account_plan' && period === 'annual' ? '&periodo=anual' : ''}`);
+    router.push(`/app/planos?de=${source}${source === 'account_plan' && period === 'annual' ? '&periodo=anual' : ''}`);
   };
 
   async function portal(cancel: boolean) {
@@ -112,7 +108,9 @@ export function PlanSection() {
         <div className="flex min-w-0 flex-1 flex-col gap-2.5">
           <p className="m-0 text-xs font-bold uppercase tracking-[.12em] text-on-dark">{t('account.plan.title')}</p>
           <h2 id="plan-h" className="m-0 font-display text-[44px] font-extrabold leading-none tracking-[-0.035em]">{t(`billing.plan.${ent.plan}`)}</h2>
-          {pro ? (
+          {founder ? (
+            <p className="m-0 max-w-[360px]">{t('account.plan.founderText')}</p>
+          ) : pro ? (
             <>
               <p className="m-0 max-w-[360px]">{t('account.plan.proText', { pdf: PLAN_LIMITS.pro.limits.ai_generations, date: renewal ?? '' })}</p>
               {renewal && ent.cancelAtPeriodEnd ? <p className="m-0 text-sm">{t('billing.account.cancelsAt', { date: renewal })}</p> : null} {/* the active state already reads "Renova em …" in proText, as in the mock */}
@@ -161,6 +159,12 @@ export function PlanSection() {
           </div>
         )}
       </section>
+
+      <SectionCard
+        title={t('referral.accountEntry')}
+        body={t('referral.accountEntryDesc')}
+        action={<Button variant="secondary" icon={<Icon name="gift" size={18} />} onClick={() => router.push('/app/indicar?de=account')}>{t('referral.accountEntryCta')}</Button>}
+      />
 
       <SectionCard title={t('account.plan.usageTitle')} body={t('account.plan.usageBody')}>
         {usageRows(ent).map(meter)}

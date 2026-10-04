@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { annualSavings, formatBRL, type RedirectUrl, type SwitchToAnnualResult } from '@remoa/contracts';
 import { t } from '@remoa/strings';
-import { Alert, Button, Icon, useToast } from '@remoa/ui';
+import { Alert, Button, Icon, Morph, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { formatDate } from '@/features/billing/format';
@@ -17,6 +17,19 @@ export function SubscriptionCard() {
   const { toast } = useToast();
   const [busy, setBusy] = useState<'portal' | 'switch' | null>(null);
   const [error, setError] = useState(false);
+
+  if (entitlements?.plan === 'founder') {
+    return (
+      <section aria-labelledby="sub-h" className="flex flex-col gap-[18px] rounded-hero border border-border bg-surface p-[26px] shadow-lift">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+          <h2 id="sub-h" className="m-0 whitespace-nowrap text-xs font-bold uppercase tracking-[0.12em] text-muted">{t('plans.subscriber.title')}</h2>
+          <span className="rounded-pill bg-primary-tint px-3 py-1 text-[13px] font-bold text-primary-deep">{t('plans.subscriber.founderStatus')}</span>
+        </div>
+        <span className="font-display text-[44px] font-extrabold leading-none tracking-[-0.035em] text-ink">{t('plans.subscriber.founderPlan')}</span>
+        <p className="m-0 text-sm leading-normal text-ink-2">{t('plans.subscriber.founderText')}</p>
+      </section>
+    );
+  }
 
   // Fallback (no summary): only what the entitlements carry.
   const s = sub ?? (entitlements?.plan === 'pro'
@@ -73,14 +86,14 @@ export function SubscriptionCard() {
       </div>
       <span className="flex items-baseline gap-2">
         <span className="font-display text-[44px] font-extrabold leading-none tracking-[-0.035em] text-ink">{t('plans.subscriber.plan')}</span>
-        {amountLine ? <span className="text-[15px] font-semibold text-muted">{amountLine}</span> : null}
+        {amountLine ? <span className="text-[15px] font-semibold text-muted"><Morph>{amountLine}</Morph></span> : null}
       </span>
       {s.pastDue && s.graceUntil ? <Alert tone="watch" title={t('plans.subscriber.pastDue', { date: formatDate(s.graceUntil) })} /> : null}
       {pix && !s.cancelAtPeriodEnd ? <Alert tone="unknown" title={t('plans.subscriber.pixRenew', { date })} /> : null}
       {error ? <Alert tone="review" role="alert" title={t('plans.subscriber.actionError')} /> : null}
       <dl className="m-0 flex flex-col">
         {rows.map(([k, v]) => (
-          <div key={k} className="flex justify-between gap-3 border-t border-divider py-3"><dt className="text-muted">{k}</dt><dd className="m-0 font-bold">{v}</dd></div>
+          <div key={k} className="flex justify-between gap-3 border-t border-divider py-3"><dt className="text-muted">{k}</dt><dd className="m-0 font-bold"><Morph>{v}</Morph></dd></div>
         ))}
       </dl>
       {canSwitch && priceBook ? (

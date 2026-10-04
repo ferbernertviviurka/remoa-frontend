@@ -207,8 +207,9 @@ describe('controles', () => {
     expect((await screen.findAllByText('Mover o mapa: arraste o fundo')).length).toBeGreaterThan(0);
     expect(await violations(container)).toEqual([]);
   });
-  it('ZoomControl: limites 60–140% e Ajustar', async () => {
-    expect(stepZoom(0.6, -1)).toBe(0.6);
+  it('ZoomControl: limites 10–140% e Ajustar', async () => {
+    expect(stepZoom(0.1, -1)).toBe(0.1);
+    expect(stepZoom(0.6, -1)).toBe(0.5);
     expect(stepZoom(1.4, 1)).toBe(1.4);
     expect(stepZoom(1, 1)).toBe(1.1);
     const onFit = vi.fn();

@@ -9,7 +9,7 @@ export default function SharedBoardNotFound() {
         {t('sharedMap.notFoundTitle')}
       </h1>
       <Link
-        href="/mapas"
+        href="/app/mapas"
         className="text-sm font-semibold text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         data-testid="not-found-back"
       >

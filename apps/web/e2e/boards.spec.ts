@@ -4,12 +4,12 @@ import { expect, test } from '@playwright/test';
 
 test('meus mapas: criar, renomear, duplicar e arquivar', async ({ page }) => {
   await signUpViaForm(page, `e2e-boards-${Date.now()}@remoa.test`);
-  await expect(page).toHaveURL(/\/$/); // D-086: pós-login cai no Hoje
-  await page.goto('/mapas');
+  await expect(page).toHaveURL(/\/app\/hoje$/); // D-321: pós-login cai no Hoje
+  await page.goto('/app/mapas');
 
   await createBlankBoard(page, 'Sepse');
 
-  await page.goto('/mapas');
+  await page.goto('/app/mapas');
   await expect(page.getByRole('link', { name: 'Sepse' }).first()).toBeVisible();
   await expect(page.getByText('0 cards · 0 conexões')).toBeVisible();
 

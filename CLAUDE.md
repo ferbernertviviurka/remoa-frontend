@@ -7,7 +7,7 @@ Regras, vocabulário e DoD do produto: `../CLAUDE.md`, `../AGENTS.md`, `../docs/
 ## Mapa
 
 ```
-apps/web/            Next.js App Router: (marketing) (auth) (app) (mobile) (editorial); features/<x>/
+apps/web/            Next.js App Router: (marketing) (auth) (public) públicas; app/ = parte logada em /app/* com (app) (fullscreen) (mobile) (editorial); features/<x>/
 packages/ui/         design system: Button, IconButton, Input, Dialog, Toast... + tokens.css + Storybook
 packages/strings/    strings pt-BR: pt-BR.ts, t(), regra eslint remoa/no-literal-strings
 .claude/agents/      frontend, frontend-deep, design-system

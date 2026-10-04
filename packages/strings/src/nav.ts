@@ -6,6 +6,7 @@ export const nav = {
   planChip: {
     free: 'Plano Free',
     pro: 'Plano Pro',
+    founder: 'Plano Founder',
     aria: 'Ver detalhes do plano',
   },
   upgradeButton: 'Fazer upgrade',

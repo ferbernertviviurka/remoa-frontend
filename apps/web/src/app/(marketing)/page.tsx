@@ -1,7 +1,7 @@
 import { t } from '@remoa/strings';
 import { Section } from '@remoa/ui';
 import { landingMetadata } from '@/lib/seo/landing';
-import { JsonLd, faqPageLd, organizationLd, softwareApplicationLd } from '@/lib/seo/json-ld';
+import { JsonLd, faqPageLd, organizationLd, softwareApplicationLd, webSiteLd } from '@/lib/seo/json-ld';
 import { landingFlags } from '@/features/landing/flags';
 import { HeroSection } from '@/features/landing/hero';
 import { DemoSection } from '@/features/landing/demo';
@@ -29,7 +29,8 @@ export default async function Page({ searchParams }: { searchParams: SearchParam
   return (
     <>
       <JsonLd data={organizationLd()} />
-      {priceBook ? <JsonLd data={softwareApplicationLd((priceBook.monthly.amount / 100).toFixed(2))} /> : null}
+      <JsonLd data={webSiteLd()} />
+      <JsonLd data={softwareApplicationLd(priceBook ? (priceBook.monthly.amount / 100).toFixed(2) : undefined)} />
       <JsonLd data={faqPageLd(faqItems)} />
       <LandingAnalytics variant={variant} h1={h1} />
       <HeroSection h1={h1} flags={flags} />

@@ -69,7 +69,7 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
       }
       track('board_created', {});
       if (itemId) track('board_linked_to_matrix', { count: 1, suggestedCount: suggested.some((s) => s.id === itemId) ? 1 : 0 });
-      router.push(`/mapas/${r.data.id}`);
+      router.push(`/app/mapas/${r.data.id}`);
     } catch {
       setError(t('errors.internal'));
     } finally {
@@ -100,12 +100,12 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
     <div className="flex min-h-dvh bg-canvas text-ink">
       <main className="flex min-w-0 flex-1 flex-col lg:w-1/2 lg:flex-none gap-6 px-4 pb-8 pt-5 sm:px-6 sm:pt-[30px] md:gap-7 md:px-14">
         <div className="flex items-center justify-between gap-4">
-          <Link href="/" aria-label={t('pages.logoLink')} className="inline-flex min-h-11 min-w-11 items-center no-underline">
+          <Link href="/app/hoje" aria-label={t('pages.logoLink')} className="inline-flex min-h-11 min-w-11 items-center no-underline">
             <span className="max-sm:hidden"><Logo size={32} withWordmark /></span>
             <span className="sm:hidden"><Logo size={32} /></span>
           </Link>
           <Stepper aria-label={t('newMap.stepsLabel')} doneLabel={t('newMap.stepDone')} current={step} steps={[t('newMap.step.one'), t('newMap.step.two'), t('newMap.step.three')]} />
-          <IconButton aria-label={t('newMap.closeLabel')} variant="secondary" onClick={() => router.push('/mapas')}>
+          <IconButton aria-label={t('newMap.closeLabel')} variant="secondary" onClick={() => router.push('/app/mapas')}>
             <Icon name="close" size={20} />
           </IconButton>
         </div>
@@ -178,7 +178,7 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
                 ? heading(t(`import.heading.${anki.state.kind === 'uploading' || anki.state.kind === 'inspecting' ? 'sending' : anki.state.kind}.title` as StringKey), t(`import.heading.${anki.state.kind === 'uploading' || anki.state.kind === 'inspecting' ? 'sending' : anki.state.kind}.desc` as StringKey))
                 : heading(t(`newMap.step3Title.${path}` as StringKey), t(`newMap.step3Desc.${path}` as StringKey))}
               {ankiRunning && anki.state.kind !== 'idle' ? (
-                <AnkiImportFlow state={anki.state} onPlan={anki.setPlan} onConfirm={() => void anki.confirm()} onReset={anki.reset} onOpen={(id) => router.push(`/mapas/${id}`)} />
+                <AnkiImportFlow state={anki.state} onPlan={anki.setPlan} onConfirm={() => void anki.confirm()} onReset={anki.reset} onOpen={(id) => router.push(`/app/mapas/${id}`)} />
               ) : null}
               {needsFile && !ankiRunning ? (
                 <>

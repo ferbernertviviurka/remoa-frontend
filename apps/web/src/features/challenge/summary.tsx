@@ -24,7 +24,7 @@ export function Summary({ summary, items, onMore, onExit }: { summary: SessionSu
           <ul className="m-0 flex list-none flex-col gap-1 p-0">
             {cards.map((c) => (
               <li key={c.cardId}>
-                <Link href={`/mapas/${c.boardId}`} className="font-semibold text-text underline" aria-label={`${t('challenge.summary.openBoard')}: ${c.cardTitle || t('challenge.summary.untitled')}`}>
+                <Link href={`/app/mapas/${c.boardId}`} className="font-semibold text-text underline" aria-label={`${t('challenge.summary.openBoard')}: ${c.cardTitle || t('challenge.summary.untitled')}`}>
                   {c.cardTitle || t('challenge.summary.untitled')}
                 </Link>
               </li>
@@ -40,7 +40,7 @@ export function Summary({ summary, items, onMore, onExit }: { summary: SessionSu
       <span className="grow" />
       <Button onClick={onMore}>{t('challenge.summary.more')}</Button>
       <Button variant="secondary" onClick={onExit}>{t('quiz.exit')}</Button>
-      <Link href="/revisar" className="inline-flex min-h-11 items-center justify-center font-semibold text-primary-deep underline">
+      <Link href="/app/revisar" className="inline-flex min-h-11 items-center justify-center font-semibold text-primary-deep underline">
         {t('challenge.backToReview')}
       </Link>
     </section>

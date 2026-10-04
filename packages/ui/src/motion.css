@@ -74,3 +74,21 @@
   :root:not([data-motion]) .mk-marquee-track { width: auto; }
   :root:not([data-motion]) .mk-marquee-half { flex-wrap: wrap; justify-content: center; }
 }
+
+/* F18 Indicação (Indicar.dc.html / Convite.dc.html). Só `from` (estado final = estilo do elemento): com animação desligada
+   (prefers-reduced-motion ou data-motion="reduced", regras acima) aparece o quadro final. Só transform/opacity;
+   exceção: o traço das arestas do mapa usa stroke-dashoffset (SVG, como `.draw`). */
+@keyframes rf-popn { from { opacity: 0; transform: scale(0.88); } }
+@keyframes rf-rise { from { opacity: 0; transform: translateY(56px) scale(0.98); } }
+@keyframes rf-fadein { from { opacity: 0; } }
+@keyframes rf-ulbar { from { transform: scaleX(0); } }
+@keyframes rf-edge { from { stroke-dashoffset: 1; } }
+@keyframes rf-floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.rf-popn { animation: rf-popn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.rf-edge { animation: rf-edge 0.8s ease-out both; }
+
+/* F19 Suporte e Admin (Suporte.dc.html, Admin*.dc.html). Só `from` (D-392): sem animação aparece o quadro final. */
+@keyframes growy { from { transform: scaleY(0); } }
+@keyframes inright { from { opacity: 0; transform: translateX(56px); } }
+.growy { transform-origin: 50% 100%; animation: growy 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.inright { animation: inright 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }

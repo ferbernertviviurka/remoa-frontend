@@ -24,7 +24,7 @@ export function HomeHeaderActions({ mapCount }: { mapCount: number }) {
         icon={locked ? <Icon name="lock" size={20} /> : <Icon name="plus" size={20} />}
         onClick={() => {
           if (locked) track('upgrade_clicked', { source: 'header_new_map_lock' });
-          router.push(locked ? '/planos?de=header_new_map_lock' : '/mapas/novo');
+          router.push(locked ? '/app/planos?de=header_new_map_lock' : '/app/mapas/novo');
         }}
       >
         {t('library.newMapButton')}
@@ -39,11 +39,11 @@ export function HeroActions({ only }: { only?: { id: string; title: string } }) 
   const router = useRouter();
   return (
     <>
-      <Button variant="light" size="hero" iconEnd={<Icon name="right" size={20} />} onClick={() => router.push('/revisar')}>
+      <Button variant="light" size="hero" iconEnd={<Icon name="right" size={20} />} onClick={() => router.push('/app/revisar')}>
         {t('home.startReview')}
       </Button>
       {only ? (
-        <Button variant="outline-light" size="hero" onClick={() => router.push(`/mapas/${only.id}?modo=desafio`)}>
+        <Button variant="outline-light" size="hero" onClick={() => router.push(`/app/mapas/${only.id}?modo=desafio`)}>
           {t('home.reviewOnlyBoard', { board: only.title })}
         </Button>
       ) : null}

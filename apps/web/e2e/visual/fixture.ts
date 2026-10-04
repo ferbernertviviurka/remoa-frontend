@@ -22,8 +22,8 @@ export async function signUpAndLogin(page: Page, request: APIRequestContext) {
     await page.getByLabel('E-mail').fill(email);
     await page.getByLabel('Senha').fill(password);
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-    await expect(page).toHaveURL(/\/$/, { timeout: 4000 }); // D-086: pós-login cai no Hoje
-    await page.goto('/mapas');
+    await expect(page).toHaveURL(/\/(app\/hoje)?$/, { timeout: 4000 }); // D-086: pós-login cai no Hoje
+    await page.goto('/app/mapas');
   }).toPass({ timeout: 30_000 });
   return { email, userId: su.user.id as string, headers: { authorization: `Bearer ${token}` } };
 }

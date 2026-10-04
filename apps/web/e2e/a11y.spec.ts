@@ -15,24 +15,24 @@ const axe = async (page: Page) => {
 test('axe: Hoje, Meus mapas e Novo mapa (3 passos)', async ({ page, request }) => {
   test.setTimeout(180_000);
   const { userId, headers } = await signUpAndLogin(page, request);
-  await page.goto('/');
+  await page.goto('/app/hoje');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   expect(await axe(page), 'hoje vazio').toEqual([]);
-  await page.goto('/mapas');
+  await page.goto('/app/mapas');
   await expect(page.getByRole('heading', { level: 1, name: 'Meus mapas' })).toBeVisible();
   expect(await axe(page), 'mapas vazio').toEqual([]);
 
   await seedMock(request, headers, userId);
-  await page.goto('/');
+  await page.goto('/app/hoje');
   await expect(page.getByRole('link', { name: 'Abrir o mapa Sepse' })).toBeVisible();
   expect(await axe(page), 'hoje').toEqual([]);
-  await page.goto('/mapas');
+  await page.goto('/app/mapas');
   await expect(page.getByRole('link', { name: 'Sepse' }).first()).toBeVisible();
   expect(await axe(page), 'mapas').toEqual([]);
   await page.getByRole('button', { name: 'Lista' }).click().catch(() => undefined); // alterna grade/lista, se o controle existir
   expect(await axe(page), 'mapas (lista)').toEqual([]);
 
-  await page.goto('/mapas/novo');
+  await page.goto('/app/mapas/novo');
   await expect(page.getByRole('button', { name: /Em branco/ })).toBeVisible();
   expect(await axe(page), 'novo 1').toEqual([]);
   await page.getByRole('button', { name: 'Continuar' }).click();
@@ -45,7 +45,7 @@ test('axe: Editor (resumo, card, cada aba do inspetor) e paleta ⌘K', async ({ 
   test.setTimeout(180_000);
   const { userId, headers } = await signUpAndLogin(page, request);
   const { sepse } = await seedMock(request, headers, userId);
-  await page.goto(`/mapas/${sepse}`);
+  await page.goto(`/app/mapas/${sepse}`);
   await expect(page.locator('.react-flow__node')).toHaveCount(6);
   expect(await axe(page), 'editor resumo').toEqual([]);
   await page.getByRole('button', { name: 'Selecionar Choque séptico' }).click();
@@ -66,7 +66,7 @@ test('axe: Editor (resumo, card, cada aba do inspetor) e paleta ⌘K', async ({ 
 
   // Desafio no editor (T6): antes e depois de revelar a resposta.
   await page.keyboard.press('Escape');
-  await page.goto(`/mapas/${sepse}?modo=desafio`);
+  await page.goto(`/app/mapas/${sepse}?modo=desafio`);
   await expect(page.getByRole('button', { name: 'Corrigir resposta' })).toBeVisible();
   await page.getByLabel('Sua resposta').fill('Iniciar noradrenalina');
   expect(await axe(page), 'desafio').toEqual([]);
@@ -83,10 +83,10 @@ test('axe: Editor (resumo, card, cada aba do inspetor) e paleta ⌘K', async ({ 
 test('axe: Preços, Conta (e confirmação de exclusão) e Paywall de mapas', async ({ page, request }) => {
   test.setTimeout(120_000);
   const { headers } = await signUpAndLogin(page, request);
-  await page.goto('/planos');
+  await page.goto('/app/planos');
   await expect(page.getByRole('table', { name: 'Comparação entre Free e Pro' })).toBeVisible();
   expect(await axe(page), 'preços').toEqual([]);
-  await page.goto('/conta/dados');
+  await page.goto('/app/conta/dados');
   await expect(page.getByRole('button', { name: 'Exportar meus dados' })).toBeVisible();
   expect(await axe(page), 'conta').toEqual([]);
   await page.getByRole('button', { name: 'Excluir conta' }).click();
@@ -95,7 +95,7 @@ test('axe: Preços, Conta (e confirmação de exclusão) e Paywall de mapas', as
   await page.keyboard.press('Escape');
 
   for (let i = 0; i < PLAN_LIMITS.free.limits.boards; i++) expect((await request.post('http://localhost:4000/v1/boards', { headers, data: { title: `M${i}` } })).status()).toBe(201);
-  await page.goto('/mapas/novo?caminho=blank');
+  await page.goto('/app/mapas/novo?caminho=blank');
   await page.getByRole('button', { name: 'Continuar' }).click();
   await page.getByRole('button', { name: 'Continuar' }).click();
   await page.getByRole('button', { name: 'Criar mapa', exact: true }).click();

@@ -20,6 +20,6 @@ export async function requireRole(roles: readonly ProfileRole[]) {
   const user = await requireUser();
   const supabase = await createClient();
   const { data } = await supabase.from('profiles').select('role').eq('user_id', user.id).single();
-  if (!data || !roles.includes(data.role as ProfileRole)) redirect('/mapas');
+  if (!data || !roles.includes(data.role as ProfileRole)) redirect('/app/mapas');
   return user;
 }

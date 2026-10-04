@@ -24,6 +24,13 @@ describe('componentes de exibição', () => {
     render(<Progress aria-label="Progresso" value={40} />);
     expect(screen.getByRole('progressbar', { name: 'Progresso' })).toHaveAttribute('aria-valuenow', '40');
   });
+  it('Avatar com foto mostra o anel de carregamento até a imagem carregar', () => {
+    render(<Avatar name="Ana Lima" fallback="AL" src="/foto.webp" />);
+    expect(screen.getByTestId('avatar-loading')).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Ana Lima' }).getAttribute('aria-busy')).toBe('true');
+    expect(screen.queryByText('AL')).toBeNull();
+  });
+
   it('Avatar mostra fallback com nome acessível', () => {
     render(<Avatar name="Ana Lima" fallback="AL" />);
     expect(screen.getByRole('img', { name: 'Ana Lima' })).toHaveTextContent('AL');

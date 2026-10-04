@@ -9,7 +9,7 @@ import { Button, Input, Separator } from '@remoa/ui';
 import { sendMagicLink, signIn, signInWithGoogle, type AuthResult } from '@/server/auth/actions';
 import { identify, track } from '@/lib/analytics';
 import { createClient } from '@/lib/supabase/client';
-import { safeNext } from '@/lib/safe-next';
+import { APP_HOME, safeNext } from '@/lib/safe-next';
 import { FieldError, PasswordField } from './password-field';
 
 const googleOn = process.env.NEXT_PUBLIC_AUTH_GOOGLE === '1';
@@ -106,7 +106,7 @@ export function SignInForm({ next }: { next?: string }) {
       <Separator />
       <p className="m-0 text-sm text-muted">
         {t('auth.signIn.noAccount')}{' '}
-        <Link href={target === '/' ? '/cadastro' : `/cadastro?next=${encodeURIComponent(target)}`} className="inline-flex min-h-11 items-center font-bold text-primary-deep underline">
+        <Link href={target === APP_HOME ? '/cadastro' : `/cadastro?next=${encodeURIComponent(target)}`} className="inline-flex min-h-11 min-w-11 items-center justify-center font-bold text-primary-deep underline">
           {t('auth.signIn.toSignUp')}
         </Link>
       </p>

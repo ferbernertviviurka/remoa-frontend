@@ -20,8 +20,8 @@ const center = async (page: Page, selector: string, i: number) => {
 test('desafiar este mapa no editor: autoavaliação, opções, conexão oculta e resumo', async ({ page }) => {
   test.setTimeout(180_000);
   await signUpViaForm(page, `e2e-challenge-${Date.now()}@remoa.test`);
-  await expect(page).toHaveURL(/\/$/); // D-086: pós-login cai no Hoje
-  await page.goto('/mapas');
+  await expect(page).toHaveURL(/\/app\/hoje$/); // D-321: pós-login cai no Hoje
+  await page.goto('/app/mapas');
   await createBlankBoard(page, 'Sepse');
   await expect(page.locator('.react-flow__pane')).toBeVisible();
 

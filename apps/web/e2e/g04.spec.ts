@@ -18,7 +18,7 @@ test('arrastar 3 cards (centro, borda, canto; mouse e arraste rápido) e recarre
   test.setTimeout(120_000);
   const { headers } = await signUpAndLogin(page, request);
   const board = await createSepseBoard(request, headers);
-  await page.goto(`/mapas/${board}`);
+  await page.goto(`/app/mapas/${board}`);
   await expect(page.locator('.react-flow__node')).toHaveCount(6);
   await page.waitForTimeout(800); // fitView
   const k = await page.locator('.react-flow__viewport').evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).a);
@@ -58,7 +58,7 @@ test('clicar e logo arrastar (ou tocar-e-arrastar no trackpad) move o card e nã
   test.setTimeout(120_000);
   const { headers } = await signUpAndLogin(page, request);
   const board = await createSepseBoard(request, headers);
-  await page.goto(`/mapas/${board}`);
+  await page.goto(`/app/mapas/${board}`);
   await expect(page.locator('.react-flow__node')).toHaveCount(6);
   await page.waitForTimeout(800);
   const b = (await node(page, 'Choque séptico').boundingBox())!;
@@ -83,7 +83,7 @@ test('formato: o nó muda na hora, grava sem "Salvar", Cancelar não desfaz e re
   test.setTimeout(120_000);
   const { headers } = await signUpAndLogin(page, request);
   const board = await createSepseBoard(request, headers);
-  await page.goto(`/mapas/${board}`);
+  await page.goto(`/app/mapas/${board}`);
   await expect(page.locator('.react-flow__node')).toHaveCount(6);
   await page.waitForTimeout(800);
   await node(page, 'Lactato').dblclick();
@@ -122,7 +122,7 @@ test('desafio: "Pular" é um botão com borda e fundo, contraste ≥ 4,5:1 e alv
   test.setTimeout(120_000);
   const { userId, headers } = await signUpAndLogin(page, request);
   const board = await createMockSepse(request, headers, userId);
-  await page.goto(`/mapas/${board}?modo=desafio`);
+  await page.goto(`/app/mapas/${board}?modo=desafio`);
   const skip = page.getByRole('button', { name: 'Pular', exact: true });
   await expect(skip).toBeVisible();
   await expect(skip).toBeEnabled();

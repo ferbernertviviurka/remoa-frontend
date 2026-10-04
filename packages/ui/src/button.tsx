@@ -28,7 +28,7 @@ export const buttonVariants = {
   secondary: 'font-bold bg-surface text-ink border border-border-strong hover:border-primary hover:bg-primary-tint',
   quiet: 'font-bold bg-transparent text-primary-deep hover:bg-primary-tint',
   danger: 'font-bold bg-review text-white hover:brightness-110 disabled:bg-[#EAD3C7] disabled:text-[#7C2D12] disabled:opacity-100 disabled:cursor-not-allowed',
-  light: 'bg-surface text-panel-dark font-extrabold hover:brightness-95',
+  light: 'bg-on-dark text-panel-dark font-extrabold hover:brightness-95',
   'outline-light': 'font-bold px-5! border-[1.5px] border-white/40 text-on-dark hover:bg-white/10',
 } as const;
 

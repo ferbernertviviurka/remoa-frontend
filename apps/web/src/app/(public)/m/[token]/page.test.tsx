@@ -1,6 +1,6 @@
 // F17 T7: tests for the shared board page and unlock form.
-import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { render, screen, waitFor, fireEvent, act, cleanup } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { sharedBoardFixture, sharedLockedFixture } from '@remoa/contracts/mocks';
 
 // ---- mocks ----
@@ -14,7 +14,7 @@ vi.mock('@remoa/ui', async (importOriginal) => {
   return { ...actual, useToast: () => ({ toast: vi.fn() }) };
 });
 vi.mock('@/features/billing/paywall', () => ({
-  usePaywall: () => ({ show: vi.fn(), handle: vi.fn() }),
+  usePaywall: vi.fn(() => ({ show: vi.fn(), handle: vi.fn() })),
   PaywallProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 vi.mock('./actions', () => ({
@@ -31,6 +31,8 @@ import { UnlockForm } from './unlock-form';
 import { SharedBoardView } from './shared-board-view';
 import * as actions from './actions';
 
+afterEach(cleanup);
+
 // ---- UnlockForm ----
 describe('UnlockForm', () => {
   beforeEach(() => {
@@ -40,14 +42,14 @@ describe('UnlockForm', () => {
   it('renders the locked title and password field', () => {
     render(<UnlockForm token={'A'.repeat(43)} />);
     expect(screen.getByText(/mapa protegido por senha/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/senha/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^senha$/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
   });
 
   it('shows "Verificando…" while submitting', async () => {
     vi.mocked(actions.unlockBoardAction).mockReturnValue(new Promise(() => {}));
     render(<UnlockForm token={'A'.repeat(43)} />);
-    fireEvent.change(screen.getByLabelText(/senha/i), { target: { value: 'minhasenha' } });
+    fireEvent.change(screen.getByLabelText(/^senha$/i), { target: { value: 'minhasenha' } });
     fireEvent.submit(screen.getByRole('button', { name: /entrar/i }).closest('form')!);
     expect(await screen.findByRole('button', { name: /verificando/i })).toBeInTheDocument();
   });
@@ -55,7 +57,7 @@ describe('UnlockForm', () => {
   it('shows "Senha incorreta" on 401', async () => {
     vi.mocked(actions.unlockBoardAction).mockResolvedValue({ ok: false, error: 'wrong_password' });
     render(<UnlockForm token={'A'.repeat(43)} />);
-    fireEvent.change(screen.getByLabelText(/senha/i), { target: { value: 'errada' } });
+    fireEvent.change(screen.getByLabelText(/^senha$/i), { target: { value: 'errada' } });
     fireEvent.submit(screen.getByRole('button', { name: /entrar/i }).closest('form')!);
     await waitFor(() => expect(screen.getByText(/senha incorreta/i)).toBeInTheDocument());
   });
@@ -63,7 +65,7 @@ describe('UnlockForm', () => {
   it('shows "Muitas tentativas" on 429', async () => {
     vi.mocked(actions.unlockBoardAction).mockResolvedValue({ ok: false, error: 'too_many_attempts' });
     render(<UnlockForm token={'A'.repeat(43)} />);
-    fireEvent.change(screen.getByLabelText(/senha/i), { target: { value: 'errada' } });
+    fireEvent.change(screen.getByLabelText(/^senha$/i), { target: { value: 'errada' } });
     fireEvent.submit(screen.getByRole('button', { name: /entrar/i }).closest('form')!);
     await waitFor(() => expect(screen.getByText(/muitas tentativas/i)).toBeInTheDocument());
   });

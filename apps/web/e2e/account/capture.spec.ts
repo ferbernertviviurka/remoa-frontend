@@ -12,24 +12,24 @@ test('shots', async ({ page, request }) => {
   await accountUser(page, request, 'Admin');
   const settle = async () => { await page.waitForLoadState('networkidle'); await page.waitForTimeout(1500); };
   for (const s of only) {
-    await page.goto(`/conta/${s}`);
+    await page.goto(`/app/conta/${s}`);
     await settle();
     await page.screenshot({ path: `${out}/app-${s}.png`, fullPage: true, animations: 'disabled' });
   }
   if (process.env.DIALOGS === '1') {
-    await page.goto('/conta/perfil');
+    await page.goto('/app/conta/perfil');
     await settle();
     await page.getByRole('button', { name: 'Adicionar foto' }).click();
     await page.waitForTimeout(800);
     await page.screenshot({ path: `${out}/app-foto.png`, animations: 'disabled' });
     await page.keyboard.press('Escape');
-    await page.goto('/conta/dados');
+    await page.goto('/app/conta/dados');
     await settle();
     await page.getByRole('button', { name: 'Excluir conta' }).click();
     await page.waitForTimeout(800);
     await page.screenshot({ path: `${out}/app-excluir.png`, animations: 'disabled' });
     await page.keyboard.press('Escape');
-    await page.goto('/conta/seguranca');
+    await page.goto('/app/conta/seguranca');
     await settle();
     await page.getByRole('button', { name: 'Alterar senha' }).click();
     await page.waitForTimeout(800);

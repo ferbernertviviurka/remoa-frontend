@@ -34,6 +34,7 @@ import { Inspector, type Connection as PanelConnection } from './inspector';
 import { autoLayout, CARD_H, CARD_W, sizeOf } from './layout';
 import { LinkEdgeView } from './link-edge';
 import { quizView } from './quiz-view';
+import { openSupport } from '@/features/support/open';
 import { createOpQueue, loadPending, type OpQueue, type QueueStatus } from './op-queue';
 
 const nodeTypes = { card: CardNodeView };
@@ -660,6 +661,7 @@ function Canvas({ data }: { data: BoardGraph }) {
       ...(['structure', 'recall', 'coverage'] as const).map((k) => ({ id: `layer:${k}`, group: t('palette.groups.layers'), label: t(`palette.${k}.label`), hint: t(`palette.${k}.hint`) })),
       ...graph.nodes.map((n) => ({ id: `card:${n.id}`, group: t('palette.groups.cards'), label: n.data.card.title, hint: t('palette.card') })),
       ...(['home', 'maps', 'newMap', 'review'] as const).map((k) => ({ id: `go:${k}`, group: t('palette.groups.goTo'), label: t(`palette.${k}.label`), hint: t(`palette.${k}.hint`) })),
+      { id: 'support', group: t('palette.groups.goTo'), label: t('support.navigation.talkToSupport') },
     ],
     [graph.nodes],
   );
@@ -669,10 +671,11 @@ function Canvas({ data }: { data: BoardGraph }) {
       if (kind === 'create') createCard(arg as CardType);
       else if (kind === 'layer') changeLayer(arg as NodeLayer);
       else if (kind === 'card') goToCard(arg);
+      else if (c.id === 'support') openSupport('command');
       else if (c.id === 'map:link') setTool('connect');
       else if (c.id === 'map:organize') organize();
       else if (c.id === 'map:challenge') setMode('challenge');
-      else router.push(({ home: '/', maps: '/mapas', newMap: '/mapas/novo', review: '/revisar' } as Record<string, string>)[arg] ?? '/');
+      else router.push(({ home: '/app/hoje', maps: '/app/mapas', newMap: '/app/mapas/novo', review: '/app/revisar' } as Record<string, string>)[arg] ?? '/app/hoje');
     },
     [changeLayer, createCard, goToCard, organize, router, setMode, setTool],
   );
@@ -984,7 +987,7 @@ const FocusLayer = memo(function FocusLayer({ node }: { node: CardNode }) {
 });
 const transformOf = (s: ReactFlowState) => s.transform;
 
-/** Zoom 60–140% in 10% steps (ZoomControl v2); "Ajustar" fits the map. Re-renders only on zoom change. */
+/** Zoom 10–140% in 10% steps (ZoomControl v2); "Ajustar" fits the map. Re-renders only on zoom change. */
 const Zoom = memo(function Zoom({ onFit }: { onFit: () => void }) {
   const rf = useReactFlow();
   const zoom = useStore(zoomOf);

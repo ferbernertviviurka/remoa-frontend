@@ -27,22 +27,22 @@ test('visual conta: 5 seções, Pro, foto e exclusão', async ({ page, request }
   };
 
   for (const s of sections) {
-    await page.goto(`/conta/${s}`);
+    await page.goto(`/app/conta/${s}`);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await shot(`conta-${s}.png`, true);
   }
 
-  await page.goto('/conta/seguranca');
+  await page.goto('/app/conta/seguranca');
   await page.getByRole('button', { name: 'Alterar senha' }).click();
   await shot('conta-seguranca-senha.png', true);
 
-  await page.goto('/conta/perfil');
+  await page.goto('/app/conta/perfil');
   await page.getByRole('button', { name: 'Adicionar foto' }).click();
   await expect(page.getByRole('dialog', { name: 'Foto de perfil' })).toBeVisible();
   await shot('conta-foto.png');
   await page.keyboard.press('Escape');
 
-  await page.goto('/conta/dados');
+  await page.goto('/app/conta/dados');
   await page.getByRole('button', { name: 'Excluir conta' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.getByRole('dialog').getByRole('textbox').blur();
@@ -50,11 +50,11 @@ test('visual conta: 5 seções, Pro, foto e exclusão', async ({ page, request }
   await page.keyboard.press('Escape');
 
   // Pro: assina pelo checkout mock (STRIPE=mock), como o billing.spec.
-  await page.goto('/planos');
+  await page.goto('/app/planos');
   await page.getByRole('radio', { name: /^Cartão/ }).click();
   await page.getByRole('button', { name: 'Assinar o Pro' }).click();
   await expect(page).toHaveURL(/\/planos\/sucesso/);
   await expect(page.getByRole('dialog', { name: 'Você agora é Pro.' })).toBeVisible();
-  await page.goto('/conta/plano');
+  await page.goto('/app/conta/plano');
   await shot('conta-plano-pro.png', true);
 });

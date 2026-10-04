@@ -27,10 +27,10 @@ test('plans: toggle changes price and label', async ({ page }) => {
   const plans = page.locator('#planos');
   await plans.scrollIntoViewIfNeeded();
   const pro = plans.getByRole('article', { name: strings.landing.plans.pro.name });
-  const before = await pro.locator('.pop').first().textContent();
+  const before = await pro.locator('[torph-sr]').first().textContent();
   await plans.screenshot({ path: 'test-results/landing-planos-mensal.png' });
   await plans.getByRole('button', { name: new RegExp(strings.landing.plans.period.annual) }).click();
-  await expect(pro.locator('.pop').first()).not.toHaveText(before!);
+  await expect(pro.locator('[torph-sr]').first()).not.toHaveText(before!);
   await expect(pro).toContainText(/\/ano/);
   await page.waitForTimeout(600);
   await plans.screenshot({ path: 'test-results/landing-planos-anual.png' });

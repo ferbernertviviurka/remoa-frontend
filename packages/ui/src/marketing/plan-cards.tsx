@@ -4,12 +4,13 @@ import type { ReactNode } from 'react';
 import { Reveal } from './reveal';
 import { Icon } from '../icons';
 import { focusRing } from '../button';
+import { Morph } from '../morph';
 
 export type PlanCardPeriod = 'monthly' | 'annual';
 export type PlanCardPlan = {
   name: string;
   price: { amount: number; currency: 'BRL' };
-  /** Ex.: "/mês" ou "/ano". */
+  /** Ex.: "/mês" ou "/ano". Planos de preço único (Founder) ignoram o seletor de período: o app passa sempre o mesmo valor. */
   cadence: string;
   description?: string;
   /** Linha sob o preço, anunciada ao mudar (`aria-live="polite"`). */
@@ -36,7 +37,7 @@ export function formatBRL(amount: number, currency: 'BRL' = 'BRL') {
 }
 
 /**
- * Planos da landing: seletor Mensal/Anual com marcador deslizante (400 ms), preço que entra com escala (400 ms, re-chaveado ao trocar o período)
+ * Planos da landing: seletor Mensal/Anual com marcador deslizante (400 ms), preço, cadência e nota que se transformam com Torph (`Morph`) ao trocar o período
  * e cartão escuro opcional (Pro). Valores vêm do app (PriceBook); nada é fixo aqui. Movimento reduzido: tudo estático.
  */
 export function PlanCards({ period, onPeriodChange, periodLabels, periodGroupLabel, plans, discountLabel }: PlanCardsProps) {
@@ -52,7 +53,7 @@ export function PlanCards({ period, onPeriodChange, periodLabels, periodGroupLab
           {discountLabel ? <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-on-primary">{discountLabel}</span> : null}
         </button>
       </div>
-      <div className="grid items-stretch gap-7 md:grid-cols-2">
+      <div className={`grid items-stretch gap-7 ${plans.length > 2 ? 'lg:grid-cols-3' : 'md:grid-cols-2'}`}>
         {plans.map((p, i) => {
           const hid = `plan-${i}-name`;
           return (
@@ -61,14 +62,14 @@ export function PlanCards({ period, onPeriodChange, periodLabels, periodGroupLab
                 <div className="flex flex-col gap-1.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 id={hid} className="m-0 font-display text-[34px] font-extrabold tracking-[-0.03em]">{p.name}</h3>
-                    {p.badge ? <span className="rounded-full bg-surface px-3.5 py-1 text-[13px] font-extrabold text-panel-dark">{p.badge}</span> : null}
+                    {p.badge ? <span className="rounded-full bg-on-dark px-3.5 py-1 text-[13px] font-extrabold text-panel-dark">{p.badge}</span> : null}
                   </div>
-                  <div className="flex items-baseline gap-2">
-                    <span key={`${period}-${p.price.amount}`} className="pop inline-block font-display text-[48px] leading-none font-extrabold tracking-[-0.04em] tabular-nums md:text-[56px]">{formatBRL(p.price.amount, p.price.currency)}</span>
-                    <span className={`text-[17px] font-semibold ${p.dark ? 'text-on-dark-muted' : 'text-muted'}`}>{p.cadence}</span>
+                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <span className="inline-block font-display text-[48px] leading-none font-extrabold tracking-[-0.04em] tabular-nums md:text-[56px]"><Morph>{formatBRL(p.price.amount, p.price.currency)}</Morph></span>
+                    <span className={`text-[17px] font-semibold ${p.dark ? 'text-on-dark-muted' : 'text-muted'}`}><Morph>{p.cadence}</Morph></span>
                   </div>
                   {p.description ? <span className={`text-[15px] ${p.dark ? 'text-on-dark-muted-2' : 'text-muted'}`}>{p.description}</span> : null}
-                  {p.note ? <span aria-live="polite" className={`text-[15px] ${p.dark ? 'text-on-dark-muted-2' : 'text-muted'}`}>{p.note}</span> : null}
+                  {p.note ? <span aria-live="polite" className={`text-[15px] ${p.dark ? 'text-on-dark-muted-2' : 'text-muted'}`}><Morph>{p.note}</Morph></span> : null}
                 </div>
                 <ul className="m-0 flex list-none flex-col gap-3 p-0">
                   {p.features.map((f) => (

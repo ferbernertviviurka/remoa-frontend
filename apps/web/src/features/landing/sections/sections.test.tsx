@@ -1,5 +1,5 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, test } from 'vitest';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { strings } from '@remoa/strings';
 import { FeaturesSection, HowSection, MoreSection, ProblemSection, ReadyMarquee } from './index';
 
@@ -9,7 +9,7 @@ afterEach(() => {
 });
 
 describe('landing sections', () => {
-  test('explorer: 6 tabs, active image has the right alt, selecting fires feature_tab_selected', () => {
+  test('explorer: 6 tabs, active image has the right alt, selecting fires feature_tab_selected', async () => {
     render(<FeaturesSection />);
     const tabs = screen.getAllByRole('tab');
     expect(tabs).toHaveLength(6);
@@ -18,7 +18,35 @@ describe('landing sections', () => {
     fireEvent.click(tabs[4]!);
     expect(screen.getByAltText(strings.landing.featureAlts.fsrs).getAttribute('loading')).toBe('lazy');
     expect(screen.getByText('Imagem da plataforma: lembrança estimada')).toBeTruthy();
-    expect(window.__remoaEvents).toContainEqual({ event: 'feature_tab_selected', props: { feature: 'fsrs', platform: 'web' } });
+    await waitFor(() => expect(window.__remoaEvents).toContainEqual({ event: 'feature_tab_selected', props: { feature: 'fsrs', platform: 'web' } }));
+  });
+
+  test('explorer auto-advances only while visible, and stops once the user picks a tab', () => {
+    vi.useFakeTimers();
+    let fire: (v: boolean) => void = () => {};
+    vi.stubGlobal('IntersectionObserver', class { constructor(cb: (e: { isIntersecting: boolean }[]) => void) { fire = (v) => cb([{ isIntersecting: v }]); } observe() {} disconnect() {} });
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('min-width'), addEventListener() {}, removeEventListener() {} }));
+    try {
+      render(<FeaturesSection />);
+      const selected = () => screen.getAllByRole('tab').findIndex((t) => t.getAttribute('aria-selected') === 'true');
+      act(() => vi.advanceTimersByTime(7000));
+      expect(selected()).toBe(0);
+      act(() => fire(true));
+      expect(document.querySelector('.lp-step-fill')).toBeTruthy();
+      act(() => vi.advanceTimersByTime(6000));
+      expect(selected()).toBe(1);
+      act(() => fire(false));
+      act(() => vi.advanceTimersByTime(12000));
+      expect(selected()).toBe(1);
+      act(() => fire(true));
+      fireEvent.click(screen.getAllByRole('tab')[4]!);
+      act(() => vi.advanceTimersByTime(12000));
+      expect(selected()).toBe(4);
+      expect(document.querySelector('.lp-step-fill')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
   });
 
   test('problem, how, more render all their texts', () => {

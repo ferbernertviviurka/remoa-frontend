@@ -43,12 +43,16 @@ export type RailItemProps = {
   href?: string;
   as?: LinkLike;
   onClick?: () => void;
+  /** `admin` (F19 FR-11): light-orange background; only rendered for admins. */
+  tone?: 'admin';
 };
 
-export function RailItem({ icon, label, active = false, badge, badgeLabel, href, as, onClick }: RailItemProps) {
+export function RailItem({ icon, label, active = false, badge, badgeLabel, href, as, onClick, tone }: RailItemProps) {
   const cls = clsx(
     'relative flex h-16 w-[68px] flex-col items-center justify-center gap-1 rounded-[18px] border-0 text-xs no-underline transition-colors duration-150',
-    active ? 'bg-primary-tint font-bold text-primary-deep' : 'bg-transparent font-semibold text-muted hover:bg-primary-tint/60',
+    tone === 'admin'
+      ? clsx('bg-review-bg text-review-text hover:brightness-95', active ? 'font-bold' : 'font-semibold')
+      : active ? 'bg-primary-tint font-bold text-primary-deep' : 'bg-transparent font-semibold text-muted hover:bg-primary-tint/60',
     focusRing,
   );
   const inner = (

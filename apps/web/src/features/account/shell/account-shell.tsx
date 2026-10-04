@@ -8,6 +8,7 @@ import { t } from '@remoa/strings';
 import { Alert, Button, Icon, SettingsNav, SettingsNavAction, useToast, type SettingsNavLinkProps } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
+import { openSupport } from '@/features/support/open';
 import { signOut } from '@/server/auth/actions';
 import { PhotoDialogProvider } from '../profile/photo-dialog';
 import { AccountHero } from './account-hero';
@@ -73,12 +74,12 @@ export function AccountShell({ children }: { children: ReactNode }) {
 
   const items = accountSections.map((id) => ({
     id,
-    href: `/conta/${id}`,
+    href: `/app/conta/${id}`,
     label: t(`account.nav.${id}`),
     icon: <NavIcon section={id} />,
     current: id === current,
-    chipTone: account.entitlements.plan === 'pro' ? ('primary' as const) : ('neutral' as const),
-    chip: id === 'plano' ? t(account.entitlements.plan === 'pro' ? 'billing.plan.pro' : 'billing.plan.free') : undefined,
+    chipTone: account.entitlements.plan !== 'free' ? ('primary' as const) : ('neutral' as const),
+    chip: id === 'plano' ? t(`billing.plan.${account.entitlements.plan}`) : undefined,
   }));
 
   return (
@@ -93,6 +94,10 @@ export function AccountShell({ children }: { children: ReactNode }) {
             items={items}
             linkComponent={NavLink}
             footer={
+              <>
+              <SettingsNavAction icon={<Icon name="help" size={20} />} onClick={() => openSupport('account_menu')}>
+                {t('support.navigation.talkToSupport')}
+              </SettingsNavAction>
               <SettingsNavAction
                 icon={<Icon name="logout" size={20} />}
                 onClick={async () => {
@@ -103,6 +108,7 @@ export function AccountShell({ children }: { children: ReactNode }) {
               >
                 {t('account.nav.signOut')}
               </SettingsNavAction>
+              </>
             }
           />
           {children}

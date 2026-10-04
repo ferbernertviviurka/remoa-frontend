@@ -48,11 +48,11 @@ function TopicRow({ entry, boards, onLink }: { entry: TopicEntry; boards: BoardS
       <span className="flex flex-wrap items-center gap-1 sm:justify-end">
         {state === 'gap' ? (
           <>
-            <Link href={`/mapas/novo?item=${item.id}`} aria-label={t('coverage.createMapFor', { topic: item.title })} className={linkCls}>{t('coverage.createMap')}</Link>
+            <Link href={`/app/mapas/novo?item=${item.id}`} aria-label={t('coverage.createMapFor', { topic: item.title })} className={linkCls}>{t('coverage.createMap')}</Link>
             <Button size="sm" variant="quiet" aria-label={t('coverage.linkExistingFor', { topic: item.title })} onClick={() => onLink(item)}>{t('coverage.linkExisting')}</Button>
           </>
         ) : linked[0] ? (
-          <Link href={`/mapas/${linked[0].id}`} aria-label={t('coverage.openMapFor', { topic: item.title })} className={linkCls}>
+          <Link href={`/app/mapas/${linked[0].id}`} aria-label={t('coverage.openMapFor', { topic: item.title })} className={linkCls}>
             {t('coverage.openMap')}{linked.length > 1 ? ` ${t('coverage.openMapMore', { n: linked.length - 1 })}` : ''}
           </Link>
         ) : null}
@@ -137,7 +137,7 @@ export function CoverageView({ rows: initialRows, items, summary, boards: initia
           <ul aria-label={t('coverage.emptySuggestionsLabel')} className="m-0 list-none p-0">
             {suggestTopics(areaItems).map((i) => <TopicActions key={i.id} topic={i} onLink={setLinking} />)}
           </ul>
-          <div><Link href="/mapas" className="inline-flex min-h-11 items-center rounded-btn bg-primary px-5 font-bold text-on-primary no-underline hover:brightness-110">{t('coverage.myMaps')}</Link></div>
+          <div><Link href="/app/mapas" className="inline-flex min-h-11 items-center rounded-btn bg-primary px-5 font-bold text-on-primary no-underline hover:brightness-110">{t('coverage.myMaps')}</Link></div>
         </section>
       ) : (
         <>
@@ -151,7 +151,7 @@ export function CoverageView({ rows: initialRows, items, summary, boards: initia
                   <li key={i.id} className="flex flex-1 basis-[220px] flex-col items-start gap-1 rounded-[20px] border border-border bg-bg px-4 py-3">
                     <span className="font-semibold">{i.title}</span>
                     <span className="text-sm text-muted">{t('coverage.target', { n: i.targetCards })}</span>
-                    <Link href={`/mapas/novo?item=${i.id}`} aria-label={t('coverage.createMapFor', { topic: i.title })} className={`${linkCls}`}>{t('coverage.createMap')}</Link>
+                    <Link href={`/app/mapas/novo?item=${i.id}`} aria-label={t('coverage.createMapFor', { topic: i.title })} className={`${linkCls}`}>{t('coverage.createMap')}</Link>
                   </li>
                 ))}
               </ul>

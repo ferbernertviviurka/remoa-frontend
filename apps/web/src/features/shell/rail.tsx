@@ -10,39 +10,38 @@ import { AppRail, Avatar, Logo, RailAccount, RailItem, type IconName } from '@re
 import { initialsOf } from '@/features/account/shell/format';
 
 export const items: { href: string; icon: IconName; label: StringKey }[] = [
-  { href: '/', icon: 'home', label: 'rail.home' },
-  { href: '/mapas', icon: 'maps', label: 'rail.maps' },
-  { href: '/revisar', icon: 'bolt', label: 'rail.review' },
-  { href: '/cobertura', icon: 'bars', label: 'rail.enamed' },
-  { href: '/loja', icon: 'store', label: 'rail.store' },
+  { href: '/app/hoje', icon: 'home', label: 'rail.home' },
+  { href: '/app/mapas', icon: 'maps', label: 'rail.maps' },
+  { href: '/app/revisar', icon: 'bolt', label: 'rail.review' },
+  { href: '/app/cobertura', icon: 'bars', label: 'rail.enamed' },
+  { href: '/app/loja', icon: 'store', label: 'rail.store' },
 ];
 
-// O middleware reescreve `/` → `/hoje` sem mudar a URL, então o Hoje aparece como `/` (ou `/hoje` em acesso direto).
 export const isActive = (path: string, href: string, challenge: boolean) =>
-  href === '/' ? path === '/' || path === '/hoje' : challenge ? href === '/revisar' : path === href || path.startsWith(`${href}/`);
+  challenge ? href === '/app/revisar' : path === href || path.startsWith(`${href}/`);
 
 /** Trilho de 88 px (D-076). `dueTotal` = badge do Revisar. */
 /** F13: who is signed in, for the avatar at the foot of the rail (null = API down, user icon). */
 export type RailIdentity = { name: string | null; email: string; color: number; src?: string } | null;
 
-export function Rail({ dueTotal = 0, account = null }: { dueTotal?: number; account?: RailIdentity }) {
+export function Rail({ dueTotal = 0, account = null, isAdmin = false }: { dueTotal?: number; account?: RailIdentity; isAdmin?: boolean }) {
   // useSearchParams sem Suspense derruba o prerender das páginas estáticas no `next build`; o fallback é o mesmo trilho sem `modo`.
   return (
-    <Suspense fallback={<RailView dueTotal={dueTotal} account={account} modo={null} />}>
-      <RailWithParams dueTotal={dueTotal} account={account} />
+    <Suspense fallback={<RailView dueTotal={dueTotal} account={account} modo={null} isAdmin={isAdmin} />}>
+      <RailWithParams dueTotal={dueTotal} account={account} isAdmin={isAdmin} />
     </Suspense>
   );
 }
 
-function RailWithParams({ dueTotal, account }: { dueTotal: number; account: RailIdentity }) {
-  return <RailView dueTotal={dueTotal} account={account} modo={useSearchParams().get('modo')} />;
+function RailWithParams({ dueTotal, account, isAdmin }: { dueTotal: number; account: RailIdentity; isAdmin: boolean }) {
+  return <RailView dueTotal={dueTotal} account={account} isAdmin={isAdmin} modo={useSearchParams().get('modo')} />;
 }
 
-function RailView({ dueTotal, account, modo }: { dueTotal: number; account: RailIdentity; modo: string | null }) {
+function RailView({ dueTotal, account, modo, isAdmin }: { dueTotal: number; account: RailIdentity; modo: string | null; isAdmin: boolean }) {
   const path = usePathname();
   const router = useRouter();
-  // G01 T6: the challenge lives in the map (`/mapas/<id>?modo=desafio`) but belongs to Revisar (Desafio.dc.html)
-  const challenge = path.startsWith('/mapas/') && modo === 'desafio';
+  // G01 T6: the challenge lives in the map (`/app/mapas/<id>?modo=desafio`) but belongs to Revisar (Desafio.dc.html)
+  const challenge = path.startsWith('/app/mapas/') && modo === 'desafio';
   // Destaque otimista: o item clicado fica ativo na hora (estado no NavPendingProvider, que limpa ao mudar a rota).
   const { pending, setPending } = useNavPending();
   return (
@@ -50,13 +49,13 @@ function RailView({ dueTotal, account, modo }: { dueTotal: number; account: Rail
       aria-label={t('pages.navLabel')}
       logo={
         showNavbar(path) ? null : (
-          <Link href="/" aria-label={t('pages.logoLink')}>
+          <Link href="/app/hoje" aria-label={t('pages.logoLink')}>
             <Logo size={36} />
           </Link>
         )
       }
       account={
-        showNavbar(path) ? null : <RailAccount aria-label={t('rail.account')} active={path.startsWith('/conta')} onClick={() => router.push('/conta')}>
+        showNavbar(path) ? null : <RailAccount aria-label={t('rail.account')} active={path.startsWith('/app/conta')} onClick={() => router.push('/app/conta')}>
           {account ? <Avatar name={account.name ?? account.email} fallback={initialsOf(account.name, account.email)} src={account.src} color={account.color} size={44} plain /> : null}
         </RailAccount>
       }
@@ -70,9 +69,10 @@ function RailView({ dueTotal, account, modo }: { dueTotal: number; account: Rail
           label={t(i.label)}
           active={pending ? pending === i.href : isActive(path, i.href, challenge)}
           onClick={() => !isActive(path, i.href, challenge) && setPending(i.href)}
-          {...(i.href === '/revisar' && dueTotal > 0 ? { badge: dueTotal, badgeLabel: t('review.badge', { n: dueTotal }) } : {})}
+          {...(i.href === '/app/revisar' && dueTotal > 0 ? { badge: dueTotal, badgeLabel: t('review.badge', { n: dueTotal }) } : {})}
         />
       ))}
+      {isAdmin ? <RailItem as={Link} href="/admin" icon="shield" label={t('admin.navigation.admin')} tone="admin" /> : null}
     </AppRail>
   );
 }

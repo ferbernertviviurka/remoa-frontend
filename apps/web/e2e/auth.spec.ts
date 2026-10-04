@@ -5,8 +5,8 @@ const email = `e2e-${Date.now()}@remoa.test`;
 const password = 'senha-forte-123';
 
 test('rota protegida redireciona para /entrar', async ({ page }) => {
-  await page.goto('/mapas');
-  await expect(page).toHaveURL(/\/entrar\?next=%2Fmapas$/);
+  await page.goto('/app/mapas');
+  await expect(page).toHaveURL(/\/entrar\?next=%2Fapp%2Fmapas$/);
 });
 
 test('cadastro, logout e login', async ({ page }) => {
@@ -27,12 +27,12 @@ test('cadastro, logout e login', async ({ page }) => {
   await expect(page.getByText('Marque a caixa')).toBeVisible();
   await page.getByRole('checkbox').click();
   await page.getByRole('button', { name: 'Criar conta' }).click();
-  await expect(page).toHaveURL(/\/$/); // D-086: pós-login cai no Hoje
+  await expect(page).toHaveURL(/\/app\/hoje$/); // D-321: pós-login cai no Hoje
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Seu primeiro mapa começa aqui');
   const events = await page.evaluate(() => window.__remoaEvents ?? []);
   expect(events.map((e) => e.event)).toContain('signup');
 
-  await page.goto('/conta');
+  await page.goto('/app/conta');
   await expect(page.getByRole('region', { name: 'Resumo do perfil' }).getByText(email, { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Sair' }).click();
   await expect(page).toHaveURL(/\/$/);
@@ -44,5 +44,5 @@ test('cadastro, logout e login', async ({ page }) => {
   await page.getByLabel('E-mail').fill(email);
   await page.getByLabel('Senha').fill(password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-  await expect(page).toHaveURL(/\/$/); // D-086: pós-login cai no Hoje
+  await expect(page).toHaveURL(/\/app\/hoje$/); // D-321: pós-login cai no Hoje
 });

@@ -70,7 +70,7 @@ export function WaitlistForm(p: WaitlistFormProps) {
           id={`${uid}-email`} name="email" type="email" autoComplete="email" inputMode="email" required
           value={p.email} onChange={(e) => p.onEmailChange(e.target.value)} placeholder={p.emailPlaceholder}
           aria-invalid={failed || undefined} aria-describedby={failed ? `${uid}-err` : undefined}
-          className={`h-[60px] min-w-0 flex-1 rounded-[18px] border-2 bg-surface px-5 text-[17px] font-semibold text-ink placeholder:text-muted ${failed ? 'border-review-on-dark' : 'border-transparent'} ${focusRing}`}
+          className={`h-[60px] min-w-0 sm:flex-1 rounded-[18px] border-2 bg-surface px-5 text-[17px] font-semibold text-ink placeholder:text-muted ${failed ? 'border-review-on-dark' : 'border-transparent'} ${focusRing}`}
         />
         <button type="submit" disabled={busy} className={`lift h-[60px] cursor-pointer rounded-[18px] border-0 bg-primary px-[26px] text-[17px] font-extrabold whitespace-nowrap text-on-primary disabled:cursor-progress disabled:opacity-70 ${focusRing}`}>
           {busy ? (p.submittingLabel ?? p.submitLabel) : p.submitLabel}
@@ -82,7 +82,7 @@ export function WaitlistForm(p: WaitlistFormProps) {
         {p.segments.map((s) => (
           <label key={s.value} className="relative">
             <input type="radio" name="segment" value={s.value} checked={p.segment === s.value} onChange={() => p.onSegmentChange(s.value)} className="peer sr-only" />
-            <span className="flex h-11 cursor-pointer items-center rounded-full border-[1.5px] border-on-dark-line bg-transparent px-[18px] text-sm font-bold text-on-dark transition-[background,border-color] duration-200 peer-checked:border-surface peer-checked:bg-surface peer-checked:text-panel-dark peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-steady-on-dark">{s.label}</span>
+            <span className="flex h-11 cursor-pointer items-center rounded-full border-[1.5px] border-on-dark-line bg-transparent px-[18px] text-sm font-bold text-on-dark transition-[background,border-color] duration-200 peer-checked:border-on-dark peer-checked:bg-on-dark peer-checked:text-panel-dark peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-steady-on-dark">{s.label}</span>
           </label>
         ))}
       </fieldset>

@@ -36,7 +36,7 @@ describe('NewMapView', () => {
     next();
     expect(screen.getByText('Tudo pronto para criar')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Criar mapa' }));
-    await waitFor(() => expect(push).toHaveBeenCalledWith('/mapas/new1'));
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/app/mapas/new1'));
     expect(api).toHaveBeenCalledWith('/v1/boards', { method: 'POST', body: JSON.stringify({ title: 'Meu mapa', area: 'CM', matrixItemId: 'i1' }) });
     expect(track).toHaveBeenCalledWith('board_created', {});
   });

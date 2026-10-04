@@ -24,7 +24,7 @@ test('novo mapa: em branco cria e abre o editor com matrixItemId; PDF, Anki e ma
   // PDF e Anki: CTA só com arquivo; depois, "Em breve" sem chamada à API.
   // (Anki deixou de ser "Em breve": F06, coberto por import.spec.ts.)
   for (const [caminho, file, cta] of [['pdf', 'a.pdf', 'Gerar rascunho do mapa']] as const) {
-    await page.goto(`/mapas/novo?caminho=${caminho}`);
+    await page.goto(`/app/mapas/novo?caminho=${caminho}`);
     await toStep3(page);
     await expect(page.getByRole('button', { name: cta })).toBeDisabled();
     await page.locator('input[type=file]').setInputFiles({ name: file, mimeType: 'application/octet-stream', buffer: Buffer.from('x') });
@@ -36,32 +36,32 @@ test('novo mapa: em branco cria e abre o editor com matrixItemId; PDF, Anki e ma
   expect(posts).toEqual([]);
 
   // Mapa pronto: não existe (D-088): aviso honesto, CTA desabilitado.
-  await page.goto('/mapas/novo?caminho=pronto');
+  await page.goto('/app/mapas/novo?caminho=pronto');
   await expect(page.getByRole('button', { name: /De um mapa pronto/ })).toHaveAttribute('aria-pressed', 'true');
   await toStep3(page);
   await expect(page.getByRole('status')).toContainText('Os mapas prontos aparecem aqui');
   await expect(page.getByRole('button', { name: 'Adicionar ao meu mapa' })).toBeDisabled();
 
   // ?caminho= inválido cai em "Em branco"; padrão sem query é PDF.
-  await page.goto('/mapas/novo?caminho=xyz');
+  await page.goto('/app/mapas/novo?caminho=xyz');
   await expect(page.getByRole('button', { name: /Em branco/ })).toHaveAttribute('aria-pressed', 'true');
-  await page.goto('/mapas/novo');
+  await page.goto('/app/mapas/novo');
   await expect(page.getByRole('button', { name: /Do meu PDF/ })).toHaveAttribute('aria-pressed', 'true');
 
   // ?item= (link da Cobertura): pré-seleciona o item, Em branco, passo Detalhes; id desconhecido é ignorado.
-  await page.goto('/mapas/novo?item=00000000-0000-0000-0000-000000000000');
+  await page.goto('/app/mapas/novo?item=00000000-0000-0000-0000-000000000000');
   await expect(page.getByRole('heading', { level: 1, name: 'Como você quer começar?' })).toBeVisible();
   const { headers } = auth;
   const list = (await (await request.get('http://localhost:4000/v1/matrix/items?area=CM', { headers })).json()).data as { id: string; title: string; parentId: string | null }[];
   const leaf = list.filter((x) => !list.some((c) => c.parentId === x.id))[1]!;
-  await page.goto(`/mapas/novo?item=${leaf.id}`);
+  await page.goto(`/app/mapas/novo?item=${leaf.id}`);
   await expect(page.getByRole('heading', { level: 1, name: 'Sobre o que é este mapa?' })).toBeVisible();
   await expect(page.getByLabel('Nome do mapa')).toHaveCount(1); // the slide keeps the outgoing step mounted for a moment
   await expect(page.getByLabel('Nome do mapa')).toHaveValue(leaf.title);
   await expect(page.getByRole('complementary', { name: 'Prévia do seu mapa' }).getByText(leaf.title).first()).toBeVisible();
 
   // Em branco: cria, vai para o editor, com o item da matriz sugerido.
-  await page.goto('/mapas/novo?caminho=blank');
+  await page.goto('/app/mapas/novo?caminho=blank');
   await toStep3(page);
   await expect(page.getByText('Tudo pronto para criar')).toBeVisible();
   await page.getByRole('button', { name: 'Criar mapa', exact: true }).click();

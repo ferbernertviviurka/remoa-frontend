@@ -39,7 +39,7 @@ describe('AccountView', () => {
     expect(screen.getByText(`2 de ${PLAN_LIMITS.free.limits.boards}`)).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Cancelar assinatura' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Assinar o Pro' }));
-    expect(push).toHaveBeenCalledWith('/planos?de=account_plan');
+    expect(push).toHaveBeenCalledWith('/app/planos?de=account_plan');
   });
 
   it('pro: next charge, unlimited usage, manage and cancel open the portal', async () => {
@@ -69,7 +69,7 @@ describe('AccountView', () => {
     view(pro, 'checkout');
     expect(screen.getByText('Assinatura ativada. Bem-vindo ao Pro.')).toBeVisible();
     expect(track).toHaveBeenCalledWith('subscription_started', {});
-    expect(replace).toHaveBeenCalledWith('/conta');
+    expect(replace).toHaveBeenCalledWith('/app/conta');
   });
 
   it('exports the data as a JSON download and tracks account_exported', async () => {

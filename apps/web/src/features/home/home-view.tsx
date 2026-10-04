@@ -113,9 +113,9 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart }: 
               due > 0 && top ? (
                 <HeroActions only={dueBoards.length > 1 ? { id: top.id, title: top.title } : undefined} />
               ) : boards.length === 0 ? (
-                <GoButton variant="light" href="/mapas/novo" label={t('library.newMapButton')} />
+                <GoButton variant="light" href="/app/mapas/novo" label={t('library.newMapButton')} />
               ) : (
-                <GoButton variant="light" href="/mapas" label={t('home.openMaps')} />
+                <GoButton variant="light" href="/app/mapas" label={t('home.openMaps')} />
               )
             }
           >
@@ -154,7 +154,7 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart }: 
           <section aria-labelledby="home-new" className={`${panel} gap-3 p-[22px]`}>
             <h2 id="home-new" className={`${h2} mb-0.5 text-[22px] tracking-[-0.02em]`}>{t('home.startSomething')}</h2>
             {shortcuts.map((s) => (
-              <Link key={s.key} href={`/mapas/novo?caminho=${s.key}`} className="lift flex items-center gap-3.5 rounded-[18px] bg-canvas p-3 text-ink no-underline">
+              <Link key={s.key} href={`/app/mapas/novo?caminho=${s.key}`} className="lift flex items-center gap-3.5 rounded-[18px] bg-canvas p-3 text-ink no-underline">
                 <span aria-hidden="true" className="flex size-11 items-center justify-center rounded-[14px] bg-primary-tint text-primary-deep"><Icon name={s.icon} size={22} /></span>
                 <span className="flex flex-col leading-[1.3]">
                   <span className="font-bold">{t(s.title)}</span>
@@ -162,6 +162,13 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart }: 
                 </span>
               </Link>
             ))}
+            <Link href="/app/indicar?de=home" className="lift flex items-center gap-3.5 rounded-[18px] bg-canvas p-3 text-ink no-underline">
+              <span aria-hidden="true" className="flex size-11 items-center justify-center rounded-[14px] bg-primary-tint text-primary-deep"><Icon name="gift" size={22} /></span>
+              <span className="flex flex-col leading-[1.3]">
+                <span className="font-bold">{t('referral.homeCard')}</span>
+                <span className="text-[13px] text-muted">{t('referral.homeCardDesc')}</span>
+              </span>
+            </Link>
           </section>
         </aside>
       </div>

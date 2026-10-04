@@ -23,14 +23,14 @@ describe('MainSlot', () => {
     expect(screen.queryByText('página real')).toBeNull();
     expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true');
     expect(screen.getByRole('link', { name: 'Mapas' })).toHaveAttribute('aria-current', 'page');
-    pathname = '/mapas';
+    pathname = '/app/mapas';
     rerender(app());
     expect(screen.getByText('página real')).toBeInTheDocument();
     expect(screen.queryByRole('status')).toBeNull();
   });
 
   it('without a rail click (back/forward, full load) never shows a skeleton', () => {
-    pathname = '/revisar';
+    pathname = '/app/revisar';
     render(app());
     expect(screen.getByText('página real')).toBeInTheDocument();
   });
@@ -46,11 +46,11 @@ describe('MainSlot', () => {
 describe('PendingLink (G02)', () => {
   it('a map tile click shows the editor skeleton until the route changes; modifier clicks do not', async () => {
     const { PendingLink } = await import('./nav-pending');
-    pathname = '/mapas';
+    pathname = '/app/mapas';
     const id = '00000000-0000-4000-8000-000000000001';
     const page = () => (
       <NavPendingProvider>
-        <PendingLink href={`/mapas/${id}`}>Sepse</PendingLink>
+        <PendingLink href={`/app/mapas/${id}`}>Sepse</PendingLink>
         <MainSlot><p>página real</p></MainSlot>
       </NavPendingProvider>
     );
@@ -60,7 +60,7 @@ describe('PendingLink (G02)', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Sepse' }), { button: 0 });
     expect(screen.queryByText('página real')).toBeNull();
     expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true');
-    pathname = `/mapas/${id}`;
+    pathname = `/app/mapas/${id}`;
     rerender(page());
     expect(screen.getByText('página real')).toBeInTheDocument();
   });

@@ -27,7 +27,7 @@ export function QueueView({ items, boardTitles }: { items: QueueItem[]; boardTit
   if (items.length === 0) {
     return (
       <EmptyState title={t('review.empty.title')} body={t('review.empty.body')}>
-        <Link href="/mapas">{t('review.empty.cta')}</Link>
+        <Link href="/app/mapas">{t('review.empty.cta')}</Link>
       </EmptyState>
     );
   }
@@ -53,7 +53,7 @@ export function QueueView({ items, boardTitles }: { items: QueueItem[]; boardTit
           <li key={id}>
             <Card>
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <Link href={`/mapas/${id}`} className="inline-flex min-h-11 items-center font-semibold text-text underline">
+                <Link href={`/app/mapas/${id}`} className="inline-flex min-h-11 items-center font-semibold text-text underline">
                   {boardTitles[id] ?? t('review.unknownBoard')}
                 </Link>
                 <span className="text-sm text-muted">
@@ -71,7 +71,7 @@ export function QueueView({ items, boardTitles }: { items: QueueItem[]; boardTit
           onClick={async () => {
             setStarting('busy');
             const first = await begin({ kind: 'daily' });
-            if (first) router.push(`/mapas/${first.boardId}?modo=desafio&sessao=diaria`);
+            if (first) router.push(`/app/mapas/${first.boardId}?modo=desafio&sessao=diaria`);
             else setStarting('failed');
           }}
         >

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/landing';
 import { Button, Empty } from '@remoa/ui';
 
 export default function ErrorBoundary({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
@@ -15,7 +15,7 @@ export default function ErrorBoundary({ error, reset }: { error: Error & { diges
           action={
             <>
               <Button onClick={reset}>{t('boundary.retry')}</Button>
-              <Link href="/mapas" className="inline-flex min-h-[46px] items-center rounded-btn px-4 font-display text-sm font-bold text-primary-deep">
+              <Link href="/app/mapas" className="inline-flex min-h-[46px] items-center rounded-btn px-4 font-display text-sm font-bold text-primary-deep">
                 {t('boundary.home')}
               </Link>
             </>

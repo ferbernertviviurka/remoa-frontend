@@ -12,6 +12,16 @@ export const plans = {
     eyebrow: 'Planos',
     free: { title: 'Seu estudo pede mais espaço?', subtitle: 'Comece no Free. Assine o Pro quando precisar de mais mapas, cards e correções.' },
     pro: { title: 'Você está no Pro.', subtitle: 'Veja o que está liberado e gerencie a sua assinatura.' },
+    founder: { title: 'Você é Founder.', subtitle: 'Acesso vitalício, IA ilimitada e as novidades primeiro.' },
+  },
+  // Founder (compra única, vitalícia). Oferta para quem está no Free.
+  founderOffer: {
+    title: 'Founder',
+    price: 'Pagamento único',
+    description: 'Tudo do Pro, IA sem limite e as novidades antes de todo mundo. Acesso vitalício.',
+    benefits: ['Tudo do Pro', 'Correções por IA ilimitadas', 'Mapas de PDF ilimitados', 'Novidades primeiro'],
+    choose: 'Quero ser Founder',
+    back: 'Prefiro o Pro',
   },
   period: {
     label: 'Período de cobrança',
@@ -55,6 +65,11 @@ export const plans = {
   summary: {
     title: 'Resumo do pedido',
     planName: 'Pro',
+    founderPlanName: 'Founder',
+    founderPer: 'pagamento único',
+    founderNote: 'Acesso vitalício, sem renovação. Pix ou cartão.',
+    founderLine: 'Founder, acesso vitalício',
+    founderSubscribe: 'Comprar o Founder',
     billingNote: {
       monthly: 'Cobrado todo mês.',
       annual: 'Cobrado uma vez por ano. Equivale a {price} por mês.',
@@ -100,6 +115,16 @@ export const plans = {
     method: { pix: 'Pix', card: 'cartão' },
   },
   success: {
+    founder: {
+      title: 'Você agora é Founder.',
+      subtitle: 'Seu acesso vitalício está ativo. Tudo isto já está liberado.',
+      benefits: {
+        pro: 'Tudo do Pro, para sempre',
+        aiGrades: 'Correções por IA ilimitadas',
+        pdfMaps: 'Mapas gerados de PDF ilimitados',
+        early: 'As novidades primeiro',
+      },
+    },
     title: 'Você agora é Pro.',
     subtitle: 'Seu plano foi atualizado. Tudo isto já está liberado.',
     benefits: {
@@ -128,11 +153,14 @@ export const plans = {
   subscriber: {
     title: 'Sua assinatura',
     plan: 'Pro',
+    founderPlan: 'Founder',
+    founderStatus: 'Vitalício',
+    founderText: 'Acesso vitalício, sem renovação. Obrigado por apoiar o Remoa.',
     status: { active: 'Ativa', pastDue: 'Pagamento pendente', canceling: 'Termina em {date}' },
     perYear: '{price} por ano',
     perMonth: '{price} por mês',
     billing: 'Cobrança',
-    billingValue: { monthly: 'Mensal', annual: 'Anual' },
+    billingValue: { monthly: 'Mensal', annual: 'Anual', lifetime: 'Pagamento único' },
     amount: 'Valor',
     renewal: 'Renova em',
     endsAt: 'Termina em {date}',

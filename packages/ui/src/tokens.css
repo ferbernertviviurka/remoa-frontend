@@ -26,6 +26,7 @@
 
   /* painel escuro (hero, barra de ferramentas, prévia do Novo mapa) */
   --panel-dark: #241a5c;
+  --admin-nav: #1a1533; /* barra lateral do painel admin (F19): escura nos dois temas, propositalmente diferente do app */
   --on-dark: #ffffff;
   --on-dark-muted: #cfc8f5; /* eyebrow, legendas */
   --on-dark-muted-2: #ddd7fa; /* texto de apoio */
@@ -142,6 +143,7 @@
   --color-grid: var(--grid);
   --color-grid-dot: var(--grid-dot);
   --color-panel-dark: var(--panel-dark);
+  --color-admin-nav: var(--admin-nav);
   --color-on-dark: var(--on-dark);
   --color-on-dark-muted: var(--on-dark-muted);
   --color-on-dark-muted-2: var(--on-dark-muted-2);

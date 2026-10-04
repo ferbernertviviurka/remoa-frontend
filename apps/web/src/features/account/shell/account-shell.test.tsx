@@ -34,7 +34,7 @@ describe('AccountShell', () => {
   it('pending chips are buttons: photo opens the dialog, reminder goes to preferences, both tracked', () => {
     view();
     fireEvent.click(screen.getByRole('button', { name: 'Ligar lembrete' }));
-    expect(push).toHaveBeenCalledWith('/conta/preferencias');
+    expect(push).toHaveBeenCalledWith('/app/conta/preferencias');
     expect(track).toHaveBeenCalledWith('completeness_chip_clicked', { item: 'reminder' });
     fireEvent.click(screen.getByRole('button', { name: 'Adicionar foto' }));
     expect(screen.getByRole('dialog', { name: 'Foto de perfil' })).toBeVisible();

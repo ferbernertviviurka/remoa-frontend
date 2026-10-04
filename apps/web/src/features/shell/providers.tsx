@@ -1,13 +1,13 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { t } from '@remoa/strings';
 import { ToastProvider } from '@remoa/ui';
 import { PaywallProvider } from '@/features/billing/paywall';
 
-export function Providers({ children }: { children: ReactNode }) {
+/** Labels come from the server layout so this client module does not pull the whole dictionary into every page (P-174). */
+export function Providers({ children, closeLabel, viewportLabel }: { children: ReactNode; closeLabel: string; viewportLabel: string }) {
   return (
-    <ToastProvider closeLabel={t('common.close')} viewportLabel={t('common.notifications')}>
+    <ToastProvider closeLabel={closeLabel} viewportLabel={viewportLabel}>
       <PaywallProvider>{children}</PaywallProvider>
     </ToastProvider>
   );

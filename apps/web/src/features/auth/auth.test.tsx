@@ -40,12 +40,12 @@ describe('SignInForm', () => {
     expect(signIn).not.toHaveBeenCalled();
   });
 
-  it('entra e vai para o next seguro; next externo cai em /', async () => {
+  it('entra e vai para o next seguro; next externo cai no Hoje', async () => {
     render(<SignInForm next="//evil.com" />);
     type('E-mail', 'a@b.co');
     type('Senha', 'senha-forte-123');
     click('Entrar');
-    await waitFor(() => expect(push).toHaveBeenCalledWith('/'));
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/app/hoje'));
     expect(signIn).toHaveBeenCalledWith({ email: 'a@b.co', password: 'senha-forte-123' });
   });
 
@@ -59,8 +59,8 @@ describe('SignInForm', () => {
   });
 
   it('preserva o next no link de cadastro', () => {
-    render(<SignInForm next="/mapas" />);
-    expect(screen.getByRole('link', { name: 'Criar conta' }).getAttribute('href')).toBe('/cadastro?next=%2Fmapas');
+    render(<SignInForm next="/app/mapas" />);
+    expect(screen.getByRole('link', { name: 'Criar conta' }).getAttribute('href')).toBe('/cadastro?next=%2Fapp%2Fmapas');
   });
 });
 
@@ -93,7 +93,7 @@ describe('SignUpWizard', () => {
   });
 
   it('exige o consentimento, envia nome, e grava momento/objetivo pelo PATCH do perfil', async () => {
-    render(<SignUpWizard next="/mapas" />);
+    render(<SignUpWizard next="/app/mapas" />);
     fillAccount();
     click('Continuar');
     type('Como podemos te chamar?', 'Ana Souza');
@@ -105,7 +105,7 @@ describe('SignUpWizard', () => {
     expect(signUp).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('checkbox'));
     click('Criar conta');
-    await waitFor(() => expect(push).toHaveBeenCalledWith('/mapas'));
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/app/mapas'));
     expect(signUp).toHaveBeenCalledWith({ email: 'novo@remoa.test', password: 'senha-forte-123', name: 'Ana Souza' });
     expect(api).toHaveBeenCalledWith('/v1/account/profile', { method: 'PATCH', body: JSON.stringify({ stage: 'y5_6', goal: 'residencia_enare' }) });
   });

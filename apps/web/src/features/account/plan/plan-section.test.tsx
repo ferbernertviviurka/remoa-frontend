@@ -30,6 +30,16 @@ afterEach(() => {
 });
 
 describe('PlanSection', () => {
+  it('referral card goes to /app/indicar?de=account for both plans', () => {
+    for (const a of [accountFreeFixture, accountProFixture]) {
+      view(a);
+      fireEvent.click(screen.getByRole('button', { name: 'Convidar amigos' }));
+      expect(push).toHaveBeenLastCalledWith('/app/indicar?de=account');
+      cleanup();
+    }
+  });
+
+
   it('free: offer with period toggle and upgrade tracking', () => {
     view(withUsage(accountFreeFixture, { boards: 0, cards: 0, ai_grades: 0, ai_generations: 0 }));
     expect(screen.getByText('R$ 39')).toBeVisible();
@@ -37,7 +47,7 @@ describe('PlanSection', () => {
     expect(screen.getByText('R$ 349')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Assinar o Pro' }));
     expect(track).toHaveBeenCalledWith('upgrade_clicked', { source: 'account_plan' });
-    expect(push).toHaveBeenCalledWith('/planos?de=account_plan&periodo=anual');
+    expect(push).toHaveBeenCalledWith('/app/planos?de=account_plan&periodo=anual');
   });
 
   it('pro: manage button, no offer, unlimited meters', () => {

@@ -22,9 +22,9 @@ export function NavPendingProvider({ children }: { children: ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
-const skeletons: Record<string, () => ReactNode> = { '/': HomeSkeleton, '/mapas': BoardsSkeleton, '/revisar': ReviewSkeleton };
+const skeletons: Record<string, () => ReactNode> = { '/app/hoje': HomeSkeleton, '/app/mapas': BoardsSkeleton, '/app/revisar': ReviewSkeleton };
 /** G02: a map opened from a MapTile (Hoje, Meus mapas) shows the editor skeleton on the click, before the route answers. */
-const skeletonOf = (href: string) => skeletons[href] ?? (/^\/mapas\/[0-9a-f-]{36}$/.test(href) ? EditorSkeleton : undefined);
+const skeletonOf = (href: string) => skeletons[href] ?? (/^\/app\/mapas\/[0-9a-f-]{36}$/.test(href) ? EditorSkeleton : undefined);
 
 /** next/link that marks its destination as pending on a plain click (MapTile `as`), so `MainSlot` swaps in its skeleton at once. */
 export function PendingLink({ onClick, ...p }: ComponentProps<typeof Link>) {
@@ -45,7 +45,7 @@ export function PendingLink({ onClick, ...p }: ComponentProps<typeof Link>) {
 export function MainSlot({ children }: { children: ReactNode }) {
   const { pending } = useNavPending();
   const path = usePathname();
-  const same = pending === '/' ? path === '/' || path === '/hoje' : pending != null && (path === pending || path.startsWith(`${pending}/`));
+  const same = pending != null && (path === pending || path.startsWith(`${pending}/`));
   const Skeleton = pending && !same ? skeletonOf(pending) : undefined;
   return <>{Skeleton ? <Skeleton /> : children}</>;
 }

@@ -93,13 +93,13 @@ describe('MapSlider', () => {
     fireEvent.click(screen.getByRole('button', { name: /Fazer upgrade/ }));
     expect(track).toHaveBeenCalledWith('upgrade_clicked', { source: 'map_slider_lock' });
     expect(track).toHaveBeenCalledWith('map_slide_clicked', { kind: 'locked' });
-    expect(push).toHaveBeenCalledWith('/planos?de=map_slider_lock');
+    expect(push).toHaveBeenCalledWith('/app/planos?de=map_slider_lock');
   });
 
   it('Free with 1 map: new card with the remaining count links to /mapas/novo', () => {
     plan = { limits: { boards: 2 } };
     render(<MapSlider maps={maps(1)} />);
     expect(screen.getByText('Você ainda pode criar 1 mapa no plano Free.')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Criar um novo mapa' })).toHaveAttribute('href', '/mapas/novo');
+    expect(screen.getByRole('link', { name: 'Criar um novo mapa' })).toHaveAttribute('href', '/app/mapas/novo');
   });
 });

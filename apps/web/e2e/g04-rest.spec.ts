@@ -9,7 +9,7 @@ test.use({ viewport: { width: 1440, height: 900 }, colorScheme: 'light' });
 test('1. /conta/plano: Mensal ↔ Anual troca valor e textos com TextMorph', async ({ page, request }) => {
   test.setTimeout(120_000);
   await accountUser(page, request);
-  await page.goto('/conta/plano');
+  await page.goto('/app/conta/plano');
   const offer = page.locator('section').filter({ has: page.getByRole('radiogroup', { name: /cobrança/i }) }).first();
   const group = page.getByRole('radiogroup', { name: /cobrança/i });
   await expect(group).toBeVisible();
@@ -32,7 +32,7 @@ test('1. /conta/plano: Mensal ↔ Anual troca valor e textos com TextMorph', asy
 test('2 e 3. Preferências: Escuro "Em breve" desabilitado; sem "Cards novos por dia"', async ({ page, request }) => {
   test.setTimeout(120_000);
   await accountUser(page, request);
-  await page.goto('/conta/preferencias');
+  await page.goto('/app/conta/preferencias');
   const dark = page.getByRole('radio', { name: /Escuro/ }).or(page.getByRole('button', { name: /Escuro/ })).first();
   await expect(dark).toBeVisible();
   await expect(dark).toBeDisabled();
@@ -47,14 +47,14 @@ test('2 e 3. Preferências: Escuro "Em breve" desabilitado; sem "Cards novos por
 test('4. avatar na navbar (link para /conta) e nenhuma conta no trilho', async ({ page, request }) => {
   test.setTimeout(120_000);
   await accountUser(page, request);
-  for (const path of ['/', '/mapas', '/revisar', '/conta/perfil']) {
+  for (const path of ['/app/hoje', '/app/mapas', '/app/revisar', '/app/conta/perfil']) {
     await page.goto(path);
     const acc = page.getByLabel('Minha conta');
     await expect(acc, path).toHaveCount(1);
     await expect(page.getByRole('banner').getByLabel('Minha conta'), path).toBeVisible();
     await expect(page.locator('aside [aria-label="Minha conta"], nav [aria-label="Minha conta"]'), `trilho em ${path}`).toHaveCount(0);
   }
-  await page.goto('/');
+  await page.goto('/app/hoje');
   await shot(page, 'p4-navbar');
   await page.getByRole('banner').getByLabel('Minha conta').click();
   await expect(page).toHaveURL(/\/conta/);
@@ -63,7 +63,7 @@ test('4. avatar na navbar (link para /conta) e nenhuma conta no trilho', async (
 test('6. /mapas/novo: cada alternativa troca título e passos do painel direito', async ({ page, request }) => {
   test.setTimeout(120_000);
   await accountUser(page, request);
-  await page.goto('/mapas/novo');
+  await page.goto('/app/mapas/novo');
   const aside = page.getByRole('complementary', { name: 'Prévia do seu mapa' });
   await expect(aside).toBeVisible();
   const cases = [
@@ -96,7 +96,7 @@ test('7. Free 50 cards: "N de 50", 51º barrado, arquivar libera', async ({ page
   const send = (n: number) => request.post(`${API}/v1/boards/ops`, { headers, data: { ops: Array.from({ length: n }, card) } });
   expect((await send(50)).status()).toBe(200);
 
-  await page.goto('/conta/plano');
+  await page.goto('/app/conta/plano');
   const cards = page.getByText('50 de 50');
   await expect(cards.first()).toBeVisible();
   await shot(page, 'p7-conta-plano-50');
@@ -113,7 +113,7 @@ test('7. Free 50 cards: "N de 50", 51º barrado, arquivar libera', async ({ page
   expect((await over.json()).error.message).toBe('cards');
 
   // 51º pela UI: mensagem de limite
-  await page.goto(`/mapas/${board}`);
+  await page.goto(`/app/mapas/${board}`);
   await expect(page.locator('.react-flow__node')).toHaveCount(50);
   await page.getByRole('button', { name: 'Adicionar Pergunta e Resposta' }).first().click();
   await expect(page.getByRole('dialog').filter({ hasText: 'limite de 50 cards do Free' })).toBeVisible();
@@ -123,7 +123,7 @@ test('7. Free 50 cards: "N de 50", 51º barrado, arquivar libera', async ({ page
   // arquivar libera
   const r = await request.patch(`${API}/v1/boards/${board}`, { headers, data: { archived: true } });
   expect(r.status()).toBe(200);
-  await page.goto('/conta/plano');
+  await page.goto('/app/conta/plano');
   await expect(page.getByText('0 de 50')).toBeVisible();
   const b2 = (await (await request.post(`${API}/v1/boards`, { headers, data: { title: 'Novo' } })).json()).data.id as string;
   const ok = await request.post(`${API}/v1/boards/ops`, { headers, data: { ops: [{ ...card(), boardId: b2 }] } });

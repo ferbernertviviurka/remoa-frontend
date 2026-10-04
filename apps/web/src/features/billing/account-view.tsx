@@ -25,6 +25,7 @@ export function AccountView({ email, ent, notice }: { email: string; ent: Entitl
   const [error, setError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
   const announced = useRef(false);
+  const founder = ent.plan === 'founder';
   const pro = ent.plan === 'pro';
 
   useEffect(() => {
@@ -32,7 +33,7 @@ export function AccountView({ email, ent, notice }: { email: string; ent: Entitl
     announced.current = true;
     if (notice === 'checkout') track('subscription_started', {});
     toast({ title: t(notice === 'checkout' ? 'billing.account.checkoutOk' : 'billing.account.portalOk') });
-    router.replace('/conta'); // so a refresh doesn't announce (and track) it again
+    router.replace('/app/conta'); // so a refresh doesn't announce (and track) it again
   }, [notice, router, toast]);
 
   async function portal(cancel: boolean) {
@@ -111,7 +112,7 @@ export function AccountView({ email, ent, notice }: { email: string; ent: Entitl
           {pro && !ent.cancelAtPeriodEnd && ent.renewsAt ? <p className="text-sm">{t('billing.account.renewsAt', { date: formatDate(ent.renewsAt) })}</p> : null}
           {ent.graceUntil ? <Alert tone="watch" title={t('billing.account.grace', { date: formatDate(ent.graceUntil) })} /> : null}
           <div className="flex flex-wrap gap-2">
-            {pro ? (
+            {founder ? null : pro ? (
               <>
                 <Button variant="secondary" loading={busy === 'portal'} onClick={() => void portal(false)}>{t('billing.account.manage')}</Button>
                 {ent.cancelAtPeriodEnd ? null : (
@@ -119,7 +120,7 @@ export function AccountView({ email, ent, notice }: { email: string; ent: Entitl
                 )}
               </>
             ) : (
-              <Button onClick={() => router.push('/planos?de=account_plan')}>{t('billing.account.subscribe')}</Button>
+              <Button onClick={() => router.push('/app/planos?de=account_plan')}>{t('billing.account.subscribe')}</Button>
             )}
           </div>
         </section>

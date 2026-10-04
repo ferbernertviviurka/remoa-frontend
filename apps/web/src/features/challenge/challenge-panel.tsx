@@ -43,7 +43,7 @@ export function ChallengePanel({ scope, boardId, heat, onExit, onRated }: Props)
   const elsewhere = item && item.boardId !== boardId ? item.boardId : null;
 
   useEffect(() => {
-    if (elsewhere) router.replace(`/mapas/${elsewhere}?modo=desafio&sessao=diaria`, { scroll: false });
+    if (elsewhere) router.replace(`/app/mapas/${elsewhere}?modo=desafio&sessao=diaria`, { scroll: false });
   }, [elsewhere, router]);
 
   const loading = (
@@ -223,7 +223,7 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
       ) : null}
       {out.fallback ? (
         <Alert tone={out.fallback === 'quota' ? 'watch' : 'unknown'} title={t(fallbackText[out.fallback])}>
-          {out.fallback === 'quota' ? <Link href="/planos?de=ai_quota" className="font-semibold underline">{t('challenge.quotaCta')}</Link> : null}
+          {out.fallback === 'quota' ? <Link href="/app/planos?de=ai_quota" className="font-semibold underline">{t('challenge.quotaCta')}</Link> : null}
         </Alert>
       ) : null}
       {out.gradeLocked ? <Alert tone="review" title={t('challenge.gradeLocked')} /> : null}

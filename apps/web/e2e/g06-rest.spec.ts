@@ -50,7 +50,7 @@ test('misto: Conteúdo nunca vira item do desafio nem da fila; só Pergunta e Re
   }
   expect(board$).toContain(ids[0]!);
 
-  await page.goto(`/mapas/${id}?modo=desafio`);
+  await page.goto(`/app/mapas/${id}?modo=desafio`);
   let asked = 0;
   for (let n = 0; n < 8; n++) {
     const summary = page.getByRole('heading', { name: 'Sessão concluída' });
@@ -65,7 +65,7 @@ test('misto: Conteúdo nunca vira item do desafio nem da fila; só Pergunta e Re
   await expect(page.getByRole('heading', { name: 'Sessão concluída' })).toBeVisible();
   expect(asked).toBe(2);
 
-  await page.goto('/revisar');
+  await page.goto('/app/revisar');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(page.locator('main')).not.toContainText(/Conteúdo (Gama|Delta)/);
 });
@@ -74,7 +74,7 @@ test('caso: o tooltip da etapa abre por hover e fecha com Escape; axe com ele ab
   test.setTimeout(120_000);
   const { headers } = await signUpAndLogin(page, request);
   const { id } = await board(request, headers, 'Caso', [{ title: 'Caso sepse', type: 'case', x: 80, y: 120, put: { payload: { caseSteps: [{ stage: 'presentation', text: 'Febre' }] } } }]);
-  await page.goto(`/mapas/${id}`);
+  await page.goto(`/app/mapas/${id}`);
   const card = node(page, 'Caso sepse');
   await card.getByRole('button', { name: /Diagnóstico/ }).hover();
   await expect(page.getByRole('tooltip')).toContainText('pergunta o diagnóstico');
@@ -86,7 +86,7 @@ test('caso: o tooltip da etapa abre por hover e fecha com Escape; axe com ele ab
 test('perfil: escolher objetivo de outro grupo e momento novo persiste após recarregar; axe', async ({ page, request }) => {
   test.setTimeout(120_000);
   await accountUser(page, request);
-  await page.goto('/conta/perfil');
+  await page.goto('/app/conta/perfil');
   const residencia = page.getByRole('radiogroup', { name: /^Objetivo de prova: Residência/ });
   await residencia.getByRole('radio', { name: 'USP' }).click();
   await expect(residencia.getByRole('radio', { name: 'USP' })).toBeChecked();
@@ -104,7 +104,7 @@ test('perfil: escolher objetivo de outro grupo e momento novo persiste após rec
 test('cobertura → "Criar mapa para este tema" abre o Novo mapa com o item pré-selecionado', async ({ page, request }) => {
   test.setTimeout(120_000);
   await signUpAndLogin(page, request);
-  await page.goto('/cobertura');
+  await page.goto('/app/cobertura');
   const link = page.getByRole('link', { name: /^Criar mapa para / }).first();
   const label = (await link.getAttribute('aria-label'))!.replace(/^Criar mapa para /, '');
   await link.click();
@@ -119,14 +119,14 @@ test('axe: Novo mapa nas 4 alternativas e em 390x844', async ({ page, request })
   test.setTimeout(150_000);
   await signUpAndLogin(page, request);
   for (const c of ['pdf', 'anki', 'pronto', 'blank']) {
-    await page.goto(`/mapas/novo?caminho=${c}`);
+    await page.goto(`/app/mapas/novo?caminho=${c}`);
     await expect(page.getByRole('heading', { level: 1, name: 'Como você quer começar?' })).toBeVisible();
     expect(await axe(page), `novo ${c} passo 1`).toEqual([]);
     await page.getByRole('button', { name: 'Continuar' }).click();
     expect(await axe(page), `novo ${c} passo 2`).toEqual([]);
   }
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/mapas/novo?caminho=anki');
+  await page.goto('/app/mapas/novo?caminho=anki');
   expect(await axe(page), 'novo anki 390').toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'sem scroll horizontal').toBe(true);
 });
@@ -139,7 +139,7 @@ test('axe: editor com card redimensionado e painel aberto, Conteúdo, fluxograma
     { title: 'Fisiopatologia', type: 'note', x: 480, y: 80, put: { front: 'Resposta desregulada do hospedeiro.' } },
     { title: 'Pacote', type: 'flow', x: 80, y: 420, put: { payload: { steps: [{ id: 's1', text: 'Lactato' }, { id: 's2', text: 'Hemoculturas' }, { id: 's3', text: 'Antibiótico' }] } } },
   ]);
-  await page.goto(`/mapas/${id}`);
+  await page.goto(`/app/mapas/${id}`);
   const card = node(page, 'Sepse');
   await card.getByRole('button', { name: 'Selecionar Sepse' }).click();
   const h = (await card.locator('.react-flow__resize-control.bottom.right').boundingBox())!;
@@ -161,7 +161,7 @@ test('axe: editor com card redimensionado e painel aberto, Conteúdo, fluxograma
   expect(await axe(page), 'fluxograma virado (timeline)').toEqual([]);
 
   const sepse = await createMockSepse(request, headers, userId);
-  await page.goto(`/mapas/${sepse}?modo=desafio`);
+  await page.goto(`/app/mapas/${sepse}?modo=desafio`);
   await page.getByRole('group', { name: 'Como responder' }).getByRole('button', { name: 'Falar' }).click();
   await expect(panel(page).getByText('Em breve', { exact: true })).toBeVisible();
   expect(await axe(page), 'desafio Falar + Em breve').toEqual([]);

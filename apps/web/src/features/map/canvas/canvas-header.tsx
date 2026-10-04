@@ -95,7 +95,7 @@ export const CanvasHeader = memo(function CanvasHeader(p: Props) {
       {/* phone (G02): back, truncated title, Explorar/Desafio and the rest in a "⋯" menu */}
       <header className="flex h-[68px] shrink-0 items-center gap-2 border-b border-border bg-surface px-3 md:gap-3.5 md:px-5">
         <Link
-          href="/mapas"
+          href="/app/mapas"
           aria-label={t('editor.backToLibrary')}
           className="flex size-11 shrink-0 items-center justify-center rounded-[14px] border border-border text-ink no-underline hover:bg-primary-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
@@ -111,7 +111,7 @@ export const CanvasHeader = memo(function CanvasHeader(p: Props) {
           {saveText(p.status, p.board.updatedAt, now)}
         </span>
         {p.coverage ? (
-          <Link href="/cobertura" className="hidden min-h-11 shrink-0 items-center truncate text-[13px] font-semibold text-primary-deep no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:inline-flex">
+          <Link href="/app/cobertura" className="hidden min-h-11 min-w-24 max-w-[22rem] shrink items-center truncate text-[13px] font-semibold text-primary-deep no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:inline-flex">
             {t('editor.coversHeader', { pct: p.coverage.pct, item: p.coverage.item })}
           </Link>
         ) : null}

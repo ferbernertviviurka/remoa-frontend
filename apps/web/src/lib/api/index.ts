@@ -1,5 +1,4 @@
 import { httpErrorBodySchema, type Result } from '@remoa/contracts';
-import { createClient } from '@/lib/supabase/client';
 
 export const apiBase = () => process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -18,8 +17,12 @@ export async function apiFetch<T>(path: string, token: string | null, init: Requ
   return { ok: false, error: parsed.success ? parsed.data.error : { code: 'internal', message: `HTTP ${res.status}` } };
 }
 
-/** Browser-side call with the current Supabase session token. */
+/**
+ * Browser-side call with the current Supabase session token. supabase-js is imported lazily (G11/D-357) so public pages
+ * that only use `apiFetch`/`apiBase` (the landing) do not ship ~60 KB gzip of auth client.
+ */
 export async function api<T>(path: string, init?: RequestInit): Promise<Result<T>> {
+  const { createClient } = await import('@/lib/supabase/client');
   const { data } = await createClient().auth.getSession();
   return apiFetch<T>(path, data.session?.access_token ?? null, init);
 }

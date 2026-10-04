@@ -25,6 +25,8 @@ export type QuestionPanelProps = {
   progressLabel: string;
   chips?: readonly { label: string; tone: 'brand' | 'review' | 'watch' }[];
   question: string;
+  /** Inert/decorative uses (landing hero) render the question as a paragraph so the page keeps a single heading outline (P-177). */
+  questionAs?: 'h2' | 'p';
   modeLabel: string;
   modes: readonly { value: AnswerMode; label: string }[];
   mode: AnswerMode;
@@ -47,6 +49,7 @@ export type QuestionPanelProps = {
 export function QuestionPanel(p: QuestionPanelProps) {
   const areaId = useId();
   const voiceId = useId();
+  const Q = p.questionAs ?? 'h2';
   return (
     <div className="flex h-full min-h-0 flex-col text-(--cv-ink)">
       <div className="flex flex-col gap-3 border-b border-border px-5 pb-3.5 pt-5">
@@ -66,7 +69,7 @@ export function QuestionPanel(p: QuestionPanelProps) {
         ) : null}
       </div>
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto px-5 py-[18px]">
-        <h2 className="m-0 font-display text-[21px] font-bold leading-[1.25] tracking-[-.02em]">{p.question}</h2>
+        <Q className="m-0 font-display text-[21px] font-bold leading-[1.25] tracking-[-.02em]">{p.question}</Q>
         {p.result ?? (
           <>
             <div role="group" aria-label={p.modeLabel} className="flex gap-1 rounded-[14px] bg-(--cv-seg) p-1">

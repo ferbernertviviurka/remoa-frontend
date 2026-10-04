@@ -11,9 +11,9 @@ test('navbar: presença por rota, painel do plano Free (hover, clique, Esc, Tab)
   const bar = page.getByRole('banner');
   const chip = page.getByRole('button', { name: 'Ver detalhes do plano' });
 
-  await page.goto('/');
+  await page.goto('/app/hoje');
   await expect(bar).toBeVisible();
-  await page.goto('/mapas');
+  await page.goto('/app/mapas');
   await expect(bar).toBeVisible();
   await expect(chip).toHaveText('Plano Free');
   await expect(page.getByRole('button', { name: 'Fazer upgrade' })).toBeVisible();
@@ -43,6 +43,6 @@ test('navbar: presença por rota, painel do plano Free (hover, clique, Esc, Tab)
   expect(results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')).toEqual([]);
   await page.screenshot({ path: test.info().outputPath('navbar-painel-free.png') });
 
-  await page.goto(`/mapas/${board}`);
+  await page.goto(`/app/mapas/${board}`);
   await expect(page.getByRole('banner')).toHaveCount(0);
 });

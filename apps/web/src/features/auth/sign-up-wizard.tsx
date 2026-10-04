@@ -10,7 +10,8 @@ import { signUp } from '@/server/auth/actions';
 import { identify, track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
-import { safeNext } from '@/lib/safe-next';
+import { attributeReferral } from '@/features/referral/invite/actions';
+import { APP_HOME, safeNext } from '@/lib/safe-next';
 import { goalGroups, stageOptions } from '../account/profile/profile-section';
 import { FieldError, PasswordField } from './password-field';
 import { generalMessage, validEmail } from './sign-in-form';
@@ -18,7 +19,8 @@ import { generalMessage, validEmail } from './sign-in-form';
 type Values = { email: string; password: string; name: string; stage: Stage | null; goal: Goal | null; consent: boolean };
 type Errs = Partial<Record<'email' | 'password' | 'name' | 'consent' | 'general', string>>;
 
-export function SignUpWizard({ next }: { next?: string }) {
+/** `referred`: there is an `rf` cookie (FR-15 shows the consent line; FR-16 attributes right after sign-up). */
+export function SignUpWizard({ next, referred = false }: { next?: string; referred?: boolean }) {
   const router = useRouter();
   const target = safeNext(next);
   const [hydrated, setHydrated] = useState(false);
@@ -72,6 +74,10 @@ export function SignUpWizard({ next }: { next?: string }) {
     const { data } = await createClient().auth.getUser();
     if (data.user) {
       identify(data.user.id);
+      if (referred) {
+        const r = await attributeReferral().catch(() => null); // never blocks the sign-up (D-383)
+        if (r) track('referral_signup', { valid: r.attributed, method: 'password' });
+      }
       // ponytail: signUpInputSchema só leva e-mail/senha/nome; momento e objetivo vão por PATCH /v1/account/profile (best-effort).
       if (v.stage || v.goal) {
         const body = { ...(v.stage ? { stage: v.stage } : {}), ...(v.goal ? { goal: v.goal } : {}) };
@@ -159,6 +165,7 @@ export function SignUpWizard({ next }: { next?: string }) {
           </dl>
           <Checkbox label={t('auth.review.consent')} checked={v.consent} onCheckedChange={(c) => set('consent', c === true)} aria-describedby={errs.consent ? 'su-consent-err' : undefined} />
           <FieldError id="su-consent-err">{errs.consent}</FieldError>
+          {referred ? <p className="m-0 text-sm text-muted">{t('referral.consent.nameVisibility')}</p> : null}
         </div>
       ) : null}
 
@@ -176,7 +183,7 @@ export function SignUpWizard({ next }: { next?: string }) {
       </div>
       <p className="m-0 text-sm text-muted">
         {t('auth.signUp.hasAccount')}{' '}
-        <Link href={target === '/' ? '/entrar' : `/entrar?next=${encodeURIComponent(target)}`} className="inline-flex min-h-11 items-center font-bold text-primary-deep underline">
+        <Link href={target === APP_HOME ? '/entrar' : `/entrar?next=${encodeURIComponent(target)}`} className="inline-flex min-h-11 min-w-11 items-center justify-center font-bold text-primary-deep underline">
           {t('auth.signUp.toSignIn')}
         </Link>
       </p>

@@ -77,7 +77,7 @@ export function SharedBoardView({ board, token }: Props) {
         return;
       }
       track('board_copied_from_link', { access: board.access, cards: board.cardCount, blockedByQuota: false });
-      router.push(`/mapas/${result.boardId}`);
+      router.push(`/app/mapas/${result.boardId}`);
     });
   }
 
@@ -91,7 +91,7 @@ export function SharedBoardView({ board, token }: Props) {
           <span className="text-sm font-semibold text-muted">
             {t('sharedMap.cardCount', { n: board.cardCount })}
           </span>
-          <Button size="sm" onClick={() => router.push(`/mapas/${board.ownBoardId}`)}>
+          <Button size="sm" onClick={() => router.push(`/app/mapas/${board.ownBoardId}`)}>
             {t('importReport.open')}
           </Button>
         </header>

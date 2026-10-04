@@ -15,7 +15,7 @@ vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
 vi.mock('@/lib/analytics', () => ({ track: () => undefined }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, replace, refresh: () => undefined }),
-  usePathname: () => `/mapas/${sepseBoard.id}`,
+  usePathname: () => `/app/mapas/${sepseBoard.id}`,
   useSearchParams: () => search,
 }));
 
@@ -175,7 +175,7 @@ describe('editor v2 (T5)', () => {
     }
   });
 
-  it('pinça: ctrl+roda fora do pane (sobre as camadas) e gesto do Safari dão zoom no mapa, não na página; 60–140%', async () => {
+  it('pinça: ctrl+roda fora do pane (sobre as camadas) e gesto do Safari dão zoom no mapa, não na página; 10–140%', async () => {
     mount();
     const zoom = screen.getByRole('group', { name: 'Controles de zoom' });
     await waitFor(() => expect(zoom).toHaveTextContent(/\d+%/));
@@ -196,7 +196,7 @@ describe('editor v2 (T5)', () => {
     await waitFor(() => expect(zoom).toHaveTextContent('140%'));
     gesture('gesturestart', 1);
     gesture('gesturechange', 0.01);
-    await waitFor(() => expect(zoom).toHaveTextContent('60%'));
+    await waitFor(() => expect(zoom).toHaveTextContent('10%'));
   });
 
   const sentOps = () => api.mock.calls.filter((c) => c[0] === '/v1/boards/ops').flatMap((c) => JSON.parse(c[1].body).ops as { op: string }[]);
@@ -275,7 +275,7 @@ describe('editor v2 (T5)', () => {
   it('Desafiar este mapa entra no modo desafio pela URL', async () => {
     mount();
     fireEvent.click(screen.getAllByRole('button', { name: 'Desafiar este mapa' })[0]!); // header first
-    expect(replace).toHaveBeenCalledWith(`/mapas/${sepseBoard.id}?modo=desafio`, { scroll: false });
+    expect(replace).toHaveBeenCalledWith(`/app/mapas/${sepseBoard.id}?modo=desafio`, { scroll: false });
   });
 
   it('modo desafio (?modo=desafio): sem pulse, sem legenda, inicia a sessão do mapa; "Sair do desafio" volta', async () => {
@@ -287,7 +287,7 @@ describe('editor v2 (T5)', () => {
     await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/challenge/start', expect.objectContaining({ method: 'POST' })));
     expect(JSON.parse(api.mock.calls.find((c) => c[0] === '/v1/challenge/start')![1].body)).toEqual({ kind: 'board', boardId: sepseBoard.id });
     fireEvent.click(screen.getAllByRole('button', { name: 'Sair do desafio' })[0]!); // header first
-    expect(replace).toHaveBeenCalledWith(`/mapas/${sepseBoard.id}`, { scroll: false });
+    expect(replace).toHaveBeenCalledWith(`/app/mapas/${sepseBoard.id}`, { scroll: false });
   });
 
   const item = (over: Record<string, unknown>) => ({ subId: null, boardId: sepseBoard.id, grading: 'none', options: ['a', 'b', 'c', 'd'], context: { neighbors: [] }, ...over });
@@ -361,7 +361,7 @@ describe('editor v2 (T5)', () => {
     expect(api).not.toHaveBeenCalledWith(`/v1/boards/${sepseBoard.id}`, expect.anything());
   });
 
-  it('zoom: botões presos a 60–140%', async () => {
+  it('zoom: botões presos a 10–140%', async () => {
     mount();
     const zoom = screen.getByRole('group', { name: 'Controles de zoom' });
     const step = async (name: string, times: number) => {
@@ -375,8 +375,8 @@ describe('editor v2 (T5)', () => {
     await step('Aumentar zoom', 8);
     expect(zoom).toHaveTextContent('140%');
     expect(within(zoom).getByRole('button', { name: 'Aumentar zoom' })).toBeDisabled();
-    await step('Diminuir zoom', 12);
-    expect(zoom).toHaveTextContent('60%');
+    await step('Diminuir zoom', 14);
+    expect(zoom).toHaveTextContent('10%');
     expect(within(zoom).getByRole('button', { name: 'Diminuir zoom' })).toBeDisabled();
   }, 15_000);
 });

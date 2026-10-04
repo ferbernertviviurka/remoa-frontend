@@ -30,6 +30,12 @@ describe('SuccessView', () => {
     expect(entRefresh).toHaveBeenCalled();
   });
 
+  it('paid lifetime: Founder copy', () => {
+    render(<SuccessView sessionId="cs_1" initial="paid" plan="founder" />);
+    expect(screen.getAllByText('Você agora é Founder.').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Você agora é Pro.')).toBeNull();
+  });
+
   it('pending_pix: waits without showing Pro, polls, then shows success when paid', async () => {
     api.mockResolvedValueOnce(pending).mockResolvedValueOnce({ ok: true, data: { status: 'paid' } });
     render(<SuccessView sessionId="cs_1" initial="pending_pix" />);

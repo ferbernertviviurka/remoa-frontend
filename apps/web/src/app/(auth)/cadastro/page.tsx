@@ -1,6 +1,9 @@
+import { cookies } from 'next/headers';
+import { REFERRAL_COOKIE } from '@remoa/contracts';
 import { SignUpWizard } from '@/features/auth/sign-up-wizard';
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams;
-  return <SignUpWizard next={next} />;
+  const referred = !!(await cookies()).get(REFERRAL_COOKIE);
+  return <SignUpWizard next={next} referred={referred} />;
 }

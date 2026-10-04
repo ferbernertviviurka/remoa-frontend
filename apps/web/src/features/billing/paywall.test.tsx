@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { PLAN_LIMITS } from '@remoa/contracts';
-import { Paywall, paywallFromError, PaywallProvider, usePaywall } from './paywall';
+import { paywallFromError, PaywallProvider, usePaywall } from './paywall';
+import { Paywall } from './paywall-dialog';
 
 const push = vi.fn();
 const track = vi.fn();
@@ -36,10 +37,10 @@ describe('Paywall', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(push).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Assinar o Pro' }));
-    expect(push).toHaveBeenCalledWith('/planos?de=cards');
+    expect(push).toHaveBeenCalledWith('/app/planos?de=cards');
   });
 
-  it('provider opens on a 402 error and closes on dismiss', () => {
+  it('provider opens on a 402 error and closes on dismiss', async () => {
     function Probe() {
       const p = usePaywall();
       return <button onClick={() => p.handle({ code: 'quota_exceeded', message: 'ai_generations' })}>go</button>;
@@ -47,7 +48,7 @@ describe('Paywall', () => {
     render(<PaywallProvider><Probe /></PaywallProvider>);
     expect(screen.queryByRole('dialog')).toBeNull();
     fireEvent.click(screen.getByText('go'));
-    expect(screen.getByRole('dialog')).toHaveTextContent('geração de mapa por PDF');
+    expect(await screen.findByRole('dialog')).toHaveTextContent('geração de mapa por PDF');
     expect(track).toHaveBeenCalledWith('paywall_viewed', { reason: 'pdf' });
     fireEvent.click(screen.getByRole('button', { name: 'Continuar no Free' }));
     expect(screen.queryByRole('dialog')).toBeNull();

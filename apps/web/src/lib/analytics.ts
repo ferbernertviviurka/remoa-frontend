@@ -1,5 +1,4 @@
-import type { ZodTypeAny } from 'zod';
-import { eventSchemas, type Track } from '@remoa/contracts';
+import type { Track } from '@remoa/contracts';
 
 type Sent = { event: string; props: Record<string, unknown> };
 declare global {
@@ -17,16 +16,23 @@ const mixpanel = () =>
     return mp;
   }));
 
-/** Typed by contracts/events.ts. Without a token it is a no-op that records into window.__remoaEvents (used by e2e). */
-export const track: Track = (event, props) => {
-  const parsed = (eventSchemas[event] as ZodTypeAny).safeParse(props);
-  if (!parsed.success) {
-    if (process.env.NODE_ENV !== 'production') reportError(new Error(`invalid props for event ${event}`));
-    return;
-  }
-  const payload = { ...(parsed.data as Record<string, unknown>), platform: 'web' };
+function send(event: string, props: Record<string, unknown>) {
+  const payload = { ...props, platform: 'web' };
   if (token) void mixpanel().then((mp) => mp.track(event, payload));
   else (window.__remoaEvents ??= []).push({ event, props: payload });
+}
+
+/**
+ * Typed by contracts/events.ts (compile time). Runtime zod validation runs only outside production, behind a dynamic import, so the
+ * validator (~13 KB gzip) is not in the landing bundle (P-175, D-372). Without a token it records into window.__remoaEvents (used by e2e).
+ */
+export const track: Track = (event, props) => {
+  if (process.env.NODE_ENV === 'production') return send(event, props as Record<string, unknown>);
+  void import('@remoa/contracts').then(({ eventSchemas }) => {
+    const parsed = (eventSchemas[event] as { safeParse: (v: unknown) => { success: boolean; data?: unknown } }).safeParse(props);
+    if (!parsed.success) return reportError(new Error(`invalid props for event ${event}`));
+    send(event, parsed.data as Record<string, unknown>);
+  });
 };
 
 export function identify(userId: string) {

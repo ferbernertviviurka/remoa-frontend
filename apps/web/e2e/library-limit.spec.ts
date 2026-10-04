@@ -5,7 +5,7 @@ import { createSepseBoard, signUpAndLogin } from './visual/fixture';
 test('meus mapas: limite Free de 2 mapas', async ({ page, request }) => {
   const { headers } = await signUpAndLogin(page, request);
   await createSepseBoard(request, headers);
-  await page.goto('/mapas');
+  await page.goto('/app/mapas');
 
   // 1 of 2: new-map card with the remaining count + lock card; the header button still creates
   await expect(page.getByRole('link', { name: 'Criar um novo mapa' })).toContainText('Você ainda pode criar 1 mapa no plano Free.');
@@ -28,7 +28,7 @@ test('meus mapas: limite Free de 2 mapas', async ({ page, request }) => {
   await page.getByRole('button', { name: 'Continuar' }).click();
   await page.getByRole('button', { name: 'Criar mapa', exact: true }).click();
   await expect(page).toHaveURL(/\/mapas\/[0-9a-f-]{36}$/);
-  await page.goto('/mapas');
+  await page.goto('/app/mapas');
 
   await expect(page.getByRole('link', { name: 'Criar um novo mapa' })).toHaveCount(0);
   await expect(page.getByText('O Free permite até 2 mapas. Faça upgrade para criar o próximo.')).toBeVisible();

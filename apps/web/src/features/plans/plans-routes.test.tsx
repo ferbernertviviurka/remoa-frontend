@@ -14,7 +14,7 @@ vi.mock('@/lib/api/server', () => ({ serverApi: (...a: unknown[]) => serverApi(.
 vi.mock('@/server/auth/session', () => ({ getUser: () => getUser() }));
 vi.mock('@/lib/analytics', () => ({ track: vi.fn() }));
 
-import Planos from '../../app/(app)/planos/page';
+import Planos from '../../app/app/(app)/planos/page';
 import Precos from '../../app/(marketing)/precos/page';
 
 afterEach(() => {
@@ -25,18 +25,16 @@ const api = (prices: unknown, ent: unknown) => (path: string) =>
   Promise.resolve(path.endsWith('prices') ? prices : path.endsWith('entitlements') ? ent : { ok: true, data: null });
 
 describe('/precos', () => {
-  it('redirects permanently to /planos keeping periodo and de', async () => {
-    await Precos({ searchParams: Promise.resolve({ periodo: 'anual', de: 'boards' }) });
-    expect(permanentRedirect).toHaveBeenCalledWith('/planos?periodo=anual&de=boards');
-    await Precos({ searchParams: Promise.resolve({}) });
-    expect(permanentRedirect).toHaveBeenLastCalledWith('/planos');
+  it('stays public: redirects to the landing plans section', () => {
+    Precos();
+    expect(permanentRedirect).toHaveBeenCalledWith('/#planos');
   });
 });
 
 describe('/planos page', () => {
   it('signed out: goes to /entrar with next back to /planos', async () => {
     getUser.mockResolvedValue(null);
-    await expect(Planos({ searchParams: Promise.resolve({ de: 'boards' }) })).rejects.toThrow(`redirect:/entrar?next=${encodeURIComponent('/planos?de=boards')}`);
+    await expect(Planos({ searchParams: Promise.resolve({ de: 'boards' }) })).rejects.toThrow(`redirect:/entrar?next=${encodeURIComponent('/app/planos?de=boards')}`);
   });
 
   it('?periodo=anual opens on the annual period; entitlements failing still renders the matrix', async () => {

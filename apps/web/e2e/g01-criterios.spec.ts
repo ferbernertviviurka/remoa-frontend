@@ -7,7 +7,7 @@ test.use({ viewport: { width: 1440, height: 900 } });
 const openSepse = async (page: Page, request: Parameters<typeof signUpAndLogin>[1]) => {
   const { userId, headers } = await signUpAndLogin(page, request);
   const { sepse } = await seedMock(request, headers, userId);
-  await page.goto(`/mapas/${sepse}`);
+  await page.goto(`/app/mapas/${sepse}`);
   await expect(page.locator('.react-flow__node')).toHaveCount(6);
   await page.waitForTimeout(1200);
 };
@@ -65,7 +65,7 @@ test('camadas trocam cor/rodapé sem reflow; pulse só em vencido na Lembrança 
   expect(new Set(await anim(page))).toEqual(new Set(['none']));
 });
 
-test('paleta ⌘K: foco preso, busca, esc fecha e devolve o foco; zoom 60–140%', async ({ page, request }) => {
+test('paleta ⌘K: foco preso, busca, esc fecha e devolve o foco; zoom 10–140%', async ({ page, request }) => {
   test.setTimeout(120_000);
   await openSepse(page, request);
   const opener = page.getByRole('button', { name: 'Buscar ou comandar' });
@@ -87,10 +87,10 @@ test('paleta ⌘K: foco preso, busca, esc fecha e devolve o foco; zoom 60–140%
   await expect(opener).toBeFocused();
 
   const pct = () => page.getByRole('group', { name: 'Controles de zoom' }).innerText();
-  for (let i = 0; i < 12; i++) { await page.getByRole('button', { name: 'Diminuir zoom' }).click({ timeout: 1000 }).catch(() => undefined); await page.waitForTimeout(350); } // zoom anima
-  expect(await pct()).toContain('60%');
+  for (let i = 0; i < 24; i++) { await page.getByRole('button', { name: 'Diminuir zoom' }).click({ timeout: 1000 }).catch(() => undefined); await page.waitForTimeout(350); } // zoom anima
+  expect(await pct()).toContain('10%');
   await expect(page.getByRole('button', { name: 'Diminuir zoom' })).toBeDisabled();
-  for (let i = 0; i < 12; i++) { await page.getByRole('button', { name: 'Aumentar zoom' }).click({ timeout: 1000 }).catch(() => undefined); await page.waitForTimeout(350); }
+  for (let i = 0; i < 24; i++) { await page.getByRole('button', { name: 'Aumentar zoom' }).click({ timeout: 1000 }).catch(() => undefined); await page.waitForTimeout(350); }
   expect(await pct()).toContain('140%');
   await expect(page.getByRole('button', { name: 'Aumentar zoom' })).toBeDisabled();
 });
