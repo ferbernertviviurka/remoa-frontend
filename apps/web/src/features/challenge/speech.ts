@@ -35,7 +35,11 @@ export function useSpeech(onText: (text: string) => void, onFail?: () => void) {
     rec.onresult = (ev) => {
       if (settled) return;
       settled = true;
-      const text = ev.results[0]?.[0]?.transcript ?? '';
+      const text = (ev.results[0]?.[0]?.transcript ?? '').trim();
+      if (!text) {
+        onFail?.();
+        return;
+      }
       setTranscript(text);
       onText(text);
     };

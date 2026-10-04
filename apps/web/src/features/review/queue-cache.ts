@@ -1,7 +1,8 @@
 import { queueItemSchema } from '@remoa/contracts';
 import { z } from 'zod';
 
-const KEY = '/revisar/fila';
+const KEY = '/revisar/fila.json';
+const LEGACY = '/revisar/fila';
 const CACHE = 'remoa-queue';
 
 const savedSchema = z.object({
@@ -22,18 +23,22 @@ export async function rememberQueue(saved: SavedQueue): Promise<void> {
   }
 }
 
+async function readSaved(cache: Cache, key: string): Promise<SavedQueue | null> {
+  const hit = await cache.match(key);
+  if (!hit) return null;
+  const body: unknown = await hit.json();
+  const saved = savedSchema.safeParse(body);
+  if (saved.success) return saved.data;
+  const legacy = z.array(queueItemSchema).safeParse(body);
+  return legacy.success ? { items: legacy.data, boardTitles: {} } : null;
+}
+
 /** The queue from the last successful load. Null when nothing valid is stored. */
 export async function recallQueue(): Promise<SavedQueue | null> {
   try {
     if (typeof caches === 'undefined') return null;
     const cache = await caches.open(CACHE);
-    const hit = await cache.match(KEY);
-    if (!hit) return null;
-    const body: unknown = await hit.json();
-    const saved = savedSchema.safeParse(body);
-    if (saved.success) return saved.data;
-    const legacy = z.array(queueItemSchema).safeParse(body);
-    return legacy.success ? { items: legacy.data, boardTitles: {} } : null;
+    return (await readSaved(cache, KEY)) ?? (await readSaved(cache, LEGACY));
   } catch {
     return null;
   }

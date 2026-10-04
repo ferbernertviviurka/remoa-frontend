@@ -28,22 +28,26 @@ describe('rememberQueue', () => {
 });
 
 function cacheStore() {
-  let body: unknown;
-  const put = async (_request: string, response: Response) => {
-    body = await response.json();
+  const bodies = new Map<string, unknown>();
+  const put = async (request: string, response: Response) => {
+    bodies.set(request, await response.json());
   };
   globalThis.caches = {
     open: async () => ({
       put,
-      match: async () => (body === undefined ? undefined : new Response(JSON.stringify(body))),
+      match: async (key: string) => {
+        const body = bodies.get(key);
+        return body === undefined ? undefined : new Response(JSON.stringify(body));
+      },
     }),
   } as unknown as CacheStorage;
   return {
     get saved() {
-      return body as { items: unknown; boardTitles: Record<string, string> } | undefined;
+      return bodies.get('/revisar/fila.json') as { items: unknown; boardTitles: Record<string, string> } | undefined;
     },
     putRaw(value: unknown) {
-      body = value;
+      bodies.delete('/revisar/fila.json');
+      bodies.set('/revisar/fila', value);
     },
   };
 }

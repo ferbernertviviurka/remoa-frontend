@@ -8,6 +8,13 @@ import { Button } from '@remoa/ui';
 
 type Prompt = Event & { prompt: () => Promise<void> };
 
+const SESSIONS = 'remoa-sessions';
+const SESSION_EVENT = 'remoa-sessions-changed';
+
+function sessionsDone() {
+  return Number(localStorage.getItem(SESSIONS) ?? '0') >= 2;
+}
+
 /** Registers the review shell worker and offers install after two finished sessions. */
 export function Pwa() {
   const [prompt, setPrompt] = useState<Prompt | null>(null);
@@ -21,15 +28,15 @@ export function Pwa() {
     window.addEventListener('appinstalled', onInstalled);
     const onPrompt = (event: Event) => {
       event.preventDefault();
-      const sessions = Number(localStorage.getItem('remoa-sessions') ?? '0');
-      if (sessions >= 2) {
-        setPrompt(event as Prompt);
-        setOpen(true);
-      }
+      setPrompt(event as Prompt);
+      if (sessionsDone()) setOpen(true);
     };
+    const onSessions = () => { if (sessionsDone()) setOpen(true); };
     window.addEventListener('beforeinstallprompt', onPrompt);
+    window.addEventListener(SESSION_EVENT, onSessions);
     return () => {
       window.removeEventListener('beforeinstallprompt', onPrompt);
+      window.removeEventListener(SESSION_EVENT, onSessions);
       window.removeEventListener('online', onOnline);
       window.removeEventListener('appinstalled', onInstalled);
     };
@@ -48,6 +55,7 @@ export function Pwa() {
 }
 
 export function countSession() {
-  const n = Number(localStorage.getItem('remoa-sessions') ?? '0') + 1;
-  localStorage.setItem('remoa-sessions', String(n));
+  const n = Number(localStorage.getItem(SESSIONS) ?? '0') + 1;
+  localStorage.setItem(SESSIONS, String(n));
+  window.dispatchEvent(new Event(SESSION_EVENT));
 }

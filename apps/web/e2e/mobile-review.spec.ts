@@ -38,7 +38,9 @@ test('revisão no celular: lista sem canvas, uma pergunta, campo e notas', async
   await expect(page.locator('.react-flow')).toHaveCount(0);
   await page.getByRole('button', { name: 'Sepse' }).click();
   await expect(page.getByRole('button', { name: 'Revisar este conceito' })).toBeVisible();
-  await expect(page.getByText('Editar no computador')).toBeVisible();
+  const edit = page.getByRole('link', { name: 'Editar no computador' });
+  await expect(edit).toBeVisible();
+  await expect(edit).toHaveAttribute('href', `/mapas/${board}`);
 
   await page.goto(`/mapas/${board}?modo=desafio`);
   const field = page.getByLabel('Sua resposta');

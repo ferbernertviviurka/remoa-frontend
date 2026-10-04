@@ -16,7 +16,7 @@ import { Summary } from './summary';
 
 const grades = ['again', 'hard', 'good', 'easy'] as const;
 const letters = ['A', 'B', 'C', 'D'];
-const fallbackText = { no_rubric: 'challenge.fallbackNoRubric', grader_error: 'challenge.fallbackGraderError', quota: 'challenge.fallbackQuota' } as const;
+const fallbackText = { no_rubric: 'challenge.fallbackNoRubric', grader_error: 'challenge.fallbackGraderError', quota: 'challenge.fallbackQuota', offline: 'challenge.fallbackOffline' } as const;
 const subjectOf = { next_step: 'step', case: 'stage', occlusion: 'region', edge: 'card', hidden_card: 'card' } as const;
 
 function SpeakFeedback({ text }: { text: string }) {

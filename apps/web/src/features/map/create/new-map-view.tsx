@@ -74,8 +74,8 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
     setProgress(0);
     setStage('ocr');
     const started = Date.now();
-    const open = (boardId: string, cards: number, edges: number) => {
-      track('board_generated_from_pdf', { pages: 1, cards, edges, durationMs: Date.now() - started });
+    const open = (boardId: string, cards: number, edges: number, pages = 1) => {
+      track('board_generated_from_pdf', { pages, cards, edges, durationMs: Date.now() - started });
       router.push(`/mapas/${boardId}`);
     };
     try {
@@ -101,7 +101,7 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
         return;
       }
       for (;;) {
-        const job = await api<BoardGenerationProgress & { cards?: number; edges?: number }>(`/v1/ai/jobs/${body.data.jobId}`);
+        const job = await api<BoardGenerationProgress & { cards?: number; edges?: number; pages?: number }>(`/v1/ai/jobs/${body.data.jobId}`);
         if (!job.ok) {
           setError(t('errors.internal'));
           return;
@@ -109,12 +109,14 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
         setProgress(job.data.progress);
         setStage(job.data.stage === 'ocr' || job.data.stage === 'layout' ? job.data.stage : 'extract');
         if (job.data.status === 'done' && job.data.boardId) {
-          open(job.data.boardId, job.data.cards ?? 0, job.data.edges ?? 0);
+          open(job.data.boardId, job.data.cards ?? 0, job.data.edges ?? 0, job.data.pages ?? 1);
           return;
         }
         if (job.data.status === 'failed') {
           if (job.data.error === 'ai_generations') paywall.handle({ code: 'quota_exceeded', message: 'ai_generations' });
-          else setError(job.data.error === 'pdf_unreadable' ? t('newMap.pdfUnreadable') : t('errors.internal'));
+          else if (job.data.error === 'pdf_unreadable') setError(t('newMap.pdfUnreadable'));
+          else if (job.data.error === 'generate_timeout') setError(t('newMap.generateTimeout'));
+          else setError(t('errors.internal'));
           return;
         }
         await new Promise((resolve) => setTimeout(resolve, 300));

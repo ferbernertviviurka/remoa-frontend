@@ -6,12 +6,14 @@ import { t } from '@remoa/strings';
 import { Button } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
+import { rubricPointDiff } from './rubric-diff';
 
 type Point = { text: string; essential: boolean };
 type Item = {
   id: string; cardId: string; boardId: string; boardTitle?: string; title?: string;
   front: string | null; back: string | null; source: string | null; points: Point[]; previousPoints: Point[];
   status: string; flagSource: string | null; note: string | null;
+  answerText: string | null; verdict: 'correct' | 'partial' | 'incorrect' | null; feedback: string | null; criticalError: boolean;
 };
 type Queue = { items: Item[]; total: number; boards: { id: string; title: string }[]; reviewer: { name: string | null; crm: string | null } };
 type Draft = { id: string; title: string };
@@ -24,7 +26,10 @@ export function EditorialView() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [denied, setDenied] = useState(false);
   const [note, setNote] = useState('');
+  const [changelog, setChangelog] = useState('');
+  const [edition, setEdition] = useState('Enamed 2026.2');
   const [blocked, setBlocked] = useState(false);
+  const [markMissing, setMarkMissing] = useState(false);
   const [flag, setFlag] = useState('');
   const [board, setBoard] = useState('');
   const [boards, setBoards] = useState<{ id: string; title: string }[]>([]);
@@ -90,7 +95,13 @@ export function EditorialView() {
 
   async function publish(boardId: string, title: string) {
     setBlocked(false);
-    const r = await api('/v1/editorial/publish', { method: 'POST', body: JSON.stringify({ boardId, changelog: note.trim() || title, temporalMark: 'Enamed 2026.2' }) });
+    const temporalMark = edition.trim();
+    if (!temporalMark) {
+      setMarkMissing(true);
+      return;
+    }
+    setMarkMissing(false);
+    const r = await api('/v1/editorial/publish', { method: 'POST', body: JSON.stringify({ boardId, changelog: changelog.trim() || title, temporalMark }) });
     if (!r.ok) setBlocked(true);
     else {
       track('version_published', {});
@@ -122,6 +133,15 @@ export function EditorialView() {
         <input value={note} onChange={(e) => setNote(e.target.value)} className="h-11 rounded-xl border border-border bg-surface px-3" />
       </label>
       {ownCard ? <p role="alert" className="m-0 text-sm font-semibold text-review">{t('editorial.ownCard')}</p> : null}
+      <label className="flex flex-col gap-1 text-sm font-semibold">
+        {t('editorial.changelog')}
+        <input value={changelog} onChange={(e) => setChangelog(e.target.value)} className="h-11 rounded-xl border border-border bg-surface px-3" />
+      </label>
+      <label className="flex flex-col gap-1 text-sm font-semibold">
+        {t('editorial.temporalMark')}
+        <input value={edition} onChange={(e) => { setEdition(e.target.value); setMarkMissing(false); }} className="h-11 rounded-xl border border-border bg-surface px-3" />
+      </label>
+      {markMissing ? <p role="alert" className="m-0 text-sm font-semibold text-review">{t('editorial.publishMark')}</p> : null}
       {blocked ? <p role="alert" className="m-0 text-sm font-semibold text-review">{t('editorial.publishBlocked')}</p> : null}
       <ul className="m-0 flex list-none flex-col gap-2 p-0">
         {drafts.map((d) => (
@@ -158,6 +178,20 @@ export function EditorialView() {
   );
 }
 
+function RubricDiff({ previous, current }: { previous: Point[]; current: Point[] }) {
+  const diff = rubricPointDiff(previous, current);
+  return (
+    <div className="rounded-xl bg-canvas px-3 py-2 text-sm text-muted">
+      <p className="m-0 font-semibold">{t('editorial.before')}</p>
+      {diff.removed.length === 0 && diff.added.length === 0 ? <p className="m-0">{t('editorial.diffSame')}</p> : null}
+      <ul className="m-0 list-none p-0">
+        {diff.removed.map((text) => <li key={`out-${text}`}>{t('editorial.diffOut', { text })}</li>)}
+        {diff.added.map((text) => <li key={`in-${text}`}>{t('editorial.diffIn', { text })}</li>)}
+      </ul>
+    </div>
+  );
+}
+
 function ReviewItem({ item, onDecide, onDispute }: {
   item: Item;
   onDecide: (id: string, decision: 'approved' | 'changes_requested' | 'rejected', points: Point[]) => Promise<void>;
@@ -171,12 +205,18 @@ function ReviewItem({ item, onDecide, onDispute }: {
       {item.front ? <p className="m-0 text-sm">{item.front}</p> : null}
       {item.back ? <p className="m-0 text-sm text-muted">{item.back}</p> : null}
       {item.source ? <p className="m-0 text-sm text-muted">{t('editorial.source', { fonte: item.source })}</p> : null}
-      {item.previousPoints.length ? (
-        <div className="rounded-xl bg-canvas px-3 py-2 text-sm text-muted">
-          <p className="m-0 font-semibold">{t('editorial.before')}</p>
-          <ul className="m-0 list-disc pl-5">{item.previousPoints.map((p) => <li key={p.text}>{p.text}</li>)}</ul>
+      {item.flagSource === 'user_disagree' ? (
+        <div className="flex flex-col gap-1 rounded-xl bg-canvas px-3 py-2 text-sm">
+          <p className="m-0"><span className="font-semibold">{t('editorial.studentAnswer')}: </span>{item.answerText ?? t('editorial.noAnswer')}</p>
+          <p className="m-0">
+            <span className="font-semibold">{t('editorial.verdict')}: </span>
+            {item.verdict ? t(`editorial.verdictName.${item.verdict}`) : t('editorial.noVerdict')}
+          </p>
+          {item.criticalError ? <p className="m-0 font-semibold">{t('editorial.critical')}</p> : null}
+          {item.feedback ? <p className="m-0 text-muted">{item.feedback}</p> : null}
         </div>
       ) : null}
+      {item.previousPoints.length ? <RubricDiff previous={item.previousPoints} current={item.points} /> : null}
       <div className="flex flex-col gap-2">
         {points.map((p, i) => (
           <input
@@ -188,7 +228,7 @@ function ReviewItem({ item, onDecide, onDispute }: {
           />
         ))}
       </div>
-      <span className="text-sm text-muted">{item.flagSource ?? item.status}</span>
+      <span className="text-sm text-muted">{t(item.flagSource === 'ai' ? 'editorial.filterAi' : item.flagSource === 'user_disagree' ? 'editorial.filterDisagree' : 'editorial.filterDraft')}</span>
       <div className="flex flex-wrap gap-2">
         {item.flagSource === 'user_disagree' ? (
           <>

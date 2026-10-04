@@ -112,7 +112,7 @@ describe('NewMapView', () => {
       if (!String(path).includes('/v1/ai/jobs/')) return { ok: true, data: [] };
       polls += 1;
       if (polls === 1) return { ok: true, data: { jobId, status: 'running', progress: 30, stage: 'extract', boardId: null, error: null } };
-      return { ok: true, data: { jobId, status: 'done', progress: 100, stage: null, boardId: 'pdf1', error: null, cards: 4, edges: 1 } };
+      return { ok: true, data: { jobId, status: 'done', progress: 100, stage: null, boardId: 'pdf1', error: null, cards: 4, edges: 1, pages: 12 } };
     });
     render(<NewMapView items={items} initialPath="pdf" />);
     next();
@@ -123,7 +123,7 @@ describe('NewMapView', () => {
     expect(await screen.findByRole('progressbar', { name: 'Progresso da geração do mapa' })).toBeTruthy();
     expect(await screen.findByText('Extraindo conceitos… 30%')).toBeTruthy();
     await waitFor(() => expect(push).toHaveBeenCalledWith('/mapas/pdf1'));
-    expect(track).toHaveBeenCalledWith('board_generated_from_pdf', expect.objectContaining({ cards: 4, edges: 1, pages: 1 }));
+    expect(track).toHaveBeenCalledWith('board_generated_from_pdf', expect.objectContaining({ cards: 4, edges: 1, pages: 12 }));
     vi.unstubAllGlobals();
   });
 

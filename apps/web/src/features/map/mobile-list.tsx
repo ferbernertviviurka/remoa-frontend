@@ -6,14 +6,17 @@ import type { BoardGraph, MapState, RetrievabilityMap } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { Button, FilterChip, Input } from '@remoa/ui';
 import { api } from '@/lib/api';
+import { AiDraftTag } from './ai-draft';
 
 const states = ['all', 'review', 'watch', 'steady', 'unknown'] as const;
 type Filter = (typeof states)[number];
 
+const fold = (value: string) => value.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+
 export function filterMobileCards<T extends { id: string; title: string }>(cards: T[], query: string, state: Filter, heat: RetrievabilityMap): T[] {
-  const q = query.trim().toLowerCase();
+  const q = fold(query.trim());
   return cards.filter((c) => {
-    if (q && !c.title.toLowerCase().includes(q)) return false;
+    if (q && !fold(c.title).includes(q)) return false;
     if (state === 'all') return true;
     return (heat[c.id]?.state ?? 'unknown') === state;
   });
@@ -42,6 +45,7 @@ export function MobileCardList({ graph }: { graph: BoardGraph }) {
           </FilterChip>
         ))}
       </div>
+      {cards.length === 0 ? <p className="m-0 text-sm text-muted">{t('map.listEmpty')}</p> : null}
       <ul className="m-0 flex list-none flex-col gap-2 p-0">
         {cards.map((c) => {
           const entry = heat[c.id];
@@ -62,10 +66,11 @@ export function MobileCardList({ graph }: { graph: BoardGraph }) {
       {selected ? (
         <div className="fixed inset-x-0 bottom-0 z-50 flex max-h-[70dvh] flex-col gap-3 overflow-auto rounded-t-3xl border border-border bg-surface p-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           <h2 className="m-0 text-xl font-bold">{selected.title}</h2>
+          <AiDraftTag card={selected} />
           <p className="m-0 text-sm text-muted">{selected.back ?? selected.front}</p>
           {selected.source ? <p className="m-0 text-sm text-muted">{t('editorial.source', { fonte: selected.source })}</p> : null}
           <Button onClick={() => router.push(`/mapas/${graph.board.id}?modo=desafio`)}>{t('map.inspector.reviewThis')}</Button>
-          <p className="m-0 text-sm text-muted">{t('editorial.editOnComputer')}</p>
+          <a href={`/mapas/${graph.board.id}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary-deep">{t('editorial.editOnComputer')}</a>
           <Button variant="secondary" onClick={() => setOpen(null)}>{t('common.close')}</Button>
         </div>
       ) : null}

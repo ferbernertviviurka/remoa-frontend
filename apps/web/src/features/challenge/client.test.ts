@@ -35,10 +35,27 @@ describe('offline answers', () => {
     expect(JSON.parse(localStorage.getItem('remoa-offline-answers') ?? '[]')).toEqual([]);
   });
 
+  it('syncs three answers made while offline, in the order they were given', async () => {
+    api.mockRejectedValue(new Error('offline'));
+    for (const text of ['um', 'dois', 'três']) {
+      const saved = await challengeClient.answer({ sessionId: 's', itemId: text, durationMs: 1, inputKind: 'text', text });
+      expect(saved.ok && saved.data.fallback).toBe('offline');
+    }
+    expect(JSON.parse(localStorage.getItem('remoa-offline-answers') ?? '[]')).toHaveLength(3);
+    api.mockReset();
+    api.mockResolvedValue({ ok: true, data: {} });
+    const synced = vi.fn();
+    await flushOffline(synced);
+    expect(synced).toHaveBeenCalledTimes(3);
+    expect(JSON.parse(localStorage.getItem('remoa-offline-answers') ?? '[]')).toEqual([]);
+    const texts = api.mock.calls.map((call) => JSON.parse(String((call[1] as RequestInit).body)).text);
+    expect(texts).toEqual(['um', 'dois', 'três']);
+  });
+
   it('lets the student rate offline and sends the answer when the network returns', async () => {
     api.mockRejectedValueOnce(new Error('offline'));
     const saved = await challengeClient.answer({ sessionId: 's', itemId: 'i', durationMs: 1, inputKind: 'text', text: 'noradrenalina' });
-    expect(saved.ok && saved.data.fallback).toBe('grader_error');
+    expect(saved.ok && saved.data.fallback).toBe('offline');
     expect(JSON.parse(localStorage.getItem('remoa-offline-answers') ?? '[]')).toHaveLength(1);
     api.mockResolvedValueOnce({ ok: true, data: {} });
     const synced = vi.fn();

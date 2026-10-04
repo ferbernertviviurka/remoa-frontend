@@ -16,6 +16,7 @@ import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { primeCardDetail, useCardDetail } from './card-detail';
 import { usePaywall } from '@/features/billing/paywall';
+import { AiDraftTag } from '../ai-draft';
 import { caseStageItems } from './card-node';
 
 type Entry = RetrievabilityMap[string] | undefined;
@@ -111,6 +112,7 @@ function CardPanel(p: Props & { card: Card }) {
           </span>
         </div>
         <h2 className={h2}>{card.title}</h2>
+        <AiDraftTag card={card} />
         {note ? null : <span className="flex"><StatePill state={state} label={pill} /></span>}
       </div>
       {p.editing ? (

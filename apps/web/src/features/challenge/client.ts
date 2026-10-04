@@ -63,7 +63,7 @@ const offlineSlot = () => ({ due: new Date(), intervalDays: 0 });
 /** Shown when the answer is stored locally: the student rates now, the server grades after reconnect. */
 function offlineAnswer() {
   const slot = offlineSlot();
-  return { canonical: '', verdict: null, suggestedGrade: null, gradeLocked: false, fallback: 'grader_error' as const, preview: { again: slot, hard: slot, good: slot, easy: slot } };
+  return { canonical: '', verdict: null, suggestedGrade: null, gradeLocked: false, fallback: 'offline' as const, preview: { again: slot, hard: slot, good: slot, easy: slot } };
 }
 
 export async function flushOffline(trackSynced: () => void) {

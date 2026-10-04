@@ -10,13 +10,36 @@ import { usePaywall } from '@/features/billing/paywall';
 
 type Seed = { id: string; title: string; area: string; temporalMark: string | null };
 
+function areaLabel(area: string) {
+  switch (area) {
+    case 'CM': return t('boards.area.CM');
+    case 'CIR': return t('boards.area.CIR');
+    case 'GO': return t('boards.area.GO');
+    case 'PED': return t('boards.area.PED');
+    case 'MP': return t('boards.area.MP');
+    default: return area;
+  }
+}
+
+function grouped(seeds: Seed[]) {
+  const groups = new Map<string, Seed[]>();
+  for (const seed of seeds) groups.set(seed.area, [...(groups.get(seed.area) ?? []), seed]);
+  return [...groups];
+}
+
 export function SeedsView() {
   const router = useRouter();
   const paywall = usePaywall();
   const [seeds, setSeeds] = useState<Seed[]>([]);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState(false);
   useEffect(() => {
-    void api<Seed[]>('/v1/editorial/seeds').then((r) => { if (r.ok) setSeeds(r.data); });
+    void api<Seed[]>('/v1/editorial/seeds').then((r) => {
+      if (r.ok) {
+        setSeeds(r.data);
+        setStatus('ready');
+      } else setStatus('error');
+    });
   }, []);
   async function copy(boardId: string) {
     setError(false);
@@ -30,19 +53,25 @@ export function SeedsView() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
       <h1 className="m-0 font-display text-3xl font-extrabold">{t('editorial.seeds')}</h1>
-      {error ? <p role="alert" className="m-0 text-sm font-semibold text-review">{t('errors.internal')}</p> : null}
-      <ul className="m-0 flex list-none flex-col gap-3 p-0">
-        {seeds.length === 0 ? <li className="text-muted">{t('newMap.seedSoon')}</li> : null}
-        {seeds.map((s) => (
-          <li key={s.id} className="flex items-center justify-between gap-3 rounded-3xl border border-border bg-surface p-4">
-            <span>
-              <span className="block font-semibold">{s.title}</span>
-              <span className="text-sm text-muted">{s.temporalMark}</span>
-            </span>
-            <Button size="sm" onClick={() => void copy(s.id)}>{t('editorial.copy')}</Button>
-          </li>
-        ))}
-      </ul>
+      {error || status === 'error' ? <p role="alert" className="m-0 text-sm font-semibold text-review">{t('errors.internal')}</p> : null}
+      {status === 'loading' ? <p className="m-0 text-muted">{t('common.loading')}</p> : null}
+      {status === 'ready' && seeds.length === 0 ? <p className="m-0 text-muted">{t('newMap.seedSoon')}</p> : null}
+      {status === 'ready' ? grouped(seeds).map(([area, items]) => (
+        <section key={area} aria-label={areaLabel(area)} className="flex flex-col gap-3">
+          <h2 className="m-0 text-lg font-bold">{areaLabel(area)}</h2>
+          <ul className="m-0 flex list-none flex-col gap-3 p-0">
+            {items.map((s) => (
+              <li key={s.id} className="flex items-center justify-between gap-3 rounded-3xl border border-border bg-surface p-4">
+                <span>
+                  <span className="block font-semibold">{s.title}</span>
+                  <span className="text-sm text-muted">{s.temporalMark}</span>
+                </span>
+                <Button size="sm" onClick={() => void copy(s.id)}>{t('editorial.copy')}</Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )) : null}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { ProgressSummary } from '@remoa/contracts';
 import { t } from '@remoa/strings';
-import { Button } from '@remoa/ui';
+import { BarChart, Button } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { createClient } from '@/lib/supabase/client';
 
@@ -35,7 +35,7 @@ export function ProgressView({ summary }: { summary: ProgressSummary }) {
       setExportError(true);
     }
   }
-  const max = Math.max(1, ...summary.reviewsPerDay.map((d) => d.count));
+  const dayLabel = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString('pt-BR');
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -59,15 +59,16 @@ export function ProgressView({ summary }: { summary: ProgressSummary }) {
       </section>
       <section aria-label={t('progress.chart')} className="rounded-3xl border border-border bg-surface p-5">
         <h2 className="m-0 mb-3 text-lg font-bold">{t('progress.chart')}</h2>
-        <div className="flex h-28 items-end gap-1">
-          {summary.reviewsPerDay.map((d) => (
-            <div key={d.date} title={`${d.date}: ${d.count}`} className="min-w-0 flex-1 rounded-t bg-primary" style={{ height: `${Math.max(4, (d.count / max) * 100)}%` }} />
-          ))}
-        </div>
+        <BarChart
+          label={t('progress.chart')}
+          items={summary.reviewsPerDay.map((d) => ({ id: d.date, value: d.count }))}
+          barLabel={(item) => t('progress.dayCount', { date: dayLabel(item.id), n: item.value })}
+        />
       </section>
       <section aria-label={t('progress.weak')}>
         <h2 className="m-0 text-lg font-bold">{t('progress.weak')}</h2>
         <p className="m-0 mb-3 text-sm text-muted">{t('progress.weakHint')}</p>
+        {summary.weakCards.length === 0 ? <p className="m-0 text-sm text-muted">{t('progress.weakEmpty')}</p> : null}
         <ul className="m-0 flex list-none flex-col gap-2 p-0">
           {summary.weakCards.map((c) => (
             <li key={c.cardId} className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
@@ -82,6 +83,7 @@ export function ProgressView({ summary }: { summary: ProgressSummary }) {
       </section>
       <section aria-label={t('progress.accuracy')}>
         <h2 className="m-0 mb-3 text-lg font-bold">{t('progress.accuracy')}</h2>
+        {summary.accuracy.length === 0 ? <p className="m-0 text-sm text-muted">{t('progress.accuracyEmpty')}</p> : null}
         <ul className="m-0 flex list-none flex-col gap-2 p-0">
           {summary.accuracy.map((a) => (
             <li key={a.matrixItemId ?? a.area} className="flex justify-between rounded-2xl border border-border bg-surface px-4 py-3">

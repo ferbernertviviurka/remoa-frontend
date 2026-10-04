@@ -12,5 +12,6 @@ describe('filterMobileCards', () => {
     expect(filterMobileCards(cards, 'nora', 'all', heat).map((c) => c.id)).toEqual(['a']);
     expect(filterMobileCards(cards, '', 'review', heat).map((c) => c.id)).toEqual(['a']);
     expect(filterMobileCards(cards, '', 'unknown', heat).map((c) => c.id)).toEqual(['b']);
+    expect(filterMobileCards([{ id: 'c', title: 'Insuficiência cardíaca' }], 'insuficiencia', 'all', {}).map((c) => c.id)).toEqual(['c']);
   });
 });

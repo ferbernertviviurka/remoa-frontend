@@ -164,6 +164,7 @@ describe('ChallengePanel', () => {
     ['no_rubric', /Sem rubrica aprovada para corrigir/],
     ['grader_error', /correção automática falhou/],
     ['quota', /correções por IA de hoje acabaram/],
+    ['offline', /A resposta ficou neste aparelho/],
   ] as const)('fallback %s: alert + self-rating', async (fallback, msg) => {
     const user = userEvent.setup();
     overrides.answer = async (b) => (b.inputKind === 'text' ? ans({ fallback }) : mocks.answer(fixtureUserId, b as never));
