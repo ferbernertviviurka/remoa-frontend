@@ -258,6 +258,9 @@ test.describe('desktop 1440x900', () => {
 
 test.describe('celular 390x844 (toque)', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, colorScheme: 'light' });
+  // Merge main (F09 FR-2): on a phone the map is a list (map-surface.tsx), so canvas pinch/bottom sheet no longer render below 768 px.
+  // Phone review is covered by mobile-review.spec.ts. Pending product call: drop these or move them to a tablet viewport.
+  test.skip(true, 'F09: mapa no celular é lista, sem canvas');
 
   test('3 pinça por toque (CDP) começando sobre um card: a escala do mapa muda e a página não dá zoom', async ({ page, request }) => {
     test.setTimeout(120_000);

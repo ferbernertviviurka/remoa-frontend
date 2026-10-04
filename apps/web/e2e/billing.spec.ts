@@ -37,7 +37,7 @@ test('assinar, cancelar, exportar e excluir a conta', async ({ page }) => {
     await page.getByRole('link', { name: 'Dados e privacidade' }).click();
     await page.getByRole('button', { name: 'Exportar meus dados' }).click();
     const download = page.waitForEvent('download');
-    await page.getByRole('button', { name: 'Baixar' }).click();
+    await page.getByRole('button', { name: 'Baixar', exact: true }).click();
     const file = await download;
     expect(file.suggestedFilename()).toMatch(/\.json$/);
   });

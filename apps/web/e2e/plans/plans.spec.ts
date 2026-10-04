@@ -12,7 +12,7 @@ test('Free com 2 mapas: aviso, anual, FUNDADOR, Pix, overlay, checkout mock e su
 
   await expect(page.getByRole('heading', { level: 1, name: 'Seu estudo pede mais espaço?' })).toBeVisible();
   await expect(page.getByRole('status').filter({ hasText: 'Você usou 2 de 2 mapas. O Pro libera o resto.' })).toBeVisible();
-  expect(await events(page)).toContainEqual(expect.objectContaining({ event: 'plans_viewed', props: expect.objectContaining({ from: 'library_lock' }) }));
+  await expect.poll(() => events(page)).toContainEqual(expect.objectContaining({ event: 'plans_viewed', props: expect.objectContaining({ from: 'library_lock' }) }));
 
   const summary = page.getByRole('complementary', { name: 'Resumo do pedido' });
   await expect(summary).toContainText('R$ 39,00');
@@ -117,7 +117,7 @@ test('/precos segue público (landing #planos); ?periodo=anual abre no anual; ?d
   await planUser(page, request);
   await page.goto('/app/planos?periodo=anual&de=<script>');
   await expect(page.getByRole('complementary', { name: 'Resumo do pedido' })).toContainText('R$ 349,00');
-  expect(await events(page)).toContainEqual(expect.objectContaining({ event: 'plans_viewed', props: expect.objectContaining({ from: 'direct' }) }));
+  await expect.poll(() => events(page)).toContainEqual(expect.objectContaining({ event: 'plans_viewed', props: expect.objectContaining({ from: 'direct' }) }));
 });
 
 test('FAQ: uma aberta por vez, por teclado, com faq_opened', async ({ page, request }) => {

@@ -12,7 +12,11 @@ import { useCardFace } from '@/features/cards/card-face';
 import { Markdown } from '@/features/cards/markdown';
 import { useAsset, useAssets } from '@/features/cards/upload';
 import { isDue } from './canvas-context';
-import { useCardDetail } from './card-detail';
+import { track } from '@/lib/analytics';
+import { api } from '@/lib/api';
+import { primeCardDetail, useCardDetail } from './card-detail';
+import { usePaywall } from '@/features/billing/paywall';
+import { AiDraftTag } from '../ai-draft';
 import { caseStageItems } from './card-node';
 
 type Entry = RetrievabilityMap[string] | undefined;
@@ -108,6 +112,7 @@ function CardPanel(p: Props & { card: Card }) {
           </span>
         </div>
         <h2 className={h2}>{card.title}</h2>
+        <AiDraftTag card={card} />
         {note ? null : <span className="flex"><StatePill state={state} label={pill} /></span>}
       </div>
       {p.editing ? (
@@ -120,8 +125,8 @@ function CardPanel(p: Props & { card: Card }) {
           <div className="min-h-0 grow overflow-auto px-5 py-[18px]">
             <InspectorTabPanel idPrefix={`card-${card.id}`} id={tab}>
               {tab === 'content' ? <ContentTab card={card} detail={detail} entry={entry} connections={p.connections} endOfToday={p.endOfToday} /> : null}
-              {tab === 'rubric' ? <RubricTab detail={detail} onEdit={() => p.onEdit(card.id)} /> : null}
-              {tab === 'origin' ? <OriginTab board={p.board} card={card} /> : null}
+              {tab === 'rubric' ? <RubricTab detail={detail} /> : null}
+              {tab === 'origin' ? <OriginTab board={p.board} card={card} detail={detail} /> : null}
               {tab === 'history' ? <p className="m-0 text-sm leading-normal text-(--cv-ink-2)">{t('inspector.noHistory')}</p> : null}
             </InspectorTabPanel>
           </div>
@@ -237,15 +242,38 @@ function ContentTab({ card, detail, entry, connections, endOfToday }: { card: Ca
   );
 }
 
-function RubricTab({ detail, onEdit }: { detail: CardDetail | null; onEdit: () => void }) {
+function RubricTab({ detail }: { detail: CardDetail | null }) {
+  const paywall = usePaywall();
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   if (!detail) return <p className="m-0 text-sm text-muted">{t('common.loading')}</p>;
   const r = detail.rubric;
+  async function generate() {
+    if (!detail) return;
+    setFailed(false);
+    setBusy(true);
+    try {
+      const created = await api<CardDetail['rubric']>('/v1/ai/rubric', { method: 'POST', body: JSON.stringify({ cardId: detail.id }) });
+      if (!created.ok) {
+        if (!paywall.handle(created.error)) setFailed(true);
+        return;
+      }
+      track('rubric_generated', {});
+      const fresh = await api<CardDetail>(`/v1/cards/${detail.id}`);
+      if (fresh.ok) primeCardDetail(fresh.data);
+      else setFailed(true);
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  }
   if (!r)
     return (
       <>
         <p className="m-0 text-sm leading-normal text-(--cv-ink-2)">{t('inspector.noRubricWarning')}</p>
-        {/* F05 generates rubrics; until then the card editor is where a rubric would be written. */}
-        <Button variant="secondary" icon={<Icon name="sparkle" size={18} />} onClick={onEdit}>{t('cards.rubric.generate')}</Button>
+        <Button variant="secondary" icon={<Icon name="sparkle" size={18} />} loading={busy} onClick={() => void generate()}>{t('cards.rubric.generate')}</Button>
+        {failed ? <p role="alert" className="m-0 text-sm font-semibold text-review">{t('errors.internal')}</p> : null}
       </>
     );
   const approved = r.status === 'approved';
@@ -268,16 +296,30 @@ function Row({ term, children, last }: { term: string; children: ReactNode; last
   );
 }
 
-/** Rule 6: source, temporal mark, reviewer (name + CRM). No reviewer profile endpoint yet: honest placeholder. */
-function OriginTab({ board, card }: { board: Board; card: Card }) {
+function changelogNote(mark: string | null, changelog: string | null | undefined) {
+  if (!changelog) return null;
+  if (mark && changelog.startsWith(`${mark}: `)) return changelog.slice(mark.length + 2);
+  return changelog;
+}
+
+/** Source, temporal mark, and the reviewer stamped on the rubric when a card is approved. */
+function OriginTab({ board, card, detail }: { board: Board; card: Card; detail: CardDetail | null }) {
   const approved = card.status === 'approved';
-  // F17 T7 (FR-16): board.copiedFrom — origin notice for copied boards.
+  const name = detail?.rubric?.reviewerName ?? null;
+  const crm = detail?.rubric?.reviewerCrm ?? null;
+  const reviewer = approved && name && crm
+    ? t('inspector.reviewerInfo', { revisor: name, crm })
+    : approved && name
+      ? t('inspector.reviewerNamed', { revisor: name })
+      : approved
+        ? t('inspector.reviewerPending')
+        : t('inspector.noEditorial');
   const copiedDate = board.copiedFrom?.at
     ? new Date(board.copiedFrom.at).toLocaleDateString('pt-BR')
     : null;
+  const note = changelogNote(board.temporalMark, board.changelog);
   return (
     <dl className="m-0 flex flex-col">
-      {/* FR-16: show copy origin when the board was copied from a shared link. */}
       {copiedDate ? (
         <div className="mb-3 rounded-[12px] bg-canvas px-3 py-2.5 text-sm text-muted" data-testid="board-copied-from">
           {t('boardsOrigin.copiedFrom', { date: copiedDate })}
@@ -285,7 +327,9 @@ function OriginTab({ board, card }: { board: Board; card: Card }) {
       ) : null}
       <Row term={t('inspector.sourceLabel')}>{card.source ?? t('inspector.noSource')}</Row>
       <Row term={t('inspector.temporalLabel')}>{board.temporalMark ?? t('inspector.noMark')}</Row>
-      <Row term={t('inspector.editorialLabel')}>{approved ? t('inspector.reviewerPending') : t('inspector.noEditorial')}</Row>
+      {board.temporalMark ? <p className="m-0 py-2 text-sm text-muted">{t('inspector.changelog', { mark: board.temporalMark })}</p> : null}
+      {note ? <p className="m-0 pb-2 text-sm text-(--cv-ink-2)">{note}</p> : null}
+      <Row term={t('inspector.editorialLabel')}>{reviewer}</Row>
       <Row term={t('inspector.version')} last>
         {approved ? `v${board.version}` : t('inspector.status.draft')}
       </Row>

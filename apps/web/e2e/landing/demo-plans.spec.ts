@@ -16,7 +16,7 @@ test('demo: answer correctly, reveal step 5, retry, verdict announced', async ({
   await expect(demo.getByRole('status')).toContainText(d.verdicts.correct);
   await expect(demo.getByRole('status')).toContainText(d.demoLabel);
   await expect(demo.getByRole('link', { name: d.cta })).toBeVisible();
-  expect(await events(page)).toEqual(expect.arrayContaining(['demo_started', 'demo_answered', 'demo_completed']));
+  await expect.poll(() => events(page)).toEqual(expect.arrayContaining(['demo_started', 'demo_answered', 'demo_completed']));
   await page.waitForTimeout(600); // pop animation
   await demo.screenshot({ path: 'test-results/landing-experimente-certo.png' });
   await demo.getByRole('button', { name: d.retry }).click();
@@ -34,7 +34,7 @@ test('plans: toggle changes price and label', async ({ page }) => {
   await expect(pro).toContainText(/\/ano/);
   await page.waitForTimeout(600);
   await plans.screenshot({ path: 'test-results/landing-planos-anual.png' });
-  expect(await events(page)).toEqual(expect.arrayContaining(['pricing_viewed', 'pricing_toggled']));
+  await expect.poll(() => events(page)).toEqual(expect.arrayContaining(['pricing_viewed', 'pricing_toggled']));
 });
 
 test('faq: first open, keyboard toggles one at a time', async ({ page }) => {
@@ -44,7 +44,7 @@ test('faq: first open, keyboard toggles one at a time', async ({ page }) => {
   await page.keyboard.press('Enter');
   await expect(qs.nth(1)).toHaveAttribute('aria-expanded', 'true');
   await expect(qs.first()).toHaveAttribute('aria-expanded', 'false');
-  expect(await events(page)).toContain('faq_opened');
+  await expect.poll(() => events(page)).toContain('faq_opened');
 });
 
 test('axe: demo, comparison, plans, faq have no violations', async ({ page }) => {

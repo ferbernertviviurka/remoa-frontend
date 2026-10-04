@@ -1,6 +1,5 @@
-import { t } from '@remoa/strings';
-import { EmptyState } from '@/features/shell/empty-state';
+import { redirect } from 'next/navigation';
 
 export default function Page() {
-  return <EmptyState title={t('empty.mobileReview.title')} body={t('empty.mobileReview.body')} />;
+  redirect('/app/revisar');
 }

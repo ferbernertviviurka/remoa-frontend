@@ -113,7 +113,7 @@ test.describe('Minha conta', () => {
     await page.goto('/app/conta/dados');
     await page.getByRole('button', { name: 'Exportar meus dados' }).click();
     const download = page.waitForEvent('download');
-    await page.getByRole('button', { name: 'Baixar' }).click();
+    await page.getByRole('button', { name: 'Baixar', exact: true }).click();
     expect((await download).suggestedFilename()).toMatch(/\.json$/);
   });
 

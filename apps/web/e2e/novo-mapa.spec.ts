@@ -21,26 +21,18 @@ test('novo mapa: em branco cria e abre o editor com matrixItemId; PDF, Anki e ma
     else other.push(r.url());
   });
 
-  // PDF e Anki: CTA só com arquivo; depois, "Em breve" sem chamada à API.
-  // (Anki deixou de ser "Em breve": F06, coberto por import.spec.ts.)
-  for (const [caminho, file, cta] of [['pdf', 'a.pdf', 'Gerar rascunho do mapa']] as const) {
-    await page.goto(`/app/mapas/novo?caminho=${caminho}`);
-    await toStep3(page);
-    await expect(page.getByRole('button', { name: cta })).toBeDisabled();
-    await page.locator('input[type=file]').setInputFiles({ name: file, mimeType: 'application/octet-stream', buffer: Buffer.from('x') });
-    await page.getByRole('button', { name: cta }).click();
-    await expect(page.getByRole('dialog', { name: 'Em breve' })).toBeVisible();
-    await page.getByRole('dialog').getByRole('button', { name: 'Fechar' }).first().click();
-    await expect(page.getByRole('dialog')).toHaveCount(0);
-  }
+  // PDF: CTA só com arquivo. A geração em si é F05 (POST /v1/ai/generate-pdf, não /v1/boards); Anki é F06 (import.spec.ts).
+  await page.goto('/app/mapas/novo?caminho=pdf');
+  await toStep3(page);
+  await expect(page.getByRole('button', { name: 'Gerar rascunho do mapa' })).toBeDisabled();
+  await page.locator('input[type=file]').setInputFiles({ name: 'a.pdf', mimeType: 'application/pdf', buffer: Buffer.from('x') });
+  await expect(page.getByRole('button', { name: 'Gerar rascunho do mapa' })).toBeEnabled();
   expect(posts).toEqual([]);
 
-  // Mapa pronto: não existe (D-088): aviso honesto, CTA desabilitado.
+  // Mapa pronto (F10, main): abre direto na lista publicada pela revisão editorial; sem CTA que finja gerar.
   await page.goto('/app/mapas/novo?caminho=pronto');
-  await expect(page.getByRole('button', { name: /De um mapa pronto/ })).toHaveAttribute('aria-pressed', 'true');
-  await toStep3(page);
-  await expect(page.getByRole('status')).toContainText('Os mapas prontos aparecem aqui');
-  await expect(page.getByRole('button', { name: 'Adicionar ao meu mapa' })).toBeDisabled();
+  await expect(page.getByRole('heading', { level: 1, name: 'Escolha o mapa pronto' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Adicionar ao meu mapa' })).toHaveCount(0);
 
   // ?caminho= inválido cai em "Em branco"; padrão sem query é PDF.
   await page.goto('/app/mapas/novo?caminho=xyz');

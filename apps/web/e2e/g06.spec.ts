@@ -170,17 +170,16 @@ test('4. caso clínico: a etapa explica o que é por tooltip, pelo teclado; pain
   await expect(aside).toHaveCount(0);
 });
 
-test('5. desafio: no modo Falar o botão de gravar fica desabilitado com "Em breve"', async ({ page, request }) => {
+// G12 (main): Falar dita pela Web Speech quando o navegador tem; sem suporte, o aviso "ainda não está disponível" segue.
+test('5. desafio: no modo Falar aparece o botão de gravar com a nota certa para o navegador', async ({ page, request }) => {
   test.setTimeout(120_000);
   const { userId, headers } = await signUpAndLogin(page, request);
   const sepse = await createMockSepse(request, headers, userId);
   await page.goto(`/app/mapas/${sepse}?modo=desafio`);
   await expect(page.getByRole('button', { name: 'Corrigir resposta' })).toBeVisible();
   await page.getByRole('group', { name: 'Como responder' }).getByRole('button', { name: 'Falar' }).click();
-  const rec = page.getByRole('button', { name: 'Falar a resposta' });
-  await expect(rec).toHaveAttribute('aria-disabled', 'true');
-  await expect(panel(page).getByText('Em breve', { exact: true })).toBeVisible();
-  await rec.click({ force: true });
-  await expect(page.getByLabel('Sua resposta')).toHaveCount(0); // nothing transcribed, still in Falar
-  await shot(page, 'g06-falar-em-breve');
+  await expect(page.getByRole('button', { name: 'Falar a resposta' })).toBeVisible();
+  const supported = await page.evaluate(() => 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+  await expect(panel(page).getByText(supported ? 'O texto aparece no campo' : 'Responder falando ainda não está disponível')).toBeVisible();
+  await shot(page, 'g06-falar');
 });

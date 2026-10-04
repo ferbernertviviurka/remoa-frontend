@@ -1,4 +1,4 @@
-import type { Track } from '@remoa/contracts';
+import type { BaseEventProps, Track } from '@remoa/contracts';
 
 type Sent = { event: string; props: Record<string, unknown> };
 declare global {
@@ -16,8 +16,62 @@ const mixpanel = () =>
     return mp;
   }));
 
+const APP_VERSION = '0.0.0';
+const PLAN_KEY = 'remoa-plan';
+const BOARD_KEY = 'remoa-board';
+
+/** The shell writes the current plan so every later event carries it (F11 FR-4). */
+export function rememberPlan(plan: BaseEventProps['plan']) {
+  try {
+    sessionStorage.setItem(PLAN_KEY, plan);
+  } catch {
+    /* private mode */
+  }
+}
+
+/** The open map, so later events carry `boardId` and `area` when they are known (F11 FR-4). */
+export function rememberBoard(boardId: string | null, area?: BaseEventProps['area'] | null) {
+  try {
+    if (!boardId) sessionStorage.removeItem(BOARD_KEY);
+    else sessionStorage.setItem(BOARD_KEY, JSON.stringify({ boardId, area: area ?? null }));
+  } catch {
+    /* private mode */
+  }
+}
+
+function boardContext(): Pick<BaseEventProps, 'boardId' | 'area'> {
+  try {
+    const raw = sessionStorage.getItem(BOARD_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as { boardId?: unknown; area?: unknown };
+    const out: Pick<BaseEventProps, 'boardId' | 'area'> = {};
+    if (typeof parsed.boardId === 'string' && parsed.boardId) out.boardId = parsed.boardId;
+    if (typeof parsed.area === 'string' && parsed.area) out.area = parsed.area as BaseEventProps['area']; // written only by rememberBoard
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+function baseProps(): BaseEventProps {
+  let plan: BaseEventProps['plan'] = 'free';
+  try {
+    const stored = sessionStorage.getItem(PLAN_KEY);
+    if (stored === 'pro' || stored === 'founder') plan = stored;
+  } catch {
+    /* unavailable */
+  }
+  let platform: 'web' | 'pwa' = 'web';
+  try {
+    if (window.matchMedia('(display-mode: standalone)').matches) platform = 'pwa';
+  } catch {
+    /* jsdom without matchMedia */
+  }
+  return { plan, platform, appVersion: APP_VERSION, ...boardContext() };
+}
+
 function send(event: string, props: Record<string, unknown>) {
-  const payload = { ...props, platform: 'web' };
+  const payload = { ...props, ...baseProps() };
   if (token) void mixpanel().then((mp) => mp.track(event, payload));
   else (window.__remoaEvents ??= []).push({ event, props: payload });
 }

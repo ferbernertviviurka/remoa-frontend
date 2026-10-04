@@ -14,6 +14,7 @@ export const items: { href: string; icon: IconName; label: StringKey }[] = [
   { href: '/app/mapas', icon: 'maps', label: 'rail.maps' },
   { href: '/app/revisar', icon: 'bolt', label: 'rail.review' },
   { href: '/app/cobertura', icon: 'bars', label: 'rail.enamed' },
+  { href: '/app/progresso', icon: 'list', label: 'shell.nav.progress' },
   { href: '/app/loja', icon: 'store', label: 'rail.store' },
 ];
 

@@ -58,7 +58,7 @@ test('mapa sem item: uma sugestão liga o mapa e a cobertura aparece no painel',
   await expect(page.getByRole('link', { name: /^cobre \d+% de / })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Ligar a / })).toHaveCount(0);
   const events = await page.evaluate(() => window.__remoaEvents ?? []);
-  expect(events).toContainEqual({ event: 'board_linked_to_matrix', props: { count: 1, suggestedCount: 1, platform: 'web' } });
+  expect(events).toContainEqual({ event: 'board_linked_to_matrix', props: expect.objectContaining({ count: 1, suggestedCount: 1, platform: 'web', plan: 'free', appVersion: '0.0.0' }) });
 });
 
 test('lacunas: ligar um mapa que já tenho move o tema para Em andamento', async ({ page, request }) => {
@@ -78,5 +78,5 @@ test('lacunas: ligar um mapa que já tenho move o tema para Em andamento', async
   await expect(page.getByRole('link', { name: `Abrir mapa de ${other.title}` })).toBeVisible();
   await expect(page.getByRole('button', { name: `Ligar um mapa que já tenho a ${other.title}` })).toHaveCount(0);
   const events = await page.evaluate(() => window.__remoaEvents ?? []);
-  expect(events).toContainEqual({ event: 'board_linked_to_matrix', props: { count: 1, suggestedCount: 0, platform: 'web' } });
+  expect(events).toContainEqual({ event: 'board_linked_to_matrix', props: expect.objectContaining({ count: 1, suggestedCount: 0, platform: 'web', plan: 'free', appVersion: '0.0.0' }) });
 });

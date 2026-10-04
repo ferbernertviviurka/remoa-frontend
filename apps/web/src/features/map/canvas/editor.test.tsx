@@ -12,7 +12,7 @@ const push = vi.fn();
 let search = new URLSearchParams();
 let startItems: unknown[] = [];
 vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
-vi.mock('@/lib/analytics', () => ({ track: () => undefined }));
+vi.mock('@/lib/analytics', () => ({ track: () => undefined, rememberBoard: () => undefined }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, replace, refresh: () => undefined }),
   usePathname: () => `/app/mapas/${sepseBoard.id}`,

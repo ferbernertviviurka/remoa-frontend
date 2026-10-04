@@ -21,6 +21,7 @@ export * from './spinner';
 export * from './separator';
 export * from './kbd';
 export * from './stat';
+export * from './chart';
 export * from './empty';
 export * from './breadcrumb';
 export * from './rating';

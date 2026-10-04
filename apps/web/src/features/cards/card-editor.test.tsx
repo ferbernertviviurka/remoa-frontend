@@ -94,12 +94,12 @@ describe('CardEditor: concept', () => {
     expect(api.mock.calls.filter(([, i]) => i?.method === 'PUT')).toHaveLength(0);
   });
 
-  it('shows the read-only rubric and a disabled "Gerar rubrica"', async () => {
+  it('shows the read-only rubric, without the old "Gerar rubrica" placeholder (F05)', async () => {
     editor(base);
     await form();
     expect(screen.getByText('Disfunção orgânica com risco de vida')).toBeInTheDocument();
     expect(screen.getAllByText('Essencial')).toHaveLength(2);
-    expect(screen.getByRole('button', { name: 'Gerar rubrica · Em breve' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Gerar rubrica · Em breve' })).toBeNull();
   });
 
   it('axe: no violations', async () => {

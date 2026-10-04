@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 
 // D-323: a parte logada mudou para `/app/*`; links e favoritos antigos seguem valendo (308, a query vai junto).
-const moved = ['hoje', 'mapas', 'revisar', 'cobertura', 'loja', 'conta', 'planos', 'editorial', 'm/revisar'];
+const moved = ['hoje', 'mapas', 'revisar', 'cobertura', 'loja', 'conta', 'planos', 'editorial', 'progresso', 'm/revisar'];
 
 const config: NextConfig = {
   transpilePackages: ['@remoa/contracts', '@remoa/strings', '@remoa/ui'],

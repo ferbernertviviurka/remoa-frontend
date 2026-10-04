@@ -9,6 +9,9 @@ const track = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
 vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
+vi.mock('@/lib/supabase/client', () => ({
+  createClient: () => ({ auth: { getSession: async () => ({ data: { session: { access_token: 'tok' } } }) } }),
+}));
 
 const items: MatrixItem[] = [
   { id: 'i1', area: 'CM', code: '1', title: 'Sepse e choque séptico', parentId: null, targetCards: 40 },
@@ -77,26 +80,60 @@ describe('NewMapView', () => {
     expect(screen.getByText('Como você quer começar?')).toBeTruthy();
   });
 
-  it('PDF path: CTA needs a file, then opens "Em breve" and never calls the API', async () => {
+  it('PDF path: CTA needs a file, then asks the API to generate the draft', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      json: async () => ({ ok: true, data: { boardId: 'pdf1', cards: 3, edges: 2 } }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
     render(<NewMapView items={items} initialPath="pdf" />);
     next();
     next();
     const cta = screen.getByRole('button', { name: 'Gerar rascunho do mapa' }) as HTMLButtonElement;
     expect(cta.disabled).toBe(true);
     const input = document.querySelector('input[type=file]') as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [new File(['x'], 'apostila.pdf', { type: 'application/pdf' })] } });
+    fireEvent.change(input, { target: { files: [new File(['(Sepse e choque septico exige noradrenalina imediata)'], 'apostila.pdf', { type: 'application/pdf' })] } });
     expect(screen.getByText('apostila.pdf')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Gerar rascunho do mapa' }));
-    expect(await screen.findByRole('dialog', { name: 'Em breve' })).toBeTruthy();
-    // Only the debounced matrix suggestion (F07) may have fired; nothing was generated or imported.
-    expect(api.mock.calls.filter(([path]) => !String(path).includes('/v1/matrix/suggest'))).toHaveLength(0);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain('/v1/ai/generate-pdf');
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/app/mapas/pdf1'));
+    vi.unstubAllGlobals();
   });
 
-  it('mapa pronto path: nothing to pick yet, CTA disabled', () => {
+  it('PDF path shows generation progress before opening the map', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, data: { jobId: '11111111-1111-4111-8111-111111111111' } }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const jobId = '11111111-1111-4111-8111-111111111111';
+    let polls = 0;
+    api.mockImplementation(async (path: string) => {
+      if (!String(path).includes('/v1/ai/jobs/')) return { ok: true, data: [] };
+      polls += 1;
+      if (polls === 1) return { ok: true, data: { jobId, status: 'running', progress: 30, stage: 'extract', boardId: null, error: null } };
+      return { ok: true, data: { jobId, status: 'done', progress: 100, stage: null, boardId: 'pdf1', error: null, cards: 4, edges: 1, pages: 12 } };
+    });
+    render(<NewMapView items={items} initialPath="pdf" />);
+    next();
+    next();
+    const input = document.querySelector('input[type=file]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [new File(['texto longo o bastante para o pdf'], 'apostila.pdf', { type: 'application/pdf' })] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Gerar rascunho do mapa' }));
+    expect(await screen.findByRole('progressbar', { name: 'Progresso da geração do mapa' })).toBeTruthy();
+    expect(await screen.findByText('Extraindo conceitos… 30%')).toBeTruthy();
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/app/mapas/pdf1'));
+    expect(track).toHaveBeenCalledWith('board_generated_from_pdf', expect.objectContaining({ cards: 4, edges: 1, pages: 12 }));
+    vi.unstubAllGlobals();
+  });
+
+  it('mapa pronto path: published seeds are listed; until then the edition is still in review', async () => {
+    api.mockResolvedValue({ ok: true, data: [] });
     render(<NewMapView items={items} initialPath="seed" />);
     next();
     next();
-    expect((screen.getByRole('button', { name: 'Adicionar ao meu mapa' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(await screen.findByText('Os mapas prontos aparecem aqui quando a revisão editorial publicar a primeira edição.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Adicionar ao meu mapa' })).toBeNull();
   });
 
   it('live preview mirrors the name', () => {
@@ -118,7 +155,7 @@ describe('NewMapView: painel explicativo', () => {
     expect(screen.getAllByText(/Até 5\.000 cards por importação no Free e 20\.000 no Pro/).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: /De um mapa pronto/ }));
     expect(panel()).toContain('Mapas prontos e revisados');
-    expect(screen.getAllByText(/Ainda não disponível/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/A lista mostra a edição já publicada pela revisão editorial/).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: /Em branco/ }));
     expect(panel()).toContain('Comece do zero');
   });

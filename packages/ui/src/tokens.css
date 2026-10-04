@@ -1,5 +1,5 @@
 /* Tokens do design system v2 (fonte: docs/DESIGN.md, identidade roxa). Importar depois de `@import 'tailwindcss'`.
-   O app é claro; o tema escuro (prefers-color-scheme / data-theme="dark") só mantém o v1 funcional até a onda 2.
+   O app fica claro. Painéis escuros usam --panel-dark e não dependem do tema do sistema.
 
    ALIASES v1 (nomes antigos que o app ainda usa; apontam para os v2 e saem na onda 2):
    --text → --ink · --grid → --grid-dot · --shadow-card/--shadow-map/--shadow-map-hover/--shadow-lift (valores v2 achatados)
@@ -84,44 +84,6 @@
   --font-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
   --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
   --font-body: var(--font-sans);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --primary: #beb0ff;
-    --primary-deep: #d9d0ff;
-    --primary-tint: #30294a;
-    --on-primary: #1c1538;
-    --canvas: #101b24;
-    --surface: #172934;
-    --ink: #eaf2f3;
-    --ink-2: #d5e0e3;
-    --muted: #aebcc7;
-    --border: #3b5363;
-    --border-strong: #4a6476;
-    --track: #1f3441;
-    --divider: #263a47;
-    --chip: #1f3441;
-    --grid-dot: #263a47;
-  }
-}
-
-:root[data-theme='dark'] {
-  --primary: #beb0ff;
-  --primary-deep: #d9d0ff;
-  --primary-tint: #30294a;
-  --on-primary: #1c1538;
-  --canvas: #101b24;
-  --surface: #172934;
-  --ink: #eaf2f3;
-  --ink-2: #d5e0e3;
-  --muted: #aebcc7;
-  --border: #3b5363;
-  --border-strong: #4a6476;
-  --track: #1f3441;
-  --divider: #263a47;
-  --chip: #1f3441;
-  --grid-dot: #263a47;
 }
 
 @theme inline {

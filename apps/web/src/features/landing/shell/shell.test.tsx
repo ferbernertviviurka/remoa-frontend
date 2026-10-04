@@ -68,7 +68,7 @@ describe('WaitlistCta', () => {
     const ok = await screen.findByRole('status');
     await waitFor(() => expect(document.activeElement).toBe(ok));
     expect(post).toHaveBeenCalledWith({ email: 'a@b.co', segment: 'y5_6', variant: '29', honeypot: '' });
-    expect(window.__remoaEvents).toContainEqual({ event: 'waitlist_joined', props: { segment: 'y5_6', variant: '29', platform: 'web' } });
+    expect(window.__remoaEvents).toContainEqual({ event: 'waitlist_joined', props: { segment: 'y5_6', variant: '29', platform: 'web', plan: 'free', appVersion: '0.0.0' } });
     fireEvent.click(screen.getByRole('button', { name: strings.landing.waitlist.success.alternate }));
     expect((screen.getByLabelText(strings.landing.waitlist.email.label) as HTMLInputElement).value).toBe('');
   });
@@ -111,14 +111,14 @@ describe('landing_cta_clicked (D-370)', () => {
     rerender(<LandingHeader phase="open" signedIn />);
     fireEvent.click(screen.getAllByRole('link', { name: strings.landing.nav.openApp })[0]!);
     await waitFor(() => expect(sent()).toEqual([
-      { location: 'header', cta: 'waitlist', platform: 'web' },
-      { location: 'header', cta: 'signin', platform: 'web' },
-      { location: 'header', cta: 'open_app', platform: 'web' },
+      { location: 'header', cta: 'waitlist', platform: 'web', plan: 'free', appVersion: '0.0.0' },
+      { location: 'header', cta: 'signin', platform: 'web', plan: 'free', appVersion: '0.0.0' },
+      { location: 'header', cta: 'open_app', platform: 'web', plan: 'free', appVersion: '0.0.0' },
     ]));
   });
   test('final: open phase sign-up link', async () => {
     render(<WaitlistCta phase="open" variant={null} />);
     fireEvent.click(screen.getByRole('link', { name: strings.landing.ctaSection.primary }));
-    await waitFor(() => expect(sent()).toEqual([{ location: 'final', cta: 'create', platform: 'web' }]));
+    await waitFor(() => expect(sent()).toEqual([{ location: 'final', cta: 'create', platform: 'web', plan: 'free', appVersion: '0.0.0' }]));
   });
 });

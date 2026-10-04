@@ -313,9 +313,6 @@ function RubricView({ rubric }: { rubric: Rubric | null }) {
           <p className="text-xs text-muted">{t('cards.rubric.source', { source: rubric.source })}</p>
         </>
       ) : null}
-      <Button variant="quiet" disabled>
-        {`${t('cards.rubric.generate')} · ${t('common.comingSoon')}`}
-      </Button>
     </section>
   );
 }

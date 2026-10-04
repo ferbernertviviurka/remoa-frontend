@@ -69,7 +69,7 @@ test('6. /mapas/novo: cada alternativa troca título e passos do painel direito'
   const cases = [
     [/Do meu PDF/, 'Do PDF ao rascunho', 'Em breve: a geração por IA'],
     [/Do meu Anki/, 'Do Anki para o mapa', 'Disponível agora'],
-    [/De um mapa pronto/, 'Mapas prontos e revisados', 'Ainda não disponível'],
+    [/De um mapa pronto/, 'Mapas prontos e revisados', 'A lista mostra a edição já publicada'],
     [/Em branco/, 'Comece do zero', ''],
   ] as const;
   const seen = new Set<string>();

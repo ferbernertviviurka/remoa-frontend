@@ -16,5 +16,7 @@ describe('parseInitial (?item=)', () => {
   it('item desconhecido é ignorado em silêncio', () => {
     expect(parseInitial(undefined, 'zzz', items)).toEqual({ path: undefined, itemId: undefined, step: 0 });
     expect(parseInitial('anki', undefined, items)).toEqual({ path: 'anki', itemId: undefined, step: 0 });
+    expect(parseInitial('seed', undefined, items)).toEqual({ path: 'seed', itemId: undefined, step: 2 });
+    expect(parseInitial('pronto', 'i1', items)).toEqual({ path: 'seed', itemId: 'i1', step: 2 });
   });
 });

@@ -294,6 +294,7 @@ export const account = {
     exportTitle: 'Exportar seus dados',
     exportBody: 'Baixe seus mapas, cards, conexões e o histórico de tentativas em um arquivo JSON.',
     exportStart: 'Exportar meus dados',
+    attemptsCsv: 'Baixar histórico de tentativas',
     exportPreparing: 'Preparando seu arquivo…',
     exportPreparingBody: 'Pode continuar usando o Remoa. Avisamos quando estiver pronto.',
     exportReady: '{size} · pronto para baixar',

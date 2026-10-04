@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { usePathname } from 'next/navigation';
 import type { Entitlements } from '@remoa/contracts';
 import { api } from '@/lib/api';
+import { rememberPlan } from '@/lib/analytics';
 
 type Ctx = { entitlements: Entitlements | null; status: 'ready' | 'error'; refresh: () => Promise<void> };
 const EntitlementsContext = createContext<Ctx>({ entitlements: null, status: 'error', refresh: async () => {} });
@@ -22,6 +23,9 @@ export function EntitlementsProvider({ initial, children }: { initial: Entitleme
     if (first.current) { first.current = false; return; }
     void refresh();
   }, [pathname, refresh]);
+  useEffect(() => {
+    if (entitlements?.plan) rememberPlan(entitlements.plan);
+  }, [entitlements]);
   return <EntitlementsContext.Provider value={{ entitlements, status, refresh }}>{children}</EntitlementsContext.Provider>;
 }
 

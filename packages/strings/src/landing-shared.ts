@@ -22,6 +22,7 @@ export const challenge = {
   backToReview: 'Voltar para Revisar hoje',
   empty: { title: 'Nada para revisar agora', body: 'Volte mais tarde ou adicione conceitos ao mapa.' },
   stagesLabel: 'Etapas até aqui',
+  context: 'No mapa',
   edgeAsk: 'O que liga {from} a {to}?',
   imageAlt: 'Imagem com regiões cobertas',
   answerMode: 'Como responder',
@@ -45,6 +46,7 @@ export const challenge = {
   fallbackNoRubric: 'Sem rubrica aprovada para corrigir: avalie você mesmo.',
   fallbackGraderError: 'A correção automática falhou. Compare com a resposta e avalie você mesmo.',
   fallbackQuota: 'Suas correções por IA de hoje acabaram. Compare com a resposta e avalie você mesmo.',
+  fallbackOffline: 'Sem conexão. A resposta ficou neste aparelho e a correção por IA acontece quando a rede voltar.',
   quotaCta: 'Ver planos',
   rateError: 'Não conseguimos salvar a nota. Tente de novo.',
   disputed: 'Obrigado. Vamos revisar esta correção.',
@@ -187,9 +189,13 @@ export const quiz = {
   summaryPanel: 'Resumo da sessão',
   speak: 'Falar',
   voiceRecord: 'Falar a resposta',
-  // G06 (D-203): Web Speech transcription removed from the UI until F09
+  voiceNote: 'O texto aparece no campo. Confira antes de corrigir. O áudio não é enviado.',
   voiceSoon: 'Em breve',
   voiceSoonNote: 'Responder falando ainda não está disponível. Por enquanto, escreva a resposta.',
+  install: 'Instalar o Remoa',
+  installBody: 'A revisão fica na tela inicial, para abrir entre um plantão e outro.',
+  installAction: 'Instalar',
+  installDismiss: 'Agora não',
 } as const;
 
 export const boundary = {

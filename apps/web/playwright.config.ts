@@ -8,7 +8,8 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   // PORT=3001 npx playwright test … runs against a private dev server (other sessions may own :3000).
   use: { baseURL: `http://localhost:${process.env.PORT ?? 3000}` },
-  webServer: [
+  // PW_NO_SERVER=1: the app is already on PORT and this spec does not need a second dev process.
+  webServer: process.env.PW_NO_SERVER ? undefined : [
     // API from the sibling backend repo (D-034); needs its .env (`pnpm --silent db:env > .env` there).
     { command: 'pnpm -C ../../../remoa-backend dev', url: 'http://localhost:4000/health', reuseExistingServer: !process.env.CI, env: { STRIPE: 'mock' } },
     { command: 'pnpm dev', port: Number(process.env.PORT ?? 3000), reuseExistingServer: !process.env.CI },

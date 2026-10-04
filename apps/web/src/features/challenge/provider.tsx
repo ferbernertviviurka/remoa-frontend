@@ -10,7 +10,7 @@ export const MAX_SKIPS = 2; // contracts MAX_SKIPS_PER_ITEM; the server is the a
 export type Scope = { kind: 'daily' } | { kind: 'board'; boardId: string };
 export const scopeKey = (s: Scope) => (s.kind === 'daily' ? 'daily' : s.boardId);
 
-export type Run = { sessionId: string; items: ChallengeItemPublic[]; queue: string[]; total: number; correct: number; wrong: number; skips: Record<string, number> };
+export type Run = { sessionId: string; items: ChallengeItemPublic[]; queue: string[]; total: number; correct: number; wrong: number; skips: Record<string, number>; toReview: string[] };
 export type ChallengeState =
   | { phase: 'idle' }
   | { phase: 'loading'; scope: string }
@@ -27,7 +27,7 @@ export type ChallengeApi = {
   /** Starts a session for the scope unless one is already running/loading for it (idempotent, StrictMode safe). */
   ensure: (scope: Scope) => void;
   reset: () => void;
-  answer: (item: ChallengeItemPublic, p: AnswerPayload, durationMs: number) => ReturnType<typeof challengeClient.answer>;
+  answer: (item: ChallengeItemPublic, p: AnswerPayload, durationMs: number, onFeedback?: (chunk: string) => void) => ReturnType<typeof challengeClient.answer>;
   rate: (item: ChallengeItemPublic, grade: Grade, overridden: boolean, inputKind: AnswerPayload['inputKind']) => Promise<boolean>;
   skip: (item: ChallengeItemPublic) => Promise<'ok' | 'limit' | 'error'>;
   dispute: (item: ChallengeItemPublic) => Promise<boolean>;
@@ -66,7 +66,7 @@ export function ChallengeProvider({ children }: { children: ReactNode }) {
       if (items.length === 0) return void setState({ phase: 'empty', scope: key }), null;
       startedAt.current = performance.now();
       track('challenge_started', { kind: scope.kind, items: items.length, modes: [...new Set(items.map((i) => i.mode))] });
-      setState({ phase: 'running', scope: key, sessionId, items, queue: items.map((i) => i.id), total: items.length, correct: 0, wrong: 0, skips: {} });
+      setState({ phase: 'running', scope: key, sessionId, items, queue: items.map((i) => i.id), total: items.length, correct: 0, wrong: 0, skips: {}, toReview: [] });
       return items[0]!;
     },
     [setState],
@@ -85,9 +85,20 @@ export function ChallengeProvider({ children }: { children: ReactNode }) {
   const reset = useCallback(() => setState({ phase: 'idle' }), [setState]);
 
   const finish = useCallback(
-    async (sessionId: string, items: ChallengeItemPublic[], scope: string, tally: { correct: number; wrong: number }) => {
+    async (sessionId: string, items: ChallengeItemPublic[], scope: string, tally: { correct: number; wrong: number; toReview: string[] }) => {
       setState({ phase: 'finishing', scope, items });
       const r = await challengeClient.finish({ sessionId });
+      if (!r.ok && r.error.message === 'network') {
+        const durationMs = Math.round(performance.now() - startedAt.current);
+        track('challenge_finished', { correct: tally.correct, wrong: tally.wrong, durationMs });
+        setState({
+          phase: 'done',
+          scope,
+          items,
+          summary: { sessionId, correct: tally.correct, wrong: tally.wrong, toReview: tally.toReview, nextDue: null, durationMs },
+        });
+        return;
+      }
       if (!r.ok) return setState({ phase: 'error', scope });
       track('challenge_finished', { correct: tally.correct, wrong: tally.wrong, durationMs: Math.round(performance.now() - startedAt.current) });
       setState({ phase: 'done', scope, items, summary: r.data });
@@ -97,12 +108,16 @@ export function ChallengeProvider({ children }: { children: ReactNode }) {
 
   const running = () => (cur.current.phase === 'running' ? cur.current : null);
 
-  const answer = useCallback<ChallengeApi['answer']>(async (item, p, durationMs) => {
+  const answer = useCallback<ChallengeApi['answer']>(async (item, p, durationMs, onFeedback) => {
     const s = running();
     if (!s) return { ok: false, error: { code: 'conflict', message: 'no session' } };
     const t0 = performance.now();
-    const r = await challengeClient.answer({ sessionId: s.sessionId, itemId: item.id, durationMs, ...p });
-    if (r.ok) track('answer_submitted', { mode: item.mode, inputKind: p.inputKind, verdict: r.data.verdict?.verdict ?? null, latencyMs: Math.round(performance.now() - t0) });
+    const r = await challengeClient.answer({ sessionId: s.sessionId, itemId: item.id, durationMs, ...p }, onFeedback);
+    if (r.ok) {
+      const latencyMs = Math.round(performance.now() - t0);
+      track('answer_submitted', { mode: item.mode, inputKind: p.inputKind, verdict: r.data.verdict?.verdict ?? null, latencyMs });
+      if (r.data.verdict) track('ai_graded', { verdict: r.data.verdict.verdict, latencyMs, costCents: r.data.verdict.costCents ?? 0, model: r.data.verdict.model.slice(0, 64) });
+    }
     return r;
   }, []);
 
@@ -115,9 +130,10 @@ export function ChallengeProvider({ children }: { children: ReactNode }) {
       if (overridden) track('grade_overridden', {});
       track('review_completed', { grade, mode: item.mode, inputKind, overridden });
       const queue = s.queue.slice(1);
-      const tally = { correct: s.correct + (grade === 'again' ? 0 : 1), wrong: s.wrong + (grade === 'again' ? 1 : 0) };
+      const toReview = grade === 'again' ? [...s.toReview, item.cardId] : s.toReview;
+      const tally = { correct: s.correct + (grade === 'again' ? 0 : 1), wrong: s.wrong + (grade === 'again' ? 1 : 0), toReview };
       if (queue.length === 0) void finish(s.sessionId, s.items, s.scope, tally);
-      else setState({ ...s, queue, ...tally });
+      else setState({ ...s, queue, correct: tally.correct, wrong: tally.wrong, toReview });
       return true;
     },
     [finish, setState],

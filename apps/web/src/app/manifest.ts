@@ -6,10 +6,13 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: t('common.appName'),
     short_name: t('common.appName'),
+    description: t('common.appDescription'),
     start_url: '/app/hoje',
     display: 'standalone',
     theme_color: '#241A5C',
     background_color: '#241A5C',
+    lang: 'pt-BR',
+    scope: '/',
     icons: [
       { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
       { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },

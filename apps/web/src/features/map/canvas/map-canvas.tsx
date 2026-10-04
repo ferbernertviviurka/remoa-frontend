@@ -18,7 +18,7 @@ import {
   useToast, type CommandItem, type NodeLayer, type ToolbarItem,
 } from '@remoa/ui';
 import { previewOf } from '@/features/cards/draft';
-import { track } from '@/lib/analytics';
+import { rememberBoard, track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { usePaywall } from '@/features/billing/paywall';
 import { CanvasContext, endOfDay, isDue, type CanvasCtx } from './canvas-context';
@@ -224,10 +224,15 @@ function Canvas({ data }: { data: BoardGraph }) {
 
   const opened = useRef(false);
   useEffect(() => {
+    rememberBoard(board.id, board.area);
+    return () => rememberBoard(null);
+  }, [board.id, board.area]);
+  useEffect(() => {
     if (opened.current) return;
     opened.current = true;
+    rememberBoard(board.id, board.area);
     track('board_opened', { cards: data.cards.length, edges: data.edges.length });
-  }, [data]);
+  }, [data, board.id, board.area]);
 
   // Any error = every card "Sem revisões" (D-039). Reloaded after each rating of the challenge.
   const loadHeat = useCallback(() => {
@@ -870,12 +875,11 @@ function Canvas({ data }: { data: BoardGraph }) {
             <CanvasToolbar aria-label={t('canvas.toolbar.label')} items={tools} onSelect={onTool} />
           </div>
         </div>
-        {/* desktop: floating 340 px panel on the right; phone: bottom sheet (full width, up to 55% of the canvas). Always mounted so
-            the panel can play its closing animation; the empty frame lets clicks through to the map. */}
+        {/* desktop: floating 340 px panel on the right; phone: bottom sheet above the nav. The challenge needs more of the screen than a card. */}
         <div
           ref={panelWrap}
           onAnimationEnd={(e) => /^cv-(panel|sheet)-in$/.test(e.animationName) && focusPanel()}
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[55%] md:inset-x-auto md:bottom-5 md:right-5 md:top-5 md:h-auto [&>aside]:pointer-events-auto [&>aside]:max-md:w-full [&>aside]:max-md:rounded-b-none"
+          className={`pointer-events-none absolute inset-x-0 bottom-[calc(72px+env(safe-area-inset-bottom))] z-20 md:inset-x-auto md:bottom-5 md:right-5 md:top-5 md:h-auto [&>aside]:pointer-events-auto [&>aside]:max-md:w-full [&>aside]:max-md:rounded-b-none ${mode === 'challenge' ? 'h-[78%]' : 'h-[55%]'}`}
         >
             <Inspector
               board={board}

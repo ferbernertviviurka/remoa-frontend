@@ -118,13 +118,17 @@ test('cobertura → "Criar mapa para este tema" abre o Novo mapa com o item pré
 test('axe: Novo mapa nas 4 alternativas e em 390x844', async ({ page, request }) => {
   test.setTimeout(150_000);
   await signUpAndLogin(page, request);
-  for (const c of ['pdf', 'anki', 'pronto', 'blank']) {
+  for (const c of ['pdf', 'anki', 'blank']) {
     await page.goto(`/app/mapas/novo?caminho=${c}`);
     await expect(page.getByRole('heading', { level: 1, name: 'Como você quer começar?' })).toBeVisible();
     expect(await axe(page), `novo ${c} passo 1`).toEqual([]);
     await page.getByRole('button', { name: 'Continuar' }).click();
     expect(await axe(page), `novo ${c} passo 2`).toEqual([]);
   }
+  // F10 (main): "pronto" abre direto na lista de mapas prontos.
+  await page.goto('/app/mapas/novo?caminho=pronto');
+  await expect(page.getByRole('heading', { level: 1, name: 'Escolha o mapa pronto' })).toBeVisible();
+  expect(await axe(page), 'novo pronto (lista)').toEqual([]);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/app/mapas/novo?caminho=anki');
   expect(await axe(page), 'novo anki 390').toEqual([]);
@@ -163,6 +167,6 @@ test('axe: editor com card redimensionado e painel aberto, Conteúdo, fluxograma
   const sepse = await createMockSepse(request, headers, userId);
   await page.goto(`/app/mapas/${sepse}?modo=desafio`);
   await page.getByRole('group', { name: 'Como responder' }).getByRole('button', { name: 'Falar' }).click();
-  await expect(panel(page).getByText('Em breve', { exact: true })).toBeVisible();
-  expect(await axe(page), 'desafio Falar + Em breve').toEqual([]);
+  await expect(page.getByRole('button', { name: 'Falar a resposta' })).toBeVisible();
+  expect(await axe(page), 'desafio Falar').toEqual([]);
 });

@@ -8,7 +8,7 @@ const push = vi.fn();
 const track = vi.fn();
 let pathname = '/';
 vi.mock('next/navigation', () => ({ usePathname: () => pathname, useRouter: () => ({ push }) }));
-vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
+vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a), rememberPlan: () => undefined }));
 vi.mock('@/lib/api', () => ({ api: vi.fn(async () => ({ ok: false })) }));
 vi.mock('next/image', () => ({ default: ({ alt }: { alt: string }) => <img alt={alt} /> }));
 afterEach(() => { cleanup(); vi.clearAllMocks(); pathname = '/'; });
