@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { CHALLENGE_MIN_CARDS, SELF_MARK_GRADE, caseStages, challengeErrors, type AnswerOutput, type ChallengeItemPublic, type Grade, type MapState, type RetrievabilityMap } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { Alert, Button, QuestionPanel, RatingButton, RatingGroup, Skeleton, Tag, VerdictBox } from '@remoa/ui';
@@ -102,6 +102,19 @@ export function ChallengePanel({ scope, boardId, heat, onExit, onRated, missing 
   );
 }
 
+/** Card flip (rotateY, ~450 ms) between the question and the answer. Reduced motion (system or <html data-motion="reduced">) swaps directly: motion.css zeroes the transition. */
+function Flip({ flipped, front, back }: { flipped: boolean; front: ReactNode; back: ReactNode }) {
+  const face = 'col-start-1 row-start-1 min-h-0 [backface-visibility:hidden]';
+  return (
+    <div className="grid h-full min-h-0 [perspective:1400px]">
+      <div className={`grid h-full min-h-0 transition-transform duration-[450ms] ease-in-out [transform-style:preserve-3d] ${flipped ? '[transform:rotateY(180deg)]' : ''}`}>
+        <div className={face} aria-hidden={flipped || undefined} inert={flipped}>{front}</div>
+        <div className={`${face} [transform:rotateY(180deg)]`} aria-hidden={!flipped || undefined} inert={!flipped}>{back}</div>
+      </div>
+    </div>
+  );
+}
+
 type Busy = AnswerPayload['inputKind'] | 'rate' | 'skip' | null;
 type ItemProps = { item: ChallengeItemPublic; n: number; total: number; done: number; state: MapState | undefined; canSkip: boolean; selfMark: boolean; onRated: () => void };
 
@@ -124,6 +137,7 @@ function ItemQuestion({ item, n, total, done, state, canSkip, selfMark, onRated 
   ];
   const [text, setText] = useState('');
   const [busy, setBusy] = useState<Busy>(null);
+  const [rating, setRating] = useState<Grade | null>(null);
   const [answered, setAnswered] = useState<{ out: AnswerOutput; kind: AnswerPayload['inputKind'] } | null>(null);
   const [live, setLive] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -159,10 +173,12 @@ function ItemQuestion({ item, n, total, done, state, canSkip, selfMark, onRated 
   async function rate(g: Grade) {
     if (!answered || busy || (answered.out.gradeLocked && g !== 'again')) return;
     setBusy('rate');
+    setRating(g);
     setError(null);
     const ok = await ch.rate(item, g, answered.out.suggestedGrade != null && g !== answered.out.suggestedGrade, answered.kind);
     if (ok) return onRated();
     setBusy(null);
+    setRating(null);
     setError(t('challenge.rateError'));
   }
 
@@ -254,16 +270,16 @@ function ItemQuestion({ item, n, total, done, state, canSkip, selfMark, onRated 
       ) : null}
       {out.gradeLocked ? <Alert tone="review" title={t('challenge.gradeLocked')} /> : null}
       {selfMark && !v ? (
-        <RatingGroup label={t('challengeSetup.answer.markLabel')}>
+        <RatingGroup label={t('challengeSetup.answer.markLabel')} busy={busy === 'rate'}>
           {marks.map((m) => (
-            <RatingButton key={m.grade} label={t(m.label)} hint={hint(m.grade, m.key)} shortcut={m.key} onClick={() => void rate(m.grade)} />
+            <RatingButton key={m.grade} label={t(m.label)} hint={hint(m.grade, m.key)} shortcut={m.key} loading={rating === m.grade} disabled={busy === 'rate'} onClick={() => void rate(m.grade)} />
           ))}
         </RatingGroup>
       ) : (
-        <RatingGroup label={suggested ? t('quiz.ratingLabelSuggested', { grade: t(`grade.${suggested}`) }) : t('quiz.ratingLabel')}>
+        <RatingGroup busy={busy === 'rate'} label={suggested ? t('quiz.ratingLabelSuggested', { grade: t(`grade.${suggested}`) }) : t('quiz.ratingLabel')}>
           {grades.map((g, i) =>
             out.gradeLocked && g !== 'again' ? null : ( // RatingButton v2 has no `disabled` (CCR): a locked grade is not offered
-              <RatingButton key={g} label={t(`grade.${g}`)} hint={hint(g, String(i + 1))} shortcut={String(i + 1)} suggested={suggested === g} onClick={() => void rate(g)} />
+              <RatingButton key={g} label={t(`grade.${g}`)} hint={hint(g, String(i + 1))} shortcut={String(i + 1)} suggested={suggested === g} loading={rating === g} disabled={busy === 'rate'} onClick={() => void rate(g)} />
             ),
           )}
         </RatingGroup>
@@ -301,7 +317,30 @@ function ItemQuestion({ item, n, total, done, state, canSkip, selfMark, onRated 
         </ul>
       ) : null}
       <div className="min-h-0 flex-1">
-        <QuestionPanel
+        <Flip flipped={!!out} front={
+<QuestionPanel
+          eyebrow={t('editor.challenge')}
+          progressText={t('challenge.progress', { n, total })}
+          progress={done / total}
+          progressLabel={t('challenge.progressLabel')}
+          chips={chips}
+          question={question}
+          modeLabel={t('challenge.answerMode')}
+          modes={modes}
+          mode="write"
+          onModeChange={() => undefined}
+          answerLabel={t('challenge.textLabel')}
+          answer={text}
+          onAnswerChange={setText}
+          optionsLabel={t('challenge.optionsLabel')}
+          options={[]}
+          selectedOption={null}
+          onSelectOption={() => undefined}
+          checkLabel={busy === 'text' && ai ? t('challenge.grading') : ai && text.trim() ? t('challenge.submitText') : t('challenge.reveal')}
+          canCheck={!busy}
+          onCheck={reveal}
+        />
+        } back={out ? <QuestionPanel
           eyebrow={t('editor.challenge')}
           progressText={t('challenge.progress', { n, total })}
           progress={done / total}
@@ -324,6 +363,7 @@ function ItemQuestion({ item, n, total, done, state, canSkip, selfMark, onRated 
           onCheck={reveal}
           result={resultNode}
         />
+        : null} />
       </div>
       {!out ? (
         <div className="flex shrink-0 flex-col gap-1.5 border-t border-border px-5 py-3">

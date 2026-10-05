@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MainSlot, NavPendingProvider } from './nav-pending';
 import { Rail, items } from './rail';
-import { BottomNav } from './bottom-nav';
+import { MobileMenu } from './mobile-menu';
 
 let pathname = '/';
 vi.mock('next/navigation', () => ({ usePathname: () => pathname, useRouter: () => ({ push: vi.fn() }), useSearchParams: () => new URLSearchParams() }));
@@ -68,23 +68,35 @@ describe('MainSlot', () => {
   });
 });
 
-describe('BottomNav', () => {
+describe('MobileMenu', () => {
   const phone = () => (
     <NavPendingProvider>
-      <BottomNav />
+      <MobileMenu />
       <MainSlot><p>página real</p></MainSlot>
     </NavPendingProvider>
   );
   it.each(['/app/revisar', '/app/mapas', '/app/cobertura', '/app/loja', '/app/conta/perfil'])('%s: active + skeleton on the click', (href) => {
     pathname = '/app/hoje';
     const { rerender } = render(phone());
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir menu' }));
     const link = screen.getAllByRole('link').find((a) => a.getAttribute('href') === href)!;
     fireEvent.click(link, { button: 0 });
-    expect(link).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true');
+    expect(screen.queryByRole('dialog')).toBeNull(); // fecha ao navegar
     pathname = href;
     rerender(phone());
     expect(screen.getByText('página real')).toBeInTheDocument();
+  });
+});
+
+describe('MobileMenu a11y', () => {
+  it('Esc fecha o menu', () => {
+    pathname = '/app/hoje';
+    render(<NavPendingProvider><MobileMenu isAdmin /></NavPendingProvider>);
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir menu' }));
+    expect(screen.getByRole('link', { name: 'Admin' })).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
 

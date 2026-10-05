@@ -102,7 +102,7 @@ describe('ChallengePanel', () => {
     await user.click(reveal());
     await waitFor(() => expect(screen.getByText('Resposta canônica')).toBeVisible());
     expect(calls.answer![0]).toMatchObject({ inputKind: 'text', text: 'disfunção orgânica' });
-    expect(screen.getByText(/disfunção orgânica/)).toBeVisible();
+    expect(screen.getByText(/disfunção orgânica/, { selector: 'p' })).toBeVisible();
     expect(screen.getByRole('group', { name: 'Você acertou?' })).toBeVisible();
     expect(rating('Acertei')).toHaveTextContent(/tecla 2/);
     expect(rating('Errei')).toHaveTextContent(/tecla 1/);

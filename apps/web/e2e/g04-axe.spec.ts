@@ -35,7 +35,7 @@ test('axe: Home com cartão de limite', async ({ page, request }) => {
   const { headers } = await accountUser(page, request);
   await makeBoards(request, headers, 2);
   await page.goto('/app/hoje');
-  await expect(page.getByText('Limite do plano Free')).toBeVisible();
+  await expect(page.getByText('Limite do plano Free').first()).toBeVisible(); // the slider can hold the card twice while it rotates (strict mode saw 2 spans)
   expect(await axe(page), 'home').toEqual([]);
 });
 

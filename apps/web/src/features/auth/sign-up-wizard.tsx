@@ -11,12 +11,14 @@ import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
 import { attributeReferral } from '@/features/referral/invite/actions';
-import { APP_HOME, safeNext } from '@/lib/safe-next';
+import { APP_HOME, ONBOARDING_HOME, safeNext } from '@/lib/safe-next';
 import { emptyPersonal, PersonalFields, validatePersonal, type PersonalErrors, type PersonalValues } from '../account/profile/personal-fields';
+import { ConfirmEmail } from './confirm-email';
 import { FieldError, PasswordField } from './password-field';
 import { generalMessage, validEmail } from './sign-in-form';
 
 type Values = { email: string; password: string; name: string; personal: PersonalValues; consent: boolean };
+const NO_TYPE = { userType: false } as const; // "Você é?" lives in the onboarding
 type Errs = PersonalErrors & Partial<Record<'email' | 'password' | 'name' | 'consent' | 'general', string>>;
 
 /** `referred`: there is an `rf` cookie (FR-15 shows the consent line; FR-16 attributes right after sign-up). */
@@ -35,13 +37,14 @@ const addressLine = ({ address: a }: PersonalValues) =>
 
 export function SignUpWizard({ next, referred = false }: { next?: string; referred?: boolean }) {
   const [navigating, router] = useNavigate();
-  const target = safeNext(next);
+  const target = next ? safeNext(next) : ONBOARDING_HOME; // a new account goes to the onboarding unless a deep link was asked for
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []); // `data-ready`: typing before hydration is wiped by the controlled inputs (e2e waits for it)
   const [step, setStep] = useState(0);
   const [v, setV] = useState<Values>({ email: '', password: '', name: '', personal: emptyPersonal, consent: false });
   const [errs, setErrs] = useState<Errs>({});
   const [busy, setBusy] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const mounted = useRef(false);
@@ -67,7 +70,7 @@ export function SignUpWizard({ next, referred = false }: { next?: string; referr
         ...(isValidPassword(v.password) ? {} : { password: t('auth.passwordWeak') }),
       };
     }
-    if (s === 1) return { ...(name && !isValidName(name) ? { name: t('auth.about.nameInvalid') } : {}), ...validatePersonal(v.personal).errors };
+    if (s === 1) return { ...(name && !isValidName(name) ? { name: t('auth.about.nameInvalid') } : {}), ...validatePersonal(v.personal, NO_TYPE).errors };
     return v.consent ? {} : { consent: t('auth.review.consentRequired') };
   }
 
@@ -85,14 +88,15 @@ export function SignUpWizard({ next, referred = false }: { next?: string; referr
     }
     track('signup', { method: 'password' });
     const { data } = await createClient().auth.getUser();
-    if (data.user) {
+    if (!data.user) { setPendingEmail(v.email); setBusy(false); return; } // e-mail confirmation required: the link opens /auth/callback -> onboarding
+    {
       if (referred) {
         const r = await attributeReferral().catch(() => null); // never blocks the sign-up (D-383)
         if (r) track('referral_signup', { valid: r.attributed, method: 'password' });
       }
       // signUpInputSchema só leva e-mail/senha/nome; os dados pessoais vão por PATCH /v1/account/profile, sem nulls (D-571; best-effort: vale também no perfil).
-      const personal = validatePersonal(v.personal).payload;
-      if (personal) await api('/v1/account/profile', { method: 'PATCH', body: JSON.stringify(personal) }).catch(() => null);
+      const personal = validatePersonal(v.personal, NO_TYPE).payload;
+      if (personal && Object.keys(personal).length) await api('/v1/account/profile', { method: 'PATCH', body: JSON.stringify(personal) }).catch(() => null);
     }
     router.push(target);
     router.refresh();
@@ -119,6 +123,8 @@ export function SignUpWizard({ next, referred = false }: { next?: string; referr
       <dd className="m-0 min-w-0 break-words text-right text-[15px] font-bold text-text">{value || t('auth.review.empty')}</dd>
     </div>
   );
+
+  if (pendingEmail) return <ConfirmEmail email={pendingEmail} />;
 
   return (
     <form ref={formRef} onSubmit={onSubmit} noValidate data-ready={hydrated || undefined} className="flex flex-col gap-5">
@@ -152,7 +158,7 @@ export function SignUpWizard({ next, referred = false }: { next?: string; referr
         <div className="flex flex-col gap-5">
           <Input label={t('auth.about.name')} autoComplete="name" value={v.name} onChange={(e) => set('name', e.target.value)} aria-invalid={!!errs.name} aria-describedby={errs.name ? 'su-name-err' : undefined} />
           <FieldError id="su-name-err">{errs.name}</FieldError>
-          <PersonalFields value={v.personal} onChange={(p) => set('personal', p)} errors={errs} idPrefix="su" />
+          <PersonalFields value={v.personal} onChange={(p) => set('personal', p)} errors={errs} idPrefix="su" hideUserType />
         </div>
       ) : null}
 
@@ -161,7 +167,6 @@ export function SignUpWizard({ next, referred = false }: { next?: string; referr
           <dl className="m-0 rounded-field border border-border px-4">
             {row(t('auth.review.emailRow'), v.email)}
             {row(t('auth.review.nameRow'), name)}
-            {row(t('auth.review.userTypeRow'), v.personal.userType ? t(`personal.userType.${v.personal.userType}`) : '')}
             {row(t('auth.review.sexRow'), v.personal.sex ? t(`personal.sex.${v.personal.sex}`) : '')}
             {row(t('auth.review.phoneRow'), v.personal.phone)}
             {row(t('auth.review.addressRow'), addressLine(v.personal))}

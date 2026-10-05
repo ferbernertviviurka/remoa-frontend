@@ -19,7 +19,7 @@ export const metadata: Metadata = { robots: { index: false, follow: true } };
 export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
-      <aside className="hidden flex-col justify-between gap-10 bg-panel-dark p-12 text-on-dark lg:flex">
+      <aside className="hidden flex-col justify-between gap-10 bg-panel-dark p-12 text-on-dark lg:sticky lg:top-0 lg:flex lg:h-dvh lg:self-start">
         <Link href="/" aria-label={t('landing.nav.wordmark.aria')} className="inline-flex min-h-11 items-center self-start no-underline"><Logo size={36} withWordmark onDark /></Link>
         <div className="flex flex-col items-start gap-8">
           <Constellation nodes={nodes} edges={edges} />

@@ -30,7 +30,7 @@ export function Donut({ segments, summary, totalLabel, tableHeaders, tableToggle
   const small = total === 0 ? (emptyText ?? totalLabel) : act ? act.label : totalLabel;
   return (
     <ChartFrame summary={summary} tableToggleLabel={tableToggleLabel} table={{ caption: summary, head: tableHeaders, rows: segments.map((s) => [s.label, s.value]) }}>
-      <div className="flex items-center gap-[26px]">
+      <div className="flex items-center gap-4 sm:gap-[26px]">
         <div className="relative size-[200px] shrink-0">
           <svg width="200" height="200" viewBox="0 0 200 200" fill="none" aria-hidden="true">
             <circle cx="100" cy="100" r={R} stroke="var(--divider)" strokeWidth="24" />

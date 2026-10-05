@@ -55,16 +55,17 @@ test.describe('desktop rail', () => {
   });
 });
 
-test.describe('bottom nav', () => {
+test.describe('mobile menu', () => {
   test.use({ viewport: { width: 390, height: 844 } });
-  test('every bottom-nav item: active + skeleton on the next frame, then the page', async ({ page, request }) => {
+  test('every mobile-menu item: active + skeleton on the next frame, then the page', async ({ page, request }) => {
     test.setTimeout(180_000);
     await accountUser(page, request);
     await page.goto('/app/hoje');
     // `next dev` only: the dev-tools indicator (nextjs-portal) sits bottom-left, over the first bottom-nav item, and swallows the click
     await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
-    const nav = page.getByRole('navigation', { name: 'Navegação inferior' });
     for (const href of ['/app/revisar', '/app/mapas', '/app/cobertura', '/app/loja', '/app/conta/perfil']) {
+      await page.getByRole('button', { name: 'Abrir menu' }).click();
+      const nav = page.getByRole('dialog').getByRole('navigation');
       const r = await clickAndProbe(page, nav.locator(`a[href="${href}"]`), href);
       expect.soft(r.content, href).toBeGreaterThan(0);
       expect.soft(r.active!, href).toBeLessThan(100);

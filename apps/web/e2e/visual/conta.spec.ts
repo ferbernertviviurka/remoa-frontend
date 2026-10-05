@@ -13,6 +13,7 @@ test('visual conta: 5 seções, Pro, foto e exclusão', async ({ page, request }
   const { email } = await accountUser(page, request, 'Admin');
   const shot = async (name: string, full = false) => {
     await page.waitForLoadState('networkidle');
+    await page.evaluate(() => { scrollTo(0, 0); return document.fonts.ready; }); // the sticky header drifts when the page was scrolled by the previous click
     await page.mouse.move(2, 2);
     await page.waitForTimeout(1500); // slide 450 ms + anel/barras 900 ms
     const volatile = [
@@ -23,7 +24,7 @@ test('visual conta: 5 seções, Pro, foto e exclusão', async ({ page, request }
       page.getByText(/Visto |agora/), // dispositivos
       page.getByRole('list', { name: 'Lista de dispositivos' }).getByText(/Safari|Chrome|desconhecido/),
     ];
-    await expect(page).toHaveScreenshot(name, { fullPage: full, mask: volatile, animations: 'disabled', maxDiffPixelRatio: 0.02 });
+    await expect(page).toHaveScreenshot(name, { fullPage: full, mask: volatile, animations: 'disabled', stylePath: 'e2e/visual/hide-dev-badge.css', maxDiffPixelRatio: 0.02 });
   };
 
   for (const s of sections) {

@@ -86,7 +86,7 @@ export function OnboardingView({ initial, needsUserType = false }: { initial: Pi
   return (
     <div className="flex min-h-dvh flex-col bg-canvas text-ink">
       <main className="mx-auto flex w-full max-w-[760px] flex-1 flex-col gap-6 px-4 pb-10 pt-5 sm:px-6 sm:pt-[30px] md:gap-7">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col items-center gap-4">
           <Link href="/app/hoje" aria-label={t('pages.logoLink')} className="inline-flex min-h-11 min-w-11 items-center no-underline">
             <Logo size={32} withWordmark />
           </Link>

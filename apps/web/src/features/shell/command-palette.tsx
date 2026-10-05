@@ -94,7 +94,7 @@ export function PaletteButton({ compact = false }: { compact?: boolean }) {
   const p = usePalette();
   if (!p) return null;
   return compact ? (
-    <IconButton aria-label={t('editor.commandPalette')} onClick={p.open} aria-keyshortcuts="Meta+K Control+K"><Icon name="search" size={20} /></IconButton>
+    <IconButton variant="outline" aria-label={t('editor.commandPalette')} onClick={p.open} aria-keyshortcuts="Meta+K Control+K"><Icon name="search" size={20} /></IconButton>
   ) : (
     <Button size="sm" variant="secondary" icon={<Icon name="search" size={18} />} iconEnd={<Kbd>{t('palette.keyboardHint')}</Kbd>} onClick={p.open} aria-keyshortcuts="Meta+K Control+K">
       {t('editor.commandPalette')}

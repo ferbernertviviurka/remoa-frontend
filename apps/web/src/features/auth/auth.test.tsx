@@ -7,19 +7,24 @@ const push = vi.fn();
 const signUp = vi.fn();
 const signIn = vi.fn();
 const api = vi.fn();
+const resend = vi.fn();
+let session = true;
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push, refresh: vi.fn() }) }));
 vi.mock('@/server/auth/actions', () => ({
   signUp: (...a: unknown[]) => signUp(...a),
   signIn: (...a: unknown[]) => signIn(...a),
   sendMagicLink: vi.fn(),
   signInWithGoogle: vi.fn(),
+  resendConfirmation: (...a: unknown[]) => resend(...a),
 }));
 vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
 vi.mock('@/lib/analytics', () => ({ track: vi.fn() }));
-vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({ auth: { getUser: async () => ({ data: { user: { id: 'u1' } } }) } }) }));
+vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({ auth: { getUser: async () => ({ data: { user: session ? { id: 'u1' } : null } }) } }) }));
 
 beforeEach(() => {
   vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} }); // Radix (radio/checkbox) in jsdom
+  session = true;
+  resend.mockResolvedValue({ ok: true });
   signUp.mockResolvedValue({ ok: true });
   signIn.mockResolvedValue({ ok: true });
   api.mockResolvedValue({ ok: true, data: {} });
@@ -80,7 +85,6 @@ describe('SignUpWizard', () => {
   });
 
   const toAbout = () => { fillAccount(); click('Continuar'); };
-  const pickType = (name = 'Aluno') => fireEvent.click(screen.getByRole('radio', { name }));
 
   it('avança, volta sem perder o digitado e marca o passo atual', () => {
     render(<SignUpWizard />);
@@ -101,12 +105,10 @@ describe('SignUpWizard', () => {
     expect(screen.queryByRole('radio', { name: '5º–6º ano' })).toBeNull();
   });
 
-  it('tipo de usuário é obrigatório; telefone inválido e endereço incompleto bloqueiam o passo', () => {
+  it('não pergunta "Você é"; telefone inválido e endereço incompleto bloqueiam o passo', () => {
     render(<SignUpWizard />);
     toAbout();
-    click('Continuar');
-    expect(screen.getByRole('alert').textContent).toMatch(/Escolha uma opção/);
-    pickType('Professor');
+    expect(screen.queryByRole('radio', { name: 'Aluno' })).toBeNull();
     type('Telefone (opcional)', '123');
     click('Continuar');
     expect(screen.getByRole('alert').textContent).toMatch(/telefone com DDD/);
@@ -154,14 +156,12 @@ describe('SignUpWizard', () => {
     render(<SignUpWizard next="/app/mapas" />);
     toAbout();
     type('Como podemos te chamar?', 'Ana Souza');
-    pickType('Médico formado');
     fireEvent.click(screen.getByRole('radio', { name: 'Feminino' }));
     type('Telefone (opcional)', '11912345678');
     type('CEP', '01310100');
     await waitFor(() => expect((screen.getByLabelText('Logradouro') as HTMLInputElement).value).toBe('Avenida Paulista'));
     type('Número', 'S/N');
     click('Continuar');
-    expect(screen.getByText('Médico formado', { selector: 'dd' })).toBeVisible();
     click('Criar conta');
     expect(screen.getByRole('alert').textContent).toMatch(/marque que você concorda/);
     expect(screen.getByRole('checkbox')).toHaveAttribute('aria-invalid', 'true');
@@ -179,33 +179,46 @@ describe('SignUpWizard', () => {
     const [url, init] = api.mock.calls[0]!;
     expect(url).toBe('/v1/account/profile');
     expect(JSON.parse(init.body)).toEqual({
-      userType: 'medico_formado', sex: 'feminino', phone: '+5511912345678',
+      sex: 'feminino', phone: '+5511912345678',
       address: { cep: '01310100', street: 'Avenida Paulista', number: 'S/N', complement: null, district: 'Bela Vista', city: 'São Paulo', uf: 'SP' },
     });
     vi.unstubAllGlobals();
   });
 
-  it('só o tipo de usuário: o PATCH leva apenas userType', async () => {
+  it('sem dados pessoais: vai ao onboarding e não faz PATCH', async () => {
     render(<SignUpWizard />);
     toAbout();
-    pickType();
     click('Continuar');
     fireEvent.click(screen.getByRole('checkbox'));
     click('Criar conta');
-    await waitFor(() => expect(push).toHaveBeenCalled());
-    expect(JSON.parse(api.mock.calls[0]![1].body)).toEqual({ userType: 'aluno' });
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/app/onboarding'));
+    expect(api).not.toHaveBeenCalled();
   });
 
   it('e-mail já cadastrado volta ao passo 1 com o erro no campo', async () => {
     signUp.mockResolvedValue({ ok: false, error: { code: 'conflict', message: 'x' } });
     render(<SignUpWizard />);
     toAbout();
-    pickType();
     click('Continuar');
     fireEvent.click(screen.getByRole('checkbox'));
     click('Criar conta');
     expect((await screen.findByRole('alert')).textContent).toMatch(/Já existe uma conta/);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Criar conta');
     expect((screen.getByLabelText('E-mail') as HTMLInputElement).value).toBe('novo@remoa.test');
+  });
+
+  it('com confirmação de e-mail: mostra a tela de confirmação, reenvia e não navega', async () => {
+    session = false;
+    render(<SignUpWizard />);
+    toAbout();
+    click('Continuar');
+    fireEvent.click(screen.getByRole('checkbox'));
+    click('Criar conta');
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Confirme seu e-mail'));
+    expect(screen.getByText(/novo@remoa.test/)).toBeVisible();
+    expect(push).not.toHaveBeenCalled();
+    click('Reenviar e-mail');
+    await waitFor(() => expect(resend).toHaveBeenCalledWith({ email: 'novo@remoa.test' }));
+    expect(await screen.findByText(/novo link/)).toBeVisible();
   });
 });

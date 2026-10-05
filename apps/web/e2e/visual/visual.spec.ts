@@ -3,6 +3,7 @@
 import { expect, test, type Locator } from '@playwright/test';
 import { mask, seedMock, signUpAndLogin } from './fixture';
 
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 test.use({ viewport: { width: 1440, height: 900 }, colorScheme: 'light' });
 
 test('visual v2: Hoje, Meus mapas, Novo mapa (3 passos) e Editor', async ({ page, request }) => {
@@ -45,9 +46,12 @@ test('visual v2: Hoje, Meus mapas, Novo mapa (3 passos) e Editor', async ({ page
   await page.waitForTimeout(600);
   await shot('editor-card.png');
 
-  // Desafio (T6): mesmo editor com ?modo=desafio; a resposta digitada é o que o mock mostra.
+  // Desafio (T6): mesmo editor com ?modo=desafio; G14: Eu respondo é o padrão, o botão é "Revelar resposta".
+  // D-579/D-603: sessão de mapa exige >= 10 cards desafiáveis (o mock Sepse tem 6): completa com cards extras fora da tela
+  const extra = Array.from({ length: 5 }, (_, i) => ({ op: 'createCard', opId: crypto.randomUUID(), boardId: sepse, card: { id: crypto.randomUUID(), type: 'concept', title: `Extra ${i + 1}`, position: { x: 1400 + i * 220, y: 900 } } }));
+  expect((await request.post(`${API}/v1/boards/ops`, { headers, data: { ops: extra } })).status()).toBe(200);
   await page.goto(`/app/mapas/${sepse}?modo=desafio`);
-  await expect(page.getByRole('button', { name: 'Corrigir resposta' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Revelar resposta' })).toBeVisible();
   await page.getByLabel('Sua resposta').fill('Iniciar noradrenalina');
   await page.waitForTimeout(1200);
   await shot('desafio.png');

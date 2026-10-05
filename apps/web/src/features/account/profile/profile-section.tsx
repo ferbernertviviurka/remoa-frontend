@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { emailSchema, goalsSchema, isValidName, normalizeName, stageSchema, ACCOUNT_LIMITS, MAX_GOALS, type Goal, type Stage } from '@remoa/contracts';
+import { emailSchema, type OnboardingState, goalsSchema, isValidName, normalizeName, stageSchema, ACCOUNT_LIMITS, MAX_GOALS, type Goal, type Stage } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { Alert, Avatar, Button, ChoiceChip, ChoiceChipMulti, Icon, InlineField, Input, Pill, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
@@ -150,6 +150,21 @@ export function ProfileSection() {
     if (campo === 'objetivo') studyRef.current?.querySelector<HTMLElement>('[role="radio"]')?.focus();
     window.history.replaceState(null, '', '/app/conta/perfil');
   }, [campo]);
+
+  // Onboarding answers fill what the profile row lacks (stage/goals are mirrored server-side; this covers a row that missed the mirror).
+  useEffect(() => {
+    if (profile.stage && profile.goals.length) return;
+    let live = true;
+    void api<OnboardingState>('/v1/onboarding').then((r) => {
+      if (!live || !r.ok) return;
+      const { segment, goals } = r.data.answers ?? {};
+      const g = goals ?? [];
+      if (!segment && !g.length) return;
+      setAccount((p) => ({ ...p, profile: { ...p.profile, stage: p.profile.stage ?? segment ?? null, ...(p.profile.goals.length || !g.length ? {} : { goals: g, goal: g[0] ?? null }) } }));
+    }).catch(() => null);
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (wait <= 0) return;

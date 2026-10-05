@@ -472,11 +472,10 @@ export const ptBR = {
       account: 'Minha conta',
       plan: 'Plano Free',
     },
-    bottomNav: {
-      label: 'Navegação inferior',
-      boards: 'Mapas',
-      review: 'Revisar',
-      coverage: 'Cobertura',
+    mobileMenu: {
+      open: 'Abrir menu',
+      title: 'Menu',
+      description: 'Navegue pelo Remoa',
       account: 'Conta',
     },
     header: {
@@ -571,7 +570,7 @@ export const ptBR = {
     },
     about: {
       title: 'Sobre você',
-      subtitle: 'Só o tipo de usuário é obrigatório. O resto você completa depois no perfil.',
+      subtitle: 'Tudo aqui é opcional. Você completa depois no perfil.',
       name: 'Como podemos te chamar?',
       nameInvalid: 'Use de 2 a 60 caracteres, só letras, espaço, hífen ou apóstrofo.',
     },
@@ -580,7 +579,6 @@ export const ptBR = {
       subtitle: 'Confira os dados antes de criar.',
       emailRow: 'E-mail',
       nameRow: 'Nome',
-      userTypeRow: 'Você é',
       sexRow: 'Sexo',
       phoneRow: 'Telefone',
       addressRow: 'Endereço',
@@ -594,6 +592,17 @@ export const ptBR = {
     google: 'Entrar com Google',
     signOut: 'Sair',
     or: 'ou',
+    confirm: {
+      title: 'Confirme seu e-mail',
+      body: 'Enviamos um link de confirmação para {email}. Abra-o para continuar; depois você escolhe como quer estudar.',
+      bodyNoEmail: 'Informe o e-mail do cadastro e enviaremos um novo link de confirmação.',
+      failedTitle: 'Não foi possível confirmar',
+      failedBody: 'O link expirou, já foi usado ou foi aberto em outro navegador. Se você já confirmou, é só entrar; senão, peça um novo link.',
+      resend: 'Reenviar e-mail',
+      resent: 'Enviamos um novo link. Pode levar alguns minutos; olhe também o spam.',
+      hint: 'O link vale por pouco tempo. Use o mais recente.',
+      toSignIn: 'Ir para entrar',
+    },
     linkSent: {
       title: 'Confira seu e-mail',
       body: 'Enviamos um link de acesso para {email}. Ele vale por poucos minutos.',

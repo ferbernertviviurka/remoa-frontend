@@ -101,6 +101,8 @@ test('sheet de criar: 8 opções, fecha por Esc, scrim, alça e arrastar; foco v
   await close();
   await expect(fab).toBeFocused();
   await fab.click();
+  await expect(sheet(page)).toBeVisible();
+  await page.waitForTimeout(800); // slide-in: the scrim is only clickable at rest
   await page.mouse.click(195, 40); // scrim
   await close();
   await fab.click();

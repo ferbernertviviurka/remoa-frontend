@@ -21,7 +21,9 @@ export function ChartFrame({ summary, table, tableToggleLabel, children }: { sum
           {tableToggleLabel}
         </button>
       ) : null}
-      <table className={visible ? 'w-full text-left text-sm text-ink' : 'sr-only'}>
+      {/* sr-only on a `display: table` element does not shrink it (390 px overflow); the wrapper div does */}
+      <div className={visible ? undefined : 'sr-only'}>
+      <table className={visible ? 'w-full text-left text-sm text-ink' : undefined}>
         <caption className={visible ? 'pb-1 text-left text-[13px] text-muted' : undefined}>{table.caption}</caption>
         <thead>
           <tr>{table.head.map((h) => <th key={h} scope="col" className="py-1 pr-3 font-bold">{h}</th>)}</tr>
@@ -32,6 +34,7 @@ export function ChartFrame({ summary, table, tableToggleLabel, children }: { sum
           ))}
         </tbody>
       </table>
+      </div>
     </figure>
   );
 }

@@ -27,15 +27,15 @@ export type NotificationPrefsTableProps = {
   onChange: (id: string, channel: 'app' | 'email', value: boolean) => void;
 };
 
-const GRID = 'grid grid-cols-[minmax(0,1fr)_56px_56px] items-center gap-2';
+const GRID = 'grid grid-cols-[minmax(0,1fr)_64px_64px] items-center gap-2';
 
 export function NotificationPrefsTable({ rows, typeHeader, appHeader, emailHeader, notApplicableLabel, lockedLabel, lockedHint, cellLabel, onChange }: NotificationPrefsTableProps) {
   return (
     <div role="table" aria-label={`${appHeader} / ${emailHeader}`}>
-      <div role="row" className={`${GRID} px-1 pb-1 pt-3 text-xs font-bold uppercase tracking-[.08em] text-muted`}>
+      <div role="row" className={`${GRID} px-1 pb-1 pt-3 text-[11px] font-bold uppercase tracking-[.04em] text-muted sm:text-xs sm:tracking-[.08em]`}>
         <span role="columnheader" className="sr-only">{typeHeader}</span>
-        <span role="columnheader" className="text-center">{appHeader}</span>
-        <span role="columnheader" className="text-center">{emailHeader}</span>
+        <span role="columnheader" className="whitespace-nowrap text-center">{appHeader}</span>
+        <span role="columnheader" className="whitespace-nowrap text-center">{emailHeader}</span>
       </div>
       {rows.map((r) => (
         <div key={r.id} role="row" className={`${GRID} min-h-16 border-t border-divider p-1`}>

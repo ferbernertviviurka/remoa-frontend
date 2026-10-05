@@ -63,6 +63,8 @@ test('mapa: 3 cards, 2 conexões, salva sozinho e persiste; offline → online m
     await expect(nodes(page)).toHaveCount(3);
     await expect(page.locator('.react-flow__edge')).toHaveCount(2);
     await expect(panel(page)).toHaveCount(0); // D-098: no selection, no panel
+    // labels only render at zoom >= 70% and fitView lands at ~60% on this viewport: zoom in before looking for the pill
+    await page.getByRole('button', { name: 'Aumentar zoom' }).click();
     await expect(page.getByRole('button', { name: 'Editar rótulo: causa' })).toBeVisible();
   });
 

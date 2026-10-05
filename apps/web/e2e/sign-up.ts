@@ -3,9 +3,8 @@ import { expect, type Page } from '@playwright/test';
 /** The auth forms set `data-ready` once hydrated; text typed before that is wiped by the controlled inputs (G08). */
 export const formReady = (page: Page) => page.locator('form[data-ready]').waitFor();
 
-/** Passo "Sobre você" (G14 15): só o tipo de usuário é obrigatório; segue para a confirmação. */
-export async function fillAbout(page: Page, userType = 'Aluno') {
-  await page.getByRole('radio', { name: userType }).click();
+/** Passo "Sobre você": tudo opcional ("Você é" fica no onboarding); segue para a confirmação. */
+export async function fillAbout(page: Page) {
   await page.getByRole('button', { name: 'Continuar' }).click();
 }
 

@@ -45,6 +45,8 @@ async function png(page: Page): Promise<{ name: string; mimeType: string; buffer
   return { name: 'g06.png', mimeType: 'image/png', buffer: Buffer.from(b64, 'base64') };
 }
 
+const viewportScale = (page: Page) => page.locator('.react-flow__viewport').evaluate((e) => new DOMMatrix(getComputedStyle(e).transform).a);
+
 test('1. redimensionar pela alça do canto grava o tamanho; recarregar mantém; desfazer volta', async ({ page, request }) => {
   test.setTimeout(120_000);
   const { headers } = await signUpAndLogin(page, request);
@@ -64,6 +66,7 @@ test('1. redimensionar pela alça do canto grava o tamanho; recarregar mantém; 
   await page.mouse.move(h.x + 120, h.y + 90, { steps: 6 });
   await page.mouse.up();
   const after = (await card.boundingBox())!;
+  const afterScale = await viewportScale(page);
   expect(after.width).toBeGreaterThan(before.width + 80);
   expect(after.height).toBeGreaterThan(before.height + 60);
   expect(Math.abs(after.x - before.x)).toBeLessThan(2); // bottom-right corner: the card does not move
@@ -74,13 +77,16 @@ test('1. redimensionar pela alça do canto grava o tamanho; recarregar mantém; 
   await expect.poll(width).toBeLessThan(before.width + 10);
   await page.keyboard.press('ControlOrMeta+Shift+z'); // redo
   await expect.poll(width).toBeGreaterThan(before.width + 80);
+  await page.waitForTimeout(1500); // the redo save is debounced: `saved` would still show the previous save
   await saved(page);
 
   await page.reload();
   await expect(card).toBeVisible();
   const reloaded = (await card.boundingBox())!;
-  expect(Math.abs(reloaded.width - after.width)).toBeLessThan(10);
-  expect(Math.abs(reloaded.height - after.height)).toBeLessThan(10);
+  // fitView re-zooms after the reload (the card is bigger now): compare in flow units (screen px / viewport scale)
+  const scale = await viewportScale(page);
+  expect(Math.abs(reloaded.width / scale - after.width / afterScale)).toBeLessThan(10);
+  expect(Math.abs(reloaded.height / scale - after.height / afterScale)).toBeLessThan(10);
 });
 
 test('2. Conteúdo: criado pela barra, sem virar nem rubrica; fora do desafio', async ({ page, request }) => {

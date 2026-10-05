@@ -40,15 +40,15 @@ export function toPersonalValues(p: { userType: UserType | null; sex: Sex | null
 }
 
 /** Validates with the contract schemas. `payload` has no nulls (optional blocks left empty are omitted); `clear` lists what the profile form is clearing. */
-export function validatePersonal(v: PersonalValues): { errors: PersonalErrors; payload: ReturnType<typeof signUpProfileInputSchema.parse> | null } {
+export function validatePersonal(v: PersonalValues, opts: { userType?: boolean } = {}): { errors: PersonalErrors; payload: Partial<ReturnType<typeof signUpProfileInputSchema.parse>> | null } {
   const errors: PersonalErrors = {};
-  if (!v.userType) errors.userType = t('personal.userType.required');
+  if (opts.userType !== false && !v.userType) errors.userType = t('personal.userType.required');
   if (v.phone.trim() && !normalizeBrPhone(v.phone)) errors.phone = t('personal.phone.invalid');
   const address = addressTouched(v.address) ? addressSchema.safeParse({ ...v.address, complement: v.address.complement }) : null;
   if (address && !address.success) errors.address = t('personal.address.incomplete');
   if (Object.keys(errors).length) return { errors, payload: null };
-  const parsed = signUpProfileInputSchema.safeParse({
-    userType: v.userType,
+  const parsed = (opts.userType === false ? signUpProfileInputSchema.partial() : signUpProfileInputSchema).safeParse({
+    ...(v.userType ? { userType: v.userType } : {}),
     ...(v.sex ? { sex: v.sex } : {}),
     ...(v.phone.trim() ? { phone: v.phone } : {}),
     ...(address?.success ? { address: address.data } : {}),
@@ -81,9 +81,11 @@ type Props = {
   errors?: PersonalErrors;
   /** Prefix for element ids (the sign-up and the profile can both exist in a page). */
   idPrefix?: string;
+  /** The sign-up does not ask it (the onboarding does). */
+  hideUserType?: boolean;
 };
 
-export function PersonalFields({ value, onChange, errors = {}, idPrefix = 'pf' }: Props) {
+export function PersonalFields({ value, onChange, errors = {}, idPrefix = 'pf', hideUserType = false }: Props) {
   const [lookup, setLookup] = useState<Lookup>('idle');
   const abort = useRef<AbortController | null>(null);
   const latest = useRef(value);
@@ -114,11 +116,11 @@ export function PersonalFields({ value, onChange, errors = {}, idPrefix = 'pf' }
   const cepNote = lookup === 'loading' ? t('personal.address.searching') : lookup === 'notFound' ? t('personal.address.notFound') : lookup === 'offline' ? t('personal.address.offline') : lookup === 'found' ? t('personal.address.found') : null;
   return (
     <>
-      <div className="flex flex-col gap-2">
+      {hideUserType ? null : <div className="flex flex-col gap-2">
         <span className="font-bold text-ink">{t('personal.userType.label')}</span>
         <ChoiceChip label={t('personal.userType.label')} options={userTypes.map((u) => ({ value: u, label: t(`personal.userType.${u}`) }))} value={value.userType} onValueChange={(u) => set('userType', u as UserType)} />
         {errors.userType ? <FieldNote id={`${p}-type-err`} tone="error">{errors.userType}</FieldNote> : null}
-      </div>
+      </div>}
       <div className="flex flex-col gap-2">
         <span className="font-bold text-ink">{t('personal.sex.label')}</span>
         <ChoiceChip label={t('personal.sex.label')} options={sexes.map((s) => ({ value: s, label: t(`personal.sex.${s}` as StringKey) }))} value={value.sex} onValueChange={(s) => set('sex', s as Sex)} />
@@ -142,9 +144,9 @@ export function PersonalFields({ value, onChange, errors = {}, idPrefix = 'pf' }
           <Input label={t('personal.address.complement')} autoComplete="address-line2" value={a.complement} maxLength={60} onChange={(e) => setAddr({ complement: e.target.value })} />
         </div>
         <Input label={t('personal.address.district')} value={a.district} onChange={(e) => setAddr({ district: e.target.value })} />
-        <div className="grid grid-cols-[1fr_120px] gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_220px] gap-4">
           <Input label={t('personal.address.city')} autoComplete="address-level2" value={a.city} onChange={(e) => setAddr({ city: e.target.value })} />
-          <Select label={t('personal.address.uf')} placeholder={t('personal.address.ufPlaceholder')} options={brUfs.map((u) => ({ value: u, label: u }))} value={a.uf} onValueChange={(uf) => setAddr({ uf })} />
+          <Select label={t('personal.address.uf')} placeholder={t('personal.address.ufPlaceholder')} options={brUfs.map((u) => ({ value: u, label: `${u} · ${t(`personal.address.ufNames.${u}`)}` }))} value={a.uf} onValueChange={(uf) => setAddr({ uf })} />
         </div>
         {errors.address ? <FieldNote id={`${p}-addr-err`} tone="error">{errors.address}</FieldNote> : null}
       </fieldset>

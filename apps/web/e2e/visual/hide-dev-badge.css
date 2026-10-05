@@ -1,0 +1,2 @@
+/* P-363: the Next dev indicator ("N") exists only under `next dev`; baselines must not depend on dev vs production build. */
+nextjs-portal { display: none !important; }

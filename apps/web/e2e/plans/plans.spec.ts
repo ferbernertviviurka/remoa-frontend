@@ -88,7 +88,7 @@ test('assinante: gestão, troca para o anual e portal', async ({ page, request }
   await page.goto('/app/planos');
   await expect(page.getByRole('heading', { level: 1, name: 'Você está no Pro.' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Assinar o Pro' })).toHaveCount(0);
-  await expect(page.getByText('No anual você economiza')).toBeVisible();
+  await expect(page.getByText('No anual você economiza').first()).toBeVisible();
   await page.getByRole('button', { name: 'Mudar para o anual' }).click();
   await expect(page.getByText('No anual você economiza')).toHaveCount(0, { timeout: 45_000 }); // router.refresh em dev é lento sob carga
   const sub = (await (await request.get(`${API}/v1/billing/subscription`, { headers })).json()).data;

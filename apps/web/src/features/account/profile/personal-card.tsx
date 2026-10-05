@@ -29,7 +29,7 @@ export function PersonalCard() {
     const r = await api('/v1/account/profile', { method: 'PATCH', body: JSON.stringify(body) }).catch(() => null);
     setBusy(false);
     if (!r?.ok) return toast({ title: t('account.genericError'), tone: 'danger' });
-    setAccount((p) => ({ ...p, profile: { ...p.profile, userType: body.userType, sex: payload.sex ?? p.profile.sex, phone: body.phone, address: body.address } }));
+    setAccount((p) => ({ ...p, profile: { ...p.profile, userType: body.userType ?? p.profile.userType, sex: payload.sex ?? p.profile.sex, phone: body.phone, address: body.address } }));
     toast({ title: t('personal.saved') });
   }
 

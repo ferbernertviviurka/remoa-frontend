@@ -13,7 +13,8 @@ import {
   type SignUpInput,
 } from '@remoa/contracts';
 import { createClient } from '@/lib/supabase/server';
-import { APP_HOME, safeNext } from '@/lib/safe-next';
+import { ONBOARDING_HOME, safeNext } from '@/lib/safe-next';
+import { siteUrl } from '@/lib/site-url';
 
 export type AuthResult = { ok: true } | { ok: false; error: { code: ErrorCode; message: string } };
 const fail = (code: ErrorCode, message: string): AuthResult => ({ ok: false, error: { code, message } });
@@ -22,7 +23,7 @@ const invalid = () => fail('validation', 'invalid input');
 
 async function origin() {
   const h = await headers();
-  return h.get('origin') ?? `${h.get('x-forwarded-proto') ?? 'http'}://${h.get('host')}`;
+  return siteUrl(h.get('origin') ?? `${h.get('x-forwarded-proto') ?? 'http'}://${h.get('host')}`);
 }
 
 function fromSupabase(e: { status?: number; code?: string; message: string }): AuthResult {
@@ -40,9 +41,18 @@ export async function signUp(input: SignUpInput): Promise<AuthResult> {
     email: p.data.email,
     password: p.data.password,
     // F24 FR-7: the confirmation link comes back through /auth/callback (Supabase appends ?code=).
-    options: { data: p.data.name ? { name: p.data.name } : undefined, emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(APP_HOME)}` },
+    options: { data: p.data.name ? { name: p.data.name } : undefined, emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(ONBOARDING_HOME)}` },
   });
-  return error ? fromSupabase(error) : { ok: true }; // local config has confirmations off: session is set immediately
+  return error ? fromSupabase(error) : { ok: true }; // confirmations off: session is set immediately
+}
+
+/** Re-sends the sign-up confirmation (same redirect as signUp). Provider errors other than rate limit are swallowed: no account enumeration. */
+export async function resendConfirmation(input: { email: string }): Promise<AuthResult> {
+  const p = magicSchema.pick({ email: true }).safeParse(input);
+  if (!p.success) return invalid();
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resend({ type: 'signup', email: p.data.email, options: { emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(ONBOARDING_HOME)}` } });
+  return error?.status === 429 ? fromSupabase(error) : { ok: true };
 }
 
 export async function signIn(input: SignInInput): Promise<AuthResult> {

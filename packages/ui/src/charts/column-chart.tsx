@@ -70,7 +70,7 @@ export function ColumnChart({ items, summary, valueLabel, tableHeaders, tableTog
         {empty && emptyText ? <p className="absolute inset-x-0 top-[90px] m-0 text-center text-sm text-muted" style={{ left: 34 }}>{emptyText}</p> : null}
         <div aria-hidden="true" className="absolute right-0 flex gap-2" style={{ left: 34, top: 226 }}>
           {items.map((it) => (
-            <span key={it.id} className={`min-w-0 flex-1 text-center text-xs ${it.highlight ? 'font-bold text-ink' : 'text-muted'}`}>{it.label}</span>
+            <span key={it.id} className={`min-w-0 flex-1 whitespace-nowrap text-center text-[11px] sm:text-xs max-sm:[&:nth-child(even)]:invisible ${it.highlight ? 'font-bold text-ink' : 'text-muted'}`}>{it.label}</span>
           ))}
         </div>
       </div>
