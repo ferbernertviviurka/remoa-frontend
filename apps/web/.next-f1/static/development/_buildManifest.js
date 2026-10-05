@@ -1,1 +1,0 @@
-self.__BUILD_MANIFEST = (function(a,b,c,d){return {__rewrites:{afterFiles:[],beforeFiles:[{has:[{type:a,key:"v"}],source:b,destination:c},{has:[{type:a,key:"h"}],source:b,destination:c}],fallback:[]},__routerFilterStatic:d,__routerFilterDynamic:d,sortedPages:["\u002F_app"]}}("query","\u002F","\u002Flp",void 0));self.__BUILD_MANIFEST_CB && self.__BUILD_MANIFEST_CB()

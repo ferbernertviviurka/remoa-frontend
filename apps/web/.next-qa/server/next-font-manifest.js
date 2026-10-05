@@ -1,1 +1,0 @@
-self.__NEXT_FONT_MANIFEST="{\"pages\":{},\"app\":{\"/Users/fernandoviviurka/Desktop/Projetos/remoa/remoa-frontend/apps/web/src/app/layout\":[\"static/media/9d5a263311222317-s.p.woff2\",\"static/media/26d0ba92e140f0dc-s.p.woff2\"]},\"appUsingSizeAdjust\":true,\"pagesUsingSizeAdjust\":false}"
