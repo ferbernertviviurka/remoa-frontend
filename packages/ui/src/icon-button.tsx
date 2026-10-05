@@ -1,6 +1,6 @@
 import { forwardRef, type ComponentProps } from 'react';
 import { clsx } from 'clsx';
-import { buttonVariants, focusRing, pressable } from './button';
+import { buttonVariants, focusRing, pressable } from './button-styles';
 
 /**
  * IconButton (só ícone). `aria-label` OBRIGATÓRIO no tipo. variant = primary | secondary | quiet | danger;
@@ -22,7 +22,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       type={type}
       {...rest}
       className={clsx(
-        'inline-flex items-center justify-center aria-pressed:bg-primary-tint aria-pressed:text-primary-deep disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100',
+        'inline-flex shrink-0 items-center justify-center aria-pressed:bg-primary-tint aria-pressed:text-primary-deep disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100',
         pressable,
         focusRing,
         buttonVariants[variant],

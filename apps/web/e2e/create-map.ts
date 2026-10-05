@@ -1,13 +1,17 @@
 import { expect, type Page } from '@playwright/test';
 
-/** Meus mapas › Novo mapa › Em branco › Detalhes › Criar mapa (G01 v2, D-079). Leaves the page on the new board's editor. */
+/**
+ * Meus mapas › Novo mapa › Em branco › Sobre o mapa › Criar mapa (F17, D-079). Leaves the page on the new board's editor.
+ * G14: `?caminho=blank` already opens on "Sobre o mapa" (same path the onboarding takes). Clicks made before hydration are lost
+ * (the dev server may also remount the page while compiling), so the form is retried from a fresh load until the board exists.
+ */
 export async function createBlankBoard(page: Page, title: string) {
   await page.getByRole('button', { name: 'Novo mapa' }).first().click();
   await expect(page).toHaveURL(/\/mapas\/novo$/);
-  await page.getByRole('button', { name: /Em branco/ }).click();
-  await page.getByRole('button', { name: 'Continuar' }).click();
-  await page.getByLabel('Nome do mapa').fill(title);
-  await page.getByRole('button', { name: 'Continuar' }).click();
-  await page.getByRole('button', { name: 'Criar mapa', exact: true }).click();
-  await expect(page).toHaveURL(/\/mapas\/[0-9a-f-]{36}$/);
+  await expect(async () => {
+    if (!/caminho=blank/.test(page.url())) await page.goto('/app/mapas/novo?caminho=blank');
+    await page.getByLabel('Nome do mapa').fill(title, { timeout: 5000 });
+    await page.getByRole('button', { name: 'Criar mapa', exact: true }).click({ timeout: 5000 });
+    await expect(page).toHaveURL(/\/mapas\/[0-9a-f-]{36}$/, { timeout: 8000 });
+  }).toPass({ timeout: 45_000 });
 }

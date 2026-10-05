@@ -19,7 +19,7 @@ Object.defineProperty(window, 'location', { value: { assign }, writable: true })
 URL.createObjectURL = vi.fn(() => 'blob:x');
 URL.revokeObjectURL = vi.fn();
 
-const free: Entitlements = { plan: 'free', status: null, ...PLAN_LIMITS.free, usage: { ai_grades: 5, ai_generations: 0, boards: 2, cards: 40 }, renewsAt: null, cancelAtPeriodEnd: false, graceUntil: null };
+const free: Entitlements = { plan: 'free', status: null, ...PLAN_LIMITS.free, usage: { ai_grades: 5, ai_generations: 0, boards: 2, cards: 40 }, ankiImportsUsed: 0, renewsAt: null, cancelAtPeriodEnd: false, graceUntil: null };
 const pro: Entitlements = { ...free, plan: 'pro', status: 'active', ...PLAN_LIMITS.pro, renewsAt: new Date('2026-11-15T12:00:00Z'), usage: { ai_grades: 80, ai_generations: 2, boards: 9, cards: 900 } };
 const view = (ent: Entitlements, notice?: 'checkout' | 'portal') =>
   render(
@@ -37,16 +37,18 @@ describe('AccountView', () => {
     view(free);
     expect(screen.getByText('Free')).toBeVisible();
     expect(screen.getByText(`2 de ${PLAN_LIMITS.free.limits.boards}`)).toBeVisible();
+    expect(screen.getByText('Não incluso')).toBeVisible(); // Free: mapas de PDF (ai_generations 0)
     expect(screen.queryByRole('button', { name: 'Cancelar assinatura' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Assinar o Pro' }));
-    expect(push).toHaveBeenCalledWith('/planos?de=account_plan');
+    expect(push).toHaveBeenCalledWith('/app/planos?de=account_plan');
   });
 
   it('pro: next charge, unlimited usage, manage and cancel open the portal', async () => {
     api.mockResolvedValue({ ok: true, data: { url: 'http://portal/x' } });
     view(pro);
     expect(screen.getByText(/Próxima cobrança em 15 de novembro de 2026/)).toBeVisible();
-    expect(screen.getByText('80 (sem limite)')).toBeVisible();
+    expect(screen.getByText('9 (sem limite)')).toBeVisible();
+    expect(screen.getByText(`80 de ${PLAN_LIMITS.pro.limits.ai_grades}`)).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Gerenciar pagamento' }));
     await waitFor(() => expect(assign).toHaveBeenCalledWith('http://portal/x'));
     expect(api).toHaveBeenLastCalledWith('/v1/billing/portal', { method: 'POST', body: '{}' });
@@ -65,11 +67,11 @@ describe('AccountView', () => {
     expect(screen.getByText(/continua ativo até 22 de novembro de 2026/)).toBeVisible();
   });
 
-  it('?checkout=ok toasts, tracks subscription_started once and clears the URL', () => {
+  it('?checkout=ok toasts, clears the URL (subscription_started now comes from the webhook, D-509)', async () => {
     view(pro, 'checkout');
-    expect(screen.getByText('Assinatura ativada. Bem-vindo ao Pro.')).toBeVisible();
-    expect(track).toHaveBeenCalledWith('subscription_started', {});
-    expect(replace).toHaveBeenCalledWith('/conta');
+    expect(await screen.findByText('Assinatura ativada. Bem-vindo ao Pro.')).toBeVisible();
+    expect(track).not.toHaveBeenCalledWith('subscription_started', {});
+    expect(replace).toHaveBeenCalledWith('/app/conta');
   });
 
   it('exports the data as a JSON download and tracks account_exported', async () => {

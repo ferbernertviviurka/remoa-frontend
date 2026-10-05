@@ -106,3 +106,16 @@ export function NewMapSkeleton() {
     </Region>
   );
 }
+
+/** Genérico para rotas sem esqueleto próprio (loja, progresso, editorial, admin, onboarding...): título + blocos. */
+export function PageSkeleton() {
+  return (
+    <Region>
+      <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-6 md:px-6 md:py-[13px]">
+        <B width={320} height={40} radius={12} />
+        <B height={140} radius={28} />
+        <div className="grid gap-5 md:grid-cols-2"><Tile h={220} /><Tile h={220} /></div>
+      </div>
+    </Region>
+  );
+}

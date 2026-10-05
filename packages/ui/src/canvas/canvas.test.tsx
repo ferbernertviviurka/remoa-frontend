@@ -207,8 +207,9 @@ describe('controles', () => {
     expect((await screen.findAllByText('Mover o mapa: arraste o fundo')).length).toBeGreaterThan(0);
     expect(await violations(container)).toEqual([]);
   });
-  it('ZoomControl: limites 60–140% e Ajustar', async () => {
-    expect(stepZoom(0.6, -1)).toBe(0.6);
+  it('ZoomControl: limites 10–140% e Ajustar', async () => {
+    expect(stepZoom(0.1, -1)).toBe(0.1);
+    expect(stepZoom(0.6, -1)).toBe(0.5);
     expect(stepZoom(1.4, 1)).toBe(1.4);
     expect(stepZoom(1, 1)).toBe(1.1);
     const onFit = vi.fn();
@@ -277,6 +278,15 @@ describe('desafio', () => {
     rerender(<QuestionPanel {...props} mode="speak" canCheck />);
     expect(screen.getByRole('button', { name: 'Gravar' })).toBeInTheDocument();
     expect(await violations(container)).toEqual([]);
+  });
+  it('modo desabilitado com pílula (Voz "Em breve", G14)', async () => {
+    const onModeChange = vi.fn();
+    render(<QuestionPanel {...q} modes={[{ value: 'write', label: 'Escrever' }, { value: 'speak', label: 'Voz', disabled: true, badge: 'Em breve' }]} mode="write" canCheck onModeChange={onModeChange} onAnswerChange={vi.fn()} onSelectOption={vi.fn()} onCheck={vi.fn()} />);
+    const voz = screen.getByRole('button', { name: /Voz/ });
+    expect(voz).toBeDisabled();
+    expect(voz).toHaveTextContent('Em breve');
+    await userEvent.click(voz);
+    expect(onModeChange).not.toHaveBeenCalled();
   });
   it('com result o formulário some e a pergunta fica', () => {
     render(<QuestionPanel {...q} mode="write" canCheck onModeChange={vi.fn()} onAnswerChange={vi.fn()} onSelectOption={vi.fn()} onCheck={vi.fn()} result={<p>veredito</p>} />);

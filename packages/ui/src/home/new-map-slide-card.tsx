@@ -1,4 +1,4 @@
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 import { Icon } from '../icons';
 import type { SlideLink } from './link';
 

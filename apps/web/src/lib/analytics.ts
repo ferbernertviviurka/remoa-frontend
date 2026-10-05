@@ -1,5 +1,5 @@
-import type { ZodTypeAny } from 'zod';
-import { eventSchemas, type Track } from '@remoa/contracts';
+// Sem analytics externo (decisão do Fernando): eventos só ficam em window.__remoaEvents (lidos pelos e2e).
+import type { BaseEventProps, Track } from '@remoa/contracts';
 
 type Sent = { event: string; props: Record<string, unknown> };
 declare global {
@@ -8,21 +8,13 @@ declare global {
   }
 }
 
-const token = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN;
-
-let loaded: Promise<typeof import('mixpanel-browser').default> | undefined;
-const mixpanel = () =>
-  (loaded ??= import('mixpanel-browser').then(({ default: mp }) => {
-    mp.init(token!);
-    return mp;
-  }));
-
-const APP_VERSION = '0.0.0';
+// D-505: next.config.ts copies package.json's version into NEXT_PUBLIC_APP_VERSION at build.
+const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.0.0';
 const PLAN_KEY = 'remoa-plan';
 const BOARD_KEY = 'remoa-board';
 
 /** The shell writes the current plan so every later event carries it (F11 FR-4). */
-export function rememberPlan(plan: 'free' | 'pro') {
+export function rememberPlan(plan: BaseEventProps['plan']) {
   try {
     sessionStorage.setItem(PLAN_KEY, plan);
   } catch {
@@ -31,7 +23,7 @@ export function rememberPlan(plan: 'free' | 'pro') {
 }
 
 /** The open map, so later events carry `boardId` and `area` when they are known (F11 FR-4). */
-export function rememberBoard(boardId: string | null, area?: 'CM' | null) {
+export function rememberBoard(boardId: string | null, area?: BaseEventProps['area'] | null) {
   try {
     if (!boardId) sessionStorage.removeItem(BOARD_KEY);
     else sessionStorage.setItem(BOARD_KEY, JSON.stringify({ boardId, area: area ?? null }));
@@ -40,24 +32,25 @@ export function rememberBoard(boardId: string | null, area?: 'CM' | null) {
   }
 }
 
-function boardContext(): { boardId?: string; area?: 'CM' } {
+function boardContext(): Pick<BaseEventProps, 'boardId' | 'area'> {
   try {
     const raw = sessionStorage.getItem(BOARD_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw) as { boardId?: unknown; area?: unknown };
-    const out: { boardId?: string; area?: 'CM' } = {};
+    const out: Pick<BaseEventProps, 'boardId' | 'area'> = {};
     if (typeof parsed.boardId === 'string' && parsed.boardId) out.boardId = parsed.boardId;
-    if (parsed.area === 'CM') out.area = 'CM';
+    if (typeof parsed.area === 'string' && parsed.area) out.area = parsed.area as BaseEventProps['area']; // written only by rememberBoard
     return out;
   } catch {
     return {};
   }
 }
 
-function baseProps(): { plan: 'free' | 'pro'; platform: 'web' | 'pwa'; appVersion: string; boardId?: string; area?: 'CM' } {
-  let plan: 'free' | 'pro' = 'free';
+function baseProps(): BaseEventProps {
+  let plan: BaseEventProps['plan'] = 'free';
   try {
-    if (sessionStorage.getItem(PLAN_KEY) === 'pro') plan = 'pro';
+    const stored = sessionStorage.getItem(PLAN_KEY);
+    if (stored === 'pro' || stored === 'founder') plan = stored;
   } catch {
     /* unavailable */
   }
@@ -70,23 +63,24 @@ function baseProps(): { plan: 'free' | 'pro'; platform: 'web' | 'pwa'; appVersio
   return { plan, platform, appVersion: APP_VERSION, ...boardContext() };
 }
 
-/** Typed by contracts/events.ts. Without a token it is a no-op that records into window.__remoaEvents (used by e2e). */
-export const track: Track = (event, props) => {
-  const parsed = (eventSchemas[event] as ZodTypeAny).safeParse(props);
-  if (!parsed.success) {
-    if (process.env.NODE_ENV !== 'production') reportError(new Error(`invalid props for event ${event}`));
-    return;
-  }
-  const payload = { ...(parsed.data as Record<string, unknown>), ...baseProps() };
-  if (token) void mixpanel().then((mp) => mp.track(event, payload));
-  else (window.__remoaEvents ??= []).push({ event, props: payload });
-};
-
-export function identify(userId: string) {
-  if (token) void mixpanel().then((mp) => mp.identify(userId));
+function send(event: string, props: Record<string, unknown>) {
+  (window.__remoaEvents ??= []).push({ event, props: { ...props, ...baseProps() } });
 }
 
-/** FR-19: defer tracking to browser idle so Mixpanel (lazy import) never competes with LCP. The landing must use this for `landing_viewed` and `scroll_depth`. */
+/**
+ * Typed by contracts/events.ts (compile time). Runtime zod validation runs only outside production, behind a dynamic import, so the
+ * validator (~13 KB gzip) is not in the landing bundle (P-175, D-372). Records into window.__remoaEvents (used by e2e).
+ */
+export const track: Track = (event, props) => {
+  if (process.env.NODE_ENV === 'production') return send(event, props as Record<string, unknown>);
+  void import('@remoa/contracts').then(({ eventSchemas }) => {
+    const parsed = (eventSchemas[event] as { safeParse: (v: unknown) => { success: boolean; data?: unknown } }).safeParse(props);
+    if (!parsed.success) return reportError(new Error(`invalid props for event ${event}`));
+    send(event, parsed.data as Record<string, unknown>);
+  });
+};
+
+/** FR-19: defer tracking to browser idle so it never competes with LCP. The landing must use this for `landing_viewed` and `scroll_depth`. */
 export const trackWhenIdle: Track = (event, props) => {
   const run = () => track(event, props);
   if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 4000 });

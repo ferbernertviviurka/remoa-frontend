@@ -1,4 +1,4 @@
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 import { GraphPreview, type GraphPreviewProps } from '../graph-preview';
 import { StateBar, type StateBarProps } from '../state-bar';
 import type { SlideLink } from './link';

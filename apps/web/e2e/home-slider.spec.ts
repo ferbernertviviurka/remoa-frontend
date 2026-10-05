@@ -25,7 +25,7 @@ test('Free com 2 mapas: o cadeado é o 3º cartão e leva ao upgrade', async ({ 
   test.setTimeout(120_000);
   const { headers } = await signUpAndLogin(page, request);
   await makeBoards(request, headers, 2);
-  await page.goto('/');
+  await page.goto('/app/hoje');
   const region = page.getByRole('region', { name: 'Continue de onde parou' });
   await expect(region.getByText('Limite do plano Free')).toBeVisible();
   await expect(region.getByRole('link', { name: 'Criar um novo mapa' })).toHaveCount(0);
@@ -42,7 +42,7 @@ test('Free com 1 mapa: novo e depois o cadeado', async ({ page, request }) => {
   test.setTimeout(120_000);
   const { headers } = await signUpAndLogin(page, request);
   await makeBoards(request, headers, 1);
-  await page.goto('/');
+  await page.goto('/app/hoje');
   const region = page.getByRole('region', { name: 'Continue de onde parou' });
   const links = region.locator('.swiper-slide a, .swiper-slide button');
   await expect(region.getByText('Você ainda pode criar 1 mapa no plano Free.')).toBeVisible();
@@ -63,7 +63,7 @@ test('Pro com 6 mapas: setas, teclado, contador, CLS 0 e axe', async ({ page, re
     (window as unknown as { __cls: number }).__cls = 0;
     new PerformanceObserver((l) => { for (const e of l.getEntries() as unknown as { hadRecentInput: boolean; value: number }[]) if (!e.hadRecentInput) (window as unknown as { __cls: number }).__cls += e.value; }).observe({ type: 'layout-shift', buffered: true });
   });
-  await page.goto('/');
+  await page.goto('/app/hoje');
   const region = page.getByRole('region', { name: 'Continue de onde parou' });
   await expect(region.getByText('1–3 de 6')).toBeVisible();
   const prev = region.getByRole('button', { name: 'Mapas anteriores' });
@@ -77,6 +77,7 @@ test('Pro com 6 mapas: setas, teclado, contador, CLS 0 e axe', async ({ page, re
   await next.click();
   await expect(region.getByText('2–4 de 6')).toBeVisible();
   await expect(prev).toBeEnabled();
+  await region.locator('.swiper').evaluate((el) => el.scrollIntoView({ block: 'center' })); // Swiper Keyboard onlyInViewport: o checklist de ativação (D-527) empurra o carrossel para baixo da dobra
   await region.locator('.swiper').focus();
   await page.keyboard.press('ArrowRight');
   await expect(region.getByText('3–5 de 6')).toBeVisible();
@@ -99,7 +100,7 @@ test('cartão do limite: o CTA fica dentro do cartão em 1024, 1100, 1280, 1366 
   await makeBoards(request, headers, 2);
   for (const width of [1024, 1100, 1280, 1366, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto('/');
+    await page.goto('/app/hoje');
     const region = page.getByRole('region', { name: 'Continue de onde parou' });
     const card = region.getByText('Limite do plano Free').locator('xpath=ancestor::div[contains(@class,"border-dashed")][1]');
     await expect(card).toBeVisible();

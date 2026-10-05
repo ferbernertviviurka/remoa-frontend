@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { trackWhenIdle } from '@/lib/analytics';
+import { track, trackWhenIdle } from '@/lib/analytics';
 
 type Variant = '29' | '49' | null;
 const clip = (v: string | null, max: number) => (v ? v.slice(0, max) : null);
@@ -41,3 +41,8 @@ export function useLandingAnalytics(variant: Variant, h1: 'a' | 'b' | 'c') {
     return () => window.removeEventListener('scroll', onScroll);
   }, [variant, h1]);
 }
+
+type CtaLocation = 'header' | 'demo' | 'plans_free' | 'plans_pro' | 'plans_founder' | 'final';
+type CtaKind = 'create' | 'waitlist' | 'signin' | 'open_app';
+/** D-370/CCR-009: one handler factory for every landing CTA outside the hero (which keeps `hero_cta_clicked`). */
+export const trackCta = (location: CtaLocation, cta: CtaKind) => () => track('landing_cta_clicked', { location, cta });

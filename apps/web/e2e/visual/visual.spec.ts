@@ -17,25 +17,25 @@ test('visual v2: Hoje, Meus mapas, Novo mapa (3 passos) e Editor', async ({ page
     await expect(page).toHaveScreenshot(name, { mask: [...mask(page, email), ...extra], animations: 'disabled', maxDiffPixelRatio: 0.02 });
   };
 
-  await page.goto('/');
+  await page.goto('/app/hoje');
   await expect(page.getByRole('link', { name: 'Abrir o mapa Sepse' })).toBeVisible();
   // Saudação (hora do dia) e data do eyebrow são voláteis.
   // P-082: "Sua semana" (barras por dia da semana) e "Próximas revisões" (datas relativas) mudam com o dia da execução.
   await shot('hoje.png', [page.getByRole('heading', { level: 1 }), page.locator('h1').locator('xpath=preceding-sibling::span'), page.getByRole('region', { name: 'Sua semana' }), page.getByRole('region', { name: 'Próximas revisões' })]);
 
-  await page.goto('/mapas');
+  await page.goto('/app/mapas');
   await expect(page.getByRole('link', { name: 'Sepse' }).first()).toBeVisible();
   await shot('mapas.png');
 
-  await page.goto('/mapas/novo');
+  await page.goto('/app/mapas/novo');
   await expect(page.getByRole('button', { name: /Em branco/ })).toBeVisible();
   await shot('novo-mapa.png');
   await page.getByRole('button', { name: 'Continuar' }).click();
-  await shot('novo-mapa-2.png');
-  await page.getByRole('button', { name: 'Continuar' }).click();
-  await shot('novo-mapa-3.png');
+  await shot('novo-mapa-2.png'); // F17: PDF file step (was Detalhes); baseline to regenerate with Fernando's OK
+  await page.goto('/app/mapas/novo?caminho=blank'); // G14 17: já abre em "Sobre o mapa"
+  await shot('novo-mapa-3.png'); // F17: Sobre o mapa
 
-  await page.goto(`/mapas/${sepse}`);
+  await page.goto(`/app/mapas/${sepse}`);
   await expect(page.locator('.react-flow__node')).toHaveCount(6);
   await expect(page.locator('.react-flow__edge')).toHaveCount(6);
   await page.waitForTimeout(1500);
@@ -46,7 +46,7 @@ test('visual v2: Hoje, Meus mapas, Novo mapa (3 passos) e Editor', async ({ page
   await shot('editor-card.png');
 
   // Desafio (T6): mesmo editor com ?modo=desafio; a resposta digitada é o que o mock mostra.
-  await page.goto(`/mapas/${sepse}?modo=desafio`);
+  await page.goto(`/app/mapas/${sepse}?modo=desafio`);
   await expect(page.getByRole('button', { name: 'Corrigir resposta' })).toBeVisible();
   await page.getByLabel('Sua resposta').fill('Iniciar noradrenalina');
   await page.waitForTimeout(1200);

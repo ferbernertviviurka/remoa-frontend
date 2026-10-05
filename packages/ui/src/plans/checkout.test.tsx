@@ -1,7 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
-import { PriceTicker, tickValue, easeOutCubic } from './price-ticker';
+import { PriceTicker } from './price-ticker';
 import { MethodChoice } from './method-choice';
 import { CouponField } from './coupon-field';
 import { OrderSummary } from './order-summary';
@@ -16,36 +16,25 @@ const opts = [
   { value: 'card', label: 'Cartão', description: 'Crédito', icon: <i /> },
 ];
 
-describe('tickValue', () => {
-  it('começa na origem e termina exatamente no destino', () => {
-    expect(tickValue(3900, 34900, 0)).toBe(3900);
-    expect(tickValue(3900, 34900, 1)).toBe(34900);
-    expect(tickValue(3900, 34900, 1.7)).toBe(34900);
-    expect(tickValue(3900, 34900, 0.5)).toBe(Math.round(3900 + 31000 * easeOutCubic(0.5)));
-    expect(tickValue(3900, 34900, 0.5)).toBeGreaterThan(3900 + 31000 * 0.5);
-  });
-});
-
 describe('PriceTicker', () => {
-  afterEach(() => { delete document.documentElement.dataset.motion; });
-  it('movimento reduzido mostra o valor final direto; leitor recebe só o total', async () => {
-    document.documentElement.dataset.motion = 'reduced';
+  const mm = (reduce: boolean) => vi.stubGlobal('matchMedia', (q: string) => ({ matches: reduce && q.includes('reduce'), media: q, addEventListener() {}, removeEventListener() {} }));
+  afterEach(() => vi.unstubAllGlobals());
+  it('ao mudar o valor o texto real vira o novo e o Torph assume a animação', async () => {
+    mm(false);
+    const { rerender, container } = render(<PriceTicker value={3900} format={brl} />);
+    rerender(<PriceTicker value={34900} format={brl} />);
+    await act(async () => {});
+    expect(container.querySelector('[torph-sr]')).toHaveTextContent('R$ 349,00');
+    expect(container.querySelector('[aria-live="polite"]')).toHaveTextContent('R$ 349,00');
+    expect(container.querySelector('[torph-root]')).not.toBeNull();
+  });
+  it('movimento reduzido: troca direta, sem o Torph montar a animação', async () => {
+    mm(true);
     const { rerender, container } = render(<PriceTicker value={3900} format={brl} />);
     rerender(<PriceTicker value={34900} format={brl} />);
     await act(async () => {});
     expect(screen.getByTestId('ticker-frame')).toHaveTextContent('R$ 349,00');
-    expect(container.querySelector('[aria-live="polite"]')).toHaveTextContent('R$ 349,00');
-  });
-  it('anima e termina no valor final', async () => {
-    vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'performance'] });
-    const { rerender } = render(<PriceTicker value={3900} format={brl} />);
-    rerender(<PriceTicker value={34900} format={brl} />);
-    await act(async () => { vi.advanceTimersByTime(120); });
-    const mid = screen.getByTestId('ticker-frame').textContent;
-    expect(mid).not.toBe('R$ 349,00');
-    await act(async () => { vi.advanceTimersByTime(600); });
-    expect(screen.getByTestId('ticker-frame')).toHaveTextContent('R$ 349,00');
-    vi.useRealTimers();
+    expect(container.querySelector('[torph-root]')).toBeNull();
   });
 });
 

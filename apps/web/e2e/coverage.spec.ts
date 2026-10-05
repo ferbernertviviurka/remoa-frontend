@@ -15,7 +15,7 @@ type Item = { id: string; title: string; parentId: string | null };
 test('cobertura: estado vazio, mapa ligado aparece na tabela e no cabeçalho do mapa', async ({ page, request }) => {
   test.setTimeout(120_000);
   const { headers } = await signUpAndLogin(page, request);
-  await page.goto('/cobertura');
+  await page.goto('/app/cobertura');
   await expect(page.getByRole('heading', { name: 'Cobertura Enamed' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Meus mapas' }).first()).toBeVisible();
   await expect(page.getByRole('link', { name: /^Criar mapa para / }).first()).toHaveAttribute('href', /\/mapas\/novo\?item=/);
@@ -23,10 +23,10 @@ test('cobertura: estado vazio, mapa ligado aparece na tabela e no cabeçalho do 
 
   const items = (await (await request.get(`${API}/v1/matrix/items?area=CM`, { headers })).json()).data as Item[];
   const item = items.find((i) => i.parentId)!; // a topic, not a group heading
-  const created = await request.post(`${API}/v1/boards`, { headers, data: { title: item.title, area: 'CM', matrixItemId: item.id } });
+  const created = await request.post(`${API}/v1/boards`, { headers, data: { title: item.title, area: 'CM', matrixItemIds: [item.id] } });
   const boardId = (await created.json()).data.id as string;
 
-  await page.goto('/cobertura');
+  await page.goto('/app/cobertura');
   await expect(page.getByRole('img', { name: /% da matriz coberta/ })).toBeVisible();
   await expect(page.getByRole('link', { name: `Abrir mapa de ${item.title}` })).toBeVisible();
   await expect(page.getByText(/não uma lista oficial do INEP, e não indicam peso de prova/)).toBeVisible();
@@ -41,7 +41,7 @@ test('cobertura: estado vazio, mapa ligado aparece na tabela e no cabeçalho do 
   await expect(page.getByRole('link', { name: `Abrir mapa de ${item.title}` })).toBeVisible();
   await page.setViewportSize({ width: 1440, height: 900 });
 
-  await page.goto(`/mapas/${boardId}`);
+  await page.goto(`/app/mapas/${boardId}`);
   const link = page.getByRole('link', { name: new RegExp(`^cobre \\d+% de `) });
   await expect(link).toBeVisible();
   await link.click();
@@ -53,12 +53,12 @@ test('mapa sem item: uma sugestão liga o mapa e a cobertura aparece no painel',
   const { headers } = await signUpAndLogin(page, request);
   // FR-2 acceptance: "Sepse" suggests the sepse/choque item.
   const boardId = (await (await request.post(`${API}/v1/boards`, { headers, data: { title: 'Sepse', area: 'CM' } })).json()).data.id as string;
-  await page.goto(`/mapas/${boardId}`);
+  await page.goto(`/app/mapas/${boardId}`);
   await page.getByRole('button', { name: 'Ligar a Sepse e choque séptico' }).click();
   await expect(page.getByRole('link', { name: /^cobre \d+% de / })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Ligar a / })).toHaveCount(0);
   const events = await page.evaluate(() => window.__remoaEvents ?? []);
-  expect(events).toContainEqual({ event: 'board_linked_to_matrix', props: { count: 1, suggestedCount: 1, platform: 'web', plan: 'free', appVersion: '0.0.0' } });
+  expect(events).toContainEqual({ event: 'board_linked_to_matrix', props: expect.objectContaining({ count: 1, suggestedCount: 1, platform: 'web', plan: 'free', appVersion: '0.0.0' }) });
 });
 
 test('lacunas: ligar um mapa que já tenho move o tema para Em andamento', async ({ page, request }) => {
@@ -67,10 +67,10 @@ test('lacunas: ligar um mapa que já tenho move o tema para Em andamento', async
   const items = (await (await request.get(`${API}/v1/matrix/items?area=CM`, { headers })).json()).data as Item[];
   const first = items.find((i) => i.parentId)!;
   const other = items.find((i) => i.parentId && i.id !== first.id)!;
-  await request.post(`${API}/v1/boards`, { headers, data: { title: first.title, area: 'CM', matrixItemId: first.id } });
+  await request.post(`${API}/v1/boards`, { headers, data: { title: first.title, area: 'CM', matrixItemIds: [first.id] } });
   await request.post(`${API}/v1/boards`, { headers, data: { title: 'Meu mapa solto', area: 'CM' } });
 
-  await page.goto('/cobertura');
+  await page.goto('/app/cobertura');
   await expect(page.getByText(/^\d+ de \d+ temas sem mapa$/)).toBeVisible();
   expect(await axe(page), 'cobertura com lacunas').toEqual([]);
   await page.getByRole('button', { name: `Ligar um mapa que já tenho a ${other.title}` }).click();
@@ -78,5 +78,5 @@ test('lacunas: ligar um mapa que já tenho move o tema para Em andamento', async
   await expect(page.getByRole('link', { name: `Abrir mapa de ${other.title}` })).toBeVisible();
   await expect(page.getByRole('button', { name: `Ligar um mapa que já tenho a ${other.title}` })).toHaveCount(0);
   const events = await page.evaluate(() => window.__remoaEvents ?? []);
-  expect(events).toContainEqual({ event: 'board_linked_to_matrix', props: { count: 1, suggestedCount: 0, platform: 'web', plan: 'free', appVersion: '0.0.0' } });
+  expect(events).toContainEqual({ event: 'board_linked_to_matrix', props: expect.objectContaining({ count: 1, suggestedCount: 0, platform: 'web', plan: 'free', appVersion: '0.0.0' }) });
 });

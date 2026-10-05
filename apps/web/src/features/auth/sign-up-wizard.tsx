@@ -2,29 +2,44 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { isValidName, isValidPassword, normalizeName, passwordStrength, type Goal, type Stage } from '@remoa/contracts';
+import { useNavigate } from '@/features/shell/use-navigate';
+import { isValidName, isValidPassword, normalizeName, passwordStrength } from '@remoa/contracts';
 import { t } from '@remoa/strings';
-import { Button, Checkbox, ChoiceChip, Input, PasswordMeter, Stepper } from '@remoa/ui';
+import { Button, Checkbox, Input, PasswordMeter, Stepper } from '@remoa/ui';
 import { signUp } from '@/server/auth/actions';
-import { identify, track } from '@/lib/analytics';
+import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
-import { safeNext } from '@/lib/safe-next';
-import { goalGroups, stageOptions } from '../account/profile/profile-section';
+import { attributeReferral } from '@/features/referral/invite/actions';
+import { APP_HOME, safeNext } from '@/lib/safe-next';
+import { emptyPersonal, PersonalFields, validatePersonal, type PersonalErrors, type PersonalValues } from '../account/profile/personal-fields';
 import { FieldError, PasswordField } from './password-field';
 import { generalMessage, validEmail } from './sign-in-form';
 
-type Values = { email: string; password: string; name: string; stage: Stage | null; goal: Goal | null; consent: boolean };
-type Errs = Partial<Record<'email' | 'password' | 'name' | 'consent' | 'general', string>>;
+type Values = { email: string; password: string; name: string; personal: PersonalValues; consent: boolean };
+type Errs = PersonalErrors & Partial<Record<'email' | 'password' | 'name' | 'consent' | 'general', string>>;
 
-export function SignUpWizard({ next }: { next?: string }) {
-  const router = useRouter();
+/** `referred`: there is an `rf` cookie (FR-15 shows the consent line; FR-16 attributes right after sign-up). */
+const ext = { target: '_blank', rel: 'noopener noreferrer' } as const;
+/** P-0xx: the consent text links to /termos and /privacidade (new tab); the string keeps {terms}/{privacy} placeholders. */
+const consentLabel = t('auth.review.consent', { terms: '\u0001T', privacy: '\u0001P' })
+  .split(/(\u0001[TP])/)
+  .map((part, i) =>
+    part === '\u0001T' ? <a key={i} href="/termos" {...ext}>{t('auth.review.consentTerms')}</a>
+    : part === '\u0001P' ? <a key={i} href="/privacidade" {...ext}>{t('auth.review.consentPrivacy')}</a>
+    : part,
+  );
+
+const addressLine = ({ address: a }: PersonalValues) =>
+  [a.street && `${a.street}${a.number ? `, ${a.number}` : ''}`, a.complement, a.district, a.city && `${a.city}${a.uf ? `/${a.uf}` : ''}`, a.cep].filter(Boolean).join(' · ');
+
+export function SignUpWizard({ next, referred = false }: { next?: string; referred?: boolean }) {
+  const [navigating, router] = useNavigate();
   const target = safeNext(next);
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []); // `data-ready`: typing before hydration is wiped by the controlled inputs (e2e waits for it)
   const [step, setStep] = useState(0);
-  const [v, setV] = useState<Values>({ email: '', password: '', name: '', stage: null, goal: null, consent: false });
+  const [v, setV] = useState<Values>({ email: '', password: '', name: '', personal: emptyPersonal, consent: false });
   const [errs, setErrs] = useState<Errs>({});
   const [busy, setBusy] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -52,7 +67,7 @@ export function SignUpWizard({ next }: { next?: string }) {
         ...(isValidPassword(v.password) ? {} : { password: t('auth.passwordWeak') }),
       };
     }
-    if (s === 1) return name && !isValidName(name) ? { name: t('auth.about.nameInvalid') } : {};
+    if (s === 1) return { ...(name && !isValidName(name) ? { name: t('auth.about.nameInvalid') } : {}), ...validatePersonal(v.personal).errors };
     return v.consent ? {} : { consent: t('auth.review.consentRequired') };
   }
 
@@ -71,12 +86,13 @@ export function SignUpWizard({ next }: { next?: string }) {
     track('signup', { method: 'password' });
     const { data } = await createClient().auth.getUser();
     if (data.user) {
-      identify(data.user.id);
-      // ponytail: signUpInputSchema só leva e-mail/senha/nome; momento e objetivo vão por PATCH /v1/account/profile (best-effort).
-      if (v.stage || v.goal) {
-        const body = { ...(v.stage ? { stage: v.stage } : {}), ...(v.goal ? { goal: v.goal } : {}) };
-        await api('/v1/account/profile', { method: 'PATCH', body: JSON.stringify(body) }).catch(() => null);
+      if (referred) {
+        const r = await attributeReferral().catch(() => null); // never blocks the sign-up (D-383)
+        if (r) track('referral_signup', { valid: r.attributed, method: 'password' });
       }
+      // signUpInputSchema só leva e-mail/senha/nome; os dados pessoais vão por PATCH /v1/account/profile, sem nulls (D-571; best-effort: vale também no perfil).
+      const personal = validatePersonal(v.personal).payload;
+      if (personal) await api('/v1/account/profile', { method: 'PATCH', body: JSON.stringify(personal) }).catch(() => null);
     }
     router.push(target);
     router.refresh();
@@ -136,16 +152,7 @@ export function SignUpWizard({ next }: { next?: string }) {
         <div className="flex flex-col gap-5">
           <Input label={t('auth.about.name')} autoComplete="name" value={v.name} onChange={(e) => set('name', e.target.value)} aria-invalid={!!errs.name} aria-describedby={errs.name ? 'su-name-err' : undefined} />
           <FieldError id="su-name-err">{errs.name}</FieldError>
-          <div className="flex flex-col gap-2">
-            <span className="font-bold text-ink">{t('auth.about.stage')}</span>
-            <ChoiceChip label={t('auth.about.stage')} options={stageOptions()} value={v.stage} onValueChange={(s) => set('stage', s as Stage)} />
-          </div>
-          <div className="flex flex-col gap-2">
-            <span className="font-bold text-ink">{t('auth.about.goal')}</span>
-            {goalGroups().map((g) => (
-              <ChoiceChip key={g.label} label={`${t('auth.about.goal')}: ${g.label}`} options={g.options} value={g.options.some((o) => o.value === v.goal) ? v.goal : null} onValueChange={(x) => set('goal', x as Goal)} />
-            ))}
-          </div>
+          <PersonalFields value={v.personal} onChange={(p) => set('personal', p)} errors={errs} idPrefix="su" />
         </div>
       ) : null}
 
@@ -154,11 +161,16 @@ export function SignUpWizard({ next }: { next?: string }) {
           <dl className="m-0 rounded-field border border-border px-4">
             {row(t('auth.review.emailRow'), v.email)}
             {row(t('auth.review.nameRow'), name)}
-            {row(t('auth.review.stageRow'), stageOptions().find((o) => o.value === v.stage)?.label ?? '')}
-            {row(t('auth.review.goalRow'), goalGroups().flatMap((g) => g.options).find((o) => o.value === v.goal)?.label ?? '')}
+            {row(t('auth.review.userTypeRow'), v.personal.userType ? t(`personal.userType.${v.personal.userType}`) : '')}
+            {row(t('auth.review.sexRow'), v.personal.sex ? t(`personal.sex.${v.personal.sex}`) : '')}
+            {row(t('auth.review.phoneRow'), v.personal.phone)}
+            {row(t('auth.review.addressRow'), addressLine(v.personal))}
           </dl>
-          <Checkbox label={t('auth.review.consent')} checked={v.consent} onCheckedChange={(c) => set('consent', c === true)} aria-describedby={errs.consent ? 'su-consent-err' : undefined} />
+          <div className={`flex flex-col gap-1.5 rounded-field border-2 px-3 ${errs.consent ? 'border-review' : 'border-border'}`}>
+            <Checkbox label={consentLabel} checked={v.consent} onCheckedChange={(c) => set('consent', c === true)} invalid={!!errs.consent} aria-describedby={errs.consent ? 'su-consent-err' : undefined} />
+          </div>
           <FieldError id="su-consent-err">{errs.consent}</FieldError>
+          {referred ? <p className="m-0 text-sm text-muted">{t('referral.consent.nameVisibility')}</p> : null}
         </div>
       ) : null}
 
@@ -170,13 +182,13 @@ export function SignUpWizard({ next }: { next?: string }) {
             {t('auth.steps.back')}
           </Button>
         ) : <span />}
-        <Button key={step === 2 ? 'create' : 'next'} type="submit" size="touch" loading={busy} loadingLabel={t('common.loading')}>
+        <Button key={step === 2 ? 'create' : 'next'} type="submit" size="touch" loading={busy || navigating} loadingLabel={t('common.loading')}>
           {t(step === 2 ? 'auth.signUp.submit' : 'auth.steps.next')}
         </Button>
       </div>
       <p className="m-0 text-sm text-muted">
         {t('auth.signUp.hasAccount')}{' '}
-        <Link href={target === '/' ? '/entrar' : `/entrar?next=${encodeURIComponent(target)}`} className="inline-flex min-h-11 items-center font-bold text-primary-deep underline">
+        <Link href={target === APP_HOME ? '/entrar' : `/entrar?next=${encodeURIComponent(target)}`} className="inline-flex min-h-11 min-w-11 items-center justify-center font-bold text-primary-deep underline">
           {t('auth.signUp.toSignIn')}
         </Link>
       </p>

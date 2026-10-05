@@ -13,7 +13,7 @@ vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
 const assign = vi.fn();
 Object.defineProperty(window, 'location', { value: { assign }, writable: true });
 
-const renderIt = (period: 'monthly' | 'annual' = 'monthly') =>
+const renderIt = (period: 'monthly' | 'annual' | 'lifetime' = 'monthly') =>
   render(
     <PlansProvider initial={{ priceBook: priceBookFixture, entitlements: null, subscription: null, period }}>
       <CheckoutSummary />
@@ -34,6 +34,21 @@ afterEach(() => {
   Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
 });
 
+describe('CheckoutSummary Founder', () => {
+  it('lifetime: one-time price, no coupon or next charge, posts period lifetime without a coupon', async () => {
+    api.mockResolvedValue({ ok: true, data: { url: 'https://stripe.test/x' } });
+    renderIt('lifetime');
+    expect(screen.getAllByText(formatBRL(priceBookFixture.lifetime.amount)).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Próxima cobrança/)).toBeNull();
+    expect(screen.queryByRole('button', { name: /código de fundador/i })).toBeNull();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Comprar o Founder' })); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(700); });
+    expect(api).toHaveBeenCalledWith('/v1/billing/checkout', { method: 'POST', body: JSON.stringify({ period: 'lifetime', method: 'pix' }) });
+    expect(track).toHaveBeenCalledWith('checkout_started', { period: 'lifetime', method: 'pix', coupon: false });
+    expect(assign).toHaveBeenCalledWith('https://stripe.test/x');
+  });
+});
+
 describe('CheckoutSummary', () => {
   it('shows the monthly price and next charge from the server', () => {
     renderIt();
@@ -45,7 +60,7 @@ describe('CheckoutSummary', () => {
   it('annual shows monthly equivalent and yearly saving', () => {
     renderIt('annual');
     expect(screen.getByText(/Equivale a/)).toBeVisible();
-    expect(screen.getByText(/Economize/)).toBeVisible();
+    expect(screen.getByText(/Economize/, { selector: '[torph-sr]' })).toBeInTheDocument();
   });
 
   it('method choice tracks and explains Pix', () => {
@@ -64,7 +79,7 @@ describe('CheckoutSummary', () => {
     expect(track).toHaveBeenCalledWith('coupon_applied', {});
     expect(screen.getByText('Preço de fundador aplicado')).toBeVisible();
     expect(screen.getByText(/Preço de tabela/)).toBeInTheDocument();
-    expect(screen.getByText('Total hoje').parentElement).toHaveTextContent(formatBRL(2900));
+    expect(screen.getByText('Total hoje', { selector: '[torph-sr]' }).closest('.justify-between')).toHaveTextContent(formatBRL(2900));
     fireEvent.click(screen.getByRole('button', { name: 'Remover' }));
     expect(screen.queryByText('Preço de fundador aplicado')).toBeNull();
   });

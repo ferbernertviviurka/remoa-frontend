@@ -1,7 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/landing';
 import { Icon, buttonVariants, focusRing, pressable } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import type { LaunchPhase } from '../flags';

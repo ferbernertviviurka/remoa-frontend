@@ -12,8 +12,9 @@ const measure = (page: Page) =>
     };
     const sel = 'a[href],button,input:not([type=hidden]):not([type=file]),select,textarea,[role=button],[role=tab],[role=checkbox],[role=switch]';
     const small = [...document.querySelectorAll(sel)]
+      // Controles sr-only (radio dentro de <label>, link de pular) têm o alvo no rótulo / só aparecem com foco.
       // Exceção WCAG 2.5.8 (inline): link no meio de um texto corrido ("Já tem conta? Entrar") não precisa de 44 px.
-      .filter((e) => visible(e) && !(e.tagName === 'A' && getComputedStyle(e).display === 'inline'))
+      .filter((e) => visible(e) && !e.matches('.sr-only, .peer.sr-only, [class*="focus:not-sr-only"]') && !(e.tagName === 'A' && getComputedStyle(e).display === 'inline'))
       .map((e) => {
         const r = e.getBoundingClientRect();
         return { el: `${e.tagName.toLowerCase()} "${(e.getAttribute('aria-label') ?? e.textContent ?? '').trim().slice(0, 30)}"`, w: Math.round(r.width), h: Math.round(r.height) };
@@ -53,7 +54,7 @@ test.describe('responsivo 390x844', () => {
       await expect(page).toHaveScreenshot(name, { mask: [...mask(page, email), ...extra], animations: 'disabled', maxDiffPixelRatio: 0.02 });
     };
 
-    await page.goto('/');
+    await page.goto('/app/hoje');
     await expect(page.getByRole('link', { name: 'Abrir o mapa Sepse' })).toBeVisible();
     await check(page, 'hoje');
     await shot('m-hoje.png', [page.getByRole('heading', { level: 1 }), page.locator('h1').locator('xpath=preceding-sibling::span'), page.getByRole('region', { name: 'Sua semana' }), page.getByRole('region', { name: 'Próximas revisões' })]); // P-082
@@ -73,7 +74,7 @@ test.describe('responsivo 390x844', () => {
     expect(last.bottom).toBeLessThanOrEqual(await page.evaluate(() => scrollY + innerHeight - 0) - last.nav);
     await dump(page, 'hoje');
 
-    await page.goto('/mapas');
+    await page.goto('/app/mapas');
     await expect(page.getByRole('link', { name: 'Sepse' }).first()).toBeVisible();
     await check(page, 'mapas (grade)');
     await shot('m-mapas.png');
@@ -85,7 +86,7 @@ test.describe('responsivo 390x844', () => {
     await check(page, 'mapas (lista)');
     await dump(page, 'mapas-lista');
 
-    await page.goto('/mapas/novo');
+    await page.goto('/app/mapas/novo');
     await expect(page.getByRole('button', { name: /Em branco/ })).toBeVisible();
     await check(page, 'novo mapa 1');
     await shot('m-novo-mapa.png');
@@ -93,23 +94,24 @@ test.describe('responsivo 390x844', () => {
     await page.getByRole('button', { name: 'Continuar' }).click();
     await check(page, 'novo mapa 2');
     await dump(page, 'novo2');
-    await page.getByRole('button', { name: 'Continuar' }).click();
+    await page.goto('/app/mapas/novo?caminho=blank'); // G14 17: já abre em "Sobre o mapa"
+    await expect(page.getByLabel('Nome do mapa')).toBeVisible();
     await check(page, 'novo mapa 3');
     await dump(page, 'novo3');
 
-    await page.goto('/revisar');
+    await page.goto('/app/revisar');
     await expect(page.getByRole('button', { name: 'Começar revisão' })).toBeVisible();
     await check(page, 'revisar');
     await shot('m-revisar.png');
     await dump(page, 'revisar');
 
-    for (const [name, url] of [['cobertura', '/cobertura'], ['loja', '/loja']] as const) {
+    for (const [name, url] of [['cobertura', '/app/cobertura'], ['loja', '/app/loja']] as const) {
       await page.goto(url);
       await check(page, name);
       await dump(page, name);
     }
     // /conta é da F13 (outra sessão): só overflow, sem alvos.
-    await page.goto('/conta');
+    await page.goto('/app/conta');
     await page.waitForLoadState('networkidle');
     const m = await measure(page);
     expect(m.scrollWidth, 'conta: overflow horizontal').toBeLessThanOrEqual(m.innerWidth);
@@ -133,7 +135,7 @@ for (const [w, h] of [[360, 740], [768, 1024], [1024, 768]] as const) {
     await page.setViewportSize({ width: w, height: h });
     const { userId, headers } = await signUpAndLogin(page, request);
     await seedMock(request, headers, userId);
-    for (const [name, url] of [['hoje', '/'], ['mapas', '/mapas'], ['novo1', '/mapas/novo'], ['revisar', '/revisar'], ['cobertura', '/cobertura'], ['loja', '/loja']] as const) {
+    for (const [name, url] of [['hoje', '/app/hoje'], ['mapas', '/app/mapas'], ['novo1', '/app/mapas/novo'], ['revisar', '/app/revisar'], ['cobertura', '/app/cobertura'], ['loja', '/app/loja']] as const) {
       await page.goto(url);
       await dump(page, name);
       const m = await measure(page);

@@ -4,10 +4,10 @@ import { OFFLINE_DOCUMENT, SHELL_CACHE, START_PATH, shouldCacheShell, shouldPrec
 
 describe('shouldCacheShell', () => {
   it('keeps the review page and rejects the login redirect', () => {
-    expect(shouldCacheShell('/revisar', { ok: true, redirected: false, url: 'http://localhost:3000/revisar' })).toBe(true);
-    expect(shouldCacheShell('/revisar', { ok: true, redirected: true, url: 'http://localhost:3000/entrar' })).toBe(false);
-    expect(shouldCacheShell('/revisar', { ok: true, redirected: false, url: 'http://localhost:3000/entrar' })).toBe(false);
-    expect(shouldCacheShell('/revisar', { ok: false, redirected: false, url: 'http://localhost:3000/revisar' })).toBe(false);
+    expect(shouldCacheShell('/app/revisar', { ok: true, redirected: false, url: 'http://localhost:3000/app/revisar' })).toBe(true);
+    expect(shouldCacheShell('/app/revisar', { ok: true, redirected: true, url: 'http://localhost:3000/entrar' })).toBe(false);
+    expect(shouldCacheShell('/app/revisar', { ok: true, redirected: false, url: 'http://localhost:3000/entrar' })).toBe(false);
+    expect(shouldCacheShell('/app/revisar', { ok: false, redirected: false, url: 'http://localhost:3000/app/revisar' })).toBe(false);
   });
 
   it('is the check the service worker uses', () => {
@@ -23,13 +23,13 @@ describe('shouldCacheShell', () => {
   });
 
   it('the offline page queues the last session in the same shape the app flushes', () => {
-    const html = readFileSync('public/offline.html', 'utf8');
+    const html = readFileSync('src/app/offline.html/route.ts', 'utf8');
     expect(html).toContain('remoa-last-session');
     expect(html).toContain('remoa-offline-answers');
     expect(html).toContain("enqueue('answer'");
     expect(html).toContain("enqueue('rate'");
     expect(html).toContain("enqueue('finish'");
-    expect(html).toContain('Sem conexão');
+    expect(html).toContain("t('offline.emptyTitle')"); // text comes from @remoa/strings (D-505)
     expect(html).toContain("addEventListener('online'");
   });
 

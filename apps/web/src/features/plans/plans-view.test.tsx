@@ -7,8 +7,9 @@ import { PlansProvider } from './plans-context';
 import { PlansView, parseFrom } from './plans-view';
 
 const replace = vi.fn();
+const push = vi.fn();
 const track = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), replace, refresh: vi.fn() }) }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace, refresh: vi.fn() }) }));
 vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
 
 const free = accountFreeFixture.entitlements;
@@ -31,11 +32,43 @@ afterEach(() => {
 });
 
 describe('PlansView', () => {
+  it('Free: the referral strip goes to /app/indicar?de=plans; Pro has none', () => {
+    view();
+    fireEvent.click(screen.getByRole('button', { name: 'Indique e ganhe' }));
+    expect(push).toHaveBeenCalledWith('/app/indicar?de=plans');
+    cleanup();
+    view({ ent: pro });
+    expect(screen.queryByText('Prefere ganhar o Pro?')).toBeNull();
+  });
+
+
   it('Free: title, period toggle with the computed discount label, tracking plans_viewed', () => {
     view({ from: 'navbar_upgrade' });
     expect(screen.getByRole('heading', { level: 1, name: 'Seu estudo pede mais espaço?' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: new RegExp(`Anual.*-${annualDiscountPercent(priceBookFixture)}%`) })).toBeInTheDocument();
     expect(track).toHaveBeenCalledWith('plans_viewed', { from: 'navbar_upgrade' });
+  });
+
+  it('Free: Founder offer swaps the summary to the one-time purchase and back', () => {
+    view();
+    expect(screen.getByRole('heading', { name: /Founder/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Quero ser Founder' }));
+    expect(track).toHaveBeenCalledWith('plans_period_changed', { period: 'lifetime' });
+    expect(screen.getByRole('button', { name: 'Comprar o Founder' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Mensal/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Prefiro o Pro' }));
+    expect(screen.getByRole('button', { name: 'Assinar o Pro' })).toBeInTheDocument();
+  });
+
+  it('Founder: lifetime state, no offer, no toggle, no matrix, no renewal or manage actions', () => {
+    view({ ent: { ...pro, plan: 'founder', renewsAt: null, limits: { ...pro.limits, ai_generations: null } } });
+    expect(screen.getByRole('heading', { level: 1, name: 'Você é Founder.' })).toBeInTheDocument();
+    expect(screen.getByText('Vitalício')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Quero ser Founder' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Mensal/ })).toBeNull();
+    expect(screen.queryByRole('table')).toBeNull();
+    expect(screen.queryByText(/Renova em/)).toBeNull();
+    expect(screen.queryByRole('button', { name: /Gerenciar/ })).toBeNull();
   });
 
   it('unknown ?de= becomes direct', () => {
@@ -55,11 +88,11 @@ describe('PlansView', () => {
   it('toggle switches the period, tracks it and moves the Pro price to the annual price', () => {
     view();
     const table = screen.getByRole('table');
-    expect(within(table).getByText('R$ 39,00', { selector: '[aria-live]' })).toBeInTheDocument();
+    expect(within(table).getByText('R$ 39,00', { selector: '[torph-sr]' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Anual/ }));
     expect(track).toHaveBeenCalledWith('plans_period_changed', { period: 'annual' });
     expect(screen.getByRole('button', { name: /Anual/ })).toHaveAttribute('aria-pressed', 'true');
-    expect(within(table).getByText(/^R\$ 349,00$/, { selector: '[aria-live]' })).toBeInTheDocument();
+    expect(within(table).getByText(/^R\$ 349,00$/, { selector: '[torph-sr]' })).toBeInTheDocument();
   });
 
   it('opens on the annual period when the provider says so', () => {
@@ -84,13 +117,14 @@ describe('PlansView', () => {
     view({ ent: withUsage(free, { boards: 2, ai_grades: 3, ai_generations: 1 }) });
     expect(screen.getByText('Você usa 2 de 2')).toBeInTheDocument();
     expect(screen.getByText('Hoje: 3 de 20')).toBeInTheDocument();
-    expect(screen.getByText('Neste mês: 1 de 1')).toBeInTheDocument();
+    expect(screen.queryByText(/Neste mês/)).toBeNull(); // Free: PDF maps not included (0), no "1 de 0" line
+    expect(screen.getAllByText('Não incluso').length).toBeGreaterThan(0);
     expect(screen.queryByText(/Você tem/)).toBeNull();
     cleanup();
     view({ ent: pro });
     expect(screen.queryByText(/Você usa/)).toBeNull();
     expect(screen.getByText('Você tem 7 mapas')).toBeInTheDocument();
-    expect(screen.getByText('Sem limite diário')).toBeInTheDocument();
+    expect(screen.getByText(`Hoje: ${pro.usage.ai_grades} de ${pro.limits.ai_grades}`)).toBeInTheDocument();
   });
 
   it('entitlements failed: matrix without any usage line (FR-12)', () => {
@@ -111,10 +145,10 @@ describe('PlansView', () => {
     expect(track).toHaveBeenCalledWith('faq_opened', { index: 2 });
   });
 
-  it('?cancelado=1: toast, checkout_canceled once, query cleared', () => {
+  it('?cancelado=1: toast, checkout_canceled once, query cleared', async () => {
     view({ canceled: true });
-    expect(screen.getByText('Pagamento cancelado. Nada foi cobrado.')).toBeInTheDocument();
+    expect(await screen.findByText('Pagamento cancelado. Nada foi cobrado.')).toBeInTheDocument();
     expect(track).toHaveBeenCalledWith('checkout_canceled', {});
-    expect(replace).toHaveBeenCalledWith('/planos');
+    expect(replace).toHaveBeenCalledWith('/app/planos');
   });
 });

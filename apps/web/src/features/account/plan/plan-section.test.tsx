@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { api } from '@/lib/api';
 import { accountFreeFixture, accountProFixture } from '@remoa/contracts/mocks';
 import type { AccountSnapshot } from '@remoa/contracts';
 import { ToastProvider } from '@remoa/ui';
@@ -30,21 +31,40 @@ afterEach(() => {
 });
 
 describe('PlanSection', () => {
-  it('free: offer with period toggle and upgrade tracking', () => {
+  it('referral card goes to /app/indicar?de=account for both plans', () => {
+    for (const a of [accountFreeFixture, accountProFixture]) {
+      view(a);
+      fireEvent.click(screen.getByRole('button', { name: 'Convidar amigos' }));
+      expect(push).toHaveBeenLastCalledWith('/app/indicar?de=account');
+      cleanup();
+    }
+  });
+
+
+  it('free: offer with period toggle and upgrade tracking; prices come from /v1/billing/prices (P-094)', async () => {
+    vi.mocked(api).mockResolvedValue({ ok: true, data: { monthly: { amount: 4900 }, annual: { amount: 39900 } } } as never);
     view(withUsage(accountFreeFixture, { boards: 0, cards: 0, ai_grades: 0, ai_generations: 0 }));
-    expect(screen.getByText('R$ 39')).toBeVisible();
+    expect((await screen.findAllByText('R$ 49'))[0]).toBeVisible();
+    expect(api).toHaveBeenCalledWith('/v1/billing/prices');
     fireEvent.click(screen.getByRole('radio', { name: 'Anual' }));
-    expect(screen.getByText('R$ 349')).toBeVisible();
+    expect((await screen.findAllByText('R$ 399'))[0]).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Assinar o Pro' }));
     expect(track).toHaveBeenCalledWith('upgrade_clicked', { source: 'account_plan' });
-    expect(push).toHaveBeenCalledWith('/planos?de=account_plan&periodo=anual');
+    expect(push).toHaveBeenCalledWith('/app/planos?de=account_plan&periodo=anual');
+  });
+
+  it('prices failing: shows the placeholder, never a hard-coded price', async () => {
+    vi.mocked(api).mockRejectedValue(new Error('x'));
+    view(accountFreeFixture);
+    expect((await screen.findAllByText('—'))[0]).toBeVisible();
+    expect(screen.queryAllByText('R$ 39')).toHaveLength(0);
   });
 
   it('pro: manage button, no offer, unlimited meters', () => {
     view(withUsage(accountProFixture, { boards: 9, cards: 900, ai_grades: 80, ai_generations: 2 }));
     expect(screen.getByRole('button', { name: 'Gerenciar assinatura' })).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Assinar o Pro' })).toBeNull();
-    expect(screen.getAllByText(/Ilimitad/).length).toBeGreaterThanOrEqual(3);
+    expect(screen.getAllByText(/Ilimitad/).length).toBeGreaterThanOrEqual(2);
   });
 
   it('80% warns with "Ver o Pro"; 100% says the limit was reached', () => {

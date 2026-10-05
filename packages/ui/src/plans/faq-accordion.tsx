@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, useState } from 'react';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 
 /**
  * FaqAccordion: perguntas e respostas, uma aberta por vez (`defaultOpen` opcional). Cada pergunta é <button aria-expanded aria-controls>

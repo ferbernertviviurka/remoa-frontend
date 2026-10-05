@@ -4,7 +4,7 @@ import { flushOffline, queueOffline, challengeClient } from './client';
 const api = vi.fn();
 vi.mock('@/lib/api', () => ({ api: (...args: unknown[]) => api(...args) }));
 
-const body = { sessionId: 's', itemId: 'i', durationMs: 1, inputKind: 'text', text: 'noradrenalina' };
+const body = { sessionId: 's', itemId: 'i', durationMs: 1, inputKind: 'text' as const, text: 'noradrenalina' };
 
 beforeEach(() => {
   localStorage.clear();

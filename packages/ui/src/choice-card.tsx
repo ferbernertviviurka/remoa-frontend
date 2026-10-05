@@ -1,8 +1,9 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { focusRing } from './button';
+import { focusRing } from './button-styles';
 import { Icon, type IconName } from './icons';
+import { Tag } from './tag';
 
 /**
  * ChoiceCard: escolha única em cartão grande (caminho do Novo mapa: PDF, Anki, mapa pronto, em branco). <button aria-pressed>, mín. 176 px, raio 24,
@@ -45,16 +46,19 @@ export type ChoiceRowProps = {
   title?: string;
   description?: string;
   badge?: string;
+  /** Desabilitada (ex.: "Em breve"): não seleciona, fica esmaecida; `badge` aparece também no `md`. */
+  disabled?: boolean;
 };
 
-export function ChoiceRow({ selected, onSelect, indicator, size = 'md', children, title, description, badge }: ChoiceRowProps) {
+export function ChoiceRow({ selected, onSelect, indicator, size = 'md', children, title, description, badge, disabled }: ChoiceRowProps) {
   const lg = size === 'lg';
   return (
     <button
       type="button"
       aria-pressed={selected}
       onClick={onSelect}
-      className={`flex items-center gap-3 text-left text-ink transition-colors duration-150 ${
+      disabled={disabled}
+      className={`flex items-center gap-3 text-left text-ink transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-70 ${
         lg ? 'gap-3.5 rounded-[20px] border-2 bg-surface px-[18px] py-4' : `min-h-[52px] rounded-field border-[1.5px] px-4 py-2 text-[15px] font-semibold ${selected ? 'bg-primary-tint' : 'bg-surface'}`
       } ${selected ? 'border-primary' : 'border-border'} ${focusRing}`}
     >
@@ -72,10 +76,13 @@ export function ChoiceRow({ selected, onSelect, indicator, size = 'md', children
             <span className="font-display text-lg font-bold">{title}</span>
             {description ? <span className="text-[13px] font-normal text-muted">{description}</span> : null}
           </span>
-          {badge ? <span className="rounded-pill bg-primary-tint px-2.5 py-1 text-xs font-bold text-primary-deep">{badge}</span> : null}
+          {badge ? <span className="shrink-0 whitespace-nowrap rounded-pill bg-primary-tint px-2.5 py-1 text-xs font-bold text-primary-deep">{badge}</span> : null}
         </>
       ) : (
-        children
+        <>
+          <span className="grow">{children}</span>
+          {badge ? <span className="shrink-0 whitespace-nowrap"><Tag tone="unknown">{badge}</Tag></span> : null}
+        </>
       )}
     </button>
   );

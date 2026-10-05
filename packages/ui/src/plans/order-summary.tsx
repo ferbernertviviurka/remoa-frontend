@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Morph } from '../morph';
 
 /**
  * OrderSummary: cartão do resumo do pedido (sticky no desktop; no celular segue o fluxo). Tudo por slots/props.
@@ -15,9 +16,9 @@ export type OrderSummaryProps = {
   saving?: string;
   methodLabel: string;
   method: ReactNode;
-  coupon: ReactNode;
+  coupon?: ReactNode;
   lines: ReadonlyArray<OrderLine>;
-  nextBilling: string;
+  nextBilling?: string;
   action: ReactNode;
   secure: string;
   secureIcon?: ReactNode;
@@ -33,11 +34,11 @@ export function OrderSummary(p: OrderSummaryProps) {
       <div className="flex flex-col gap-1">
         <span className="flex items-baseline gap-1.5">
           <span className="font-display text-[50px] font-extrabold leading-none tracking-[-0.04em] tabular-nums">{p.price}</span>
-          <span className="text-base font-semibold text-muted">{p.per}</span>
+          <span className="text-base font-semibold text-muted"><Morph>{p.per}</Morph></span>
         </span>
-        <span className="text-sm text-muted">{p.note}</span>
+        <span className="text-sm text-muted"><Morph>{p.note}</Morph></span>
       </div>
-      {p.saving ? <span className="slide self-start rounded-pill bg-primary-tint px-3 py-1.5 text-[13px] font-bold text-primary-deep">{p.saving}</span> : null}
+      {p.saving ? <span className="slide self-start rounded-pill bg-primary-tint px-3 py-1.5 text-[13px] font-bold text-primary-deep"><Morph>{p.saving}</Morph></span> : null}
       <div className="flex flex-col gap-2.5">
         <span className="font-bold">{p.methodLabel}</span>
         {p.method}
@@ -46,18 +47,18 @@ export function OrderSummary(p: OrderSummaryProps) {
       <div className="flex flex-col gap-0.5 border-t border-border pt-1.5">
         {p.lines.map((l) => (
           <div key={l.label} className={`flex items-center justify-between py-2 text-[15px] ${l.strong ? 'font-extrabold text-ink' : l.struck ? 'font-semibold text-muted' : l.founder ? 'font-semibold text-primary-deep' : 'font-semibold text-ink'}`}>
-            <span>{l.label}</span>
+            <span><Morph>{l.label}</Morph></span>
             <span className="tabular-nums">
               {l.struck ? (
                 <>
                   {l.srLabel ? <span className="sr-only">{l.srLabel}: </span> : null}
-                  <s>{l.value}</s>
+                  <s><Morph>{l.value}</Morph></s>
                 </>
-              ) : l.value}
+              ) : <Morph>{l.value}</Morph>}
             </span>
           </div>
         ))}
-        <span className="text-[13px] text-muted">{p.nextBilling}</span>
+        {p.nextBilling ? <span className="text-[13px] text-muted"><Morph>{p.nextBilling}</Morph></span> : null}
       </div>
       {p.action}
       <span className="flex items-center justify-center gap-2 text-center text-[12.5px] leading-[1.4] text-muted">

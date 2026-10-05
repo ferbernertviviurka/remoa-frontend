@@ -2,14 +2,13 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from '@/features/shell/use-navigate';
 import { signUpInputSchema, type ErrorCode } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { Button, Input, Separator } from '@remoa/ui';
 import { sendMagicLink, signIn, signInWithGoogle, type AuthResult } from '@/server/auth/actions';
-import { identify, track } from '@/lib/analytics';
-import { createClient } from '@/lib/supabase/client';
-import { safeNext } from '@/lib/safe-next';
+import { track } from '@/lib/analytics';
+import { APP_HOME, safeNext } from '@/lib/safe-next';
 import { FieldError, PasswordField } from './password-field';
 
 const googleOn = process.env.NEXT_PUBLIC_AUTH_GOOGLE === '1';
@@ -22,7 +21,7 @@ export function generalMessage(code: ErrorCode, ctx: 'signIn' | 'signUp') {
 }
 
 export function SignInForm({ next }: { next?: string }) {
-  const router = useRouter();
+  const [navigating, router] = useNavigate();
   const target = safeNext(next);
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []); // `data-ready`: typing before hydration is wiped by the controlled inputs (e2e waits for it)
@@ -57,8 +56,6 @@ export function SignInForm({ next }: { next?: string }) {
     if (next.password) return focusField('password');
     void run('password', () => signIn({ email, password }), async () => {
       track('login', { method: 'password' });
-      const { data } = await createClient().auth.getUser();
-      if (data.user) identify(data.user.id);
       router.push(target);
       router.refresh();
     });
@@ -86,7 +83,7 @@ export function SignInForm({ next }: { next?: string }) {
         <FieldError id="si-pw-err">{errs.password}</FieldError>
       </div>
       {error ? <p role="alert" className="m-0 text-sm font-semibold text-review-text">{error}</p> : null}
-      <Button type="submit" size="touch" loading={busy === 'password'} loadingLabel={t('common.loading')} disabled={busy === 'magic'}>{t('auth.signIn.submit')}</Button>
+      <Button type="submit" size="touch" loading={busy === 'password' || navigating} loadingLabel={t('common.loading')} disabled={busy === 'magic'}>{t('auth.signIn.submit')}</Button>
       <Button type="button" variant="secondary" size="touch" loading={busy === 'magic'} loadingLabel={t('common.loading')} disabled={busy === 'password'} onClick={magic}>
         {t('auth.magicLink')}
       </Button>
@@ -106,7 +103,8 @@ export function SignInForm({ next }: { next?: string }) {
       <Separator />
       <p className="m-0 text-sm text-muted">
         {t('auth.signIn.noAccount')}{' '}
-        <Link href={target === '/' ? '/cadastro' : `/cadastro?next=${encodeURIComponent(target)}`} className="inline-flex min-h-11 items-center font-bold text-primary-deep underline">
+        {/* G14 (D-586): full prefetch (page + JS): /cadastro is dynamic with no loading.tsx, so the default prefetch fetched nothing. */}
+        <Link href={target === APP_HOME ? '/cadastro' : `/cadastro?next=${encodeURIComponent(target)}`} prefetch className="inline-flex min-h-11 min-w-11 items-center justify-center font-bold text-primary-deep underline">
           {t('auth.signIn.toSignUp')}
         </Link>
       </p>

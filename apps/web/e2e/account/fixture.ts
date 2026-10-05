@@ -53,5 +53,8 @@ export const sections = ['perfil', 'seguranca', 'plano', 'preferencias', 'dados'
 export async function signUpApi(request: APIRequestContext, email: string, password = PASSWORD) {
   const r = await request.post(`${env('NEXT_PUBLIC_SUPABASE_URL')}/auth/v1/signup`, { headers: { apikey: env('NEXT_PUBLIC_SUPABASE_ANON_KEY') }, data: { email, password } });
   expect(r.ok()).toBeTruthy();
-  return r.json();
+  const su = await r.json();
+  // F12: a new account is redirected to the onboarding; API-made users are about something else, so they have it done already.
+  await request.post(`${API}/v1/onboarding/complete`, { headers: { authorization: `Bearer ${su.access_token as string}` } }).catch(() => undefined);
+  return su;
 }

@@ -17,7 +17,7 @@ export function TopicActions({ topic, onLink }: { topic: MatrixItem; onLink: (t:
         <span className="text-sm text-muted">{t('coverage.target', { n: topic.targetCards })}</span>
       </span>
       <span className="flex flex-wrap gap-1">
-        <Link href={`/mapas/novo?item=${topic.id}`} aria-label={t('coverage.createMapFor', { topic: topic.title })} className={linkCls}>{t('coverage.createMap')}</Link>
+        <Link href={`/app/mapas/novo?item=${topic.id}`} aria-label={t('coverage.createMapFor', { topic: topic.title })} className={linkCls}>{t('coverage.createMap')}</Link>
         <Button size="sm" variant="quiet" aria-label={t('coverage.linkExistingFor', { topic: topic.title })} onClick={() => onLink(topic)}>{t('coverage.linkExisting')}</Button>
       </span>
     </li>

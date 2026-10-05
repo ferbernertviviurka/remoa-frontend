@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./referral": "./src/referral/index.ts",
     "./tokens.css": "./src/tokens.css",
     "./motion.css": "./src/motion.css"
   },

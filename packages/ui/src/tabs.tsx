@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import * as RT from '@radix-ui/react-tabs';
-import { focusRing } from './button';
+import { focusRing } from './button-styles';
 
 /** Abas. `label` nomeia o grupo. A primeira aba abre se `defaultValue` não vier. */
 export function Tabs({

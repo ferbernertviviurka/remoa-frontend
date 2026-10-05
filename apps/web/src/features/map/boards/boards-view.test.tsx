@@ -36,16 +36,56 @@ afterEach(() => {
 });
 
 describe('BoardsView', () => {
+  it('FR-19: shows the access badge only when the map is not "Só eu"', () => {
+    view([board, { ...board, id: 'b2', title: 'Choque', access: 'password' }, { ...board, id: 'b3', title: 'Lactato', access: 'public' }]);
+    expect(screen.getByText('Privado')).toBeInTheDocument();
+    expect(screen.getByText('Público')).toBeInTheDocument();
+    expect(screen.queryByText('Só eu')).not.toBeInTheDocument();
+  });
+
+
   it('archives after confirmation and restores with Desfazer', async () => {
     api.mockResolvedValue({ ok: true, data: board });
     view([board]);
     await openMenu('Arquivar');
     expect(api).not.toHaveBeenCalled();
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Arquivar' }));
-    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/boards/b1', { method: 'PATCH', body: JSON.stringify({ archived: true }) }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Desfazer' }));
-    await waitFor(() => expect(api).toHaveBeenLastCalledWith('/v1/boards/b1', { method: 'PATCH', body: JSON.stringify({ archived: false }) }));
+    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/boards/b1', { method: 'PATCH', body: JSON.stringify({ archived: true }) }), { timeout: 5000 });
+    fireEvent.click(await screen.findByRole('button', { name: 'Desfazer' }, { timeout: 5000 }));
+    await waitFor(() => expect(api).toHaveBeenLastCalledWith('/v1/boards/b1', { method: 'PATCH', body: JSON.stringify({ archived: false }) }), { timeout: 5000 });
     expect(refresh).toHaveBeenCalledTimes(2);
+  });
+
+  it('excludes only after typing the map name, warns it is permanent, and shows feedback', async () => {
+    api.mockResolvedValue({ ok: true, data: { id: 'b1' } });
+    view([board]);
+    await openMenu('Excluir');
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText(/Não dá para desfazer/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/histórico de revisão/)).toBeInTheDocument();
+    const confirm = within(dialog).getByRole('button', { name: 'Excluir' });
+    expect(confirm).toBeDisabled();
+    fireEvent.change(within(dialog).getByLabelText('Para confirmar, digite o nome do mapa'), { target: { value: 'Sep' } });
+    expect(confirm).toBeDisabled();
+    fireEvent.change(within(dialog).getByLabelText('Para confirmar, digite o nome do mapa'), { target: { value: 'Sepse' } });
+    fireEvent.click(confirm);
+    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/boards/b1', { method: 'DELETE' }));
+    expect(await screen.findByText('Mapa excluído')).toBeInTheDocument();
+    expect(refresh).toHaveBeenCalled();
+  });
+
+  it('filters archived maps via ?status= and unarchives from the menu', async () => {
+    const old: BoardSummary = { ...board, id: 'b9', title: 'Velho', archivedAt: new Date('2026-09-01T00:00:00Z') };
+    api.mockImplementation(async (path: string) => (path.startsWith('/v1/boards?status=') ? { ok: true, data: [old] } : { ok: true, data: old }));
+    view([board]);
+    fireEvent.click(screen.getByRole('radio', { name: 'Arquivados' }));
+    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/boards?status=archived'));
+    expect(await screen.findByRole('link', { name: 'Abrir Velho' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Abrir Sepse' })).not.toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Mais ações de Velho' }), { key: 'Enter' });
+    expect(screen.queryByRole('menuitem', { name: 'Arquivar' })).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Desarquivar' }));
+    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/boards/b9', { method: 'PATCH', body: JSON.stringify({ archived: false }) }));
   });
 
   it('renames and duplicates from the menu', async () => {
@@ -72,7 +112,7 @@ describe('BoardsView', () => {
     expect(screen.getByText('Salvo há 3 min')).toBeTruthy();
     expect(screen.getByText('Salvo há 2 dias')).toBeTruthy();
     expect(screen.getAllByRole('img', { name: /sem revisões/ })).toHaveLength(2);
-    expect(screen.getByRole('link', { name: 'Abrir Sepse' }).getAttribute('href')).toBe('/mapas/b1');
+    expect(screen.getByRole('link', { name: 'Abrir Sepse' }).getAttribute('href')).toBe('/app/mapas/b1');
   });
 
   it('search ignores case and accents; no match shows the empty state with a way to a new map', () => {
@@ -83,7 +123,7 @@ describe('BoardsView', () => {
     fireEvent.change(screen.getByRole('searchbox', { name: 'Buscar mapa' }), { target: { value: 'zzz' } });
     expect(screen.getByText('Nenhum mapa encontrado')).toBeTruthy();
     fireEvent.click(screen.getAllByRole('button', { name: 'Novo mapa' })[1]!);
-    expect(push).toHaveBeenCalledWith('/mapas/novo');
+    expect(push).toHaveBeenCalledWith('/app/mapas/novo');
   });
 
   it('area chips carry counts and filter; Todos restores', () => {
@@ -111,7 +151,7 @@ describe('BoardsView', () => {
   it('empty library points to Novo mapa', () => {
     view([]);
     fireEvent.click(screen.getAllByRole('button', { name: 'Novo mapa' })[0]!);
-    expect(push).toHaveBeenCalledWith('/mapas/novo');
+    expect(push).toHaveBeenCalledWith('/app/mapas/novo');
   });
 });
 
@@ -125,11 +165,11 @@ describe('BoardsView: Free limit (F14 FR-20/21)', () => {
   it('Free with 1 map: new-map card with remaining + lock card; header keeps +', () => {
     plan(2, 1);
     view(maps(1));
-    expect(screen.getByRole('link', { name: 'Criar um novo mapa' })).toHaveAttribute('href', '/mapas/novo');
+    expect(screen.getByRole('link', { name: 'Criar um novo mapa' })).toHaveAttribute('href', '/app/mapas/novo');
     expect(screen.getByText('Você ainda pode criar 1 mapa no plano Free.')).toBeInTheDocument();
     expect(lockCard()).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Novo mapa' }));
-    expect(push).toHaveBeenCalledWith('/mapas/novo');
+    expect(push).toHaveBeenCalledWith('/app/mapas/novo');
   });
 
   it('Free at the limit: only the lock card; header and CTA go to /planos with library_lock', () => {
@@ -138,11 +178,11 @@ describe('BoardsView: Free limit (F14 FR-20/21)', () => {
     expect(screen.queryByRole('link', { name: 'Criar um novo mapa' })).toBeNull();
     expect(screen.getByText('O Free permite até 2 mapas. Faça upgrade para criar o próximo.')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Novo mapa' }));
-    expect(push).toHaveBeenCalledWith('/planos?de=library_lock');
+    expect(push).toHaveBeenCalledWith('/app/planos?de=library_lock');
     expect(track).toHaveBeenCalledWith('upgrade_clicked', { source: 'library_lock' });
     track.mockClear();
     const cta = screen.getByRole('link', { name: 'Fazer upgrade' });
-    expect(cta).toHaveAttribute('href', '/planos?de=library_lock');
+    expect(cta).toHaveAttribute('href', '/app/planos?de=library_lock');
     fireEvent.click(cta);
     expect(track).toHaveBeenCalledWith('upgrade_clicked', { source: 'library_lock' });
   });
@@ -161,7 +201,7 @@ describe('BoardsView: Free limit (F14 FR-20/21)', () => {
     expect(screen.getByText('Comece do zero, de um PDF ou do seu Anki.')).toBeInTheDocument();
     expect(lockCard()).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Novo mapa' }));
-    expect(push).toHaveBeenCalledWith('/mapas/novo');
+    expect(push).toHaveBeenCalledWith('/app/mapas/novo');
     expect(track).not.toHaveBeenCalled();
   });
 

@@ -7,10 +7,10 @@ import { track } from '@/lib/analytics';
 import { usePlans } from './plans-context';
 
 /** F15 FR-2: personalized title; the period toggle exists only for Free and its label is computed, never typed. */
-export function PlansHeader({ pro }: { pro: boolean }) {
+export function PlansHeader({ tier }: { tier: 'free' | 'pro' | 'founder' }) {
   const { priceBook, period, setPeriod } = usePlans();
   const pct = annualDiscountPercent(priceBook);
-  const k = pro ? 'pro' : 'free';
+  const k = tier;
   return (
     <header className="flex flex-wrap items-end justify-between gap-6">
       <div className="flex flex-col gap-2 pb-0.5">
@@ -20,7 +20,7 @@ export function PlansHeader({ pro }: { pro: boolean }) {
         </h1>
         <p className="m-0 -mt-px max-w-[620px] text-base leading-5 text-muted">{t(`plans.header.${k}.subtitle`)}</p>
       </div>
-      {pro ? null : (
+      {tier !== 'free' || period === 'lifetime' ? null : (
         <PeriodToggle
           aria-label={t('plans.period.label')}
           value={period}

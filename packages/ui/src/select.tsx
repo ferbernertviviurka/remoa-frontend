@@ -2,7 +2,7 @@
 
 import { useId } from 'react';
 import * as RS from '@radix-ui/react-select';
-import { fieldControl, focusRing } from './button';
+import { fieldControl, focusRing } from './button-styles';
 
 /** Lista suspensa com rótulo. `options` são valor + texto. */
 export function Select({

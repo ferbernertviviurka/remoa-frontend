@@ -3,6 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { PLAN_LIMITS } from '@remoa/contracts';
 import { seedMock, signUpAndLogin } from './visual/fixture';
+import { padForChallenge } from './challenge-pad';
 
 test.use({ viewport: { width: 1440, height: 900 } });
 
@@ -15,37 +16,38 @@ const axe = async (page: Page) => {
 test('axe: Hoje, Meus mapas e Novo mapa (3 passos)', async ({ page, request }) => {
   test.setTimeout(180_000);
   const { userId, headers } = await signUpAndLogin(page, request);
-  await page.goto('/');
+  await page.goto('/app/hoje');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   expect(await axe(page), 'hoje vazio').toEqual([]);
-  await page.goto('/mapas');
+  await page.goto('/app/mapas');
   await expect(page.getByRole('heading', { level: 1, name: 'Meus mapas' })).toBeVisible();
   expect(await axe(page), 'mapas vazio').toEqual([]);
 
   await seedMock(request, headers, userId);
-  await page.goto('/');
+  await page.goto('/app/hoje');
   await expect(page.getByRole('link', { name: 'Abrir o mapa Sepse' })).toBeVisible();
   expect(await axe(page), 'hoje').toEqual([]);
-  await page.goto('/mapas');
+  await page.goto('/app/mapas');
   await expect(page.getByRole('link', { name: 'Sepse' }).first()).toBeVisible();
   expect(await axe(page), 'mapas').toEqual([]);
   await page.getByRole('button', { name: 'Lista' }).click().catch(() => undefined); // alterna grade/lista, se o controle existir
   expect(await axe(page), 'mapas (lista)').toEqual([]);
 
-  await page.goto('/mapas/novo');
+  await page.goto('/app/mapas/novo');
   await expect(page.getByRole('button', { name: /Em branco/ })).toBeVisible();
   expect(await axe(page), 'novo 1').toEqual([]);
   await page.getByRole('button', { name: 'Continuar' }).click();
   expect(await axe(page), 'novo 2').toEqual([]);
-  await page.getByRole('button', { name: 'Continuar' }).click();
-  expect(await axe(page), 'novo 3').toEqual([]);
+  await page.goto('/app/mapas/novo?caminho=blank'); // G14 17: já abre em "Sobre o mapa"
+  await expect(page.getByLabel('Nome do mapa')).toBeVisible();
+  expect(await axe(page), 'novo 3 (Sobre o mapa)').toEqual([]);
 });
 
 test('axe: Editor (resumo, card, cada aba do inspetor) e paleta ⌘K', async ({ page, request }) => {
   test.setTimeout(180_000);
   const { userId, headers } = await signUpAndLogin(page, request);
   const { sepse } = await seedMock(request, headers, userId);
-  await page.goto(`/mapas/${sepse}`);
+  await page.goto(`/app/mapas/${sepse}`);
   await expect(page.locator('.react-flow__node')).toHaveCount(6);
   expect(await axe(page), 'editor resumo').toEqual([]);
   await page.getByRole('button', { name: 'Selecionar Choque séptico' }).click();
@@ -64,29 +66,41 @@ test('axe: Editor (resumo, card, cada aba do inspetor) e paleta ⌘K', async ({ 
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(await axe(page), 'paleta').toEqual([]);
 
-  // Desafio no editor (T6): antes e depois de revelar a resposta.
+  // G14: mínimo de 10 cards (botão aria-disabled + tooltip), opções do desafio, Eu respondo (Acertei/Errei), tutorial
   await page.keyboard.press('Escape');
-  await page.goto(`/mapas/${sepse}?modo=desafio`);
-  await expect(page.getByRole('button', { name: 'Corrigir resposta' })).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0); // the palette hands focus back first (it would close the tooltip)
+  const challengeBtn = page.getByRole('button', { name: /^Desafiar (este mapa|os \d+)/ }).first();
+  await expect(async () => { // tap on the aria-disabled button opens the reason (retry: the palette's focus return can close it)
+    await challengeBtn.click({ force: true });
+    await expect(page.getByRole('tooltip')).toContainText('Faltam 4', { timeout: 2000 });
+  }).toPass({ timeout: 15_000 });
+  expect(await axe(page), 'desafio bloqueado (tooltip)').toEqual([]);
+  await padForChallenge(request, headers, sepse, 4);
+  await page.reload();
+  await challengeBtn.click();
+  await expect(page.getByRole('dialog', { name: 'Desafiar este mapa' })).toBeVisible();
+  expect(await axe(page), 'opções do desafio').toEqual([]);
+  await page.getByRole('button', { name: 'Começar desafio' }).click();
+  await expect(page.getByRole('button', { name: 'Revelar resposta' })).toBeVisible();
   await page.getByLabel('Sua resposta').fill('Iniciar noradrenalina');
   expect(await axe(page), 'desafio').toEqual([]);
-  for (const mode of ['Opções', 'Falar']) { // Falar: botão de gravar desabilitado com "Em breve" (D-203)
-    await page.getByRole('group', { name: 'Como responder' }).getByRole('button', { name: mode }).click();
-    expect(await axe(page), `desafio: ${mode}`).toEqual([]);
-  }
-  await page.getByRole('group', { name: 'Como responder' }).getByRole('button', { name: 'Escrever' }).click();
   await page.getByRole('button', { name: 'Revelar resposta' }).click();
-  await expect(page.getByRole('group', { name: /Como foi lembrar/ })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Você acertou?' })).toBeVisible();
   expect(await axe(page), 'desafio: resposta revelada').toEqual([]);
+  await page.keyboard.press('Meta+k');
+  await page.getByRole('combobox', { name: 'Buscar comando' }).fill('como funciona');
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('dialog', { name: 'Como funciona o desafio' })).toBeVisible();
+  expect(await axe(page), 'tutorial do desafio').toEqual([]);
 });
 
 test('axe: Preços, Conta (e confirmação de exclusão) e Paywall de mapas', async ({ page, request }) => {
   test.setTimeout(120_000);
   const { headers } = await signUpAndLogin(page, request);
-  await page.goto('/planos');
+  await page.goto('/app/planos');
   await expect(page.getByRole('table', { name: 'Comparação entre Free e Pro' })).toBeVisible();
   expect(await axe(page), 'preços').toEqual([]);
-  await page.goto('/conta/dados');
+  await page.goto('/app/conta/dados');
   await expect(page.getByRole('button', { name: 'Exportar meus dados' })).toBeVisible();
   expect(await axe(page), 'conta').toEqual([]);
   await page.getByRole('button', { name: 'Excluir conta' }).click();
@@ -95,9 +109,8 @@ test('axe: Preços, Conta (e confirmação de exclusão) e Paywall de mapas', as
   await page.keyboard.press('Escape');
 
   for (let i = 0; i < PLAN_LIMITS.free.limits.boards; i++) expect((await request.post('http://localhost:4000/v1/boards', { headers, data: { title: `M${i}` } })).status()).toBe(201);
-  await page.goto('/mapas/novo?caminho=blank');
-  await page.getByRole('button', { name: 'Continuar' }).click();
-  await page.getByRole('button', { name: 'Continuar' }).click();
+  await page.goto('/app/mapas/novo?caminho=blank'); // G14 17: já abre em "Sobre o mapa"
+  await page.getByLabel('Nome do mapa').fill('Terceiro');
   await page.getByRole('button', { name: 'Criar mapa', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('button', { name: 'Continuar no Free' })).toBeVisible();

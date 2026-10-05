@@ -2,10 +2,11 @@ import type { ReactNode } from 'react';
 import { t } from '@remoa/strings';
 import { Logo, SiteFooter } from '@remoa/ui';
 import { landingFlags } from '@/features/landing/flags';
-import { LandingHeader } from '@/features/landing/shell';
+import { LandingHeader } from '@/features/landing/shell/landing-header'; // direct: the shell barrel would ship WaitlistCta too (D-535)
 
 const skip = 'sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:flex focus:min-h-11 focus:items-center focus:rounded-[14px] focus:bg-primary focus:px-4 focus:font-bold focus:text-on-primary';
 
+// D-534: no session read here (it made `/` dynamic); the header swaps to "Abrir o app" + avatar on the client (D-320).
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   const { launchPhase } = landingFlags();
   return (

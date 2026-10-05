@@ -5,7 +5,7 @@ export const landing = {
   // Navigation and layout
   nav: {
     navLabel: 'Navegação da página',
-    wordmark: { aria: 'Remoa, ir para a página inicial' },
+    wordmark: { aria: 'Remoa, ir para a página inicial', ariaApp: 'Remoa, ir para Hoje' },
     anchors: {
       howWorks: 'Como funciona',
       features: 'Recursos',
@@ -14,6 +14,8 @@ export const landing = {
     },
     signIn: 'Entrar',
     createMap: 'Criar meu primeiro mapa',
+    openApp: 'Continuar estudando',
+    account: 'Minha conta',
     menu: {
       aria: 'Menu de navegação',
       open: 'Abrir menu',
@@ -24,7 +26,7 @@ export const landing = {
 
   // Hero section
   hero: {
-    tag: 'Da faculdade à residência',
+    tag: 'Para a residência médica e o Enamed',
     h1: {
       a: 'Seu conhecimento tem conexões. Seu estudo também.',
       b: 'O card te testa um por um. A prova te testa pela conexão.',
@@ -109,7 +111,7 @@ export const landing = {
 
   // How it works section
   how: {
-    title: 'Conecte. Revise. Evolua.',
+    title: 'Conecte, revise, evolua: revisão espaçada com contexto.',
     steps: [
       {
         num: '01',
@@ -134,7 +136,7 @@ export const landing = {
 
   // Feature explorer section (6 resources tabs) — exact copy from mock #recursos
   explorer: {
-    title: 'Tudo o que o seu estudo precisa, no mesmo mapa.',
+    title: 'Tudo o que o seu estudo para a residência precisa, no mesmo mapa.',
     lead: 'Escolha um recurso e veja como ele aparece dentro da plataforma.',
     caption: 'Imagem da plataforma: {tab}',
     items: [
@@ -181,7 +183,7 @@ export const landing = {
       },
       {
         title: 'Lembrança estimada',
-        description: 'O FSRS, o mesmo algoritmo do Anki moderno, calcula a chance de lembrar cada conceito hoje e pinta o seu mapa.',
+        description: 'O FSRS, algoritmo aberto que o Anki também oferece, calcula a chance de lembrar cada conceito hoje e pinta o seu mapa.',
         benefits: [
           'Cada card tem a sua própria curva',
           'Mapa de calor: Revisitar, Acompanhar, Mais estável',
@@ -271,7 +273,7 @@ export const landing = {
 
   // Demo section — medical content (Sepse case)
   demo: {
-    title: 'Experimente um desafio',
+    title: 'Experimente um desafio de Clínica Médica',
     noSignup: 'Sem cadastro',
     bundleTag: 'Pacote da 1ª hora',
     intro: 'Quatro passos do pacote da primeira hora na sepse. Responda e veja como o Remoa corrige e de onde vem a resposta.',
@@ -352,35 +354,48 @@ export const landing = {
       features: [
         '{maps} mapas',
         '{cards} cards',
+        '{pdfMaps, plural, =0 {Sem mapas gerados por PDF} one {# mapa gerado de PDF por mês} other {# mapas gerados de PDF por mês}}',
+        '{ankiImports, plural, one {# importação do Anki} other {# importações do Anki}} de até {ankiCards} cards',
+        '{dailyNewCards} novos cards por dia',
         '{aiCorrections} correções por IA por dia',
-        '{pdfMaps} mapa gerado de PDF por mês',
-        'Importação do Anki de até {ankiCards} cards',
-        '{dailyNewCards} cards novos por dia',
       ],
     },
     pro: {
       name: 'Pro',
       features: [
         'Mapas e cards ilimitados',
-        'Correções por IA ilimitadas',
+        '{aiCorrections} correções por IA por dia',
         '{pdfMaps} mapas gerados de PDF por mês',
-        'Importação do Anki de até {ankiCardsProto} cards',
-        '{dailyNewCardsPro} cards novos por dia',
+        'Importação do Anki {ankiPro}',
+        'Novos cards por dia: {dailyNewCardsPro}',
         'Mapas prontos (em breve)',
       ],
       featuresApproved: [
         'Mapas e cards ilimitados',
-        'Correções por IA ilimitadas',
+        '{aiCorrections} correções por IA por dia',
         '{pdfMaps} mapas gerados de PDF por mês',
-        'Importação do Anki de até {ankiCardsProto} cards',
-        '{dailyNewCardsPro} cards novos por dia',
+        'Importação do Anki {ankiPro}',
+        'Novos cards por dia: {dailyNewCardsPro}',
         'Mapas prontos revisados',
       ],
       price: 'R$ {price}/mês',
       priceAnnual: 'R$ {price}/ano',
       founder: 'Preço de fundador para quem entrar no beta',
     },
+    limit: { unlimitedF: 'ilimitada', unlimitedM: 'ilimitados', upTo: 'de até {n} cards' },
+    founder: {
+      name: 'Founder',
+      description: 'Compre uma vez e use para sempre.',
+      features: [
+        'Tudo do Pro',
+        'Correções por IA ilimitadas',
+        'Mapas gerados de PDF ilimitados',
+        'Loja de mapas liberada (Em breve)',
+        'As novidades primeiro',
+      ],
+    },
     cta: {
+      founder: 'Quero ser Founder',
       free: 'Começar grátis',
       waitlist: 'Entrar na lista de espera',
       pro: 'Assinar o Pro',
@@ -388,8 +403,10 @@ export const landing = {
     notes: {
       monthly: 'Cobrado todo mês.',
       annual: 'Equivale a {price} por mês.',
+      founder: 'Acesso vitalício',
     },
     cadence: {
+      founder: 'pagamento único',
       monthly: '/mês',
       annual: '/ano',
     },
@@ -399,11 +416,19 @@ export const landing = {
   // FAQ section
   faq: {
     eyebrow: 'Perguntas',
-    title: 'Perguntas frequentes',
+    title: 'Perguntas frequentes sobre o Remoa',
     items: [
       {
         q: 'Funciona com o Anki?',
         a: 'Sim. Importe seu arquivo .apkg e os cards viram mapa; a oclusão de imagem vem junto.',
+      },
+      {
+        q: 'Para quem é o Remoa?',
+        a: 'Para quem estuda para a residência médica: internos do 5º e 6º ano e recém-formados. A cobertura do Enamed começa por Clínica Médica; seus próprios mapas podem ser de qualquer tema.',
+      },
+      {
+        q: 'O que é revisão espaçada e como o Remoa usa?',
+        a: 'É revisar cada conteúdo perto do momento em que você o esqueceria, com intervalos que crescem a cada acerto. O Remoa calcula esses intervalos com o FSRS para cada card, mostra a lembrança estimada no mapa e junta na fila Revisar hoje o que vence no dia.',
       },
       {
         q: 'A correção por IA pode errar?',
@@ -422,6 +447,10 @@ export const landing = {
       {
         q: 'Funciona no celular?',
         a: 'Sim, como app instalável. No celular você revisa; no computador você edita.',
+      },
+      {
+        q: 'Preciso pagar para começar?',
+        a: 'Não. Você começa no plano Free e só passa para o Pro se quiser; os valores estão na seção Planos.',
       },
       {
         q: 'Posso cancelar quando quiser?',
@@ -497,9 +526,16 @@ export const landing = {
   },
 
   // SEO metadata
+  // G11: 404 (root not-found.tsx)
+  notFound: {
+    title: 'Página não encontrada',
+    text: 'O link pode ter mudado ou não existir mais.',
+    home: 'Ir para a página inicial',
+  },
+
   seo: {
-    title: 'Remoa: mapa de estudo com revisão espaçada para medicina',
-    description: 'Monte o mapa do que você sabe e deixe ele te desafiar: revisão espaçada, correção com fonte e cobertura do Enamed. Comece com seu Anki, um PDF ou um mapa pronto.',
+    title: 'Remoa: revisão espaçada em mapas para residência médica',
+    description: 'Estude para a residência médica num mapa que te testa: revisão espaçada, correção com fonte e cobertura do Enamed. Comece com seu Anki ou um PDF.',
     ogTitle: 'O que você aprende, fica.',
     ogDescription: 'Mapas de medicina que te testam pela conexão.',
     orgName: 'Remoa',

@@ -3,12 +3,13 @@
 // F17 T7 (FR-14, FR-15): server actions for the shared board page.
 // D-322: revalidatePath triggers re-render after cookie is set.
 // D-327: share access cookie is scoped to `/m/<token>`, httpOnly, secure (except local http), sameSite=lax.
-import { cookies, headers } from 'next/headers';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { SHARE_ACCESS_COOKIE, SHARE_ACCESS_HEADER, shareTokenSchema, type CopyBoardInput } from '@remoa/contracts';
 import type { Board } from '@remoa/contracts';
 import { apiBase, apiFetch } from '@/lib/api';
+import { clientIpHeaders } from '@/lib/api/client-ip';
 import { createClient } from '@/lib/supabase/server';
 import { getRequestId } from '@/lib/request-id';
 
@@ -20,16 +21,13 @@ type UnlockResult =
 export async function unlockBoardAction(token: string, password: string): Promise<UnlockResult> {
   if (!shareTokenSchema.safeParse(token).success) return { ok: false, error: 'not_found' };
 
-  const reqHeaders = await headers();
-  // Forward client IP for rate limiting
-  const ip = reqHeaders.get('x-forwarded-for') ?? reqHeaders.get('x-real-ip') ?? '127.0.0.1';
   const requestId = await getRequestId();
 
   const res = await fetch(`${apiBase()}/v1/public/shared/${token}/unlock`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      'x-forwarded-for': ip,
+      ...(await clientIpHeaders()), // D-537: the per-IP unlock limit keys on the browser, through the trusted pair
       'x-request-id': requestId,
     },
     body: JSON.stringify({ password }),
@@ -44,7 +42,8 @@ export async function unlockBoardAction(token: string, password: string): Promis
     return { ok: false, error: 'wrong_password' };
   }
 
-  const { value, expiresAt } = await res.json() as { value: string; expiresAt: string };
+  // D-503: the API answers `{ ok, data: SharedAccessGrant }` (was read as the grant itself: empty cookie, the page stayed locked).
+  const { data: { value, expiresAt } } = (await res.json()) as { data: { value: string; expiresAt: string } };
 
   const cookieStore = await cookies();
   const isDev = process.env.NODE_ENV !== 'production';
@@ -58,12 +57,6 @@ export async function unlockBoardAction(token: string, password: string): Promis
 
   revalidatePath(`/m/${token}`);
   return { ok: true };
-}
-
-/** Delete the stale share access cookie (D-311: locked despite having a cookie). */
-export async function deleteCookieAction(token: string) {
-  const cookieStore = await cookies();
-  cookieStore.delete({ name: SHARE_ACCESS_COOKIE, path: `/m/${token}` });
 }
 
 type CopyResult =

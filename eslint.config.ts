@@ -2,7 +2,7 @@ import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 
 export default tseslint.config(
-  { ignores: ['**/node_modules/**', '**/.next/**', '**/dist/**', '**/coverage/**', '**/storybook-static/**', '**/next-env.d.ts'] },
+  { ignores: ['**/node_modules/**', '**/.next*/**', '**/dist/**', '**/coverage/**', '**/storybook-static/**', '**/next-env.d.ts'] },
   ...tseslint.configs.recommended,
   {
     plugins: { 'react-hooks': reactHooks },

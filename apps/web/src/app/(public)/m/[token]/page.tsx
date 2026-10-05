@@ -3,13 +3,12 @@
 // Server Component: reads cookie, calls API, renders locked/unlocked/404.
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { SHARE_ACCESS_COOKIE, SHARE_ACCESS_HEADER, shareTokenSchema, type SharedBoardResponse } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { serverApi } from '@/lib/api/server';
 import { UnlockForm } from './unlock-form';
 import { SharedBoardView } from './shared-board-view';
-import { deleteCookieAction } from './actions';
 
 export const metadata: Metadata = {
   title: t('sharedMap.metaTitle'),
@@ -44,10 +43,11 @@ export default async function SharedBoardPage({ params }: Props) {
 
   const board = r.data;
 
-  // D-311: if we sent a cookie and the response is still locked, delete the stale cookie
-  if (board.locked && accessCookie) {
-    await deleteCookieAction(token);
-  }
+  // D-542: a stale cookie (password changed) is not deleted here: cookies can't be written while rendering (Next 15
+  // threw, 500 until it expired). The API ignores it, the unlock form shows and a new unlock overwrites it.
+
+  // D-295: the owner never sees their own link as a visitor; straight to the editor.
+  if (!board.locked && board.ownBoardId) redirect(`/app/mapas/${board.ownBoardId}`);
 
   if (board.locked) {
     return (

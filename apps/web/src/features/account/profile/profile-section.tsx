@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { emailSchema, goals, isValidName, normalizeName, stageSchema, ACCOUNT_LIMITS, type Goal, type Stage } from '@remoa/contracts';
+import { emailSchema, goalsSchema, isValidName, normalizeName, stageSchema, ACCOUNT_LIMITS, MAX_GOALS, type Goal, type Stage } from '@remoa/contracts';
 import { t } from '@remoa/strings';
-import { Alert, Avatar, Button, ChoiceChip, Icon, InlineField, Input, Pill, useToast } from '@remoa/ui';
+import { Alert, Avatar, Button, ChoiceChip, ChoiceChipMulti, Icon, InlineField, Input, Pill, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { useAccount } from '../shell/account-context';
@@ -12,6 +12,7 @@ import { initialsOf } from '../shell/format';
 import { Row, SectionCard as Card } from '../shared/section-card';
 import { useOnline } from '../shell/use-online';
 import { usePhotoDialog } from './photo-dialog';
+import { PersonalCard } from './personal-card';
 
 const patchProfile = (body: object) => api('/v1/account/profile', { method: 'PATCH', body: JSON.stringify(body) });
 
@@ -146,7 +147,7 @@ export function ProfileSection() {
     if (!campo) return;
     if (campo === 'nome') setNameOpen(true);
     if (campo === 'objetivo') studyRef.current?.querySelector<HTMLElement>('[role="radio"]')?.focus();
-    window.history.replaceState(null, '', '/conta/perfil');
+    window.history.replaceState(null, '', '/app/conta/perfil');
   }, [campo]);
 
   useEffect(() => {
@@ -157,18 +158,26 @@ export function ProfileSection() {
 
   const fail = () => toast({ title: t('account.genericError'), tone: 'danger' });
 
-  async function setStudy(key: 'goal' | 'stage', value: string) {
-    const prev = profile[key];
-    if (prev === value) return;
-    setAccount((p) => ({ ...p, profile: { ...p.profile, [key]: value } }));
+  async function setStudy(patch: { stage: Stage } | { goals: Goal[] }) {
+    const prev = { stage: profile.stage, goals: profile.goals, goal: profile.goal };
+    const next = 'goals' in patch ? { goals: patch.goals, goal: patch.goals[0] ?? null } : patch;
+    setAccount((p) => ({ ...p, profile: { ...p.profile, ...next } }));
     try {
-      const r = await patchProfile({ [key]: value });
+      const r = await patchProfile(patch);
       if (!r.ok) throw new Error(r.error.code);
       toast({ title: t('account.profile.studySaved') });
     } catch {
-      setAccount((p) => ({ ...p, profile: { ...p.profile, [key]: prev } }));
+      setAccount((p) => ({ ...p, profile: { ...p.profile, ...prev } }));
       fail();
     }
+  }
+  /** D-594: several objectives (up to MAX_GOALS); one chip group per category, the limit counts across groups. */
+  function toggleGoal(group: ReadonlyArray<{ value: Goal }>, vs: string[]) {
+    const cur = profile.goals;
+    const added = vs.find((x) => !cur.includes(x as Goal));
+    const removed = cur.find((x) => group.some((o) => o.value === x) && !vs.includes(x));
+    const next = goalsSchema.safeParse(added ? [...cur, added] : cur.filter((x) => x !== removed));
+    if (next.success) void setStudy({ goals: next.data });
   }
 
   async function resend() {
@@ -263,16 +272,18 @@ export function ProfileSection() {
         <div ref={studyRef} className="contents">
           <Row label={t('account.profile.goal')}>
             <div className="flex flex-col gap-3">
+              <p className="m-0 text-[13px] text-muted">{t('personal.goalsHelp', { max: MAX_GOALS })}</p>
               {goalGroups().map((g) => (
                 <div key={g.label} className="flex flex-col gap-1.5">
                   <span className="text-xs font-bold text-muted">{g.label}</span>
-                  <ChoiceChip label={`${t('account.profile.goal')}: ${g.label}`} options={g.options} value={g.options.some((o) => o.value === profile.goal) ? profile.goal : null} onValueChange={(v) => goals.includes(v as Goal) && void setStudy('goal', v)} />
+                  <ChoiceChipMulti label={`${t('account.profile.goal')}: ${g.label}`} options={g.options} values={profile.goals.filter((x) => g.options.some((o) => o.value === x))} full={profile.goals.length >= MAX_GOALS} onValuesChange={(vs) => toggleGoal(g.options, vs)} />
                 </div>
               ))}
+              {profile.goals.length >= MAX_GOALS ? <p role="status" className="m-0 text-[13px] font-semibold text-muted">{t('personal.goalsMax', { max: MAX_GOALS })}</p> : null}
             </div>
           </Row>
           <Row label={t('account.profile.stage')}>
-            <ChoiceChip label={t('account.profile.stageLabel')} options={stageOptions()} value={profile.stage} onValueChange={(v) => stageSchema.safeParse(v).success && void setStudy('stage', v)} />
+            <ChoiceChip label={t('account.profile.stageLabel')} options={stageOptions()} value={profile.stage} onValueChange={(v) => { const st = stageSchema.safeParse(v); if (st.success && st.data !== profile.stage) void setStudy({ stage: st.data }); }} />
           </Row>
         </div>
         <Row label={t('account.profile.timezone')}>
@@ -282,6 +293,7 @@ export function ProfileSection() {
           </span>
         </Row>
       </Card>
+      <PersonalCard />
     </>
   );
 }

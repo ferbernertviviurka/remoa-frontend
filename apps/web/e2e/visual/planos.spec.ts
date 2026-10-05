@@ -43,7 +43,7 @@ async function shot(page: Page, name: string, idle = true) {
 test('visual planos: Free, anual + fundador, Pro, redirecionando e sucesso', async ({ page, request }) => {
   test.setTimeout(240_000);
   await freeLikeMock(page, request);
-  await page.goto('/planos');
+  await page.goto('/app/planos');
   await expect(page.getByRole('table', { name: 'Comparação entre Free e Pro' })).toBeVisible();
   await shot(page, 'free');
 
@@ -56,7 +56,7 @@ test('visual planos: Free, anual + fundador, Pro, redirecionando e sucesso', asy
   await shot(page, 'anual-fundador');
 
   // redirecionando (Mensal + Pix): a criação da sessão fica pendurada para o overlay ficar parado
-  await page.goto('/planos');
+  await page.goto('/app/planos');
   await expect(page.getByRole('table', { name: 'Comparação entre Free e Pro' })).toBeVisible();
   await page.route('**/v1/billing/checkout', () => new Promise(() => undefined));
   await page.getByRole('button', { name: 'Assinar o Pro' }).click();
@@ -70,7 +70,7 @@ test('visual planos: Free, anual + fundador, Pro, redirecionando e sucesso', asy
   await expect(page.getByRole('dialog', { name: 'Você agora é Pro.' })).toBeVisible();
   await shot(page, 'sucesso');
 
-  await page.goto('/planos');
+  await page.goto('/app/planos');
   await expect(page.getByRole('heading', { level: 1, name: 'Você está no Pro.' })).toBeVisible();
   await shot(page, 'pro');
 });

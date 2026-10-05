@@ -8,7 +8,8 @@ import { t } from '@remoa/strings';
 import { Alert, Button, Icon, SettingsNav, SettingsNavAction, useToast, type SettingsNavLinkProps } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
-import { signOut } from '@/server/auth/actions';
+import { openSupport } from '@/features/support/open';
+import { signOutToLogin } from '@/features/auth/sign-out';
 import { PhotoDialogProvider } from '../profile/photo-dialog';
 import { AccountHero } from './account-hero';
 import { useAccount } from './account-context';
@@ -66,6 +67,7 @@ function useAccountTransitions() {
 /** Banner, hero and subnav live in the layout, so switching sections never remounts them (FR-1). */
 export function AccountShell({ children }: { children: ReactNode }) {
   const { account } = useAccount();
+  const { toast } = useToast();
   const online = useOnline();
   const segment = useSelectedLayoutSegment();
   useAccountTransitions();
@@ -73,12 +75,12 @@ export function AccountShell({ children }: { children: ReactNode }) {
 
   const items = accountSections.map((id) => ({
     id,
-    href: `/conta/${id}`,
+    href: `/app/conta/${id}`,
     label: t(`account.nav.${id}`),
     icon: <NavIcon section={id} />,
     current: id === current,
-    chipTone: account.entitlements.plan === 'pro' ? ('primary' as const) : ('neutral' as const),
-    chip: id === 'plano' ? t(account.entitlements.plan === 'pro' ? 'billing.plan.pro' : 'billing.plan.free') : undefined,
+    chipTone: account.entitlements.plan !== 'free' ? ('primary' as const) : ('neutral' as const),
+    chip: id === 'plano' ? t(`billing.plan.${account.entitlements.plan}`) : undefined,
   }));
 
   return (
@@ -93,16 +95,19 @@ export function AccountShell({ children }: { children: ReactNode }) {
             items={items}
             linkComponent={NavLink}
             footer={
+              <>
+              <SettingsNavAction icon={<Icon name="help" size={20} />} onClick={() => openSupport('account_menu')}>
+                {t('support.navigation.talkToSupport')}
+              </SettingsNavAction>
               <SettingsNavAction
                 icon={<Icon name="logout" size={20} />}
                 onClick={async () => {
-                  const res = await signOut();
-                  // Full navigation: push + refresh re-rendered the protected /conta first and bounced to /entrar?next=/conta (G08).
-                  if (res.ok) window.location.assign('/');
+                  if (!(await signOutToLogin())) toast({ title: t('account.genericError'), tone: 'danger' });
                 }}
               >
                 {t('account.nav.signOut')}
               </SettingsNavAction>
+              </>
             }
           />
           {children}

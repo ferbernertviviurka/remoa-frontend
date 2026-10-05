@@ -2,6 +2,7 @@
 // tooltip do caso por teclado, painel com data-state open/closed, Falar "Em breve". SHOTS=<dir> salva prints.
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { createMockSepse, signUpAndLogin } from './visual/fixture';
+import { padForChallenge } from './challenge-pad';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 const shot = (page: Page, name: string) => (process.env.SHOTS ? page.screenshot({ path: `${process.env.SHOTS}/${name}.png` }) : undefined);
@@ -48,7 +49,7 @@ test('1. redimensionar pela alça do canto grava o tamanho; recarregar mantém; 
   test.setTimeout(120_000);
   const { headers } = await signUpAndLogin(page, request);
   const id = await board(request, headers, 'Tamanhos', [{ title: 'Sepse', type: 'concept', x: 80, y: 120, put: { front: 'Qual a definição?', back: 'Disfunção orgânica' } }]);
-  await page.goto(`/mapas/${id}`);
+  await page.goto(`/app/mapas/${id}`);
   const card = node(page, 'Sepse');
   await expect(card).toBeVisible();
   const before = (await card.boundingBox())!;
@@ -86,7 +87,7 @@ test('2. Conteúdo: criado pela barra, sem virar nem rubrica; fora do desafio', 
   test.setTimeout(120_000);
   const { headers } = await signUpAndLogin(page, request);
   const id = await board(request, headers, 'Só conteúdo', []);
-  await page.goto(`/mapas/${id}`);
+  await page.goto(`/app/mapas/${id}`);
   await expect(page.locator('.react-flow__pane')).toBeVisible();
   await page.getByRole('toolbar', { name: 'Ferramentas do mapa' }).getByRole('button', { name: 'Adicionar Conteúdo' }).click();
   await expect(form(page)).toBeVisible();
@@ -104,9 +105,9 @@ test('2. Conteúdo: criado pela barra, sem virar nem rubrica; fora do desafio', 
   await saved(page);
   await shot(page, 'g06-conteudo');
 
-  // only a Conteúdo card on the map: the challenge has nothing to ask
-  await page.goto(`/mapas/${id}?modo=desafio`);
-  await expect(panel(page).getByRole('heading', { level: 2, name: 'Nada para revisar agora' })).toBeVisible();
+  // only a Conteúdo card on the map: nothing to challenge (G14 D-579: Conteúdo does not count toward the 10)
+  await page.goto(`/app/mapas/${id}?modo=desafio`);
+  await expect(panel(page).getByRole('heading', { level: 2, name: 'Ainda faltam cards para o desafio' })).toBeVisible();
   await expect(panel(page).getByRole('button', { name: 'Corrigir resposta' })).toHaveCount(0);
   await expect(panel(page).getByRole('button', { name: 'Revelar resposta' })).toHaveCount(0);
 });
@@ -116,7 +117,7 @@ test('3. imagem num passo do fluxograma e na resposta: persistem após recarrega
   const { headers } = await signUpAndLogin(page, request);
   const steps = [{ id: 's1', text: 'Colher lactato' }, { id: 's2', text: 'Hemoculturas' }, { id: 's3', text: 'Antibiótico' }];
   const id = await board(request, headers, 'Imagens', [{ title: 'Pacote', type: 'flow', x: 80, y: 120, put: { payload: { steps } } }]);
-  await page.goto(`/mapas/${id}`);
+  await page.goto(`/app/mapas/${id}`);
   const card = node(page, 'Pacote');
   await card.getByRole('button', { name: 'Selecionar Pacote' }).dblclick();
   await expect(form(page)).toBeVisible();
@@ -146,14 +147,15 @@ test('4. caso clínico: a etapa explica o que é por tooltip, pelo teclado; pain
   const { headers } = await signUpAndLogin(page, request);
   const caseSteps = [{ stage: 'presentation', text: 'Febre e confusão' }, { stage: 'workup', text: 'Lactato 4' }];
   const id = await board(request, headers, 'Caso', [{ title: 'Caso sepse', type: 'case', x: 80, y: 120, put: { payload: { caseSteps } } }]);
-  await page.goto(`/mapas/${id}`);
+  await page.goto(`/app/mapas/${id}`);
   const card = node(page, 'Caso sepse');
   await expect(card).toBeVisible();
   await card.getByRole('button', { name: 'Selecionar Caso sepse' }).focus();
   await page.keyboard.press('Tab');
   await page.keyboard.press('Tab'); // the second stage of the trail: Exames
   await expect(card.getByRole('button', { name: /Exames/ })).toBeFocused();
-  await expect(page.getByRole('tooltip')).toContainText('pergunta os exames');
+  await expect(card.getByRole('button', { name: /Exames/ })).toHaveAccessibleDescription(/pergunta os exames/);
+  await expect(card.getByRole('tooltip').filter({ hasText: 'pergunta os exames' })).toHaveCSS('opacity', '1'); // dica CSS (D-558) ligada pelo foco
   await expect(card.getByRole('button', { name: /Exames/ })).toHaveAttribute('data-filled', 'true');
   await expect(card.getByRole('button', { name: /Diagnóstico/ })).toHaveAttribute('data-filled', 'false');
   await shot(page, 'g06-caso-tooltip');
@@ -163,24 +165,24 @@ test('4. caso clínico: a etapa explica o que é por tooltip, pelo teclado; pain
   await expect(aside).toHaveAttribute('data-state', 'open');
   await expect(panel(page).getByRole('heading', { level: 2, name: 'Caso sepse' })).toBeFocused(); // focus lands once it has opened
   await panel(page).getByRole('button', { name: 'O que é Diagnóstico?' }).focus();
-  await expect(page.getByRole('tooltip')).toContainText('pergunta o diagnóstico');
+  await expect(page.getByRole('tooltip').filter({ hasText: 'pergunta o diagnóstico' }).last()).toBeVisible();
   await page.keyboard.press('Escape'); // closes the tooltip
   await page.locator('.react-flow__pane').click({ position: { x: 700, y: 600 } });
   await expect(aside).toHaveAttribute('data-state', 'closed');
   await expect(aside).toHaveCount(0);
 });
 
-test('5. desafio: no modo Falar o botão de gravar fica desabilitado com "Em breve"', async ({ page, request }) => {
+// G12 (main): Falar dita pela Web Speech quando o navegador tem; sem suporte, o aviso "ainda não está disponível" segue.
+test('5. desafio: no modo Falar aparece o botão de gravar com a nota certa para o navegador', async ({ page, request }) => {
   test.setTimeout(120_000);
   const { userId, headers } = await signUpAndLogin(page, request);
   const sepse = await createMockSepse(request, headers, userId);
-  await page.goto(`/mapas/${sepse}?modo=desafio`);
-  await expect(page.getByRole('button', { name: 'Corrigir resposta' })).toBeVisible();
-  await page.getByRole('group', { name: 'Como responder' }).getByRole('button', { name: 'Falar' }).click();
-  const rec = page.getByRole('button', { name: 'Falar a resposta' });
-  await expect(rec).toHaveAttribute('aria-disabled', 'true');
-  await expect(panel(page).getByText('Em breve', { exact: true })).toBeVisible();
-  await rec.click({ force: true });
-  await expect(page.getByLabel('Sua resposta')).toHaveCount(0); // nothing transcribed, still in Falar
-  await shot(page, 'g06-falar-em-breve');
+  await padForChallenge(request, headers, sepse, 4); // G14 D-579
+  await page.goto(`/app/mapas/${sepse}?modo=desafio`);
+  await expect(page.getByRole('button', { name: 'Revelar resposta' })).toBeVisible();
+  // G14 D-605: Voz is "Em breve" (disabled) until answerMode.voice is available
+  const voz = page.getByRole('group', { name: 'Como responder' }).getByRole('button', { name: /Voz/ });
+  await expect(voz).toBeDisabled();
+  await expect(voz).toContainText('Em breve');
+  await shot(page, 'g06-falar');
 });

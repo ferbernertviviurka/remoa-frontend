@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 
 export type MarqueeProps = { items: ReactNode[]; label: string; pauseLabel: string; playLabel: string; speedSeconds?: number };
 

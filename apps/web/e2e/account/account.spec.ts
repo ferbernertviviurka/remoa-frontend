@@ -12,7 +12,7 @@ test.describe('Minha conta', () => {
   test('foto: subir, recortar e ver no hero e na linha Foto', async ({ page, request }) => {
     test.setTimeout(120_000);
     const { email } = await accountUser(page, request);
-    await page.goto('/conta/perfil');
+    await page.goto('/app/conta/perfil');
     await page.getByRole('button', { name: 'Adicionar foto' }).click();
     const dialog = page.getByRole('dialog', { name: 'Foto de perfil' });
     await expect(dialog.getByRole('button', { name: 'Salvar foto' })).toBeDisabled();
@@ -32,7 +32,7 @@ test.describe('Minha conta', () => {
 
   test('foto: arquivo inválido mostra erro e não fecha o diálogo', async ({ page, request }) => {
     await accountUser(page, request);
-    await page.goto('/conta/perfil');
+    await page.goto('/app/conta/perfil');
     await page.getByRole('button', { name: 'Adicionar foto' }).click();
     const dialog = page.getByRole('dialog', { name: 'Foto de perfil' });
     await dialog.locator('input[type=file]').setInputFiles({ name: 'x.gif', mimeType: 'image/gif', buffer: Buffer.from('GIF89a') });
@@ -42,7 +42,7 @@ test.describe('Minha conta', () => {
 
   test('nome: editar inline atualiza o hero e devolve o foco ao botão', async ({ page, request }) => {
     await accountUser(page, request, 'Marina Alves');
-    await page.goto('/conta/perfil');
+    await page.goto('/app/conta/perfil');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Marina Alves');
     await page.getByRole('button', { name: 'Editar nome' }).click();
     const save = page.getByRole('button', { name: 'Salvar nome' });
@@ -60,7 +60,7 @@ test.describe('Minha conta', () => {
     const asOther = { authorization: `Bearer ${other.token}` };
     expect((await request.get(`${API}/v1/account/me`, { headers: asOther })).status()).toBe(200);
 
-    await page.goto('/conta/seguranca');
+    await page.goto('/app/conta/seguranca');
     // Dispositivos: a sessão do iPhone aparece e some ao encerrar (a atual não tem botão).
     const devices = page.getByRole('list', { name: 'Lista de dispositivos' });
     // 2 sessões: a deste navegador (atual, sem botão) e a do iPhone.
@@ -92,7 +92,7 @@ test.describe('Minha conta', () => {
 
   test('lembrete: ligar sobe a completude do hero', async ({ page, request }) => {
     await accountUser(page, request);
-    await page.goto('/conta/preferencias');
+    await page.goto('/app/conta/preferencias');
     const hero = page.getByRole('region', { name: 'Resumo do perfil' });
     await expect(hero.getByText('Perfil 40% completo')).toBeVisible();
     await page.getByRole('switch', { name: 'Lembrete diário por e-mail' }).click();
@@ -103,24 +103,24 @@ test.describe('Minha conta', () => {
 
   test('tema Escuro aparece como Em breve e desabilitado; sem Cards novos por dia', async ({ page, request }) => {
     await accountUser(page, request);
-    await page.goto('/conta/preferencias');
+    await page.goto('/app/conta/preferencias');
     await expect(page.getByRole('radio', { name: /Escuro/ })).toBeDisabled();
     await expect(page.getByText('Cards novos por dia')).toHaveCount(0);
   });
 
   test('exportar baixa um JSON', async ({ page, request }) => {
     await accountUser(page, request);
-    await page.goto('/conta/dados');
+    await page.goto('/app/conta/dados');
     await page.getByRole('button', { name: 'Exportar meus dados' }).click();
     const download = page.waitForEvent('download');
-    await page.getByRole('button', { name: 'Baixar' }).click();
+    await page.getByRole('button', { name: 'Baixar', exact: true }).click();
     expect((await download).suggestedFilename()).toMatch(/\.json$/);
   });
 
   test('excluir: digitar EXCLUIR, ver o banner e cancelar', async ({ page, request }) => {
     test.setTimeout(120_000);
     await accountUser(page, request);
-    await page.goto('/conta/dados');
+    await page.goto('/app/conta/dados');
     await page.getByRole('button', { name: 'Excluir conta' }).click();
     const dialog = page.getByRole('dialog');
     const confirm = dialog.getByRole('button', { name: 'Excluir conta' });
@@ -138,17 +138,17 @@ test.describe('Minha conta', () => {
   test('plano: Free mostra a oferta Pro; Pro mostra a gestão (STRIPE=mock)', async ({ page, request }) => {
     test.setTimeout(120_000);
     await accountUser(page, request);
-    await page.goto('/conta/plano');
+    await page.goto('/app/conta/plano');
     await expect(page.getByRole('button', { name: 'Assinar o Pro' })).toBeVisible();
     await expect(page.getByText('0 de 20', { exact: true })).toBeVisible();
     await page.getByRole('radio', { name: 'Anual' }).click();
-    await expect(page.getByText(/R\$ 349/)).toBeVisible();
-    await page.goto('/planos');
+    await expect(page.getByText(/R\$\s349/).first()).toBeVisible();
+    await page.goto('/app/planos');
     await page.getByRole('radio', { name: /^Cartão/ }).click();
     await page.getByRole('button', { name: 'Assinar o Pro' }).click();
     await expect(page).toHaveURL(/\/planos\/sucesso/);
     await expect(page.getByRole('dialog', { name: 'Você agora é Pro.' })).toBeVisible();
-    await page.goto('/conta/plano');
+    await page.goto('/app/conta/plano');
     await expect(page.getByRole('button', { name: 'Gerenciar assinatura' })).toBeVisible();
     await expect(page.getByText('Ilimitado').first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Assinar o Pro' })).toHaveCount(0);
@@ -156,10 +156,10 @@ test.describe('Minha conta', () => {
 
   test('sair da conta leva ao login e limpa a sessão', async ({ page, request }) => {
     await accountUser(page, request);
-    await page.goto('/conta/perfil');
+    await page.goto('/app/conta/perfil');
     await page.getByRole('button', { name: 'Sair da conta' }).click();
     await expect(page).not.toHaveURL(/\/conta/);
-    await page.goto('/conta/perfil');
+    await page.goto('/app/conta/perfil');
     await expect(page).toHaveURL(/\/entrar/);
   });
 

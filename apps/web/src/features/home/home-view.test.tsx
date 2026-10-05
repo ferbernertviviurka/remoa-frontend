@@ -27,6 +27,12 @@ const board = (id: string, title: string, dueCount: number): BoardSummary =>
   }) as unknown as BoardSummary;
 
 describe('HomeView', () => {
+  it('"Indique um amigo" links to /app/indicar?de=home', () => {
+    render(<HomeView now={now} summary={summary(0, 0)} boards={[board('1', 'Sepse', 0)]} coverage={[]} />);
+    expect(screen.getByRole('link', { name: /Indique um amigo/ })).toHaveAttribute('href', '/app/indicar?de=home');
+  });
+
+
   it('with due cards: greeting, hero, ring, only-board shortcut and week', () => {
     render(<HomeView now={now} summary={summary(12)} boards={[board('1', 'Sepse', 7), board('2', 'Asma', 5)]} coverage={[]} first={{ title: 'Choque séptico', pct: 58 }} />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Boa tarde. 12 conceitos esperam por você.');
@@ -36,10 +42,10 @@ describe('HomeView', () => {
     expect(screen.getByText('4 dias seguidos')).toBeInTheDocument();
     expect(screen.getByText('Amanhã')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Só Sepse' }));
-    expect(push).toHaveBeenCalledWith('/mapas/1?modo=desafio');
+    expect(push).toHaveBeenCalledWith('/app/mapas/1?modo=desafio');
     fireEvent.click(screen.getByRole('button', { name: /Começar revisão/ }));
-    expect(push).toHaveBeenCalledWith('/revisar');
-    expect(screen.getByRole('link', { name: 'Abrir o mapa Sepse' })).toHaveAttribute('href', '/mapas/1');
+    expect(push).toHaveBeenCalledWith('/app/revisar');
+    expect(screen.getByRole('link', { name: 'Abrir o mapa Sepse' })).toHaveAttribute('href', '/app/mapas/1');
   });
 
   it('nothing due: honest empty hero, no invented numbers', () => {
@@ -54,8 +60,8 @@ describe('HomeView', () => {
   it('no maps: invites the first map', () => {
     render(<HomeView now={now} summary={summary(0, 0)} boards={[]} coverage={[]} />);
     expect(screen.getByRole('heading', { name: 'Crie o seu primeiro mapa.' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Criar um novo mapa' })).toHaveAttribute('href', '/mapas/novo');
+    expect(screen.getByRole('link', { name: 'Criar um novo mapa' })).toHaveAttribute('href', '/app/mapas/novo');
     fireEvent.click(screen.getAllByRole('button', { name: 'Novo mapa' })[1]!);
-    expect(push).toHaveBeenCalledWith('/mapas/novo');
+    expect(push).toHaveBeenCalledWith('/app/mapas/novo');
   });
 });

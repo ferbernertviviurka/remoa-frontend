@@ -4,6 +4,7 @@ import type { BoardGraph, Card } from '@remoa/contracts';
 import { retrievabilityFixture, sepseBoard, sepseCards, sepseEdges } from '@remoa/contracts/mocks';
 import { ToastProvider } from '@remoa/ui';
 import { ChallengeProvider } from '@/features/challenge/provider';
+import { CommandPaletteProvider } from '@/features/shell/command-palette';
 import { clearCardDetails } from './card-detail';
 
 const api = vi.fn();
@@ -12,10 +13,10 @@ const push = vi.fn();
 let search = new URLSearchParams();
 let startItems: unknown[] = [];
 vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
-vi.mock('@/lib/analytics', () => ({ track: () => undefined }));
+vi.mock('@/lib/analytics', () => ({ track: () => undefined, rememberBoard: () => undefined }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, replace, refresh: () => undefined }),
-  usePathname: () => `/mapas/${sepseBoard.id}`,
+  usePathname: () => `/app/mapas/${sepseBoard.id}`,
   useSearchParams: () => search,
 }));
 
@@ -42,6 +43,11 @@ const graph: BoardGraph = {
   cards: sepseCards.map((c): Card => ({ ...c, preview: undefined })),
   edges: sepseEdges,
 };
+const baseCards = graph.cards;
+/** D-579: a board challenge needs 10 challengeable cards; the Sepse fixture has fewer. Extra concepts far from the fixture. */
+const padToMin = () => {
+  graph.cards = [...baseCards, ...Array.from({ length: 10 }, (_, i): Card => ({ ...baseCards[0]!, id: `pad-${i}`, title: `Extra ${i}`, position: { x: 4000 + i * 300, y: 4000 } }))];
+};
 
 beforeEach(() => {
   search = new URLSearchParams();
@@ -57,6 +63,7 @@ beforeEach(() => {
   });
 });
 afterEach(() => {
+  graph.cards = baseCards;
   cleanup();
   vi.clearAllMocks();
 });
@@ -65,7 +72,9 @@ const mount = () =>
   render(
     <ToastProvider closeLabel="x" viewportLabel="y">
       <ChallengeProvider>
-        <MapCanvas graph={graph} />
+        <CommandPaletteProvider>
+          <MapCanvas graph={graph} />
+        </CommandPaletteProvider>
       </ChallengeProvider>
     </ToastProvider>,
   );
@@ -175,7 +184,7 @@ describe('editor v2 (T5)', () => {
     }
   });
 
-  it('pinça: ctrl+roda fora do pane (sobre as camadas) e gesto do Safari dão zoom no mapa, não na página; 60–140%', async () => {
+  it('pinça: ctrl+roda fora do pane (sobre as camadas) e gesto do Safari dão zoom no mapa, não na página; 10–140%', async () => {
     mount();
     const zoom = screen.getByRole('group', { name: 'Controles de zoom' });
     await waitFor(() => expect(zoom).toHaveTextContent(/\d+%/));
@@ -196,7 +205,7 @@ describe('editor v2 (T5)', () => {
     await waitFor(() => expect(zoom).toHaveTextContent('140%'));
     gesture('gesturestart', 1);
     gesture('gesturechange', 0.01);
-    await waitFor(() => expect(zoom).toHaveTextContent('60%'));
+    await waitFor(() => expect(zoom).toHaveTextContent('10%'));
   });
 
   const sentOps = () => api.mock.calls.filter((c) => c[0] === '/v1/boards/ops').flatMap((c) => JSON.parse(c[1].body).ops as { op: string }[]);
@@ -272,14 +281,30 @@ describe('editor v2 (T5)', () => {
     await waitFor(() => expect(screen.queryByRole('combobox')).toBeNull());
   });
 
-  it('Desafiar este mapa entra no modo desafio pela URL', async () => {
+  it('Desafiar este mapa abre as opções (G14 ponto 21) e entra no modo desafio pela URL', async () => {
+    padToMin();
     mount();
     fireEvent.click(screen.getAllByRole('button', { name: 'Desafiar este mapa' })[0]!); // header first
-    expect(replace).toHaveBeenCalledWith(`/mapas/${sepseBoard.id}?modo=desafio`, { scroll: false });
+    const dlg = await screen.findByRole('dialog', { name: 'Desafiar este mapa' });
+    expect(replace).not.toHaveBeenCalled();
+    expect(within(dlg).getByRole('button', { name: /IA responde/ })).toBeDisabled();
+    expect(within(dlg).getByRole('button', { name: /IA responde/ })).toHaveTextContent('Em breve');
+    expect(within(dlg).getByRole('button', { name: /Eu respondo/ })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(within(dlg).getByRole('button', { name: /Seguindo o fluxo das setas/ }));
+    fireEvent.click(within(dlg).getByRole('button', { name: 'Começar desafio' }));
+    expect(replace).toHaveBeenCalledWith(`/app/mapas/${sepseBoard.id}?modo=desafio`, { scroll: false });
+  });
+
+  it('abaixo de 10 cards o desafio fica bloqueado, sem sessão (D-579)', async () => {
+    search = new URLSearchParams('modo=desafio');
+    mount();
+    expect(await screen.findByText('Ainda faltam cards para o desafio')).toBeInTheDocument();
+    expect(api).not.toHaveBeenCalledWith('/v1/challenge/start', expect.anything());
   });
 
   it('modo desafio (?modo=desafio): sem pulse, sem legenda, inicia a sessão do mapa; "Sair do desafio" volta', async () => {
     search = new URLSearchParams('modo=desafio');
+    padToMin();
     mount();
     await waitFor(() => expect(nodeOf('Sepse')).toHaveTextContent('Revisitar · 62%'));
     expect(document.querySelector('.cv-pulse')).toBeNull();
@@ -287,7 +312,7 @@ describe('editor v2 (T5)', () => {
     await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/challenge/start', expect.objectContaining({ method: 'POST' })));
     expect(JSON.parse(api.mock.calls.find((c) => c[0] === '/v1/challenge/start')![1].body)).toEqual({ kind: 'board', boardId: sepseBoard.id });
     fireEvent.click(screen.getAllByRole('button', { name: 'Sair do desafio' })[0]!); // header first
-    expect(replace).toHaveBeenCalledWith(`/mapas/${sepseBoard.id}`, { scroll: false });
+    expect(replace).toHaveBeenCalledWith(`/app/mapas/${sepseBoard.id}`, { scroll: false });
   });
 
   const item = (over: Record<string, unknown>) => ({ subId: null, boardId: sepseBoard.id, grading: 'none', options: ['a', 'b', 'c', 'd'], context: { neighbors: [] }, ...over });
@@ -295,6 +320,7 @@ describe('editor v2 (T5)', () => {
 
   it('desafio (D-097): canvas desfocado num filtro só; o card em foco nítido por cima, só a frente; o rótulo perguntado não aparece no DOM antes do /answer', async () => {
     search = new URLSearchParams('modo=desafio');
+    padToMin();
     const [choque, sepse] = [sepseCards.find((c) => c.title === 'Choque séptico')!, sepseCards.find((c) => c.title === 'Sepse')!];
     startItems = [item({ id: choque.id, cardId: choque.id, cardTitle: choque.title, mode: 'edge', prompt: 'x', context: { neighbors: [], edge: { fromTitle: sepse.title, toTitle: choque.title } } })];
     mount();
@@ -316,6 +342,7 @@ describe('editor v2 (T5)', () => {
 
   it('desafio next_step: só os passos revelados e o passo oculto mascarado', async () => {
     search = new URLSearchParams('modo=desafio');
+    padToMin();
     const pacote = sepseCards.find((c) => c.type === 'flow')!;
     const steps = (pacote.payload as { steps: { text: string }[] }).steps.map((x) => x.text);
     startItems = [item({ id: `${pacote.id}:step-3`, cardId: pacote.id, cardTitle: pacote.title, subId: 'step-3', mode: 'next_step', prompt: `${pacote.title}: qual é o passo 3?`, context: { neighbors: [], revealed: steps.slice(0, 2) } })];
@@ -330,6 +357,7 @@ describe('editor v2 (T5)', () => {
 
   it('desafio hidden_card: o verso (resposta) e o título-resposta não aparecem no nó', async () => {
     search = new URLSearchParams('modo=desafio');
+    padToMin();
     const sepse = sepseCards.find((c) => c.title === 'Sepse')!;
     startItems = [item({ id: sepse.id, cardId: sepse.id, cardTitle: '', mode: 'hidden_card', prompt: 'Qual o conceito?' })];
     mount();
@@ -361,7 +389,7 @@ describe('editor v2 (T5)', () => {
     expect(api).not.toHaveBeenCalledWith(`/v1/boards/${sepseBoard.id}`, expect.anything());
   });
 
-  it('zoom: botões presos a 60–140%', async () => {
+  it('zoom: botões presos a 10–140%', async () => {
     mount();
     const zoom = screen.getByRole('group', { name: 'Controles de zoom' });
     const step = async (name: string, times: number) => {
@@ -375,8 +403,8 @@ describe('editor v2 (T5)', () => {
     await step('Aumentar zoom', 8);
     expect(zoom).toHaveTextContent('140%');
     expect(within(zoom).getByRole('button', { name: 'Aumentar zoom' })).toBeDisabled();
-    await step('Diminuir zoom', 12);
-    expect(zoom).toHaveTextContent('60%');
+    await step('Diminuir zoom', 14);
+    expect(zoom).toHaveTextContent('10%');
     expect(within(zoom).getByRole('button', { name: 'Diminuir zoom' })).toBeDisabled();
   }, 15_000);
 });

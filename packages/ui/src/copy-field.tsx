@@ -2,7 +2,7 @@
 
 import { useId, useState } from 'react';
 import { Icon } from './icons';
-import { focusRing, pressable } from './button';
+import { focusRing, pressable } from './button-styles';
 
 /**
  * CopyField: campo só de leitura com botão "Copiar".

@@ -26,6 +26,7 @@
 
   /* painel escuro (hero, barra de ferramentas, prévia do Novo mapa) */
   --panel-dark: #241a5c;
+  --admin-nav: #1a1533; /* barra lateral do painel admin (F19): escura nos dois temas, propositalmente diferente do app */
   --on-dark: #ffffff;
   --on-dark-muted: #cfc8f5; /* eyebrow, legendas */
   --on-dark-muted-2: #ddd7fa; /* texto de apoio */
@@ -53,6 +54,12 @@
   --state-unknown-on-dark: #7a6fb0;
   --preview-edge: #c9c3e6; /* conexões na prévia do grafo */
 
+  /* escala de calor do calendário de atividade (nível 0 = --divider; 4 = --primary) */
+  --heat-1: #dad2f7;
+  --heat-2: #b7a9ee;
+  --heat-3: #8c7be0;
+  --heat-4: var(--primary);
+
   /* raios */
   --radius-btn: 15px; /* botão e input: 14–16 */
   --radius-field: 16px;
@@ -70,6 +77,23 @@
   --shadow-map: 0 10px 34px rgba(36, 26, 92, 0.05);
   --shadow-map-hover: var(--shadow-float);
   --shadow-lift: var(--shadow-float);
+
+  /* F23 mapa no celular (D-666), valores dos mocks MapaMobile*.dc.html */
+  --scrim: rgba(26, 21, 51, 0.55); /* aside e sheets */
+  --shadow-bar: 0 14px 34px rgba(26, 21, 51, 0.4); /* barra e pílulas flutuantes */
+  --shadow-pill: 0 10px 24px rgba(36, 26, 92, 0.25); /* pílula de zoom, desfazer */
+  --shadow-fab: 0 8px 20px rgba(109, 91, 208, 0.5); /* botão circular de criar */
+  --shadow-sheet: 0 -20px 60px rgba(26, 21, 51, 0.4); /* bottom sheet; o raio é --radius-hero (30 px) só em cima */
+  --shadow-aside: 24px 0 60px rgba(26, 21, 51, 0.3);
+  --map-pill-h: 52px; /* cabeçalho em pílula e pílulas de controle */
+  --map-fab: 60px; /* botão circular de criar card */
+  --map-aside-w: 344px; /* máx. 88% da largura */
+  --map-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --map-dur-sheet: 500ms; /* aside e sheets; scrim do aside 450 ms */
+  --map-text-title: 16px; /* título do card a 100% */
+  --map-text-summary: 12.5px;
+  --map-text-overview: 19px; /* título na visão geral (< 80%) */
+  --map-text-edge: 11.5px; /* rótulo de conexão */
 
   /* aliases v1 */
   --text: var(--ink);
@@ -104,6 +128,7 @@
   --color-grid: var(--grid);
   --color-grid-dot: var(--grid-dot);
   --color-panel-dark: var(--panel-dark);
+  --color-admin-nav: var(--admin-nav);
   --color-on-dark: var(--on-dark);
   --color-on-dark-muted: var(--on-dark-muted);
   --color-on-dark-muted-2: var(--on-dark-muted-2);
@@ -143,6 +168,12 @@
   --color-avatar-3: var(--avatar-3);
   --color-avatar-4: var(--avatar-4);
   --shadow-lift: var(--shadow-lift);
+  --shadow-bar: var(--shadow-bar);
+  --shadow-pill: var(--shadow-pill);
+  --shadow-fab: var(--shadow-fab);
+  --shadow-sheet: var(--shadow-sheet);
+  --shadow-aside: var(--shadow-aside);
+  --color-scrim: var(--scrim);
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
 }
@@ -192,6 +223,13 @@
   to { transform: rotate(360deg); }
 }
 
+@keyframes remoa-bsheet-in { from { transform: translateY(100%); } }
+@keyframes remoa-bsheet-out { to { transform: translateY(100%); } }
+@keyframes remoa-bscrim-out { to { opacity: 0; } }
+.remoa-bsheet[data-state='open'] { animation: remoa-bsheet-in 500ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.remoa-bsheet[data-state='closed'] { animation: remoa-bsheet-out 400ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.remoa-bscrim[data-state='open'] { animation: remoa-fade-in 400ms ease both; }
+.remoa-bscrim[data-state='closed'] { animation: remoa-bscrim-out 400ms ease both; }
 .remoa-overlay[data-state='open'] { animation: remoa-fade-in 180ms ease-out both; }
 .remoa-dialog[data-state='open'] { animation: remoa-dialog-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 .remoa-sheet[data-state='open'] { animation: remoa-fade-in 180ms ease-out both; }
@@ -212,6 +250,8 @@
   :root:not([data-motion="full"]) .remoa-overlay,
   :root:not([data-motion="full"]) .remoa-dialog,
   :root:not([data-motion="full"]) .remoa-sheet,
+  :root:not([data-motion="full"]) .remoa-bsheet,
+  :root:not([data-motion="full"]) .remoa-bscrim,
   :root:not([data-motion="full"]) .remoa-toast,
   :root:not([data-motion="full"]) .remoa-pop,
   :root:not([data-motion="full"]) .remoa-skeleton,

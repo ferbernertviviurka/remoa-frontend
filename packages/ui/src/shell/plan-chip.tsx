@@ -1,7 +1,7 @@
 'use client';
 
 import type { ComponentProps } from 'react';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 
 /**
  * PlanChip: botão de 42 px na navbar ("Plano Free"). Pílula, borda 1,5 px, texto 14/700. Free: borda --border-strong e fundo --surface;

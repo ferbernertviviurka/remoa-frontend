@@ -12,6 +12,10 @@ export const plan = {
       text: 'Mapas, cards e correções sem teto.',
       manage: 'Gerenciar assinatura',
     },
+    founder: {
+      title: 'Você é Founder',
+      text: 'Acesso vitalício, IA ilimitada e as novidades primeiro.',
+    },
     meters: {
       aiCorrections: 'Correções hoje',
       pdf: 'PDFs neste mês',
@@ -19,6 +23,7 @@ export const plan = {
       cards: 'Cards',
       value: '{used} de {limit}',
       unlimited: 'Ilimitados',
+      notIncluded: 'Não incluso',
     },
     benefits: {
       title: 'Com o Pro você ganha',
@@ -27,7 +32,7 @@ export const plan = {
       ai: 'Correções por IA sem limite.',
       aiDesc: 'Responda por texto ou voz e veja o que faltou, com fonte.',
       pdf: 'Mapas de PDF e mapas prontos.',
-      pdfDesc: 'Até 20 PDFs por mês e conteúdo revisado por médico.',
+      pdfDesc: 'Até {n} PDFs por mês e conteúdo revisado por médico.',
     },
     cta: 'Fazer upgrade',
     illustration: 'Três mapas empilhados, o terceiro com cadeado',

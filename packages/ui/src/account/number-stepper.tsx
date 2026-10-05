@@ -1,7 +1,7 @@
 'use client';
 
 import { Icon } from '../icons';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 
 /**
  * NumberStepper: valor entre `min` e `max`, de `step` em `step`. Botões "menos"/"mais" de 44 px com `aria-label`

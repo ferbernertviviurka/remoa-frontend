@@ -8,11 +8,11 @@ test.describe.configure({ mode: 'parallel' });
 test('Free com 2 mapas: aviso, anual, FUNDADOR, Pix, overlay, checkout mock e sucesso', async ({ page, request }) => {
   const { headers } = await planUser(page, request);
   await makeBoards(request, headers, 2);
-  await page.goto('/planos?de=library_lock');
+  await page.goto('/app/planos?de=library_lock');
 
   await expect(page.getByRole('heading', { level: 1, name: 'Seu estudo pede mais espaço?' })).toBeVisible();
   await expect(page.getByRole('status').filter({ hasText: 'Você usou 2 de 2 mapas. O Pro libera o resto.' })).toBeVisible();
-  expect(await events(page)).toContainEqual(expect.objectContaining({ event: 'plans_viewed', props: expect.objectContaining({ from: 'library_lock' }) }));
+  await expect.poll(() => events(page)).toContainEqual(expect.objectContaining({ event: 'plans_viewed', props: expect.objectContaining({ from: 'library_lock' }) }));
 
   const summary = page.getByRole('complementary', { name: 'Resumo do pedido' });
   await expect(summary).toContainText('R$ 39,00');
@@ -44,7 +44,7 @@ test('Free com 2 mapas: aviso, anual, FUNDADOR, Pix, overlay, checkout mock e su
 
 test('cartão no mensal vai ao sucesso e a navbar mostra Pro', async ({ page, request }) => {
   const { headers } = await planUser(page, request);
-  await page.goto('/planos');
+  await page.goto('/app/planos');
   await page.getByRole('complementary', { name: 'Resumo do pedido' }).getByRole('radio', { name: /^Cartão/ }).click();
   await page.getByRole('button', { name: 'Assinar o Pro' }).click();
   await page.waitForURL(/\/planos\/sucesso/);
@@ -64,7 +64,7 @@ test('Pix pendente: aguardando, Pro inativo; após pix-confirm vira sucesso', as
   await expect(page).toHaveURL(/\/planos\/sucesso/);
   await expect(page.getByRole('heading', { name: 'Estamos aguardando a confirmação do Pix' })).toBeVisible();
   expect((await (await request.get(`${API}/v1/billing/entitlements`, { headers })).json()).data.plan).toBe('free');
-  expect((await events(page)).map((e: { event: string }) => e.event)).toContain('checkout_pending_pix');
+  await expect.poll(async () => (await events(page)).map((e: { event: string }) => e.event)).toContain('checkout_pending_pix'); // track() é assíncrono em dev
 
   const c = await request.get(`${API}/v1/stripe/mock/pix-confirm?session=${session}`);
   expect(c.status()).toBe(200);
@@ -79,13 +79,13 @@ test('cancelar volta a /planos?cancelado=1 com aviso', async ({ page, request })
   await expect(page).toHaveURL(/\/planos/);
   await expect(page.getByText('Pagamento cancelado. Nada foi cobrado.', { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/planos$/); // replace() limpa a query
-  expect((await events(page)).map((e: { event: string }) => e.event)).toContain('checkout_canceled');
+  await expect.poll(async () => (await events(page)).map((e: { event: string }) => e.event)).toContain('checkout_canceled'); // track() é assíncrono em dev
 });
 
 test('assinante: gestão, troca para o anual e portal', async ({ page, request }) => {
   const { headers } = await planUser(page, request);
   await subscribe(request, headers, 'monthly', 'card');
-  await page.goto('/planos');
+  await page.goto('/app/planos');
   await expect(page.getByRole('heading', { level: 1, name: 'Você está no Pro.' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Assinar o Pro' })).toHaveCount(0);
   await expect(page.getByText('No anual você economiza')).toBeVisible();
@@ -99,7 +99,7 @@ test('assinante: gestão, troca para o anual e portal', async ({ page, request }
 
 test('cupom inválido mostra erro e não altera o total', async ({ page, request }) => {
   await planUser(page, request);
-  await page.goto('/planos');
+  await page.goto('/app/planos');
   const summary = page.getByRole('complementary', { name: 'Resumo do pedido' });
   await summary.getByRole('button', { name: 'Tenho um código de fundador' }).click();
   await summary.getByLabel('Código de fundador').fill('NAOEXISTE');
@@ -111,18 +111,18 @@ test('cupom inválido mostra erro e não altera o total', async ({ page, request
   expect(ev).not.toContain('NAOEXISTE');
 });
 
-test('/precos redireciona; ?periodo=anual abre no anual; ?de= inválido vira direct', async ({ page, request }) => {
-  await planUser(page, request);
+test('/precos segue público (landing #planos); ?periodo=anual abre no anual; ?de= inválido vira direct', async ({ page, request }) => {
   await page.goto('/precos');
-  await expect(page).toHaveURL(/\/planos$/);
-  await page.goto('/planos?periodo=anual&de=<script>');
+  await expect(page).toHaveURL(/\/#planos$/);
+  await planUser(page, request);
+  await page.goto('/app/planos?periodo=anual&de=<script>');
   await expect(page.getByRole('complementary', { name: 'Resumo do pedido' })).toContainText('R$ 349,00');
-  expect(await events(page)).toContainEqual(expect.objectContaining({ event: 'plans_viewed', props: expect.objectContaining({ from: 'direct' }) }));
+  await expect.poll(() => events(page)).toContainEqual(expect.objectContaining({ event: 'plans_viewed', props: expect.objectContaining({ from: 'direct' }) }));
 });
 
 test('FAQ: uma aberta por vez, por teclado, com faq_opened', async ({ page, request }) => {
   await planUser(page, request);
-  await page.goto('/planos');
+  await page.goto('/app/planos');
   await page.waitForLoadState('networkidle'); // hidratado: Enter antes disso não abre
   const q = page.locator('h3 button[aria-expanded]');
   await expect(q).toHaveCount(4);

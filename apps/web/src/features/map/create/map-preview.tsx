@@ -11,18 +11,20 @@ export function parsePath(v: string | undefined): Path {
   return v === 'pdf' || v === 'anki' || v === 'blank' ? v : v === 'pronto' || v === 'seed' ? 'seed' : 'blank';
 }
 
-/** Server-safe: `?caminho=` wins for the path; a valid `?item=` (a selectable matrix item) pre-selects it, defaults to "Em branco" and starts on step 2. A ready map (`seed`) opens on the list. Unknown ids are ignored. */
+/** Server-safe: `?caminho=` wins for the path; a valid `?item=` (a selectable matrix item) pre-selects it, defaults to "Em branco" and opens on "Sobre o mapa". A ready map (`seed`) opens on the list. Unknown ids are ignored. */
 export function parseInitial(caminho: string | undefined, item: string | undefined, items: ReadonlyArray<{ id: string }>): { path?: Path; itemId?: string; step: 0 | 1 | 2 } {
   const itemId = item && items.some((i) => i.id === item) ? item : undefined;
   const path = caminho ? parsePath(caminho) : itemId ? 'blank' : undefined;
-  const step = path === 'seed' ? 2 : itemId ? 1 : 0;
+  const step = path === 'seed' || caminho === 'blank' || itemId ? 1 : 0; // F17: the seed list and "Sobre o mapa" (Em branco) are both step 2 of 2; ?caminho=blank (onboarding, G14 ponto 17) skips the path choice
   return { path, itemId, step };
 }
 
-const n = (v: number) => v.toLocaleString('pt-BR');
-const LIMIT_VARS: Record<Path, Record<string, string>> = {
-  pdf: { free: n(PLAN_LIMITS.free.limits.ai_generations), pro: n(PLAN_LIMITS.pro.limits.ai_generations) },
-  anki: { free: n(PLAN_LIMITS.free.ankiImportMaxCards), pro: n(PLAN_LIMITS.pro.ankiImportMaxCards) },
+const n = (v: number | null) => (v === null ? t('newMap.limits.unlimited') : v.toLocaleString('pt-BR'));
+/** PDF: 0 = não incluso; senão "N por mês". Valores sempre de PLAN_LIMITS. */
+const perMonth = (v: number | null) => (v === 0 ? t('newMap.limits.notIncluded') : v === null ? n(v) : t('newMap.limits.perMonth', { n: n(v) }));
+const LIMIT_VARS: Record<Path, Record<string, string | number>> = {
+  pdf: { free: perMonth(PLAN_LIMITS.free.limits.ai_generations), pro: perMonth(PLAN_LIMITS.pro.limits.ai_generations) },
+  anki: { freeImports: PLAN_LIMITS.free.ankiImports, free: n(PLAN_LIMITS.free.ankiImportMaxCards), pro: n(PLAN_LIMITS.pro.ankiImports) },
   seed: {},
   blank: { boards: n(PLAN_LIMITS.free.limits.boards), cards: n(PLAN_LIMITS.free.limits.cards) },
 };

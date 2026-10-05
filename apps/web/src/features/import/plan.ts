@@ -1,5 +1,4 @@
 import type { ApkgSummary, FieldMapping } from '@remoa/contracts';
-import type { Plan } from './use-anki-import';
 
 type NoteType = ApkgSummary['noteTypes'][number];
 export type Preview = { title: string; front: string; back: string };
@@ -62,4 +61,11 @@ export function applyMapping(sample: Record<string, string>, mapping: FieldMappi
 export function estimate(summary: ApkgSummary, deckIds: string[]): number {
   const picked = summary.decks.filter((d) => deckIds.includes(d.id));
   return summary.decks.filter((d) => picked.some((p) => d.name === p.name || d.name.startsWith(`${p.name}::`))).reduce((n, d) => n + d.noteCount, 0);
+}
+
+/** F17 FR-3: the single root deck with notes names the map; several roots (or none) fall back to the file name without `.apkg`. */
+export function defaultBoardTitle(summary: ApkgSummary, fileName: string): string {
+  const roots = summary.decks.filter((d) => !d.name.includes('::') && estimate(summary, [d.id]) > 0);
+  const name = (roots.length === 1 ? roots[0]!.name : fileName.replace(/\.apkg$/i, '')).trim();
+  return name.slice(0, 120);
 }

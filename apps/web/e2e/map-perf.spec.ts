@@ -21,6 +21,7 @@ test('200 cards: pan fps', async ({ page, request }) => {
   const signup = await request.post(`${SUPABASE}/auth/v1/signup`, { headers: { apikey: ANON }, data: { email, password } });
   const body = await signup.json();
   const token = body.access_token as string;
+  await request.post(`${API}/v1/onboarding/complete`, { headers: { authorization: `Bearer ${token}` } }); // F12: skip the onboarding redirect
   // Free allows 50 cards: make the perf user Pro (as visual/fixture.ts seedMock does)
   const db = process.env.DATABASE_URL ?? /DATABASE_URL="?([^"\n]*)/.exec(readFileSync('../../../remoa-backend/.env', 'utf8'))?.[1] ?? '';
   execFileSync('psql', [db, '-q', '-c', `insert into subscriptions (user_id, plan, status) values ('${body.user.id}','pro','active') on conflict (user_id) do update set plan='pro'`]);
@@ -46,9 +47,9 @@ test('200 cards: pan fps', async ({ page, request }) => {
     await page.getByLabel('E-mail').fill(email);
     await page.getByLabel('Senha').fill(password);
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-    await expect(page).toHaveURL(/:3000\/(mapas)?$/, { timeout: 4000 }); // D-086: "/" after login
+    await expect(page).toHaveURL(/\/(app\/hoje|mapas)?$/, { timeout: 10_000 }); // D-086: "/" after login
   }).toPass({ timeout: 30_000 });
-  await page.goto(`/mapas/${board}`);
+  await page.goto(`/app/mapas/${board}`);
   await expect(page.locator('.react-flow__node').first()).toBeVisible();
   // D-098: no card selected = no panel (the 200/199 summary it showed is gone); the canvas has the whole width
   await expect(page.getByRole('complementary', { name: 'Painel do mapa' })).toHaveCount(0);
@@ -61,7 +62,7 @@ test('200 cards: pan fps', async ({ page, request }) => {
     if (zoom === 'zoom-in') for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'Aumentar zoom' }).click();
     if (zoom === 'challenge') {
       // G02 / D-097: the whole viewport under one blur filter + the sharp focus card on top, while panning
-      await page.goto(`/mapas/${board}?modo=desafio`);
+      await page.goto(`/app/mapas/${board}?modo=desafio`);
       await expect(page.locator('[data-testid="focus-card"]')).toBeVisible({ timeout: 30_000 });
     }
     await page.waitForTimeout(500);

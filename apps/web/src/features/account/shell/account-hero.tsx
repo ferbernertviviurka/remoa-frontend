@@ -42,9 +42,9 @@ export function AccountHero() {
   function pick(item: CompletenessItem) {
     track('completeness_chip_clicked', { item });
     if (item === 'photo') return photo.open();
-    if (item === 'reminder') return router.push('/conta/preferencias');
+    if (item === 'reminder') return router.push('/app/conta/preferencias');
     const campo = { name: 'nome', goal: 'objetivo', email: 'email' }[item];
-    router.push(`/conta/perfil?campo=${campo}`);
+    router.push(`/app/conta/perfil?campo=${campo}`);
   }
 
   return (
@@ -69,7 +69,7 @@ export function AccountHero() {
           <h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.035em] md:text-[42px]">{name ?? t('account.hero.noName')}</h1>
           <span className="text-[15px] text-on-dark-muted-2">{account.email}</span>
           <span className="mt-1.5 flex flex-wrap gap-2">
-            <span className={chip}>{t('account.hero.plan', { plan: t(account.entitlements.plan === 'pro' ? 'billing.plan.pro' : 'billing.plan.free') })}</span>
+            <span className={chip}>{t('account.hero.plan', { plan: t(`billing.plan.${account.entitlements.plan}`) })}</span>
             <span className={chip}>{t('account.hero.joined', { month: formatMonth(account.joinedAt) })}</span>
             {account.streakDays != null && account.streakDays > 0 ? <span className={chip}>{t('account.hero.streak', { n: account.streakDays })}</span> : null}
           </span>

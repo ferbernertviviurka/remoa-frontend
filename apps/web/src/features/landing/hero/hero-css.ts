@@ -8,6 +8,7 @@
 export const HERO_CSS = `
 @keyframes hx-rise { from { opacity: 0; transform: translateY(56px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes hx-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes hx-lift { from { transform: translateY(24px); } to { transform: none; } }
 @keyframes hx-fadein { from { opacity: 0; } to { opacity: 1; } }
 @keyframes hx-fadeout { from { opacity: 1; } to { opacity: 0; } }
 @keyframes hx-bar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
@@ -28,6 +29,8 @@ export const HERO_CSS = `
 }
 
 .hx-in { animation: hx-up .9s cubic-bezier(.22, 1, .36, 1) var(--d, 0s) both; }
+/* G11 (D-356): H1 and subtitle are the LCP text; fading them in from opacity 0 delays LCP, so they only rise. */
+.hx-in.hx-lcp { animation-name: hx-lift; }
 .hx-bar { transform-origin: 0 50%; animation: hx-bar 1s cubic-bezier(.22, 1, .36, 1) .9s both; }
 
 .hx-stage { --k: 1; }

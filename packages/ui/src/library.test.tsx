@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Accordion } from './accordion';
@@ -33,6 +34,13 @@ describe('biblioteca', () => {
       </div>,
     );
     expect(await violations(container)).toEqual([]);
+  });
+
+  it('avisa qual item do accordion abriu', async () => {
+    const onValueChange = vi.fn();
+    render(<Accordion onValueChange={onValueChange} items={[{ value: 'a', title: 'Título', content: 'Corpo' }]} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Título' }));
+    expect(onValueChange).toHaveBeenCalledWith('a');
   });
 
   it('expande o accordion', async () => {

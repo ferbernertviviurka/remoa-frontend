@@ -1,4 +1,5 @@
 // F16 / T2: landing hero (FR-3, FR-4, FR-17, FR-18, FR-21). HERO_URL overrides the page (default `/`).
+import { gotoLanding } from './ready';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
@@ -28,7 +29,7 @@ test.describe('desktop 1440 × 900', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
   test('final frame vs landing-hero-final.png (sanity, generous threshold)', async ({ page }) => {
-    await page.goto(PAGE);
+    await gotoLanding(page, PAGE);
     await expect(stage(page)).toHaveAttribute('data-play', '');
     await page.waitForTimeout(7000);
     const shot = await page.screenshot();
@@ -45,7 +46,7 @@ test.describe('desktop 1440 × 900', () => {
   });
 
   test('replay restarts the timeline and fires hero_replayed; axe', async ({ page }) => {
-    await page.goto(PAGE);
+    await gotoLanding(page, PAGE);
     await page.waitForTimeout(6500);
     await page.getByRole('button', { name: h.replay }).click();
     await expect(stage(page)).toHaveAttribute('data-play', '');
@@ -58,11 +59,11 @@ test.describe('desktop 1440 × 900', () => {
   });
 
   test('CTAs and the only h1', async ({ page }) => {
-    await page.goto(PAGE);
+    await gotoLanding(page, PAGE);
     await expect(page.locator('h1')).toHaveCount(1);
     await expect(page.locator('h1')).toHaveText(h.h1.a);
     await expect(page.getByRole('link', { name: h.cta.secondary })).toHaveAttribute('href', '#experimente');
-    await page.goto(`${PAGE}?h=c`);
+    await gotoLanding(page, `${PAGE}?h=c`);
     await expect(page.locator('h1')).toHaveText(h.h1.c);
   });
 });
@@ -71,7 +72,7 @@ test.describe('reduced motion', () => {
   test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
 
   test('shows the final frame immediately, nothing animates', async ({ page }) => {
-    await page.goto(PAGE);
+    await gotoLanding(page, PAGE);
     await page.waitForLoadState('networkidle');
     await expect(stage(page)).not.toHaveAttribute('data-play', '');
     const st = await stage(page).evaluate((el) => ({
@@ -87,7 +88,7 @@ test.describe('mobile 390 × 844', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test('4 cards, no horizontal scroll, shorter timeline', async ({ page }) => {
-    await page.goto(PAGE);
+    await gotoLanding(page, PAGE);
     const cards = stage(page).locator('article');
     let visible = 0;
     for (const c of await cards.all()) if (await c.isVisible()) visible++;

@@ -25,14 +25,14 @@ export function AccountView({ email, ent, notice }: { email: string; ent: Entitl
   const [error, setError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
   const announced = useRef(false);
+  const founder = ent.plan === 'founder';
   const pro = ent.plan === 'pro';
 
   useEffect(() => {
     if (!notice || announced.current) return;
     announced.current = true;
-    if (notice === 'checkout') track('subscription_started', {});
     toast({ title: t(notice === 'checkout' ? 'billing.account.checkoutOk' : 'billing.account.portalOk') });
-    router.replace('/conta'); // so a refresh doesn't announce (and track) it again
+    router.replace('/app/conta'); // so a refresh doesn't announce (and track) it again
   }, [notice, router, toast]);
 
   async function portal(cancel: boolean) {
@@ -41,7 +41,6 @@ export function AccountView({ email, ent, notice }: { email: string; ent: Entitl
     try {
       const r = await api<RedirectUrl>('/v1/billing/portal', { method: 'POST', body: JSON.stringify(cancel ? { cancel: true } : {}) });
       if (r.ok) {
-        if (cancel) track('subscription_canceled', {});
         return void window.location.assign(r.data.url);
       }
     } catch {
@@ -111,7 +110,7 @@ export function AccountView({ email, ent, notice }: { email: string; ent: Entitl
           {pro && !ent.cancelAtPeriodEnd && ent.renewsAt ? <p className="text-sm">{t('billing.account.renewsAt', { date: formatDate(ent.renewsAt) })}</p> : null}
           {ent.graceUntil ? <Alert tone="watch" title={t('billing.account.grace', { date: formatDate(ent.graceUntil) })} /> : null}
           <div className="flex flex-wrap gap-2">
-            {pro ? (
+            {founder ? null : pro ? (
               <>
                 <Button variant="secondary" loading={busy === 'portal'} onClick={() => void portal(false)}>{t('billing.account.manage')}</Button>
                 {ent.cancelAtPeriodEnd ? null : (
@@ -119,7 +118,7 @@ export function AccountView({ email, ent, notice }: { email: string; ent: Entitl
                 )}
               </>
             ) : (
-              <Button onClick={() => router.push('/planos?de=account_plan')}>{t('billing.account.subscribe')}</Button>
+              <Button onClick={() => router.push('/app/planos?de=account_plan')}>{t('billing.account.subscribe')}</Button>
             )}
           </div>
         </section>
@@ -132,14 +131,14 @@ export function AccountView({ email, ent, notice }: { email: string; ent: Entitl
             const limit = ent.limits[key];
             const used = ent.usage[key];
             const name = `${t(`billing.pricing.${label}`)} (${t(`billing.account.${window}`)})`;
-            const text = limit === null ? t('billing.account.usageUnlimited', { used }) : t('billing.account.usageLine', { used, limit });
+            const text = limit === 0 ? t('billing.account.usageNotIncluded') : limit === null ? t('billing.account.usageUnlimited', { used }) : t('billing.account.usageLine', { used, limit });
             return (
               <div key={key} className="flex flex-col gap-1">
                 <div className="flex justify-between gap-2 text-sm">
                   <span>{name}</span>
                   <span className="font-semibold">{text}</span>
                 </div>
-                {limit === null ? null : <Progress aria-label={name} value={used} max={Math.max(limit, 1)} />}
+                {limit === null || limit === 0 ? null : <Progress aria-label={name} value={used} max={Math.max(limit, 1)} />}
               </div>
             );
           })}

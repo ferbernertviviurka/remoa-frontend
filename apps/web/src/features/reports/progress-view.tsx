@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { ProgressSummary } from '@remoa/contracts';
 import { t } from '@remoa/strings';
-import { BarChart, Button } from '@remoa/ui';
+import { DailyBarChart, Button } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { createClient } from '@/lib/supabase/client';
 
@@ -59,7 +59,7 @@ export function ProgressView({ summary }: { summary: ProgressSummary }) {
       </section>
       <section aria-label={t('progress.chart')} className="rounded-3xl border border-border bg-surface p-5">
         <h2 className="m-0 mb-3 text-lg font-bold">{t('progress.chart')}</h2>
-        <BarChart
+        <DailyBarChart
           label={t('progress.chart')}
           items={summary.reviewsPerDay.map((d) => ({ id: d.date, value: d.count }))}
           barLabel={(item) => t('progress.dayCount', { date: dayLabel(item.id), n: item.value })}
@@ -75,7 +75,7 @@ export function ProgressView({ summary }: { summary: ProgressSummary }) {
               <span className="font-semibold">{c.title}</span>
               <span className="flex items-center gap-3">
                 <span className="text-sm text-muted">{pct(c.r)}</span>
-                <Link href={`/mapas/${c.boardId}?modo=desafio`} className="font-semibold text-primary-deep no-underline">{t('progress.review')}</Link>
+                <Link href={`/app/mapas/${c.boardId}?modo=desafio`} className="font-semibold text-primary-deep no-underline">{t('progress.review')}</Link>
               </span>
             </li>
           ))}

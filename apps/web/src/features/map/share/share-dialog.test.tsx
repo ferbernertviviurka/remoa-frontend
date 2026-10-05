@@ -58,8 +58,8 @@ describe('ShareDialog', () => {
     vi.spyOn(shareApi, 'getShare').mockResolvedValue({ ok: true, data: mockOwnerState });
     setup();
 
-    await waitFor(() => screen.getByRole('button', { name: /privado/i }));
-    fireEvent.click(screen.getByRole('button', { name: /privado/i }));
+    await waitFor(() => screen.getByRole('radio', { name: /privado/i }));
+    fireEvent.click(screen.getByRole('radio', { name: /privado/i }));
 
     expect(screen.getByLabelText(/nova senha/i)).toBeInTheDocument();
   });
@@ -69,8 +69,8 @@ describe('ShareDialog', () => {
     const updateShareSpy = vi.spyOn(shareApi, 'updateShare').mockResolvedValue({ ok: true, data: mockPasswordState });
     setup();
 
-    await waitFor(() => screen.getByRole('button', { name: /privado/i }));
-    fireEvent.click(screen.getByRole('button', { name: /privado/i }));
+    await waitFor(() => screen.getByRole('radio', { name: /privado/i }));
+    fireEvent.click(screen.getByRole('radio', { name: /privado/i }));
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
 
     // updateShare should NOT be called
@@ -95,8 +95,8 @@ describe('ShareDialog', () => {
     vi.spyOn(shareApi, 'getShare').mockResolvedValue({ ok: true, data: mockPublicState });
     setup();
 
-    await waitFor(() => screen.getByText(/gerar novo link/i));
-    fireEvent.click(screen.getByText(/gerar novo link/i));
+    const rotate = await screen.findByRole('button', { name: /gerar novo link/i });
+    fireEvent.click(rotate);
 
     expect(screen.getByText(/o link atual vai parar de funcionar/i)).toBeInTheDocument();
   });
@@ -108,10 +108,10 @@ describe('ShareDialog', () => {
     vi.spyOn(shareApi, 'updateShare').mockResolvedValue({ ok: true, data: rotatedState });
     setup();
 
-    await waitFor(() => screen.getByText(/gerar novo link/i));
-    fireEvent.click(screen.getByText(/gerar novo link/i));
-    await waitFor(() => screen.getByRole('button', { name: /gerar novo link/i }));
-    fireEvent.click(screen.getByRole('button', { name: /gerar novo link/i }));
+    const rotate = await screen.findByRole('button', { name: /gerar novo link/i });
+    fireEvent.click(rotate);
+    const confirm = await screen.findAllByRole('button', { name: /gerar novo link/i });
+    fireEvent.click(confirm[confirm.length - 1]!);
 
     await waitFor(() => expect(screen.getByDisplayValue(newUrl)).toBeInTheDocument());
   });

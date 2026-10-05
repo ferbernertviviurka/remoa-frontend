@@ -1,15 +1,16 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import type { BoardSummary, CoverageRow, HomeSummary } from '@remoa/contracts';
+import type { ActivationItem, BoardSummary, CoverageRow, HomeSummary } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
 import { Constellation, Hero, Icon, type IconName } from '@remoa/ui';
 import { toConstellation } from './constellation';
 import { eyebrowDate, hourIn, salutationKey, todayIso, weekdayName } from './format';
 import { MapSlider } from './slider/map-slider';
+import { ActivationChecklist } from '@/features/onboarding/activation-checklist';
 import { GoButton, HeroActions, HomeHeaderActions } from './home-actions';
 
 export type FirstInQueue = { title: string; pct: number };
-export type HomeViewProps = { now: Date; summary: HomeSummary; boards: BoardSummary[]; coverage: CoverageRow[]; first?: FirstInQueue; queueStart?: ReactNode };
+export type HomeViewProps = { now: Date; summary: HomeSummary; boards: BoardSummary[]; coverage: CoverageRow[]; first?: FirstInQueue; queueStart?: ReactNode; checklist?: ActivationItem[] };
 
 const h2 = 'm-0 font-display font-extrabold';
 const panel = 'flex flex-col rounded-[28px] border border-border bg-surface';
@@ -74,7 +75,7 @@ function coverageByArea(rows: CoverageRow[]) {
   return [...acc].map(([area, v]) => ({ area, pct: Math.min(100, Math.round((v.cards / Math.max(1, v.target)) * 100)) }));
 }
 
-export function HomeView({ now, summary, boards, coverage, first, queueStart }: HomeViewProps) {
+export function HomeView({ now, summary, boards, coverage, first, queueStart, checklist }: HomeViewProps) {
   const saudacao = t(`home.salutation.${salutationKey(hourIn(now))}`);
   const due = summary.dueToday;
   const dueBoards = boards.filter((b) => b.dueCount > 0).sort((a, b) => b.dueCount - a.dueCount);
@@ -104,6 +105,7 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart }: 
       </div>
       <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-7">
+          <ActivationChecklist items={checklist ?? []} />
           <Hero
             eyebrow={t('home.reviewSection')}
             title={heroText.title}
@@ -113,9 +115,9 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart }: 
               due > 0 && top ? (
                 <HeroActions only={dueBoards.length > 1 ? { id: top.id, title: top.title } : undefined} />
               ) : boards.length === 0 ? (
-                <GoButton variant="light" href="/mapas/novo" label={t('library.newMapButton')} />
+                <GoButton variant="light" href="/app/mapas/novo" label={t('library.newMapButton')} />
               ) : (
-                <GoButton variant="light" href="/mapas" label={t('home.openMaps')} />
+                <GoButton variant="light" href="/app/mapas" label={t('home.openMaps')} />
               )
             }
           >
@@ -154,7 +156,7 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart }: 
           <section aria-labelledby="home-new" className={`${panel} gap-3 p-[22px]`}>
             <h2 id="home-new" className={`${h2} mb-0.5 text-[22px] tracking-[-0.02em]`}>{t('home.startSomething')}</h2>
             {shortcuts.map((s) => (
-              <Link key={s.key} href={`/mapas/novo?caminho=${s.key}`} className="lift flex items-center gap-3.5 rounded-[18px] bg-canvas p-3 text-ink no-underline">
+              <Link key={s.key} href={`/app/mapas/novo?caminho=${s.key}`} className="lift flex items-center gap-3.5 rounded-[18px] bg-canvas p-3 text-ink no-underline">
                 <span aria-hidden="true" className="flex size-11 items-center justify-center rounded-[14px] bg-primary-tint text-primary-deep"><Icon name={s.icon} size={22} /></span>
                 <span className="flex flex-col leading-[1.3]">
                   <span className="font-bold">{t(s.title)}</span>
@@ -162,6 +164,20 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart }: 
                 </span>
               </Link>
             ))}
+            <Link href="/app/indicar?de=home" className="lift flex items-center gap-3.5 rounded-[18px] bg-canvas p-3 text-ink no-underline">
+              <span aria-hidden="true" className="flex size-11 items-center justify-center rounded-[14px] bg-primary-tint text-primary-deep"><Icon name="gift" size={22} /></span>
+              <span className="flex flex-col leading-[1.3]">
+                <span className="font-bold">{t('referral.homeCard')}</span>
+                <span className="text-[13px] text-muted">{t('referral.homeCardDesc')}</span>
+              </span>
+            </Link>
+            <Link href="/app/loja" className="lift flex items-center gap-3.5 rounded-[18px] border-[1.5px] border-dashed border-border-strong bg-canvas p-3 text-ink no-underline">
+              <span aria-hidden="true" className="flex size-11 items-center justify-center rounded-[14px] bg-primary-tint text-primary-deep"><Icon name="store" size={22} /></span>
+              <span className="flex flex-col leading-[1.3]">
+                <span className="font-bold">{t('store.homeCard')}</span>
+                <span className="text-[13px] text-muted">{t('store.homeCardDesc')}</span>
+              </span>
+            </Link>
           </section>
         </aside>
       </div>

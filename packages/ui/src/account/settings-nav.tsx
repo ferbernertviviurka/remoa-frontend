@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from 'react';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 
 /**
  * SettingsNav: subnav lateral (248 px a partir de md; largura total no mobile). Itens são links (`href`), o atual leva

@@ -3,9 +3,10 @@
 import './shell.css';
 import { useState } from 'react';
 import Link from 'next/link';
-import { t, strings } from '@remoa/strings';
+import { t, strings } from '@remoa/strings/landing';
 import { WaitlistForm, type WaitlistState, type WaitlistValues } from '@remoa/ui';
 import { track } from '@/lib/analytics';
+import { trackCta } from '../analytics';
 import { postWaitlist, WAITLIST_SEGMENTS } from './waitlist';
 import type { LaunchPhase } from '../flags';
 
@@ -48,7 +49,7 @@ export function WaitlistCta({ phase, variant }: { phase: LaunchPhase; variant: '
           <p className="relative m-0 text-[17px] text-on-dark-muted-2 md:text-xl">{phase === 'open' ? t('landing.ctaSection.text') : t('landing.ctaSection.textWaitlist')}</p>
           <div className="relative mt-3 flex w-full justify-center">
             {phase === 'open' ? (
-              <Link href="/cadastro" className="inline-flex min-h-14 items-center justify-center rounded-field bg-surface px-[26px] text-[17px] font-extrabold text-panel-dark no-underline hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-steady-on-dark">{t('landing.ctaSection.primary')}</Link>
+              <Link href="/cadastro" onClick={trackCta('final', 'create')} className="inline-flex min-h-14 items-center justify-center rounded-field bg-on-dark px-[26px] text-[17px] font-extrabold text-panel-dark no-underline hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-steady-on-dark">{t('landing.ctaSection.primary')}</Link>
             ) : (
               <WaitlistForm
                 state={state} email={email} onEmailChange={setEmail} segment={segment} onSegmentChange={setSegment} onSubmit={submit}

@@ -1,7 +1,7 @@
 'use client';
 
 import { clsx } from 'clsx';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 import { Icon } from '../icons';
 import './canvas.css';
 

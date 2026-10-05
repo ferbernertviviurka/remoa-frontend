@@ -2,12 +2,12 @@
 
 import type { ReactNode } from 'react';
 import * as RA from '@radix-ui/react-accordion';
-import { focusRing } from './button';
+import { focusRing } from './button-styles';
 
 /** Lista expansível. Um item aberto por vez. */
-export function Accordion({ items }: { items: ReadonlyArray<{ value: string; title: string; content: ReactNode }> }) {
+export function Accordion({ items, onValueChange }: { items: ReadonlyArray<{ value: string; title: string; content: ReactNode }>; /** Valor do item aberto; '' quando todos fecham. */ onValueChange?: (value: string) => void }) {
   return (
-    <RA.Root type="single" collapsible className="flex flex-col overflow-hidden rounded-map border border-border bg-surface shadow-card">
+    <RA.Root type="single" collapsible onValueChange={onValueChange} className="flex flex-col overflow-hidden rounded-map border border-border bg-surface shadow-card">
       {items.map((item) => (
         <RA.Item key={item.value} value={item.value} className="border-b border-border last:border-b-0">
           <RA.Header>

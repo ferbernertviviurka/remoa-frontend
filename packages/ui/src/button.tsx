@@ -4,6 +4,7 @@ import type { ComponentProps, ReactNode } from 'react';
 import { clsx } from 'clsx';
 import { TextMorph } from 'torph/react';
 import { Spinner } from './spinner';
+import { buttonVariants, focusRing, pressable } from './button-styles';
 
 /**
  * Button (medidas v2: fonte do corpo 15 px/700). Variantes: variant = primary | secondary | quiet | danger | light | outline-light
@@ -12,6 +13,7 @@ import { Spinner } from './spinner';
  * `primary` desabilitado vira cinza-lilás chapado (como no mock do Novo mapa).
  * `icon` fica antes do texto, `iconEnd` depois. Os dois são decorativos.
  * `loading` troca o ícone inicial pelo Spinner e, se `loadingLabel` vier, o Torph anima a troca do rótulo.
+ * `aria-disabled` (sem `disabled`) esmaece mas mantém o foco: para explicar o bloqueio numa Tooltip.
  * Sem className livre.
  */
 export type ButtonProps = Omit<ComponentProps<'button'>, 'className'> & {
@@ -23,15 +25,6 @@ export type ButtonProps = Omit<ComponentProps<'button'>, 'className'> & {
   loadingLabel?: string;
 };
 
-export const buttonVariants = {
-  primary: 'font-bold bg-primary text-on-primary hover:brightness-110 disabled:bg-border-strong disabled:text-muted disabled:opacity-100 disabled:cursor-not-allowed',
-  secondary: 'font-bold bg-surface text-ink border border-border-strong hover:border-primary hover:bg-primary-tint',
-  quiet: 'font-bold bg-transparent text-primary-deep hover:bg-primary-tint',
-  danger: 'font-bold bg-review text-white hover:brightness-110 disabled:bg-[#EAD3C7] disabled:text-[#7C2D12] disabled:opacity-100 disabled:cursor-not-allowed',
-  light: 'bg-surface text-panel-dark font-extrabold hover:brightness-95',
-  'outline-light': 'font-bold px-5! border-[1.5px] border-white/40 text-on-dark hover:bg-white/10',
-} as const;
-
 const sizes = {
   sm: 'min-h-11 rounded-[14px] px-4 text-[15px]',
   md: 'min-h-12 rounded-btn text-[15px]',
@@ -40,15 +33,6 @@ const sizes = {
   cta: 'min-h-14 gap-2.5 rounded-field px-[26px] text-[17px] font-extrabold!',
   touch: 'min-h-[46px] min-w-[46px] rounded-btn px-5 text-[15px]',
 } as const;
-
-export const focusRing =
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
-
-export const pressable =
-  'remoa-press cursor-pointer transition-[background-color,border-color,color,box-shadow,transform,filter] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98]';
-
-export const fieldControl =
-  'w-full rounded-field border-[1.5px] border-border-strong bg-surface px-4 text-base font-semibold text-ink transition-[border-color,box-shadow] duration-150 placeholder:font-normal placeholder:text-muted hover:border-primary focus-visible:border-primary';
 
 function Label({ children }: { children: ReactNode }) {
   if (typeof children === 'string' || typeof children === 'number') {
@@ -83,7 +67,7 @@ export function Button({
       data-loading={loading || undefined}
       {...rest}
       className={clsx(
-        'inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none disabled:hover:translate-y-0 disabled:active:scale-100 data-[loading=true]:opacity-100',
+        'inline-flex items-center justify-center gap-2 aria-disabled:opacity-50 aria-disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none disabled:hover:translate-y-0 disabled:active:scale-100 data-[loading=true]:opacity-100',
         pressable,
         focusRing,
         buttonVariants[variant],

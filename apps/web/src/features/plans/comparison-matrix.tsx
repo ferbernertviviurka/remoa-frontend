@@ -6,15 +6,16 @@ import { ComparisonTable, PlanColumnHeader, PriceTicker, type ComparisonRow } fr
 import { usePlans } from './plans-context';
 
 const num = new Intl.NumberFormat('pt-BR');
-const n = (v: number | null, unlimited: string) => (v === null ? unlimited : num.format(v));
+const n = (v: number | null, unlimited: string) => (v === null ? unlimited : v === 0 ? t('plans.matrix.notIncluded') : num.format(v));
 
 const labels: Record<PlanFeatureKey, { label: string; sub: string; unlimited: string }> = {
   boards: { label: t('plans.matrix.rows.boards.label'), sub: t('plans.matrix.rows.boards.sub'), unlimited: t('plans.matrix.unlimited.boards') },
   cards: { label: t('plans.matrix.rows.cards.label'), sub: t('plans.matrix.rows.cards.sub'), unlimited: t('plans.matrix.unlimited.cards') },
   ai_grades: { label: t('plans.matrix.rows.aiGrades.label'), sub: t('plans.matrix.rows.aiGrades.sub'), unlimited: t('plans.matrix.unlimited.aiGrades') },
-  ai_generations: { label: t('plans.matrix.rows.pdfMaps.label'), sub: t('plans.matrix.rows.pdfMaps.sub'), unlimited: '' },
-  anki_import_cards: { label: t('plans.matrix.rows.ankiImport.label'), sub: t('plans.matrix.rows.ankiImport.sub'), unlimited: '' },
-  new_cards_per_day: { label: t('plans.matrix.rows.newCards.label'), sub: t('plans.matrix.rows.newCards.sub'), unlimited: '' },
+  ai_generations: { label: t('plans.matrix.rows.pdfMaps.label'), sub: t('plans.matrix.rows.pdfMaps.sub'), unlimited: t('plans.matrix.unlimited.pdfMaps') },
+  anki_imports: { label: t('plans.matrix.rows.ankiImports.label'), sub: t('plans.matrix.rows.ankiImports.sub'), unlimited: t('plans.matrix.unlimited.ankiImports') },
+  anki_import_cards: { label: t('plans.matrix.rows.ankiImport.label'), sub: t('plans.matrix.rows.ankiImport.sub'), unlimited: t('plans.matrix.unlimited.ankiImport') },
+  new_cards_per_day: { label: t('plans.matrix.rows.newCards.label'), sub: t('plans.matrix.rows.newCards.sub'), unlimited: t('plans.matrix.unlimited.newCards') },
 };
 
 function usageText(r: Row): string {
@@ -46,7 +47,7 @@ export function ComparisonMatrix({ recommended }: { recommended: boolean }) {
       unlimited,
       // Illustrative: Free's share of Pro's limit, never below 6%; unlimited rows keep the default short bar.
       freeBar: unlimited || !r.pro ? undefined : Math.min(100, Math.max(6, Math.round((free / r.pro) * 100))),
-      usage: r.usage ? { text: usageText(r), tone: r.usage.tone === 'full' ? 'danger' : r.usage.tone === 'warn' ? 'warn' : 'normal' } : undefined,
+      usage: r.usage && r.usage.limit !== 0 ? { text: usageText(r), tone: r.usage.tone === 'full' ? 'danger' : r.usage.tone === 'warn' ? 'warn' : 'normal' } : undefined,
     };
   });
   const prices = coupon?.prices ?? { monthly: priceBook.monthly.amount, annual: priceBook.annual.amount };

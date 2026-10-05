@@ -13,10 +13,11 @@ export const POLL_MS = 3000;
 export const POLL_MAX_MS = 120_000;
 
 /** F15 FR-8. `initial` was verified on the server; Pro is only shown once the server says `paid` (the webhook, D-181). */
-export function SuccessView({ sessionId, initial }: { sessionId: string; initial: CheckoutSessionStatus['status'] }) {
+export function SuccessView({ sessionId, initial, plan: initialPlan = 'pro' }: { sessionId: string; initial: CheckoutSessionStatus['status']; plan?: CheckoutSessionStatus['plan'] }) {
   const router = useRouter();
   const { refresh } = useEntitlements();
   const [status, setStatus] = useState(initial);
+  const [plan, setPlan] = useState(initialPlan);
   const [timedOut, setTimedOut] = useState(false);
   const refreshed = useRef(false);
 
@@ -27,13 +28,13 @@ export function SuccessView({ sessionId, initial }: { sessionId: string; initial
     const id = setInterval(async () => {
       if (Date.now() - started >= POLL_MAX_MS) { clearInterval(id); return setTimedOut(true); }
       const r = await api<CheckoutSessionStatus>(`/v1/billing/checkout/${sessionId}`).catch(() => null);
-      if (r?.ok && r.data.status !== 'pending_pix') { clearInterval(id); setStatus(r.data.status); }
+      if (r?.ok && r.data.status !== 'pending_pix') { clearInterval(id); setPlan(r.data.plan ?? initialPlan); setStatus(r.data.status); }
     }, POLL_MS);
     return () => clearInterval(id);
-  }, [status, sessionId]);
+  }, [status, sessionId, initialPlan]);
 
   useEffect(() => {
-    if (status === 'canceled' || status === 'expired') router.replace('/planos?cancelado=1');
+    if (status === 'canceled' || status === 'expired') router.replace('/app/planos?cancelado=1');
     if (status !== 'paid' || refreshed.current) return;
     refreshed.current = true;
     void refresh(); // navbar chip reads the entitlements provider
@@ -42,22 +43,28 @@ export function SuccessView({ sessionId, initial }: { sessionId: string; initial
 
   if (status === 'paid') {
     const pro = PLAN_LIMITS.pro;
+    const founder = plan === 'founder';
+    const title = t(founder ? 'plans.success.founder.title' : 'plans.success.title');
+    const subtitle = t(founder ? 'plans.success.founder.subtitle' : 'plans.success.subtitle');
+    const benefits = founder
+      ? [t('plans.success.founder.benefits.pro'), t('plans.success.founder.benefits.aiGrades'), t('plans.success.founder.benefits.pdfMaps'), t('plans.success.founder.benefits.early')]
+      : [
+          t('plans.success.benefits.unlimited'),
+          t('plans.success.benefits.aiGrades', { n: pro.limits.ai_grades ?? 0 }),
+          t('plans.success.benefits.pdfMaps', { n: pro.limits.ai_generations ?? 0 }),
+          t('plans.success.benefits.anki'),
+        ];
     return (
-      <Dialog open size="bare" srOnlyHeader title={t('plans.success.title')} description={t('plans.success.subtitle')} closeLabel={t('common.close')} onOpenChange={(o) => o || router.push('/planos')}>
+      <Dialog open size="bare" srOnlyHeader title={title} description={subtitle} closeLabel={t('common.close')} onOpenChange={(o) => o || router.push('/app/planos')}>
         <SuccessPanel
           inDialog
-          title={t('plans.success.title')}
-          description={t('plans.success.subtitle')}
-          benefits={[
-            t('plans.success.benefits.unlimited'),
-            t('plans.success.benefits.aiGrades'),
-            t('plans.success.benefits.pdfMaps', { n: pro.limits.ai_generations }),
-            t('plans.success.benefits.anki', { n: new Intl.NumberFormat('pt-BR').format(pro.ankiImportMaxCards) }),
-          ]}
+          title={title}
+          description={subtitle}
+          benefits={benefits}
           actions={
             <>
-              <Button onClick={() => router.push('/hoje')}>{t('plans.success.goToday')}</Button>
-              <Button variant="secondary" onClick={() => router.push('/mapas/novo')}>{t('plans.success.createMap')}</Button>
+              <Button onClick={() => router.push('/app/hoje')}>{t('plans.success.goToday')}</Button>
+              <Button variant="secondary" onClick={() => router.push('/app/mapas/novo')}>{t('plans.success.createMap')}</Button>
             </>
           }
         />
@@ -71,7 +78,7 @@ export function SuccessView({ sessionId, initial }: { sessionId: string; initial
       {timedOut ? (
         <>
           <Alert tone="watch" title={t('plans.pixPending.timeout')} />
-          <Button onClick={() => router.push('/planos')}>{t('plans.success.seePlans')}</Button>
+          <Button onClick={() => router.push('/app/planos')}>{t('plans.success.seePlans')}</Button>
         </>
       ) : (
         <p role="status" className="m-0 text-sm text-muted">{t('plans.pixPending.checking')}</p>

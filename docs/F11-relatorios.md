@@ -35,9 +35,8 @@ O número é o percentual de concordância e a frase com quantas notas foram alt
 - `appVersion`: a constante `0.0.0`.
 - `boardId` e `area` quando `rememberBoard` gravou um mapa aberto em `remoa-board`. A área só entra se for `CM`.
 
-Sem `NEXT_PUBLIC_MIXPANEL_TOKEN`, o Mixpanel não é importado. O evento vai para `window.__remoaEvents`, que o e2e lê. Com token, o pacote `mixpanel-browser` é importado na primeira chamada. `trackWhenIdle` adia para o browser ficar ocioso; a landing é quem deve usar isso, para não competir com o LCP.
+Sem analytics externo (decisão do Fernando): o evento vai só para `window.__remoaEvents`, que o e2e lê. `trackWhenIdle` adia para o browser ficar ocioso; a landing é quem deve usar isso, para não competir com o LCP.
 
-`identify` só chama o Mixpanel quando há token.
 
 Onde os eventos desta leva saem:
 

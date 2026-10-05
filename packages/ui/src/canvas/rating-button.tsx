@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { clsx } from 'clsx';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 
 /**
  * RatingButton v2: nota FSRS no painel do desafio. `label` ("Bom") e `hint` ("volta em 4 dias"), alinhados à esquerda.

@@ -16,22 +16,22 @@ test.describe('desktop', () => {
     test.setTimeout(180_000);
     await accountUser(page, request);
     for (const s of sections) {
-      await page.goto(`/conta/${s}`);
+      await page.goto(`/app/conta/${s}`);
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       expect(await axe(page), s).toEqual([]);
     }
-    await page.goto('/conta/seguranca');
+    await page.goto('/app/conta/seguranca');
     await page.getByRole('button', { name: 'Alterar senha' }).click();
     await page.getByLabel('Nova senha', { exact: true }).fill('abc12345');
     expect(await axe(page), 'seguranca: formulário aberto').toEqual([]);
 
-    await page.goto('/conta/perfil');
+    await page.goto('/app/conta/perfil');
     await page.getByRole('button', { name: 'Adicionar foto' }).click();
     await expect(page.getByRole('dialog', { name: 'Foto de perfil' })).toBeVisible();
     expect(await axe(page), 'diálogo da foto').toEqual([]);
     await page.keyboard.press('Escape');
 
-    await page.goto('/conta/dados');
+    await page.goto('/app/conta/dados');
     await page.getByRole('button', { name: 'Excluir conta' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
     expect(await axe(page), 'diálogo de exclusão').toEqual([]);
@@ -40,7 +40,7 @@ test.describe('desktop', () => {
   test('teclado: foco preso nos diálogos e devolvido ao abrir', async ({ page, request }) => {
     test.setTimeout(120_000);
     await accountUser(page, request);
-    await page.goto('/conta/perfil');
+    await page.goto('/app/conta/perfil');
     const avatar = page.getByRole('button', { name: 'Alterar foto de perfil' });
     await avatar.focus();
     await page.keyboard.press('Enter');
@@ -56,7 +56,7 @@ test.describe('desktop', () => {
     await expect(dialog).toBeHidden();
     await expect(avatar).toBeFocused();
 
-    await page.goto('/conta/dados');
+    await page.goto('/app/conta/dados');
     const del = page.getByRole('button', { name: 'Excluir conta' });
     await del.focus();
     await page.keyboard.press('Enter');
@@ -73,7 +73,7 @@ test.describe('desktop', () => {
 
   test('aria-live: os avisos são anunciados', async ({ page, request }) => {
     await accountUser(page, request);
-    await page.goto('/conta/perfil');
+    await page.goto('/app/conta/perfil');
     await page.getByRole('button', { name: 'Editar nome' }).click();
     await page.getByRole('textbox', { name: 'Nome' }).fill('Novo Nome');
     await page.getByRole('button', { name: 'Salvar nome' }).click();
@@ -89,7 +89,7 @@ test.describe('mobile (390 px)', () => {
     test.setTimeout(180_000);
     await accountUser(page, request);
     for (const s of sections) {
-      await page.goto(`/conta/${s}`);
+      await page.goto(`/app/conta/${s}`);
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await page.waitForTimeout(1000);
       const small = await page.evaluate(() => {
@@ -119,12 +119,12 @@ test.describe('movimento', () => {
   test('sem preferência: a tela tem animação (estrela pulsa); prefers-reduced-motion e "Reduzir movimento" a desligam', async ({ page, request }) => {
     test.setTimeout(150_000);
     await accountUser(page, request);
-    await page.goto('/conta/perfil');
+    await page.goto('/app/conta/perfil');
     await page.waitForTimeout(1500);
     expect(await running(page), 'baseline anima').toBeGreaterThan(0);
 
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/conta/perfil');
+    await page.goto('/app/conta/perfil');
     await page.waitForTimeout(1500);
     expect(await running(page), 'prefers-reduced-motion').toBe(0);
     // valores finais direto: o arco do anel já está no valor (40% de 389,6 ≈ 155,8), não em 0
@@ -132,10 +132,10 @@ test.describe('movimento', () => {
     expect(Number(dash!.split(' ')[0])).toBeGreaterThan(100);
 
     await page.emulateMedia({ reducedMotion: 'no-preference' });
-    await page.goto('/conta/preferencias');
+    await page.goto('/app/conta/preferencias');
     await page.getByRole('switch', { name: 'Reduzir movimento' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-motion', 'reduced');
-    await page.goto('/conta/perfil'); // preferência salva vale em toda a /conta e vem do servidor (cookie no SSR)
+    await page.goto('/app/conta/perfil'); // preferência salva vale em toda a /conta e vem do servidor (cookie no SSR)
     await expect(page.locator('html')).toHaveAttribute('data-motion', 'reduced');
     await page.waitForTimeout(1500);
     expect(await running(page), 'opção Reduzir movimento').toBe(0);

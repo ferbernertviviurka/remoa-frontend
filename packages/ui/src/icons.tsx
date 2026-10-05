@@ -50,6 +50,20 @@ const paths = {
   pix: <><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><path d="M14 14h3v3h-3zM20 14v1M14 20h1M18 18v3h3" /></>,
   creditCard: <><rect x="3" y="5" width="18" height="14" rx="3" /><path d="M3 10h18M7 15h4" /></>,
   chevronDown: <><path d="M6 9l6 6 6-6" /></>,
+  // F18 Indicação (Indicar.dc.html)
+  gift: <><rect x="3" y="8" width="18" height="4" rx="1.2" /><path d="M12 8v13M5 12v8h14v-8M12 8C10 4 6 4.5 6 6.5S9.5 8 12 8zM12 8c2-4 6-3.5 6-1.5S14.5 8 12 8z" /></>,
+  share: <><circle cx="6" cy="12" r="2.5" /><circle cx="18" cy="6" r="2.5" /><circle cx="18" cy="18" r="2.5" /><path d="M8.2 10.9l7.6-3.8M8.2 13.1l7.6 3.8" /></>,
+  chat: <><path d="M4 5h16v11H9l-5 4z" /></>,
+  send: <><path d="M21 3L3 11l7 3 3 7z" /><path d="M10 14l11-11" /></>,
+  copy: <><rect x="9" y="9" width="11" height="11" rx="3" /><path d="M5 15V7a3 3 0 013-3h8" /></>,
+  // F19 Suporte e Admin (Suporte.dc.html, Admin*.dc.html)
+  help: <><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1.1-1.5 2.2M12 17h.01" /></>,
+  lifebuoy: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3.5" /><path d="M5.6 5.6l3.9 3.9M14.5 14.5l3.9 3.9M18.4 5.6l-3.9 3.9M9.5 14.5l-3.9 3.9" /></>,
+  users: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.5a3.5 3.5 0 010 7M18 14c2.4.6 3.5 2.4 3.5 6" /></>,
+  audit: <><rect x="6" y="4" width="12" height="17" rx="2.5" /><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3" /></>,
+  paperclip: <><path d="M20 11.5l-8 8a5 5 0 01-7-7l8.5-8.5a3.5 3.5 0 015 5L10 17a2 2 0 01-3-3l7-7" /></>,
+  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3.2 2" /></>,
+  shield: <><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z" /><path d="M9 12l2 2 4-4" /></>,
 } as const;
 
 export type IconName = keyof typeof paths;

@@ -1,7 +1,7 @@
 'use client';
 
 import { memo, useCallback, useContext, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
-import { Handle, NodeResizeControl, Position, type ControlPosition, type NodeProps } from '@xyflow/react';
+import { Handle, NodeResizeControl, Position, useStore, type ControlPosition, type NodeProps, type ReactFlowState } from '@xyflow/react';
 import { CARD_SIZE_MAX, CARD_SIZE_MIN, caseStages, type Card, type CardDetail, type CaseStage as Stage, type MapState } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { CaseStageList, NodeCard, StepTimeline, type CaseStage, type NodeCardProps, type NodeLayer, type NodeStep } from '@remoa/ui';
@@ -193,9 +193,20 @@ function Resizer({ circle }: { circle: boolean }) {
   ));
 }
 
+/** D-339: below this zoom, in a big map (> LOD_MIN_NODES cards), cards render at reduced detail; a small map keeps its text when fitted far out. Boolean selector = re-render only when crossing it. */
+export const LOD_ZOOM = 0.45;
+const LOD_MIN_NODES = 40;
+const lodLow = (s: ReactFlowState) => s.transform[2] < LOD_ZOOM && s.nodes.length > LOD_MIN_NODES;
+
 /** React Flow node: Torph NodeCard (size per type/shape or the user's, layers without reflow) + connection ports. */
 export const CardNodeView = memo(function CardNodeView({ id, data, selected }: NodeProps<CardNode>) {
-  const p = useNodeCardProps(id, data.card, selected);
+  const full = useNodeCardProps(id, data.card, selected);
+  const lod = useStore(lodLow);
+  // D-339: far out (many cards on screen) only the title/colour block is drawn: no images, steps, summary or back
+  const p = useMemo<NodeCardProps>(
+    () => (lod ? { ...full, summary: undefined, caseStages: undefined, steps: undefined, image: undefined, frontImage: undefined, backImage: undefined, back: undefined, footer: undefined } : full),
+    [lod, full],
+  );
   const { resizable } = useContext(CanvasContext);
   const stop = useMemo(() => keepToCard(p.selectLabel), [p.selectLabel]);
   return (

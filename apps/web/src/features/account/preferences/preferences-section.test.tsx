@@ -9,6 +9,8 @@ import { PreferencesSection } from './preferences-section';
 const api = vi.fn();
 vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
 vi.mock('@/lib/analytics', () => ({ track: vi.fn() }));
+// G16: the store waitlist row reads /v1/store/waitlist on mount; it has its own tests (features/store), keep this suite about preferences
+vi.mock('../../store/account-setting', () => ({ StoreWaitlistSetting: () => null }));
 
 const view = (a: AccountSnapshot) =>
   render(
@@ -43,7 +45,7 @@ describe('PreferencesSection', () => {
     expect(document.documentElement.dataset.motion).toBeUndefined();
   });
 
-  it('dark theme is listed as "Em breve" and cannot be selected; the new-cards stepper is gone', () => {
+  it('dark theme is listed as "Em breve" and cannot be selected; the new-cards stepper is gone (D-556)', () => {
     view(accountFreeFixture);
     const dark = screen.getByRole('radio', { name: /Escuro/ });
     expect(dark).toBeDisabled();

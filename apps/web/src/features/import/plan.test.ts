@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ApkgSummary } from '@remoa/contracts';
-import { applyMapping, defaultPlan, estimate } from './plan';
+import { applyMapping, defaultBoardTitle, defaultPlan, estimate } from './plan';
 
 const nt = (id: string, kind: ApkgSummary['noteTypes'][number]['kind'], fields: string[], samples: Record<string, string>[] = []) => ({ id, name: id, kind, fields, noteCount: 1, samples });
 const summary: ApkgSummary = {
@@ -52,5 +52,14 @@ describe('estimate', () => {
     expect(estimate(summary, ['a'])).toBe(7); // a parent includes its sub decks, as on the server
     expect(estimate(summary, ['a', 'b'])).toBe(7);
     expect(estimate(summary, [])).toBe(0);
+  });
+});
+
+describe('defaultBoardTitle (F17 FR-3)', () => {
+  it('one root with notes names the map; empty roots (Default) do not count', () => {
+    expect(defaultBoardTitle({ ...summary, decks: [...summary.decks, { id: 'z', name: 'Default', cardCount: 0, noteCount: 0 }] }, 'x.apkg')).toBe('CM');
+  });
+  it('several roots: the file name without .apkg', () => {
+    expect(defaultBoardTitle({ ...summary, decks: [...summary.decks, { id: 'p', name: 'Ped', cardCount: 1, noteCount: 1 }] }, 'Meu deck.APKG')).toBe('Meu deck');
   });
 });

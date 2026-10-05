@@ -2,7 +2,7 @@
 
 import { useId, type ComponentProps } from 'react';
 import * as RS from '@radix-ui/react-switch';
-import { focusRing } from './button';
+import { focusRing } from './button-styles';
 
 /**
  * Switch com rótulo (`label` obrigatório). Controlado (checked/onCheckedChange) ou não (defaultChecked).

@@ -180,7 +180,7 @@ function LoginCard() {
     setBusy(true);
     setError(null);
     try {
-      const { error: e } = await createClient().auth.linkIdentity({ provider: 'google', options: { redirectTo: `${window.location.origin}/conta/seguranca` } });
+      const { error: e } = await createClient().auth.linkIdentity({ provider: 'google', options: { redirectTo: `${window.location.origin}/app/conta/seguranca` } });
       if (e) throw e;
       // the browser redirects to Google; identity_linked fires from the shell when the snapshot shows it
     } catch {

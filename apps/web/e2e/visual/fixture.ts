@@ -16,15 +16,16 @@ export async function signUpAndLogin(page: Page, request: APIRequestContext) {
   const signup = await request.post(`${SUPABASE}/auth/v1/signup`, { headers: { apikey: ANON }, data: { email, password } });
   const su = await signup.json();
   const token = su.access_token as string;
+  await request.post(`${API}/v1/onboarding/complete`, { headers: { authorization: `Bearer ${token}` } }).catch(() => undefined); // F12: skip the onboarding redirect
   await expect(async () => { // retried: a submit before hydration is a native GET
     await page.goto('/entrar');
     await formReady(page);
     await page.getByLabel('E-mail').fill(email);
     await page.getByLabel('Senha').fill(password);
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-    await expect(page).toHaveURL(/\/$/, { timeout: 4000 }); // D-086: pós-login cai no Hoje
-    await page.goto('/mapas');
-  }).toPass({ timeout: 30_000 });
+    await expect(page).toHaveURL(/\/(app\/hoje)?$/, { timeout: 10_000 }); // D-086: pós-login cai no Hoje (10 s: Hoje compila/carrega devagar com a máquina carregada)
+    await page.goto('/app/mapas');
+  }).toPass({ timeout: 60_000 });
   return { email, userId: su.user.id as string, headers: { authorization: `Bearer ${token}` } };
 }
 

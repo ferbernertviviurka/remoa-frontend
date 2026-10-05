@@ -4,8 +4,8 @@ import { expect, test, type Page } from '@playwright/test';
 
 async function signUpAndCreateBoard(page: Page, title: string) {
   await signUpViaForm(page, `e2e-map-${Date.now()}@remoa.test`);
-  await expect(page).toHaveURL(/\/$/); // D-086: pós-login cai no Hoje
-  await page.goto('/mapas');
+  await expect(page).toHaveURL(/\/app\/hoje$/); // D-321: pós-login cai no Hoje
+  await page.goto('/app/mapas');
   await createBlankBoard(page, title);
   await expect(page.locator('.react-flow__pane')).toBeVisible();
 }
@@ -78,7 +78,7 @@ test('mapa: 3 cards, 2 conexões, salva sozinho e persiste; offline → online m
     expect(moved).not.toEqual(before);
     await context.setOffline(false);
     await expect(saveStatus(page)).toHaveText('Salvo agora', { timeout: 15_000 });
-    await page.evaluate(() => localStorage.clear()); // positions must come from the API, not the local queue
+    await page.evaluate(() => { localStorage.clear(); localStorage.setItem('remoa-challenge-tour', '1'); }); // positions must come from the API, not the local queue (tour stays seen, D-606)
     await page.reload();
     await expect(nodes(page)).toHaveCount(3);
     expect(await transforms(page)).toEqual(moved);

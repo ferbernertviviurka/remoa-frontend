@@ -1,3 +1,6 @@
 @keyframes lp-floaty { 50% { transform: translateY(-14px); } }
 .lp-dot { animation: lp-floaty 6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .lp-dot { animation: none; } }
+@keyframes lp-step { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.lp-step-fill { animation: lp-step linear forwards; }
+@media (prefers-reduced-motion: reduce) { .lp-step-fill { animation: none; } }

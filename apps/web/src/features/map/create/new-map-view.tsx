@@ -1,18 +1,22 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useNavigate } from '@/features/shell/use-navigate';
 import { useEffect, useRef, useState } from 'react';
-import type { Board, BoardGenerationProgress, MatrixItem } from '@remoa/contracts';
+import type { Board, BoardGenerationProgress, ImportBoardInput, ImportTarget, MatrixItem } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
-import { Button, ChoiceCard, ChoiceRow, Dialog, Dropzone, FilterChip, Icon, IconButton, Input, Logo, Progress, Stepper } from '@remoa/ui';
+import { Alert, Button, ChoiceCard, ChoiceRow, Dialog, Dropzone, Icon, IconButton, Logo, Progress, Stepper } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
 import { usePaywall } from '@/features/billing/paywall';
+import { useEntitlements } from '@/features/shell/entitlements';
 import { useMatrixSuggestions } from '@/features/coverage/matrix-suggestions';
 import Link from 'next/link';
 import { AnkiImportFlow } from '@/features/import/anki-import-flow';
+import { ExistingBoardDialog } from '@/features/import/existing-board-dialog';
+import { defaultBoardTitle, estimate } from '@/features/import/plan';
 import { useAnkiImport } from '@/features/import/use-anki-import';
+import { AboutMapForm, aboutErrors, aboutPayload, emptyAboutMap, type AboutMap } from './about-map-form';
 import { MapPreview, type Path } from './map-preview';
 
 const PATHS: ReadonlyArray<{ id: Path; icon: 'file' | 'archive' | 'book' | 'plus' }> = [
@@ -21,25 +25,26 @@ const PATHS: ReadonlyArray<{ id: Path; icon: 'file' | 'archive' | 'book' | 'plus
   { id: 'seed', icon: 'book' },
   { id: 'blank', icon: 'plus' },
 ];
-const AREAS = ['CM', 'CIR', 'GO', 'PED', 'MP'] as const;
 const OPTS = { pdf: ['flows', 'rubrics'] } as const;
 
+/** `items`: every CM matrix item (groups label the leaves in the picker). */
 type Props = { items: MatrixItem[]; initialPath?: Path; initialItemId?: string; initialStep?: 0 | 1 | 2 };
 
 export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 }: Props) {
-  const router = useRouter();
+  const [navigating, router] = useNavigate();
   const paywall = usePaywall();
   const anki = useAnkiImport();
+  const { entitlements } = useEntitlements();
   const h1 = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     if (anki.state.kind !== 'idle') h1.current?.focus(); // each import stage announces itself by moving focus to its heading
   }, [anki.state.kind]);
   const [step, setStep] = useState<0 | 1 | 2>(initialStep);
   const [path, setPath] = useState<Path>(initialPath ?? 'pdf');
-  const ankiRunning = path === 'anki' && anki.state.kind !== 'idle';
-  const [itemId, setItemId] = useState<string | null>(initialItemId ?? items[0]?.id ?? null);
-  const [name, setName] = useState((items.find((i) => i.id === (initialItemId ?? items[0]?.id)))?.title ?? '');
-  const [touched, setTouched] = useState(false);
+  const [about, setAbout] = useState<AboutMap>(() => emptyAboutMap(items.find((i) => i.id === initialItemId)?.title ?? '', initialItemId ? [initialItemId] : []));
+  const [titleTouched, setTitleTouched] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
+  const [existing, setExisting] = useState<{ id: string; title: string } | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [opts, setOpts] = useState<Record<string, boolean>>({ flows: true, rubrics: true });
   const [seeds, setSeeds] = useState<{ id: string; title: string; temporalMark: string | null }[] | null>(null);
@@ -49,51 +54,67 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
   const [progress, setProgress] = useState<number | null>(null);
   const [stage, setStage] = useState<'ocr' | 'extract' | 'layout' | null>(null);
 
+  // FR-3: the name follows the file (root deck, or file name) until the student types one.
+  const ankiKey = anki.state.kind === 'preview' ? anki.state.key : null;
+  useEffect(() => {
+    if (titleTouched) return;
+    const st = anki.state;
+    if (path === 'anki' && st.kind === 'preview' && file) setAbout((a) => ({ ...a, title: defaultBoardTitle(st.summary, file.name) }));
+    if (path === 'pdf' && file) setAbout((a) => ({ ...a, title: file.name.replace(/\.pdf$/i, '').slice(0, 120) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when a new file is read
+  }, [ankiKey, file, path]);
+
   useEffect(() => {
     if (path !== 'seed') return;
     void Promise.resolve(api<{ id: string; title: string; temporalMark: string | null }[]>('/v1/editorial/seeds')).then((r) => setSeeds(r?.ok ? r.data : []));
   }, [path]);
 
-  const suggested = useMatrixSuggestions(step >= 1 ? name : '', 300);
-  const item = items.find((i) => i.id === itemId);
-  // Suggestions (title similarity) go first in the list; the rest keep the catalog order.
-  const sortedItems = [...suggested.flatMap((s) => items.find((i) => i.id === s.id) ?? []), ...items.filter((i) => !suggested.some((s) => s.id === i.id))];
-  const area = t('boards.area.CM');
+  const suggested = useMatrixSuggestions(step >= 1 ? about.title : '', 300);
+  const firstItem = items.find((i) => i.id === about.matrixItemIds[0]);
+  const area = t(`boards.area.${about.area}` as StringKey);
   const needsFile = path === 'pdf' || path === 'anki';
   const accept = path === 'pdf' ? '.pdf' : '.apkg';
-
-  const pickItem = (i: MatrixItem) => {
-    setItemId(i.id);
-    if (!touched) setName(i.title);
+  const suggestedCount = about.matrixItemIds.filter((id) => suggested.some((s) => s.id === id)).length;
+  const payload = aboutPayload(about);
+  const trackAbout = () => {
+    if (payload.matrixItemIds.length) track('board_linked_to_matrix', { count: payload.matrixItemIds.length, suggestedCount });
+    if (payload.access !== 'owner') track('board_access_changed', { from: 'owner', to: payload.access, source: 'create' });
   };
 
   async function generatePdf() {
     if (!file) return;
+    if (entitlements?.limits.ai_generations === 0) return paywall.show('pdf'); // D-647: PDF maps are not in the Free plan; nothing is uploaded
     setBusy(true);
     setError(null);
     setProgress(0);
     setStage('ocr');
     const started = Date.now();
-    const open = (boardId: string, cards: number, edges: number, pages = 1) => {
+    const open = async (boardId: string, cards: number, edges: number, pages = 1) => {
       track('board_generated_from_pdf', { pages, cards, edges, durationMs: Date.now() - started });
-      router.push(`/mapas/${boardId}`);
+      trackAbout();
+      router.push(`/app/mapas/${boardId}`);
     };
     try {
       const { data } = await createClient().auth.getSession();
       const token = data.session?.access_token;
       const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
-      const res = await fetch(`${base}/v1/ai/generate-pdf?title=${encodeURIComponent(name.trim() || file.name.replace(/\.pdf$/i, ''))}`, {
-        method: 'POST',
-        headers: { authorization: token ? `Bearer ${token}` : '', 'content-type': 'application/pdf' },
-        body: file,
-      });
-      const body = (await res.json()) as { ok: true; data: { boardId?: string | null; jobId?: string; cards?: number; edges?: number } } | { ok: false; error: { code: string; message?: string } };
+      // D-541: multipart `file` + `board` (D-532); the browser sets the content-type boundary.
+      const form = new FormData();
+      form.set('file', file);
+      form.set('board', JSON.stringify(payload));
+      const res = await fetch(`${base}/v1/ai/generate-pdf`, { method: 'POST', headers: { authorization: token ? `Bearer ${token}` : '' }, body: form });
+      const body = (await res.json()) as { ok: true; data: { boardId?: string | null; jobId?: string; cards?: number; edges?: number } } | { ok?: false; error: { code: string; message?: string } };
       if (!body.ok) {
-        if (!paywall.handle(body.error)) setError(body.error.message === 'pdf_unreadable' ? t('newMap.pdfUnreadable') : t('errors.internal'));
+        // D-499: quota (402 → paywall), size/type (422) and rate limit (429) come back before the job starts.
+        const e = body.error;
+        if (paywall.handle(e)) return;
+        // D-580: 503 ai_unavailable (`ai_not_configured` = the API has no OPENROUTER_API_KEY and no AI=mock); any other code says its own typed message.
+        const msg = { pdf_unreadable: 'newMap.pdfUnreadable', pdf_too_large: 'newMap.pdfTooLarge', pdf_invalid: 'newMap.pdfInvalid', ai_not_configured: 'newMap.aiNotConfigured' }[e.message ?? ''];
+        setError(t((msg ?? `errors.${e.code}`) as StringKey));
         return;
       }
       if (body.data.boardId && !body.data.jobId) {
-        open(body.data.boardId, body.data.cards ?? 0, body.data.edges ?? 0);
+        await open(body.data.boardId, body.data.cards ?? 0, body.data.edges ?? 0);
         return;
       }
       if (!body.data.jobId) {
@@ -103,13 +124,13 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
       for (;;) {
         const job = await api<BoardGenerationProgress & { cards?: number; edges?: number; pages?: number }>(`/v1/ai/jobs/${body.data.jobId}`);
         if (!job.ok) {
-          setError(t('errors.internal'));
+          setError(t(`errors.${job.error.code}` as StringKey));
           return;
         }
         setProgress(job.data.progress);
         setStage(job.data.stage === 'ocr' || job.data.stage === 'layout' ? job.data.stage : 'extract');
         if (job.data.status === 'done' && job.data.boardId) {
-          open(job.data.boardId, job.data.cards ?? 0, job.data.edges ?? 0, job.data.pages ?? 1);
+          await open(job.data.boardId, job.data.cards ?? 0, job.data.edges ?? 0, job.data.pages ?? 1);
           return;
         }
         if (job.data.status === 'failed') {
@@ -133,14 +154,14 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
     setBusy(true);
     setError(null);
     try {
-      const r = await api<Board>('/v1/boards', { method: 'POST', body: JSON.stringify({ title: name.trim(), area: 'CM', matrixItemId: itemId }) });
+      const r = await api<Board>('/v1/boards', { method: 'POST', body: JSON.stringify(payload) });
       if (!r.ok) {
         if (!paywall.handle(r.error)) setError(t(`errors.${r.error.code}` as StringKey));
         return;
       }
       track('board_created', {});
-      if (itemId) track('board_linked_to_matrix', { count: 1, suggestedCount: suggested.some((s) => s.id === itemId) ? 1 : 0 });
-      router.push(`/mapas/${r.data.id}`);
+      trackAbout();
+      router.push(`/app/mapas/${r.data.id}`);
     } catch {
       setError(t('errors.internal'));
     } finally {
@@ -154,9 +175,35 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
     if (r.ok) {
       track('board_created', {});
       track('seed_board_copied', {});
-      router.push(`/mapas/${r.data.id}`);
+      router.push(`/app/mapas/${r.data.id}`);
     } else if (!paywall.handle(r.error)) setError(t('errors.internal'));
   }
+
+  /** FR-11: the existing-board choice comes before the import; access is only sent for a new board. */
+  function importAnki(target: ImportTarget) {
+    setExisting(null);
+    const board: ImportBoardInput = target === 'new' ? { ...payload, target } : { title: payload.title, area: payload.area, matrixItemIds: payload.matrixItemIds, target };
+    void anki.confirm(board, { suggestedCount });
+  }
+
+  async function submit() {
+    setShowErrors(true);
+    if (Object.keys(aboutErrors(about)).length) return;
+    if (path === 'blank') return void create();
+    if (path === 'pdf') return void generatePdf();
+    if (path !== 'anki') return setSoon(true);
+    setBusy(true);
+    const found = await anki.findExisting(payload.title);
+    setBusy(false);
+    if (found) setExisting(found);
+    else importAnki('new');
+  }
+
+  const pickFile = (f: File | null) => {
+    setFile(f);
+    anki.reset();
+    if (f && path === 'anki') void anki.start(f); // FR-1: upload and inspection start on choosing the file
+  };
 
   const heading = (title: string, desc: string) => (
     <div className="flex flex-col gap-2">
@@ -164,29 +211,39 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
       <p className="text-base text-muted">{desc}</p>
     </div>
   );
-  const sub = (label: string) => <span className="font-bold">{label}</span>;
-  const row = (label: string, value: string, last = false) => (
-    <div className={`flex justify-between py-3.5 ${last ? '' : 'border-b border-divider'}`}>
-      <span className="text-muted">{label}</span>
-      <span className="font-bold">{value}</span>
-    </div>
+  const st = anki.state;
+  const sending = st.kind === 'uploading' || st.kind === 'inspecting';
+  const ankiAfter = path === 'anki' && step === 2 && (st.kind === 'importing' || st.kind === 'done' || st.kind === 'error');
+  const steps = path === 'blank' ? [t('ankiSteps.step1'), t('ankiSteps.step3')] : path === 'seed' ? [t('ankiSteps.step1'), t('newMap.step3Title.seed')] : [t('ankiSteps.step1'), t('ankiSteps.step2'), t('ankiSteps.step3')];
+  const aboutStep = (path === 'blank' && step === 1) || (needsFile && step === 2);
+  const last = aboutStep || (path === 'seed' && step === 1);
+  const canContinue = step === 0 || (step === 1 && (path === 'pdf' ? file != null : path === 'anki' ? st.kind === 'preview' : false));
+  const total = st.kind === 'preview' ? estimate(st.summary, st.plan.deckIds) : 0;
+  const canFinish = path === 'anki' ? st.kind === 'preview' && st.plan.deckIds.length > 0 : path === 'pdf' ? file != null : true;
+  const cta = path === 'anki' ? t('ankiSteps.importCta', { n: total }) : t(`newMap.cta.${path}` as StringKey);
+  const form = (
+    <AboutMapForm
+      value={about}
+      onChange={(v) => {
+        if (v.title !== about.title) setTitleTouched(true);
+        setAbout(v);
+      }}
+      items={items}
+      suggestions={suggested}
+      showErrors={showErrors}
+    />
   );
-
-  const last = step === 2;
-  const canContinue = step === 0 || (step === 1 && name.trim().length > 0);
-  const canFinish = path === 'blank' ? name.trim().length > 0 : needsFile && file != null; // seed: nothing to pick yet
-  const cta = t(`newMap.cta.${path}` as StringKey);
 
   return (
     <div className="flex min-h-dvh bg-canvas text-ink">
       <main className="flex min-w-0 flex-1 flex-col lg:w-1/2 lg:flex-none gap-6 px-4 pb-8 pt-5 sm:px-6 sm:pt-[30px] md:gap-7 md:px-14">
         <div className="flex items-center justify-between gap-4">
-          <Link href="/" aria-label={t('pages.logoLink')} className="inline-flex min-h-11 min-w-11 items-center no-underline">
+          <Link href="/app/hoje" aria-label={t('pages.logoLink')} className="inline-flex min-h-11 min-w-11 items-center no-underline">
             <span className="max-sm:hidden"><Logo size={32} withWordmark /></span>
             <span className="sm:hidden"><Logo size={32} /></span>
           </Link>
-          <Stepper aria-label={t('newMap.stepsLabel')} doneLabel={t('newMap.stepDone')} current={step} steps={[t('newMap.step.one'), t('newMap.step.two'), t('newMap.step.three')]} />
-          <IconButton aria-label={t('newMap.closeLabel')} variant="secondary" onClick={() => router.push('/mapas')}>
+          <Stepper aria-label={t('newMap.stepsLabel')} doneLabel={t('newMap.stepDone')} current={step} steps={steps} />
+          <IconButton aria-label={t('newMap.closeLabel')} variant="secondary" onClick={() => router.push('/app/mapas')}>
             <Icon name="close" size={20} />
           </IconButton>
         </div>
@@ -205,8 +262,10 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
                     description={t(`newMap.path.${p.id}Desc` as StringKey)}
                     selected={path === p.id}
                     onSelect={() => {
+                      if (p.id === path) return;
                       setPath(p.id);
                       setFile(null);
+                      anki.reset();
                     }}
                   />
                 ))}
@@ -214,100 +273,72 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
             </>
           ) : null}
 
-          {step === 1 ? (
+          {step === 1 && needsFile ? (
             <>
-              {heading(t('newMap.step2Title'), t('newMap.step2Desc'))}
-              <div className="flex flex-col gap-2">
-                {sub(t('newMap.areaLabel'))}
-                <div role="group" aria-label={t('newMap.areaLabel')} className="flex flex-wrap gap-2.5">
-                  {AREAS.map((a) =>
-                    a === 'CM' ? (
-                      <FilterChip key={a} pressed>{t('boards.area.CM')}</FilterChip>
-                    ) : (
-                      // D-083: only Clínica Médica is selectable in the MVP
-                      <span key={a} className="opacity-50">
-                        <FilterChip pressed={false} disabled title={t('newMap.areaSoon')}>{t(`boards.area.${a}` as StringKey)}</FilterChip>
-                      </span>
-                    ),
-                  )}
-                </div>
-              </div>
-              <div className="flex flex-col gap-2">
-                {sub(t('newMap.itemLabel'))}
-                <div role="group" aria-label={t('newMap.itemLabel')} className="-m-1 flex max-h-[240px] flex-col gap-2 overflow-y-auto p-1">
-                  {items.length === 0 ? <p className="text-sm text-muted">{t('newMap.noItems')}</p> : null}
-                  {sortedItems.map((i) => (
-                    <ChoiceRow key={i.id} indicator="radio" selected={i.id === itemId} onSelect={() => pickItem(i)}>{i.title}</ChoiceRow>
+              {path === 'anki' && (sending || st.kind === 'error')
+                ? heading(t(`import.heading.${sending ? 'sending' : 'error'}.title` as StringKey), t(`import.heading.${sending ? 'sending' : 'error'}.desc` as StringKey))
+                : heading(t(`newMap.step3Title.${path}` as StringKey), t(`newMap.step3Desc.${path}` as StringKey))}
+              <Dropzone
+                title={t(`newMap.dropTitle.${path}` as StringKey)}
+                description={t(`newMap.dropDesc.${path}` as StringKey)}
+                buttonLabel={t('newMap.filePickerLabel')}
+                accept={accept}
+                onFiles={(f) => pickFile(f[0] ?? null)}
+                file={file ? { name: file.name, meta: t('newMap.fileMeta', { mb: (file.size / 1_048_576).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) }) } : null}
+                replaceLabel={t('newMap.replaceFile')}
+                onReplace={() => pickFile(null)}
+              />
+              {path === 'anki' && st.kind !== 'idle' && st.kind !== 'preview' ? (
+                <AnkiImportFlow state={st} onPlan={anki.setPlan} onAdjustOpened={anki.markAdjusted} onReset={() => pickFile(null)} onOpen={(id) => router.push(`/app/mapas/${id}`)} />
+              ) : null}
+              {file && path === 'anki' ? <p className="text-sm text-muted">{t('import.subdecksNote')}</p> : null}
+              {file && path === 'pdf' ? (
+                <div className="flex flex-col gap-2.5">
+                  {OPTS.pdf.map((o) => (
+                    <ChoiceRow key={o} indicator="check" selected={!!opts[o]} onSelect={() => setOpts({ ...opts, [o]: !opts[o] })}>
+                      {t(`newMap.opts.${path}.${o}` as StringKey)}
+                    </ChoiceRow>
                   ))}
                 </div>
-              </div>
-              <Input
-                label={t('newMap.nameLabel')}
-                value={name}
-                maxLength={120}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  setTouched(true);
-                }}
-              />
+              ) : null}
             </>
           ) : null}
 
-          {step === 2 ? (
+          {step === 1 && path === 'seed' ? (
             <>
-              {ankiRunning && anki.state.kind !== 'idle'
-                ? heading(t(`import.heading.${anki.state.kind === 'uploading' || anki.state.kind === 'inspecting' ? 'sending' : anki.state.kind}.title` as StringKey), t(`import.heading.${anki.state.kind === 'uploading' || anki.state.kind === 'inspecting' ? 'sending' : anki.state.kind}.desc` as StringKey))
-                : heading(t(`newMap.step3Title.${path}` as StringKey), t(`newMap.step3Desc.${path}` as StringKey))}
-              {ankiRunning && anki.state.kind !== 'idle' ? (
-                <AnkiImportFlow state={anki.state} onPlan={anki.setPlan} onConfirm={() => void anki.confirm()} onReset={anki.reset} onOpen={(id) => router.push(`/mapas/${id}`)} />
-              ) : null}
-              {needsFile && !ankiRunning ? (
+              {heading(t('newMap.step3Title.seed'), t('newMap.step3Desc.seed'))}
+              {seeds && seeds.length > 0 ? (
+                <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                  {seeds.map((s) => (
+                    <li key={s.id} className="flex items-center justify-between gap-3 rounded-[22px] border border-border bg-surface px-[22px] py-4">
+                      <span>
+                        <span className="block font-semibold">{s.title}</span>
+                        {s.temporalMark ? <span className="text-sm text-muted">{s.temporalMark}</span> : null}
+                      </span>
+                      <Button size="sm" onClick={() => void copySeed(s.id)}>{t('editorial.copy')}</Button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p role="status" className="rounded-[22px] border border-border bg-surface px-[22px] py-4 text-muted">{t('newMap.seedSoon')}</p>
+              )}
+            </>
+          ) : null}
+
+          {ankiAfter ? (
+            <>
+              {heading(t(`import.heading.${st.kind}.title` as StringKey), t(`import.heading.${st.kind}.desc` as StringKey))}
+              <AnkiImportFlow state={st} onPlan={anki.setPlan} onAdjustOpened={anki.markAdjusted} onReset={() => { pickFile(null); setStep(1); }} onOpen={(id) => router.push(`/app/mapas/${id}`)} />
+            </>
+          ) : aboutStep ? (
+            <>
+              {heading(t('newMapAbout.title'), t('newMapAbout.desc'))}
+              {form}
+              {path === 'anki' && st.kind === 'preview' ? (
                 <>
-                  <Dropzone
-                    title={t(`newMap.dropTitle.${path}` as StringKey)}
-                    description={t(`newMap.dropDesc.${path}` as StringKey)}
-                    buttonLabel={t('newMap.filePickerLabel')}
-                    accept={accept}
-                    onFiles={(f) => setFile(f[0] ?? null)}
-                    file={file ? { name: file.name, meta: t('newMap.fileMeta', { mb: (file.size / 1_048_576).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) }) } : null}
-                    replaceLabel={t('newMap.replaceFile')}
-                    onReplace={() => setFile(null)}
-                  />
-                  {file && path === 'anki' ? <p className="text-sm text-muted">{t('import.subdecksNote')}</p> : null}
-                  {file && path === 'pdf' ? (
-                    <div className="flex flex-col gap-2.5">
-                      {OPTS.pdf.map((o) => (
-                        <ChoiceRow key={o} indicator="check" selected={!!opts[o]} onSelect={() => setOpts({ ...opts, [o]: !opts[o] })}>
-                          {t(`newMap.opts.${path}.${o}` as StringKey)}
-                        </ChoiceRow>
-                      ))}
-                    </div>
-                  ) : null}
+                  {st.submitError ? <Alert tone="review" role="alert" title={st.submitError} /> : null}
+                  <AnkiImportFlow state={st} onPlan={anki.setPlan} onAdjustOpened={anki.markAdjusted} onReset={() => pickFile(null)} onOpen={(id) => router.push(`/app/mapas/${id}`)} />
                 </>
-              ) : null}
-              {path === 'seed' ? (
-                seeds && seeds.length > 0 ? (
-                  <ul className="m-0 flex list-none flex-col gap-2 p-0">
-                    {seeds.map((s) => (
-                      <li key={s.id} className="flex items-center justify-between gap-3 rounded-[22px] border border-border bg-surface px-[22px] py-4">
-                        <span>
-                          <span className="block font-semibold">{s.title}</span>
-                          {s.temporalMark ? <span className="text-sm text-muted">{s.temporalMark}</span> : null}
-                        </span>
-                        <Button size="sm" onClick={() => void copySeed(s.id)}>{t('editorial.copy')}</Button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p role="status" className="rounded-[22px] border border-border bg-surface px-[22px] py-4 text-muted">{t('newMap.seedSoon')}</p>
-                )
-              ) : null}
-              {path === 'blank' ? (
-                <div className="flex flex-col gap-0.5 rounded-[22px] border border-border bg-surface px-[22px] py-1.5">
-                  {row(t('newMap.nameLabel'), name)}
-                  {row(t('newMap.areaLabel'), area)}
-                  {row(t('newMap.itemLabel'), item?.title ?? '—', true)}
-                </div>
               ) : null}
               {progress != null ? (
                 <div className="flex flex-col gap-2">
@@ -320,32 +351,26 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
           ) : null}
         </div>
 
-        {ankiRunning ? null : <div className="sticky bottom-0 -mb-8 flex max-w-[660px] items-center justify-between gap-3 max-sm:flex-col-reverse max-sm:items-stretch max-sm:[&>button]:w-full bg-canvas pb-[calc(2rem+env(safe-area-inset-bottom))] pt-3">
+        {ankiAfter ? null : <div className="sticky bottom-0 z-10 -mb-8 flex max-w-[660px] items-center justify-between gap-3 max-sm:flex-col-reverse max-sm:items-stretch max-sm:[&>button]:w-full bg-canvas pb-[calc(2rem+env(safe-area-inset-bottom))] pt-3">
           {step > 0 ? (
             <Button variant="secondary" size="lg" icon={<Icon name="left" size={20} />} onClick={() => setStep((step - 1) as 0 | 1)}>{t('newMap.backButton')}</Button>
           ) : (
             <span className="max-sm:hidden" />
           )}
           {last && path !== 'seed' ? (
-            <Button
-              size="lg"
-              disabled={!canFinish}
-              loading={busy}
-              loadingLabel={t('common.loading')}
-              iconEnd={path === 'blank' ? <Icon name="right" size={20} /> : undefined}
-              onClick={() => (path === 'blank' ? void create() : path === 'anki' && file ? void anki.start(file) : path === 'pdf' && file ? void generatePdf() : setSoon(true))}
-            >
+            <Button size="lg" disabled={!canFinish} loading={busy || navigating} loadingLabel={t('common.loading')} iconEnd={path === 'blank' ? <Icon name="right" size={20} /> : undefined} onClick={() => void submit()}>
               {cta}
             </Button>
           ) : !last ? (
             <Button size="lg" disabled={!canContinue} iconEnd={<Icon name="right" size={20} />} onClick={() => setStep((step + 1) as 1 | 2)}>{t('newMap.continueButton')}</Button>
           ) : null}
         </div>}
-        <MapPreview compact path={path} step={step} name={name.trim()} area={area} item={item?.title ?? ''} />
+        <MapPreview compact path={path} step={step} name={about.title.trim()} area={area} item={firstItem?.title ?? ''} />
       </main>
 
-      <MapPreview path={path} step={step} name={name.trim()} area={area} item={item?.title ?? ''} />
+      <MapPreview path={path} step={step} name={about.title.trim()} area={area} item={firstItem?.title ?? ''} />
 
+      <ExistingBoardDialog open={existing != null} existing={existing} onChoose={importAnki} onCancel={() => setExisting(null)} />
       {/* D-068/D-071: PDF (F05), Anki (F06) and mapas prontos (F10/F12) do not exist in the backend yet; never pretend they generated. */}
       <Dialog open={soon} onOpenChange={setSoon} title={t('boards.soon.title')} description={t('boards.soon.body')} closeLabel={t('common.close')}>
         <Button onClick={() => setSoon(false)}>{t('common.close')}</Button>

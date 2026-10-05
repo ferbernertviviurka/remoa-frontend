@@ -69,8 +69,8 @@ export function MobileCardList({ graph }: { graph: BoardGraph }) {
           <AiDraftTag card={selected} />
           <p className="m-0 text-sm text-muted">{selected.back ?? selected.front}</p>
           {selected.source ? <p className="m-0 text-sm text-muted">{t('editorial.source', { fonte: selected.source })}</p> : null}
-          <Button onClick={() => router.push(`/mapas/${graph.board.id}?modo=desafio`)}>{t('map.inspector.reviewThis')}</Button>
-          <a href={`/mapas/${graph.board.id}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary-deep">{t('editorial.editOnComputer')}</a>
+          <Button onClick={() => router.push(`/app/mapas/${graph.board.id}?modo=desafio`)}>{t('map.inspector.reviewThis')}</Button>
+          <a href={`/app/mapas/${graph.board.id}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary-deep">{t('editorial.editOnComputer')}</a>
           <Button variant="secondary" onClick={() => setOpen(null)}>{t('common.close')}</Button>
         </div>
       ) : null}

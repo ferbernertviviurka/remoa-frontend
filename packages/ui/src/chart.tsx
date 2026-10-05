@@ -1,5 +1,5 @@
-/** Barras simples, sem biblioteca de gráfico. Cada barra tem um nome para leitor de tela. */
-export function BarChart({ label, items, barLabel }: { label: string; items: { id: string; value: number }[]; barLabel: (item: { id: string; value: number }) => string }) {
+/** F11: renamed from BarChart (clashed with the F19 admin BarChart). Barras simples, sem biblioteca de gráfico. Cada barra tem um nome para leitor de tela. */
+export function DailyBarChart({ label, items, barLabel }: { label: string; items: { id: string; value: number }[]; barLabel: (item: { id: string; value: number }) => string }) {
   const max = Math.max(1, ...items.map((item) => item.value));
   return (
     <ul aria-label={label} className="m-0 flex h-28 list-none items-end gap-1 p-0">

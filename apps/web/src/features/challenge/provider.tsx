@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { ChallengeItemPublic, Grade, SessionSummary, StartSessionInput } from '@remoa/contracts';
+import type { ChallengeItemPublic, ChallengeOptions, Grade, QueueFilter, SessionSummary, StartSessionInput } from '@remoa/contracts';
 import { track } from '@/lib/analytics';
 import { challengeClient, type AnswerPayload } from './client';
 
@@ -14,7 +14,8 @@ export type Run = { sessionId: string; items: ChallengeItemPublic[]; queue: stri
 export type ChallengeState =
   | { phase: 'idle' }
   | { phase: 'loading'; scope: string }
-  | { phase: 'error'; scope: string }
+  /** `code`: the API's error message, e.g. `challenge_min_cards` (D-579). */
+  | { phase: 'error'; scope: string; code?: string }
   | { phase: 'empty'; scope: string }
   | ({ phase: 'running'; scope: string } & Run)
   | { phase: 'finishing'; scope: string; items: ChallengeItemPublic[] }
@@ -22,10 +23,12 @@ export type ChallengeState =
 
 export type ChallengeApi = {
   state: ChallengeState;
-  /** Starts a session; resolves to its first item (the daily queue starts on whatever map owns it). */
-  begin: (scope: Scope, limit?: number) => Promise<ChallengeItemPublic | null>;
+  /** Starts a session; resolves to its first item (the daily queue starts on whatever map owns it). Without `options`, the last ones chosen ("Mais 5"). */
+  begin: (scope: Scope, limit?: number, options?: ChallengeOptions, filter?: QueueFilter) => Promise<ChallengeItemPublic | null>;
   /** Starts a session for the scope unless one is already running/loading for it (idempotent, StrictMode safe). */
-  ensure: (scope: Scope) => void;
+  ensure: (scope: Scope, options?: ChallengeOptions) => void;
+  /** CCR-019: the options of the current session (gradingMode `self` = Acertei/Errei on a board session). */
+  options: ChallengeOptions | null;
   reset: () => void;
   answer: (item: ChallengeItemPublic, p: AnswerPayload, durationMs: number, onFeedback?: (chunk: string) => void) => ReturnType<typeof challengeClient.answer>;
   rate: (item: ChallengeItemPublic, grade: Grade, overridden: boolean, inputKind: AnswerPayload['inputKind']) => Promise<boolean>;
@@ -53,16 +56,26 @@ export function ChallengeProvider({ children }: { children: ReactNode }) {
   }, []);
   const startedAt = useRef(0);
   const scopeRef = useRef<Scope>({ kind: 'daily' });
+  const optsRef = useRef<ChallengeOptions | undefined>(undefined);
+  const [options, setOptions] = useState<ChallengeOptions | null>(null);
 
   const begin = useCallback<ChallengeApi['begin']>(
-    async (scope, limit) => {
+    async (scope, limit, opts, filter) => {
       const key = scopeKey(scope);
       scopeRef.current = scope;
+      if (opts) optsRef.current = opts;
       setState({ phase: 'loading', scope: key });
-      const input: StartSessionInput = { kind: scope.kind, ...(scope.kind === 'board' ? { boardId: scope.boardId } : {}), ...(limit ? { limit } : {}) };
+      const input: StartSessionInput = {
+        kind: scope.kind,
+        ...(scope.kind === 'board' ? { boardId: scope.boardId } : {}),
+        ...(limit ? { limit } : {}),
+        ...(scope.kind === 'daily' && filter ? { filter } : {}), // G15: Revisar starts the filtered selection
+        ...(scope.kind === 'board' && optsRef.current ? { options: optsRef.current } : {}),
+      };
       const r = await challengeClient.start(input);
-      if (!r.ok) return void setState({ phase: 'error', scope: key }), null;
+      if (!r.ok) return void setState({ phase: 'error', scope: key, code: r.error.message }), null;
       const { sessionId, items } = r.data;
+      setOptions(r.data.options ?? null);
       if (items.length === 0) return void setState({ phase: 'empty', scope: key }), null;
       startedAt.current = performance.now();
       track('challenge_started', { kind: scope.kind, items: items.length, modes: [...new Set(items.map((i) => i.mode))] });
@@ -73,11 +86,11 @@ export function ChallengeProvider({ children }: { children: ReactNode }) {
   );
 
   const ensure = useCallback<ChallengeApi['ensure']>(
-    (scope) => {
+    (scope, opts) => {
       const s = cur.current;
       // running/loading/finishing resume; an error waits for "Tentar de novo"; idle/empty/done (or another scope) start over
       if (s.phase !== 'idle' && s.scope === scopeKey(scope) && s.phase !== 'empty' && s.phase !== 'done') return;
-      void begin(scope);
+      void begin(scope, undefined, opts);
     },
     [begin],
   );
@@ -162,6 +175,6 @@ export function ChallengeProvider({ children }: { children: ReactNode }) {
     return r.ok;
   }, []);
 
-  const api = useMemo(() => ({ state, begin, ensure, reset, answer, rate, skip, dispute }), [state, begin, ensure, reset, answer, rate, skip, dispute]);
+  const api = useMemo(() => ({ state, options, begin, ensure, reset, answer, rate, skip, dispute }), [state, options, begin, ensure, reset, answer, rate, skip, dispute]);
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }

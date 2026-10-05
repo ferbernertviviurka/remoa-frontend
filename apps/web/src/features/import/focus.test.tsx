@@ -21,16 +21,20 @@ describe('import focus', () => {
     api.mockImplementation(async (path: string) => {
       if (path === '/v1/imports/anki/sign') return { ok: true, data: { url: 'u', key: 'k' } };
       if (path === '/v1/imports/anki/inspect') return { ok: true, data: summary };
-      if (path === '/v1/imports/anki') return { ok: false, error: { code: 'internal', message: 'falhou' } };
+      if (path === '/v1/imports/anki') return { ok: true, data: { importId: 'i1' } };
+      if (path === '/v1/imports/i1') return { ok: true, data: { importId: 'i1', status: 'failed', processed: 0, total: 1, error: 'falhou' } };
       return { ok: false, error: { code: 'not_found', message: path } };
     });
     render(<NewMapView items={[{ id: 'i1', area: 'CM', code: '1', title: 'Sepse', parentId: null, targetCards: 10 }]} initialPath="anki" />);
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+    fireEvent.change(document.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.apkg')] } }); // FR-1: upload starts on choosing
+    const step2 = await screen.findByRole('heading', { level: 1, name: 'Envie o seu arquivo' });
+    await waitFor(() => expect(document.activeElement).toBe(step2));
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Continuar' }) as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
-    fireEvent.change(document.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.apkg')] } });
-    fireEvent.click(screen.getByRole('button', { name: 'Importar para o mapa' }));
-    const preview = await screen.findByRole('heading', { level: 1, name: 'Confira o que vira o quê' });
-    await waitFor(() => expect(document.activeElement).toBe(preview));
+    const name = screen.getByLabelText('Nome do mapa') as HTMLInputElement;
+    await waitFor(() => expect(document.activeElement).toBe(name)); // FR-2: the name gets the focus
+    expect(name.value).toBe('CM'); // FR-3: root deck
     fireEvent.click(screen.getByRole('button', { name: /^Importar \d+ card/ }));
     const err = await screen.findByRole('heading', { level: 1, name: 'Não deu para importar' });
     await waitFor(() => expect(document.activeElement).toBe(err));

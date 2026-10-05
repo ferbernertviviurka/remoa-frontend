@@ -12,6 +12,16 @@ export const plans = {
     eyebrow: 'Planos',
     free: { title: 'Seu estudo pede mais espaço?', subtitle: 'Comece no Free. Assine o Pro quando precisar de mais mapas, cards e correções.' },
     pro: { title: 'Você está no Pro.', subtitle: 'Veja o que está liberado e gerencie a sua assinatura.' },
+    founder: { title: 'Você é Founder.', subtitle: 'Acesso vitalício, IA ilimitada e as novidades primeiro.' },
+  },
+  // Founder (compra única, vitalícia). Oferta para quem está no Free.
+  founderOffer: {
+    title: 'Founder',
+    price: 'Pagamento único',
+    description: 'Tudo do Pro, IA sem limite e as novidades antes de todo mundo. Acesso vitalício.',
+    benefits: ['Tudo do Pro', 'Correções por IA ilimitadas', 'Mapas de PDF ilimitados', 'Novidades primeiro'],
+    choose: 'Quero ser Founder',
+    back: 'Prefiro o Pro',
   },
   period: {
     label: 'Período de cobrança',
@@ -33,13 +43,15 @@ export const plans = {
     currentPlan: 'Seu plano atual',
     recommended: 'Recomendado',
     // Ilimitado concorda com o gênero da linha.
-    unlimited: { boards: 'Ilimitados', cards: 'Ilimitados', aiGrades: 'Ilimitadas' },
+    unlimited: { boards: 'Ilimitados', cards: 'Ilimitados', aiGrades: 'Ilimitadas', pdfMaps: 'Ilimitados', ankiImports: 'Ilimitadas', ankiImport: 'Ilimitados', newCards: 'Ilimitados' },
+    notIncluded: 'Não incluso',
     rows: {
       boards: { label: 'Mapas', sub: 'total na conta' },
       cards: { label: 'Cards', sub: 'total na conta' },
       aiGrades: { label: 'Correções por IA', sub: 'por dia' },
       pdfMaps: { label: 'Mapas gerados de PDF', sub: 'por mês' },
-      ankiImport: { label: 'Importação do Anki', sub: 'cards por arquivo' },
+      ankiImports: { label: 'Importações do Anki', sub: 'total na conta' },
+      ankiImport: { label: 'Cards por importação do Anki', sub: 'por arquivo' },
       newCards: { label: 'Novos cards por dia', sub: 'na fila de revisão' },
     },
     usage: {
@@ -55,6 +67,11 @@ export const plans = {
   summary: {
     title: 'Resumo do pedido',
     planName: 'Pro',
+    founderPlanName: 'Founder',
+    founderPer: 'pagamento único',
+    founderNote: 'Acesso vitalício, sem renovação. Pix ou cartão.',
+    founderLine: 'Founder, acesso vitalício',
+    founderSubscribe: 'Comprar o Founder',
     billingNote: {
       monthly: 'Cobrado todo mês.',
       annual: 'Cobrado uma vez por ano. Equivale a {price} por mês.',
@@ -100,13 +117,23 @@ export const plans = {
     method: { pix: 'Pix', card: 'cartão' },
   },
   success: {
+    founder: {
+      title: 'Você agora é Founder.',
+      subtitle: 'Seu acesso vitalício está ativo. Tudo isto já está liberado.',
+      benefits: {
+        pro: 'Tudo do Pro, para sempre',
+        aiGrades: 'Correções por IA ilimitadas',
+        pdfMaps: 'Mapas gerados de PDF ilimitados',
+        early: 'As novidades primeiro',
+      },
+    },
     title: 'Você agora é Pro.',
     subtitle: 'Seu plano foi atualizado. Tudo isto já está liberado.',
     benefits: {
       unlimited: 'Mapas e cards ilimitados',
-      aiGrades: 'Correções por IA sem limite diário',
+      aiGrades: '{n} correções por IA por dia',
       pdfMaps: '{n} mapas gerados de PDF por mês',
-      anki: 'Importação de até {n} cards do Anki',
+      anki: 'Importação do Anki ilimitada',
     },
     goToday: 'Ir para Hoje',
     createMap: 'Criar um mapa',
@@ -128,11 +155,14 @@ export const plans = {
   subscriber: {
     title: 'Sua assinatura',
     plan: 'Pro',
+    founderPlan: 'Founder',
+    founderStatus: 'Vitalício',
+    founderText: 'Acesso vitalício, sem renovação. Obrigado por apoiar o Remoa.',
     status: { active: 'Ativa', pastDue: 'Pagamento pendente', canceling: 'Termina em {date}' },
     perYear: '{price} por ano',
     perMonth: '{price} por mês',
     billing: 'Cobrança',
-    billingValue: { monthly: 'Mensal', annual: 'Anual' },
+    billingValue: { monthly: 'Mensal', annual: 'Anual', lifetime: 'Pagamento único' },
     amount: 'Valor',
     renewal: 'Renova em',
     endsAt: 'Termina em {date}',

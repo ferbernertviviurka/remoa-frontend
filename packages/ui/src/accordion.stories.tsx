@@ -4,6 +4,7 @@ import { Accordion } from './accordion';
 const meta = { title: 'Accordion', component: Accordion } satisfies Meta<typeof Accordion>;
 export default meta;
 type S = StoryObj<typeof meta>;
+export const WithCallback: S = { args: { items: [{ value: 'a', title: 'Abrir', content: 'Corpo' }], onValueChange: () => {} } };
 export const Default: S = {
   args: {
     items: [

@@ -4,6 +4,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { accountUser } from './account/fixture';
 import { createMockSepse, signUpAndLogin } from './visual/fixture';
+import { padForChallenge } from './challenge-pad';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 const node = (page: Page, title: string) => page.locator('.react-flow__node').filter({ has: page.getByRole('button', { name: `Selecionar ${title}` }) });
@@ -50,9 +51,10 @@ test('misto: Conteúdo nunca vira item do desafio nem da fila; só Pergunta e Re
   }
   expect(board$).toContain(ids[0]!);
 
-  await page.goto(`/mapas/${id}?modo=desafio`);
+  await padForChallenge(request, headers, id, 8); // G14 D-579: Conteúdo does not count toward the 10
+  await page.goto(`/app/mapas/${id}?modo=desafio`);
   let asked = 0;
-  for (let n = 0; n < 8; n++) {
+  for (let n = 0; n < 15; n++) {
     const summary = page.getByRole('heading', { name: 'Sessão concluída' });
     const reveal = page.getByRole('button', { name: 'Revelar resposta' });
     await expect(summary.or(reveal.first())).toBeVisible();
@@ -60,12 +62,12 @@ test('misto: Conteúdo nunca vira item do desafio nem da fila; só Pergunta e Re
     await expect(panel(page)).not.toContainText(/Conteúdo (Gama|Delta)|Texto (gama|delta)/);
     await reveal.first().click();
     asked++;
-    await page.getByRole('button', { name: /^Bom/ }).click();
+    await page.getByRole('button', { name: /^Acertei/ }).click(); // G14 D-605
   }
   await expect(page.getByRole('heading', { name: 'Sessão concluída' })).toBeVisible();
-  expect(asked).toBe(2);
+  expect(asked).toBeGreaterThanOrEqual(2); // 2 questions + the padding concepts, never a Conteúdo
 
-  await page.goto('/revisar');
+  await page.goto('/app/revisar');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(page.locator('main')).not.toContainText(/Conteúdo (Gama|Delta)/);
 });
@@ -74,7 +76,7 @@ test('caso: o tooltip da etapa abre por hover e fecha com Escape; axe com ele ab
   test.setTimeout(120_000);
   const { headers } = await signUpAndLogin(page, request);
   const { id } = await board(request, headers, 'Caso', [{ title: 'Caso sepse', type: 'case', x: 80, y: 120, put: { payload: { caseSteps: [{ stage: 'presentation', text: 'Febre' }] } } }]);
-  await page.goto(`/mapas/${id}`);
+  await page.goto(`/app/mapas/${id}`);
   const card = node(page, 'Caso sepse');
   await card.getByRole('button', { name: /Diagnóstico/ }).hover();
   await expect(page.getByRole('tooltip')).toContainText('pergunta o diagnóstico');
@@ -86,15 +88,15 @@ test('caso: o tooltip da etapa abre por hover e fecha com Escape; axe com ele ab
 test('perfil: escolher objetivo de outro grupo e momento novo persiste após recarregar; axe', async ({ page, request }) => {
   test.setTimeout(120_000);
   await accountUser(page, request);
-  await page.goto('/conta/perfil');
-  const residencia = page.getByRole('radiogroup', { name: /^Objetivo de prova: Residência/ });
-  await residencia.getByRole('radio', { name: 'USP' }).click();
-  await expect(residencia.getByRole('radio', { name: 'USP' })).toBeChecked();
+  await page.goto('/app/conta/perfil');
+  const residencia = page.getByRole('group', { name: /^Objetivo de prova: Residência/ });
+  await residencia.getByRole('button', { name: 'USP' }).click();
+  await expect(residencia.getByRole('button', { name: 'USP' })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('radiogroup', { name: 'Momento da graduação' }).getByRole('radio', { name: 'Residente' }).click();
   await expect(page.getByText('Salvo.').first()).toBeVisible();
-  await expect(page.getByRole('radiogroup', { name: /^Objetivo de prova: Enamed/ }).getByRole('radio', { checked: true })).toHaveCount(0); // one goal only
+  await expect(page.getByRole('group', { name: /^Objetivo de prova: Enamed/ }).getByRole('button', { pressed: true })).toHaveCount(0); // G14 13: vários objetivos, mas nenhum Enamed marcado
   await page.reload();
-  await expect(page.getByRole('radiogroup', { name: /^Objetivo de prova: Residência/ }).getByRole('radio', { name: 'USP' })).toBeChecked();
+  await expect(page.getByRole('group', { name: /^Objetivo de prova: Residência/ }).getByRole('button', { name: 'USP' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('radiogroup', { name: 'Momento da graduação' }).getByRole('radio', { name: 'Residente' })).toBeChecked();
   expect(await axe(page), 'perfil').toEqual([]);
   await page.setViewportSize({ width: 390, height: 844 });
@@ -104,7 +106,7 @@ test('perfil: escolher objetivo de outro grupo e momento novo persiste após rec
 test('cobertura → "Criar mapa para este tema" abre o Novo mapa com o item pré-selecionado', async ({ page, request }) => {
   test.setTimeout(120_000);
   await signUpAndLogin(page, request);
-  await page.goto('/cobertura');
+  await page.goto('/app/cobertura');
   const link = page.getByRole('link', { name: /^Criar mapa para / }).first();
   const label = (await link.getAttribute('aria-label'))!.replace(/^Criar mapa para /, '');
   await link.click();
@@ -118,15 +120,25 @@ test('cobertura → "Criar mapa para este tema" abre o Novo mapa com o item pré
 test('axe: Novo mapa nas 4 alternativas e em 390x844', async ({ page, request }) => {
   test.setTimeout(150_000);
   await signUpAndLogin(page, request);
-  for (const c of ['pdf', 'anki', 'pronto', 'blank']) {
-    await page.goto(`/mapas/novo?caminho=${c}`);
+  for (const c of ['pdf', 'anki', 'blank']) {
+    await page.goto(`/app/mapas/novo?caminho=${c}`);
+    if (c === 'blank') {
+      // G14 17: "Em branco" já abre em "Sobre o mapa"
+      await expect(page.getByLabel('Nome do mapa')).toBeVisible();
+      expect(await axe(page), 'novo blank sobre o mapa').toEqual([]);
+      continue;
+    }
     await expect(page.getByRole('heading', { level: 1, name: 'Como você quer começar?' })).toBeVisible();
     expect(await axe(page), `novo ${c} passo 1`).toEqual([]);
     await page.getByRole('button', { name: 'Continuar' }).click();
     expect(await axe(page), `novo ${c} passo 2`).toEqual([]);
   }
+  // F10 (main): "pronto" abre direto na lista de mapas prontos.
+  await page.goto('/app/mapas/novo?caminho=pronto');
+  await expect(page.getByRole('heading', { level: 1, name: 'Escolha o mapa pronto' })).toBeVisible();
+  expect(await axe(page), 'novo pronto (lista)').toEqual([]);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/mapas/novo?caminho=anki');
+  await page.goto('/app/mapas/novo?caminho=anki');
   expect(await axe(page), 'novo anki 390').toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'sem scroll horizontal').toBe(true);
 });
@@ -139,7 +151,7 @@ test('axe: editor com card redimensionado e painel aberto, Conteúdo, fluxograma
     { title: 'Fisiopatologia', type: 'note', x: 480, y: 80, put: { front: 'Resposta desregulada do hospedeiro.' } },
     { title: 'Pacote', type: 'flow', x: 80, y: 420, put: { payload: { steps: [{ id: 's1', text: 'Lactato' }, { id: 's2', text: 'Hemoculturas' }, { id: 's3', text: 'Antibiótico' }] } } },
   ]);
-  await page.goto(`/mapas/${id}`);
+  await page.goto(`/app/mapas/${id}`);
   const card = node(page, 'Sepse');
   await card.getByRole('button', { name: 'Selecionar Sepse' }).click();
   const h = (await card.locator('.react-flow__resize-control.bottom.right').boundingBox())!;
@@ -161,8 +173,10 @@ test('axe: editor com card redimensionado e painel aberto, Conteúdo, fluxograma
   expect(await axe(page), 'fluxograma virado (timeline)').toEqual([]);
 
   const sepse = await createMockSepse(request, headers, userId);
-  await page.goto(`/mapas/${sepse}?modo=desafio`);
-  await page.getByRole('group', { name: 'Como responder' }).getByRole('button', { name: 'Falar' }).click();
-  await expect(panel(page).getByText('Em breve', { exact: true })).toBeVisible();
-  expect(await axe(page), 'desafio Falar + Em breve').toEqual([]);
+  await padForChallenge(request, headers, sepse, 4); // G14 D-579
+  await page.goto(`/app/mapas/${sepse}?modo=desafio`);
+  const voz = page.getByRole('group', { name: 'Como responder' }).getByRole('button', { name: /Voz/ }); // G14 D-605: Voz "Em breve"
+  await expect(voz).toBeDisabled();
+  await expect(voz).toContainText('Em breve');
+  expect(await axe(page), 'desafio Voz em breve').toEqual([]);
 });

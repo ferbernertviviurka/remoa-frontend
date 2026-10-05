@@ -2,19 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { TextMorph } from 'torph/react';
-import { PLAN_LIMITS, PRICES_BRL, usageRows, type QuotaKey, type RedirectUrl, type UsageRow } from '@remoa/contracts';
+import { PLAN_LIMITS, formatBRL as formatCents, usageRows, type PriceBook, type QuotaKey, type RedirectUrl, type UsageRow } from '@remoa/contracts';
 import { t } from '@remoa/strings';
-import { Alert, Button, Icon, Segmented, UsageMeter, UsageWarning, useToast } from '@remoa/ui';
+import { Alert, Button, Icon, Morph, Segmented, UsageMeter, UsageWarning, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
-import { formatBRL, formatDate } from '@/features/billing/format';
+import { formatDate } from '@/features/billing/format';
 import { SectionCard } from '../shared/section-card';
 import { useAccount } from '../shell/account-context';
-
-const Morph = ({ children, as = 'span' }: { children: string; as?: 'span' | 'p' }) => (
-  <TextMorph as={as} locale="pt-BR" duration={320} ease="cubic-bezier(0.19, 1, 0.22, 1)" respectReducedMotion>{children}</TextMorph>
-);
 
 type Period = 'monthly' | 'annual';
 const nextMonth = () => {
@@ -31,28 +26,40 @@ const meta: Record<QuotaKey, { label: string; masc: boolean }> = {
 export function PlanSection() {
   const { account } = useAccount();
   const ent = account.entitlements;
-  const pro = ent.plan === 'pro';
+  const founder = ent.plan === 'founder';
+  const pro = ent.plan !== 'free';
   const router = useRouter();
   const params = useSearchParams();
   const { toast } = useToast();
   const [period, setPeriod] = useState<Period>('monthly');
   const [busy, setBusy] = useState<'portal' | 'cancel' | null>(null);
   const [error, setError] = useState(false);
+  // P-094: same source as /app/planos (GET /v1/billing/prices, centavos); no hard-coded fallback.
+  const [prices, setPrices] = useState<PriceBook | null>(null);
+  useEffect(() => {
+    if (pro) return;
+    let alive = true;
+    Promise.resolve(api<PriceBook>('/v1/billing/prices'))
+      .then((r) => alive && r.ok && setPrices(r.data))
+      .catch(() => undefined); // price stays "unavailable"; upgrade still goes to /app/planos
+    return () => {
+      alive = false;
+    };
+  }, [pro]);
   const announced = useRef(false);
   const notice = params.get('checkout') === 'ok' ? 'checkout' : params.get('portal') === 'ok' ? 'portal' : null;
 
   useEffect(() => {
     if (!notice || announced.current) return;
     announced.current = true;
-    if (notice === 'checkout') track('subscription_started', {});
     toast({ title: t(notice === 'checkout' ? 'billing.account.checkoutOk' : 'billing.account.portalOk') });
-    router.replace('/conta/plano'); // so a refresh doesn't announce (and track) it again
+    router.replace('/app/conta/plano'); // so a refresh doesn't announce (and track) it again
   }, [notice, router, toast]);
 
   const upgrade = (source: 'account_plan' | 'usage_nudge') => {
     track('upgrade_clicked', { source });
     // D-180: every upgrade converges on /planos; the period chosen here carries over.
-    router.push(`/planos?de=${source}${source === 'account_plan' && period === 'annual' ? '&periodo=anual' : ''}`);
+    router.push(`/app/planos?de=${source}${source === 'account_plan' && period === 'annual' ? '&periodo=anual' : ''}`);
   };
 
   async function portal(cancel: boolean) {
@@ -61,7 +68,6 @@ export function PlanSection() {
     try {
       const r = await api<RedirectUrl>('/v1/billing/portal', { method: 'POST', body: JSON.stringify(cancel ? { cancel: true } : {}) });
       if (r.ok) {
-        if (cancel) track('subscription_canceled', {});
         return void window.location.assign(r.data.url);
       }
     } catch {
@@ -72,11 +78,11 @@ export function PlanSection() {
   }
 
   const renewal = ent.renewsAt ? formatDate(ent.renewsAt) : null;
-  const price = formatBRL(PRICES_BRL[period]).replace(/,00$/, '');
+  const price = prices ? formatCents(prices[period].amount).replace(/,00$/, '') : t('account.plan.priceUnavailable');
   const perks = [
     t('account.plan.perks.unlimited'),
-    t('account.plan.perks.ai'),
-    t('account.plan.perks.pdf', { n: PLAN_LIMITS.pro.limits.ai_generations }),
+    t('account.plan.perks.ai', { n: PLAN_LIMITS.pro.limits.ai_grades ?? 0 }),
+    t('account.plan.perks.pdf', { n: PLAN_LIMITS.pro.limits.ai_generations ?? 0 }),
     t('account.plan.perks.seeds'),
   ];
 
@@ -91,10 +97,11 @@ export function PlanSection() {
         : r.key === 'ai_generations'
           ? t('account.plan.usage.pdfSub', { date: formatDate(nextMonth()) })
           : t('account.plan.usage.totalSub');
-    const value = unlimited ? t(m.masc ? 'account.plan.usage.unlimitedMasc' : 'account.plan.usage.unlimitedFem') : t('account.plan.usage.value', { used: r.used, limit: limit ?? 0 });
+    const notIncluded = limit === 0;
+    const value = notIncluded ? t('account.plan.usage.notIncluded') : unlimited ? t(m.masc ? 'account.plan.usage.unlimitedMasc' : 'account.plan.usage.unlimitedFem') : t('account.plan.usage.value', { used: r.used, limit: limit ?? 0 });
     const tone = unlimited ? 'unlimited' : r.tone === 'full' ? 'danger' : r.tone;
     const warning =
-      !pro && r.tone !== 'normal' ? (
+      !pro && !notIncluded && r.tone !== 'normal' ? (
         <UsageWarning action={<Button size="sm" variant="secondary" onClick={() => upgrade('usage_nudge')}>{t('account.plan.seePro')}</Button>}>
           {t(r.tone === 'full' ? 'account.plan.atLimit' : 'account.plan.nearLimit')}
         </UsageWarning>
@@ -112,9 +119,11 @@ export function PlanSection() {
         <div className="flex min-w-0 flex-1 flex-col gap-2.5">
           <p className="m-0 text-xs font-bold uppercase tracking-[.12em] text-on-dark">{t('account.plan.title')}</p>
           <h2 id="plan-h" className="m-0 font-display text-[44px] font-extrabold leading-none tracking-[-0.035em]">{t(`billing.plan.${ent.plan}`)}</h2>
-          {pro ? (
+          {founder ? (
+            <p className="m-0 max-w-[360px]">{t('account.plan.founderText')}</p>
+          ) : pro ? (
             <>
-              <p className="m-0 max-w-[360px]">{t('account.plan.proText', { pdf: PLAN_LIMITS.pro.limits.ai_generations, date: renewal ?? '' })}</p>
+              <p className="m-0 max-w-[360px]">{t('account.plan.proText', { ai: PLAN_LIMITS.pro.limits.ai_grades ?? 0, pdf: PLAN_LIMITS.pro.limits.ai_generations ?? 0, date: renewal ?? '' })}</p>
               {renewal && ent.cancelAtPeriodEnd ? <p className="m-0 text-sm">{t('billing.account.cancelsAt', { date: renewal })}</p> : null} {/* the active state already reads "Renova em …" in proText, as in the mock */}
               <div className="mt-auto flex flex-wrap gap-2">
                 <Button variant="outline-light" loading={busy === 'portal'} onClick={() => void portal(false)}>{t('account.plan.manage')}</Button>
@@ -144,7 +153,7 @@ export function PlanSection() {
               <span className="font-semibold text-muted"><Morph>{t(period === 'monthly' ? 'billing.pricing.perMonth' : 'billing.pricing.perYear', { price: '' })}</Morph></span>
             </p>
             <p className="-mt-2 m-0 min-h-[2.6em] text-[13px] text-muted tabular-nums">
-              <Morph>{period === 'monthly' ? t('account.plan.monthlyNote') : t('account.plan.annualNote', { price: formatBRL(PRICES_BRL.annual / 12) })}</Morph>
+              <Morph>{period === 'monthly' ? t('account.plan.monthlyNote') : t('account.plan.annualNote', { price: prices ? formatCents(Math.round(prices.annual.amount / 12)) : '' })}</Morph>
             </p>
             <ul className="m-0 flex list-none flex-col gap-2 p-0 text-sm">
               {perks.map((p) => (
@@ -161,6 +170,12 @@ export function PlanSection() {
           </div>
         )}
       </section>
+
+      <SectionCard
+        title={t('referral.accountEntry')}
+        body={t('referral.accountEntryDesc')}
+        action={<Button variant="secondary" icon={<Icon name="gift" size={18} />} onClick={() => router.push('/app/indicar?de=account')}>{t('referral.accountEntryCta')}</Button>}
+      />
 
       <SectionCard title={t('account.plan.usageTitle')} body={t('account.plan.usageBody')}>
         {usageRows(ent).map(meter)}

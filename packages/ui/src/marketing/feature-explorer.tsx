@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, type ElementType, type KeyboardEvent } from 'react';
+import { useEffect, useId, useRef, useState, type ElementType, type KeyboardEvent, type ReactNode } from 'react';
 import { Icon } from '../icons';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 import { useControlled } from './use-controlled';
 
 export type FeatureItem = {
@@ -19,6 +19,8 @@ export type FeatureExplorerProps = {
   onChange?: (id: string) => void;
   /** Componente de imagem (padrão `img`; o app pode passar `next/image`). Recebe src, alt, width, height, loading e className. */
   as?: ElementType;
+  /** Legenda sob o painel de imagem (desktop). */
+  caption?: ReactNode;
 };
 
 const EASE = 'ease-[cubic-bezier(.22,1,.36,1)]';
@@ -42,7 +44,7 @@ function useNarrow() {
  * Abaixo de 768 px vira acordeão (`aria-expanded`) com a imagem dentro do item.
  * Altura animada em 450 ms (grid-template-rows); movimento reduzido: sem transição.
  */
-export function FeatureExplorer({ items, tablistLabel, activeId, onChange, as }: FeatureExplorerProps) {
+export function FeatureExplorer({ items, tablistLabel, activeId, onChange, as, caption }: FeatureExplorerProps) {
   const Img: ElementType = as ?? 'img';
   const uid = useId();
   const narrow = useNarrow();
@@ -94,7 +96,7 @@ export function FeatureExplorer({ items, tablistLabel, activeId, onChange, as }:
                 className={`flex min-h-[60px] w-full cursor-pointer items-center gap-4 rounded-[18px] border-0 bg-transparent px-2.5 py-1.5 text-left text-on-dark ${focusRing}`}
               >
                 <span aria-hidden="true" className={`flex size-9 shrink-0 items-center justify-center rounded-full text-[15px] font-extrabold ${on ? 'bg-on-dark text-panel-dark' : 'bg-on-dark-fill text-on-dark'}`}>{index + 1}</span>
-                <span className="font-display text-[19px] font-bold tracking-[-0.02em] md:text-[22px]">{it.title}</span>
+                <span className={`font-display text-[19px] font-bold tracking-[-0.02em] md:text-[22px] ${on ? '' : 'text-on-dark-muted-2'}`}>{it.title}</span>
               </button>
               <div id={body} role={narrow ? 'region' : undefined} aria-labelledby={narrow ? `${uid}-tab-${it.id}` : undefined} inert={!open} className={`grid transition-[grid-template-rows] duration-[450ms] ${EASE} ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
                 <div className="min-h-0 overflow-hidden">
@@ -116,8 +118,11 @@ export function FeatureExplorer({ items, tablistLabel, activeId, onChange, as }:
         })}
       </div>
       {narrow ? null : (
-        <div id={panelId} role="tabpanel" aria-labelledby={`${uid}-tab-${current.id}`} className="sticky top-[104px] rounded-[34px] bg-canvas p-4 shadow-[0_40px_90px_rgba(0,0,0,0.3)]">
-          {img(current, 'rounded-[20px]')}
+        <div className="sticky top-[104px] flex flex-col gap-4">
+          <div id={panelId} role="tabpanel" aria-labelledby={`${uid}-tab-${current.id}`} className="rounded-[34px] bg-canvas p-4 shadow-[0_40px_90px_rgba(0,0,0,0.3)]">
+            {img(current, 'rounded-[20px]')}
+          </div>
+          {caption ? <p className="m-0 flex items-center gap-2.5 text-sm font-semibold text-on-dark-muted"><Icon name="layers" size={18} />{caption}</p> : null}
         </div>
       )}
     </div>

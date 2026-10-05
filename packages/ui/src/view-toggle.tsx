@@ -1,6 +1,6 @@
 'use client';
 
-import { focusRing } from './button';
+import { focusRing } from './button-styles';
 import { Icon, type IconName } from './icons';
 import { segItem, segTrack } from './segmented';
 

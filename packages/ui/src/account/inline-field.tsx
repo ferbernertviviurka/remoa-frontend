@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { focusRing } from '../button';
+import { focusRing } from '../button-styles';
 
 /**
  * InlineField: linha de configuração (rótulo, valor, botão "Editar"). Ao editar, a linha dá lugar ao formulário

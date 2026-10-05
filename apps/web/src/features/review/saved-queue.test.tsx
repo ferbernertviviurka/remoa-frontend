@@ -6,7 +6,7 @@ import { rememberQueue } from './queue-cache';
 import { SavedQueueView } from './saved-queue';
 
 vi.mock('@/lib/analytics', () => ({ track: () => undefined }));
-vi.mock('next/navigation', () => ({ usePathname: () => '/revisar', useRouter: () => ({ push: () => undefined }), useSearchParams: () => new URLSearchParams() }));
+vi.mock('next/navigation', () => ({ usePathname: () => '/app/revisar', useRouter: () => ({ push: () => undefined }), useSearchParams: () => new URLSearchParams() }));
 vi.mock('@/lib/api', () => ({ api: () => Promise.resolve({ ok: false, error: { code: 'internal', message: 'network' } }) }));
 
 afterEach(() => {
@@ -21,15 +21,16 @@ describe('SavedQueueView', () => {
     await rememberQueue({ items: reviewQueueFixture, boardTitles: { [boardId]: 'Sepse' } });
     render(<ChallengeProvider><SavedQueueView message="Sem conexão" /></ChallengeProvider>);
     expect(await screen.findByText('Esta é a última fila salva neste aparelho. A correção por IA volta quando a rede voltar.')).toBeVisible();
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Sepse');
-    expect(screen.getByRole('button', { name: 'Começar revisão' })).toBeVisible();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('7 cards na última fila salva');
+    expect(screen.getByRole('button', { name: 'Começar revisão · 7' })).toBeVisible();
   });
 
   it('keeps the server message when nothing was saved', async () => {
     installCache();
     render(<ChallengeProvider><SavedQueueView message="Sem conexão" /></ChallengeProvider>);
     expect(await screen.findByText('Sem conexão')).toBeVisible();
-    expect(screen.queryByRole('button', { name: 'Começar revisão' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: /Começar revisão/ })).toBeNull();
   });
 });
 
