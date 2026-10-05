@@ -13,6 +13,7 @@ import { Row, SectionCard as Card } from '../shared/section-card';
 import { useOnline } from '../shell/use-online';
 import { usePhotoDialog } from './photo-dialog';
 import { PersonalCard } from './personal-card';
+import { TimezoneRow } from './timezone-row';
 
 const patchProfile = (body: object) => api('/v1/account/profile', { method: 'PATCH', body: JSON.stringify(body) });
 
@@ -286,12 +287,7 @@ export function ProfileSection() {
             <ChoiceChip label={t('account.profile.stageLabel')} options={stageOptions()} value={profile.stage} onValueChange={(v) => { const st = stageSchema.safeParse(v); if (st.success && st.data !== profile.stage) void setStudy({ stage: st.data }); }} />
           </Row>
         </div>
-        <Row label={t('account.profile.timezone')}>
-          <span className="font-semibold">
-            {profile.timezone === 'America/Sao_Paulo' ? t('account.profile.timezoneValue') : profile.timezone}{' '}
-            <span className="font-normal text-muted">· {t('account.profile.dayStartsAt', { hour: '4h' })}</span>
-          </span>
-        </Row>
+        <TimezoneRow />
       </Card>
       <PersonalCard />
     </>

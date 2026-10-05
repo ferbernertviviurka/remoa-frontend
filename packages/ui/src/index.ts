@@ -90,3 +90,7 @@ export * from './sheet';
 export * from './aside';
 // F23 Mapa no celular: cabeçalho em pílula, IconPill e barra flutuante (map-mobile).
 export * from './map-mobile';
+// F25 Calendário.
+export * from './calendar';
+// F26 Central de notificações (sino, popover, item, preferências).
+export * from './notifications';

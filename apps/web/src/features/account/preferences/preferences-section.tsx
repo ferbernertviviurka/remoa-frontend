@@ -6,6 +6,7 @@ import { t } from '@remoa/strings';
 import { Alert, ChoiceChip, Segmented, Switch, Tag, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
+import { PendingLink } from '../../shell/nav-pending';
 import { SectionCard, SettingRow } from '../shared/section-card';
 import { useAccount } from '../shell/account-context';
 import { StoreWaitlistSetting } from '../../store/account-setting';
@@ -97,11 +98,11 @@ export function PreferencesSection() {
       </SectionCard>
 
       <SectionCard title={t('account.prefs.emailsTitle')} body={t('account.prefs.emailsBody')}>
-        <SettingRow title={t('account.prefs.emailReview')} body={t('account.prefs.emailReviewHelp')}>
-          <Switch size="lg" hideLabel label={t('account.prefs.emailReview')} checked={prefs.emailReviewReminders} onCheckedChange={(c) => void save({ emailReviewReminders: c }, t('account.prefs.saved'))} />
-        </SettingRow>
-        <SettingRow title={t('account.prefs.emailNews')} body={t('account.prefs.emailNewsHelp')}>
-          <Switch size="lg" hideLabel label={t('account.prefs.emailNews')} checked={prefs.emailProductNews} onCheckedChange={(c) => void save({ emailProductNews: c }, t('account.prefs.saved'))} />
+        {/* F26 FR-6: one source of preferences, the notifications page (no second copy here) */}
+        <SettingRow title={t('account.prefs.emailsLinkTitle')} body={t('account.prefs.emailsLinkBody')}>
+          <PendingLink href="/app/notificacoes#preferencias" className="inline-flex min-h-11 items-center rounded-[13px] border-[1.5px] border-border-strong px-4 text-sm font-bold text-ink no-underline">
+            {t('notifications.prefs.accountLink')}
+          </PendingLink>
         </SettingRow>
       </SectionCard>
       <StoreWaitlistSetting />

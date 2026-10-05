@@ -1,0 +1,13 @@
+{
+  "/offline.html/route": "app/offline.html/route.js",
+  "/dev/emails/page": "app/dev/emails/page.js",
+  "/(auth)/cadastro/page": "app/(auth)/cadastro/page.js",
+  "/(auth)/entrar/page": "app/(auth)/entrar/page.js",
+  "/app/(fullscreen)/onboarding/page": "app/app/(fullscreen)/onboarding/page.js",
+  "/(auth)/recuperar-senha/page": "app/(auth)/recuperar-senha/page.js",
+  "/app/(app)/hoje/page": "app/app/(app)/hoje/page.js",
+  "/app/(app)/notificacoes/page": "app/app/(app)/notificacoes/page.js",
+  "/app/(app)/mapas/page": "app/app/(app)/mapas/page.js",
+  "/app/(app)/calendario/page": "app/app/(app)/calendario/page.js",
+  "/app/(app)/conta/[secao]/page": "app/app/(app)/conta/[secao]/page.js"
+}

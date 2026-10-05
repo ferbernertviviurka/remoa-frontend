@@ -40,6 +40,9 @@ export type RailItemProps = {
   active?: boolean;
   badge?: number | string;
   badgeLabel?: string;
+  /** Ponto laranja pulsante (Calendário, F25 FR-1); `dotLabel` = texto só para leitor de tela. Pulso desligado em movimento reduzido. */
+  dot?: boolean;
+  dotLabel?: string;
   href?: string;
   as?: LinkLike;
   onClick?: () => void;
@@ -47,7 +50,7 @@ export type RailItemProps = {
   tone?: 'admin';
 };
 
-export function RailItem({ icon, label, active = false, badge, badgeLabel, href, as, onClick, tone }: RailItemProps) {
+export function RailItem({ icon, label, active = false, badge, badgeLabel, dot, dotLabel, href, as, onClick, tone }: RailItemProps) {
   const cls = clsx(
     'relative flex h-16 w-[68px] flex-col items-center justify-center gap-1 rounded-[18px] border-0 text-xs no-underline transition-colors duration-150',
     tone === 'admin'
@@ -59,6 +62,11 @@ export function RailItem({ icon, label, active = false, badge, badgeLabel, href,
     <>
       <Icon name={icon} />
       <span>{label}</span>
+      {dot ? (
+        <span className="cal-pulse absolute right-[18px] top-2.5 size-2.5 rounded-full bg-review">
+          {dotLabel ? <span className="sr-only">{dotLabel}</span> : null}
+        </span>
+      ) : null}
       {badge != null ? (
         <span className="absolute right-[9px] top-1.5 flex h-5 min-w-5 items-center justify-center rounded-pill bg-review px-1.5 text-[11px] font-bold text-white">
           <span aria-hidden={badgeLabel ? true : undefined}>{badge}</span>

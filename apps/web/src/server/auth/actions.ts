@@ -13,7 +13,7 @@ import {
   type SignUpInput,
 } from '@remoa/contracts';
 import { createClient } from '@/lib/supabase/server';
-import { safeNext } from '@/lib/safe-next';
+import { APP_HOME, safeNext } from '@/lib/safe-next';
 
 export type AuthResult = { ok: true } | { ok: false; error: { code: ErrorCode; message: string } };
 const fail = (code: ErrorCode, message: string): AuthResult => ({ ok: false, error: { code, message } });
@@ -39,7 +39,8 @@ export async function signUp(input: SignUpInput): Promise<AuthResult> {
   const { error } = await supabase.auth.signUp({
     email: p.data.email,
     password: p.data.password,
-    options: { data: p.data.name ? { name: p.data.name } : undefined },
+    // F24 FR-7: the confirmation link comes back through /auth/callback (Supabase appends ?code=).
+    options: { data: p.data.name ? { name: p.data.name } : undefined, emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(APP_HOME)}` },
   });
   return error ? fromSupabase(error) : { ok: true }; // local config has confirmations off: session is set immediately
 }
@@ -74,6 +75,23 @@ export async function signInWithGoogle(input?: { next?: string; rf?: string }): 
   });
   if (error) return fromSupabase(error);
   redirect(data.url); // throws NEXT_REDIRECT on success
+}
+
+/** F24 FR-9: never reveals whether the account exists; only a malformed e-mail is rejected. Provider errors (unknown user, 429...) are swallowed. */
+export async function requestPasswordReset(input: { email: string }): Promise<AuthResult> {
+  const p = magicSchema.pick({ email: true }).safeParse(input);
+  if (!p.success) return invalid();
+  const supabase = await createClient();
+  await supabase.auth.resetPasswordForEmail(p.data.email, { redirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent('/redefinir-senha')}` });
+  return { ok: true };
+}
+
+export async function updatePassword(input: { password: string }): Promise<AuthResult> {
+  const p = signUpSchema.pick({ password: true }).safeParse(input);
+  if (!p.success) return invalid();
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password: p.data.password });
+  return error ? fromSupabase(error) : { ok: true };
 }
 
 export async function signOut(): Promise<AuthResult> {

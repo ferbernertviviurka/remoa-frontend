@@ -15,6 +15,11 @@ describe('Button', () => {
     expect(fn).toHaveBeenCalledOnce();
     expect(screen.getByRole('button')).toHaveAttribute('type', 'button');
   });
+  it('align="start" alinha à esquerda; padrão centraliza', () => {
+    render(<><Button align="start">A</Button><Button>B</Button></>);
+    expect(screen.getByRole('button', { name: 'A' }).className).toContain('justify-start');
+    expect(screen.getByRole('button', { name: 'B' }).className).toContain('justify-center');
+  });
   it('size touch tem altura mínima 46px', () => {
     render(<Button size="touch">Ir</Button>);
     expect(screen.getByRole('button').className).toContain('min-h-[46px]');

@@ -44,6 +44,20 @@ describe('Rail', () => {
   });
 });
 
+describe('Rail Calendário (F25 FR-1)', () => {
+  it('sits after Revisar (4th link) and pulses a dot only when something starts within 24 h', () => {
+    pathname = '/app/calendario';
+    const { rerender } = render(<Rail />);
+    const links = screen.getAllByRole('link');
+    expect(links).toHaveLength(7); // Progresso is still on the rail (Q-107)
+    expect(links[3]).toHaveAccessibleName('Calendário');
+    expect(links[3]).toHaveAttribute('aria-current', 'page');
+    expect(screen.queryByText('Há compromisso nas próximas 24 horas')).toBeNull();
+    rerender(<Rail calendarSoon />);
+    expect(screen.getByRole('link', { name: /Calendário/ })).toHaveAccessibleName(/Há compromisso nas próximas 24 horas/);
+  });
+});
+
 describe('Rail admin item (F19 FR-11)', () => {
   it('is absent for non-admins and a link to /admin for admins', () => {
     pathname = '/app/hoje';

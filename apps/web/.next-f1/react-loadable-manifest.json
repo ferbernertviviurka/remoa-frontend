@@ -1,0 +1,36 @@
+{
+  "../../../packages/ui/src/toast.tsx -> ./toast-host": {
+    "id": "../../../packages/ui/src/toast.tsx -> ./toast-host",
+    "files": [
+      "static/chunks/_app-pages-browser_packages_ui_src_toast-host_tsx.js"
+    ]
+  },
+  "features/billing/paywall.tsx -> ./paywall-dialog": {
+    "id": "features/billing/paywall.tsx -> ./paywall-dialog",
+    "files": [
+      "static/chunks/_app-pages-browser_src_features_billing_paywall-dialog_tsx.js"
+    ]
+  },
+  "features/calendar/api.ts -> @/lib/supabase/client": {
+    "id": "features/calendar/api.ts -> @/lib/supabase/client",
+    "files": [
+      "static/chunks/_app-pages-browser_src_lib_supabase_client_ts-_fac61.js"
+    ]
+  },
+  "features/notifications/provider.tsx -> @/lib/supabase/client": {
+    "id": "features/notifications/provider.tsx -> @/lib/supabase/client",
+    "files": [
+      "static/chunks/_app-pages-browser_src_lib_supabase_client_ts-_fac61.js"
+    ]
+  },
+  "lib/analytics.ts -> @remoa/contracts": {
+    "id": "lib/analytics.ts -> @remoa/contracts",
+    "files": []
+  },
+  "lib/api/index.ts -> @/lib/supabase/client": {
+    "id": "lib/api/index.ts -> @/lib/supabase/client",
+    "files": [
+      "static/chunks/_app-pages-browser_src_lib_supabase_client_ts-_fac60.js"
+    ]
+  }
+}

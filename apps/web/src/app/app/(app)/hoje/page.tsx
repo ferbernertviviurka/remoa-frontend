@@ -6,6 +6,8 @@ import type {
   RetrievabilityMap,
   BoardGraph,
   OnboardingState,
+  AccountSnapshot,
+  UpcomingEvents,
 } from "@remoa/contracts";
 import { Suspense } from "react";
 import { t } from "@remoa/strings";
@@ -51,11 +53,14 @@ async function QueueStart({
 
 export default async function Page() {
   const first = firstInQueue().catch(() => undefined); // dispara já, em paralelo com o resto
-  const [home, boards, coverage, onboarding] = await Promise.all([
+  const [home, boards, coverage, onboarding, upcoming, me] = await Promise.all([
     serverApi<HomeSummary>("/v1/home"),
     serverApi<BoardSummary[]>("/v1/boards"),
     serverApi<CoverageRow[]>("/v1/coverage"),
     serverApi<OnboardingState>("/v1/onboarding"),
+    // F25 FR-17: the shell asks the same path (limit 4), so it is one request per render.
+    serverApi<UpcomingEvents>("/v1/calendar/upcoming?limit=4"),
+    serverApi<AccountSnapshot>("/v1/account/me"),
   ]);
   if (!home.ok)
     return <EmptyState title={t("pages.home")} body={t("home.loadError")} />;
@@ -66,6 +71,7 @@ export default async function Page() {
       boards={data(boards, [])}
       coverage={data(coverage, [])}
       checklist={onboarding.ok ? onboarding.data.checklist : []}
+      calendar={upcoming.ok ? { upcoming: upcoming.data, timeZone: me.ok ? me.data.profile.timezone : "America/Sao_Paulo" } : null}
       queueStart={
         <Suspense
           fallback={<SkeletonBlock width={300} height={14} radius={7} />}

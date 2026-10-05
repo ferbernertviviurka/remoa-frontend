@@ -1,0 +1,12 @@
+{
+  "/offline.html/route": "app/offline.html/route.js",
+  "/(auth)/entrar/page": "app/(auth)/entrar/page.js",
+  "/app/(fullscreen)/mapas/novo/page": "app/app/(fullscreen)/mapas/novo/page.js",
+  "/app/(app)/mapas/page": "app/app/(app)/mapas/page.js",
+  "/app/(app)/hoje/page": "app/app/(app)/hoje/page.js",
+  "/app/(app)/calendario/page": "app/app/(app)/calendario/page.js",
+  "/app/(app)/mapas/[id]/page": "app/app/(app)/mapas/[id]/page.js",
+  "/app/(app)/revisar/page": "app/app/(app)/revisar/page.js",
+  "/app/(app)/notificacoes/page": "app/app/(app)/notificacoes/page.js",
+  "/app/(app)/conta/[secao]/page": "app/app/(app)/conta/[secao]/page.js"
+}
