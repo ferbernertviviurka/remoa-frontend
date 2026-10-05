@@ -3,6 +3,7 @@ import { createEvent, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BottomSheet } from './bottom-sheet';
 import { CreateCardSheet, type CreateCardSheetProps } from './create-card-sheet';
+import { FullSheet } from './full-sheet';
 import { violations } from '../test-utils';
 
 function Demo({ height }: { height?: 'auto' | 'half' | 'full' }) {
@@ -88,7 +89,7 @@ describe('BottomSheet', () => {
     at(0, () => ptr(handle, 'pointerDown', 100));
     at(400, () => ptr(handle, 'pointerMove', 140));
     at(800, () => ptr(handle, 'pointerUp', 140));
-    expect(screen.getByRole('dialog').style.transform).toBe('');
+    expect((document.querySelector('.remoa-bsheet') as HTMLElement).style.transform).toBe('');
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     at(1000, () => ptr(handle, 'pointerDown', 100));
     at(1400, () => ptr(handle, 'pointerMove', 260));
@@ -103,6 +104,54 @@ describe('BottomSheet', () => {
     at(40, () => ptr(handle, 'pointerMove', 150));
     at(50, () => ptr(handle, 'pointerUp', 150));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+});
+
+describe('BottomSheet footer', () => {
+  it('footer fica dentro do diálogo (por cima do scrim, foco alcança), fora do painel que desliza, e reserva o rodapé', async () => {
+    const onClose = vi.fn();
+    render(
+      <BottomSheet open title="Painel" closeLabel="Fechar painel" footer={<button onClick={onClose}>Fechar barra</button>}>
+        <p>conteúdo</p>
+      </BottomSheet>,
+    );
+    const footer = screen.getByRole('button', { name: 'Fechar barra' });
+    expect(screen.getByRole('dialog').contains(footer)).toBe(true);
+    expect(document.querySelector('.remoa-bsheet')!.contains(footer)).toBe(false); // parado enquanto o painel anima
+    expect((screen.getByText('conteúdo').parentElement as HTMLElement).style.paddingBottom).toContain('104px');
+    await userEvent.click(footer);
+    expect(onClose).toHaveBeenCalled();
+    expect(await violations(document.body)).toEqual([]);
+  });
+});
+
+describe('FullSheet', () => {
+  function Editor({ onOpenChange = () => {} }: { onOpenChange?: (o: boolean) => void }) {
+    return (
+      <FullSheet open title="Novo conceito" onOpenChange={onOpenChange} start={<button onClick={() => onOpenChange(false)}>Cancelar</button>} end={<button>Salvar</button>}>
+        <label>
+          Título <input />
+        </label>
+      </FullSheet>
+    );
+  }
+  it('dialog com título visível, Cancelar e Salvar no topo, sem X; axe ok', async () => {
+    render(<Editor />);
+    const d = screen.getByRole('dialog', { name: 'Novo conceito' });
+    expect(d).toHaveClass('remoa-fsheet');
+    expect(screen.getByRole('heading', { name: 'Novo conceito' })).toBeVisible();
+    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual(['Cancelar', 'Salvar']); // nenhum X extra
+    expect(d.contains(document.activeElement)).toBe(true);
+    expect(await violations(document.body)).toEqual([]);
+  });
+  it('Esc e Cancelar pedem para fechar', async () => {
+    const onOpenChange = vi.fn();
+    render(<Editor onOpenChange={onOpenChange} />);
+    await userEvent.keyboard('{Escape}');
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    onOpenChange.mockClear();
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });
 
@@ -157,7 +206,7 @@ describe('CreateCardSheet', () => {
   it('movimento reduzido: sem animação própria (regra CSS por data-motion/sistema)', () => {
     document.documentElement.dataset.motion = 'reduced';
     render(<CreateCardSheet {...sheetProps()} />);
-    expect(screen.getByRole('dialog')).toHaveClass('remoa-bsheet'); // animation: none em tokens.css/motion.css
+    expect(screen.getByRole('dialog')).toHaveClass('remoa-bsheet-host'); // animation: none em tokens.css/motion.css
     delete document.documentElement.dataset.motion;
   });
 });
