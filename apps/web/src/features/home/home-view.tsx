@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import type { ActivationItem, BoardSummary, CoverageRow, HomeSummary } from '@remoa/contracts';
+import type { ActivationItem, BoardSummary, CoverageRow, HomeSummary, UpcomingEvents } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
 import { Constellation, Hero, Icon, type IconName } from '@remoa/ui';
 import { toConstellation } from './constellation';
@@ -8,9 +8,10 @@ import { eyebrowDate, hourIn, salutationKey, todayIso, weekdayName } from './for
 import { MapSlider } from './slider/map-slider';
 import { ActivationChecklist } from '@/features/onboarding/activation-checklist';
 import { GoButton, HeroActions, HomeHeaderActions } from './home-actions';
+import { CalendarStrip, UpcomingCard } from './home-calendar';
 
 export type FirstInQueue = { title: string; pct: number };
-export type HomeViewProps = { now: Date; summary: HomeSummary; boards: BoardSummary[]; coverage: CoverageRow[]; first?: FirstInQueue; queueStart?: ReactNode; checklist?: ActivationItem[] };
+export type HomeViewProps = { now: Date; summary: HomeSummary; boards: BoardSummary[]; coverage: CoverageRow[]; first?: FirstInQueue; queueStart?: ReactNode; checklist?: ActivationItem[]; /** F25: compromissos próximos (null = API fora do ar: some a faixa e o card) e o fuso do perfil */ calendar?: { upcoming: UpcomingEvents; timeZone: string } | null };
 
 const h2 = 'm-0 font-display font-extrabold';
 const panel = 'flex flex-col rounded-[28px] border border-border bg-surface';
@@ -75,7 +76,7 @@ function coverageByArea(rows: CoverageRow[]) {
   return [...acc].map(([area, v]) => ({ area, pct: Math.min(100, Math.round((v.cards / Math.max(1, v.target)) * 100)) }));
 }
 
-export function HomeView({ now, summary, boards, coverage, first, queueStart, checklist }: HomeViewProps) {
+export function HomeView({ now, summary, boards, coverage, first, queueStart, checklist, calendar }: HomeViewProps) {
   const saudacao = t(`home.salutation.${salutationKey(hourIn(now))}`);
   const due = summary.dueToday;
   const dueBoards = boards.filter((b) => b.dueCount > 0).sort((a, b) => b.dueCount - a.dueCount);
@@ -105,6 +106,7 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart, ch
       </div>
       <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-7">
+          {calendar ? <CalendarStrip upcoming={calendar.upcoming} /> : null}
           <ActivationChecklist items={checklist ?? []} />
           <Hero
             eyebrow={t('home.reviewSection')}
@@ -153,6 +155,7 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart, ch
               </div>
             ))}
           </section>
+          {calendar ? <UpcomingCard upcoming={calendar.upcoming} timeZone={calendar.timeZone} now={now} /> : null}
           <section aria-labelledby="home-new" className={`${panel} gap-3 p-[22px]`}>
             <h2 id="home-new" className={`${h2} mb-0.5 text-[22px] tracking-[-0.02em]`}>{t('home.startSomething')}</h2>
             {shortcuts.map((s) => (

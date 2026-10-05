@@ -10,6 +10,7 @@ import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { PLAN_LIMITS } from '@remoa/contracts';
 import { initialsOf } from '@/features/account/shell/format';
+import { NotificationBell } from '@/features/notifications';
 import { PaletteButton } from './command-palette';
 import { useEntitlements } from './entitlements';
 import { PendingLink, useNavPending } from './nav-pending';
@@ -115,6 +116,7 @@ function NavbarView({ account }: { account: RailIdentity }) {
       actions={
         <>
           <PaletteButton />
+          <NotificationBell />
           <Button variant="secondary" size="touch" aria-label={t('referral.navCta')} icon={<Icon name="gift" size={18} />} onClick={() => go('/app/indicar?de=navbar')}>
             <span className="hidden md:inline">{t('referral.navCta')}</span>
           </Button>

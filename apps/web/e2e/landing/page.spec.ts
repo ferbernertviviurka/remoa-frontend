@@ -41,7 +41,7 @@ test.describe('desktop', () => {
   });
 
   test('?v=29 shows the variant price only in the waitlist phase', async ({ page, request }) => {
-    const book = await request.get('http://localhost:4000/v1/public/pricebook');
+    const book = await request.get(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/v1/public/pricebook`);
     test.skip(!book.ok(), 'API without the public pricebook (needs STRIPE=mock)');
     await gotoLanding(page, '/?v=29');
     const plans = page.locator('#planos');

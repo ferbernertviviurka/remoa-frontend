@@ -80,14 +80,17 @@ test('modo avião: 3 respostas feitas offline sincronizam ao voltar a rede', asy
   test.setTimeout(150_000);
   const { headers, userId } = await signUpAndLogin(page, request);
   const board = (await (await request.post(`${API}/v1/boards`, { headers, data: { title: 'Sepse', area: 'CM' } })).json()).data.id as string;
-  const ids = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()];
+  // D-579: sessão de mapa exige >= 10 cards desafiáveis; o limite da sessão continua 3
+  const ids = Array.from({ length: 10 }, () => crypto.randomUUID());
   const ops = ids.map((id, i) => ({ op: 'createCard', opId: crypto.randomUUID(), boardId: board, card: { id, type: 'concept', title: `Conceito ${i + 1}`, position: { x: i * 200, y: 80 } } }));
   expect((await request.post(`${API}/v1/boards/ops`, { headers, data: { ops } })).status()).toBe(200);
   const rubric = JSON.stringify({ points: [{ text: 'Disfunção orgânica', essential: true }], source: 'Diretriz', version: 1, status: 'draft', reviewerId: null });
   for (const id of ids) psql(`update cards set front = 'Defina', back = 'Disfunção orgânica', rubric = $r$${rubric}$r$::jsonb where id = '${id}'`);
 
   const started = await request.post(`${API}/v1/challenge/start`, { headers, data: { kind: 'board', boardId: board, limit: 3 } });
-  const session = (await started.json()).data as { items: unknown[] };
+  const body = await started.json();
+  expect(body.ok, JSON.stringify(body)).toBe(true);
+  const session = body.data as { items: unknown[] };
   expect(session.items).toHaveLength(3);
   await page.evaluate((data) => localStorage.setItem('remoa-last-session', JSON.stringify({ kind: 'board', boardId: data.boardId, data: data.session })), { boardId: board, session });
   await page.goto('/app/hoje');

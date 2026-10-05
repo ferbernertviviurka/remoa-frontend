@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { createSepseBoard, signUpAndLogin } from './visual/fixture';
 
-const API = 'http://localhost:4000';
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 const proxySecret = () => process.env.PROXY_SHARED_SECRET ?? /^PROXY_SHARED_SECRET="?([^"\n]*)/m.exec(readFileSync('.env.local', 'utf8'))?.[1] ?? '';
 const axe = async (page: Page) => {
   await Promise.race([page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined)))), page.waitForTimeout(1500)]);

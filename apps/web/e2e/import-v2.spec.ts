@@ -3,9 +3,10 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { resolve } from 'node:path';
+import { psql } from './db';
 import { signUpAndLogin } from './visual/fixture';
 
-const API = 'http://localhost:4000';
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 const APKG = resolve('e2e/fixtures/basic.apkg');
 const axe = async (page: Page) => {
   await Promise.race([page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined)))), page.waitForTimeout(1500)]);
@@ -33,7 +34,9 @@ test.use({ viewport: { width: 1440, height: 900 } });
 
 test('Anki v2: nome primeiro, 2 itens por busca, Pediatria limpa, Público, importa um mapa; reimportar no existente cria 0', async ({ page, request }) => {
   test.setTimeout(180_000);
-  const { headers } = await signUpAndLogin(page, request);
+  const { headers, userId } = await signUpAndLogin(page, request);
+  // D-648: Free tem 1 importação do Anki (a reimportação do fim do teste é a 2ª): este teste roda como Pro
+  psql(`insert into subscriptions (user_id, plan, status) values ('${userId}','pro','active') on conflict (user_id) do update set plan='pro'`);
   await toAbout(page);
 
   // FR-2/FR-3: nome é o 1º campo, com foco, preenchido com o baralho raiz (o "Default" vazio não conta).

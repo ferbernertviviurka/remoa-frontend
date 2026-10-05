@@ -10,6 +10,7 @@ export const items: { href: string; icon: IconName; label: StringKey }[] = [
   { href: '/app/hoje', icon: 'home', label: 'rail.home' },
   { href: '/app/mapas', icon: 'maps', label: 'rail.maps' },
   { href: '/app/revisar', icon: 'bolt', label: 'rail.review' },
+  { href: '/app/calendario', icon: 'calendar', label: 'calendar.navLabel' },
   { href: '/app/cobertura', icon: 'bars', label: 'rail.enamed' },
   { href: '/app/progresso', icon: 'list', label: 'shell.nav.progress' },
   { href: '/app/loja', icon: 'store', label: 'rail.store' },
@@ -26,20 +27,20 @@ export const isActive = (path: string, href: string, challenge: boolean) =>
 export type RailIdentity = { name: string | null; email: string; color: number; src?: string } | null;
 
 /** The account avatar and the logo live in the navbar on every /app screen (D-607). */
-export function Rail({ dueTotal = 0, isAdmin = false }: { dueTotal?: number; isAdmin?: boolean }) {
+export function Rail({ dueTotal = 0, isAdmin = false, calendarSoon = false }: { dueTotal?: number; isAdmin?: boolean; calendarSoon?: boolean }) {
   // useSearchParams sem Suspense derruba o prerender das páginas estáticas no `next build`; o fallback é o mesmo trilho sem `modo`.
   return (
-    <Suspense fallback={<RailView dueTotal={dueTotal} modo={null} isAdmin={isAdmin} />}>
-      <RailWithParams dueTotal={dueTotal} isAdmin={isAdmin} />
+    <Suspense fallback={<RailView dueTotal={dueTotal} modo={null} isAdmin={isAdmin} calendarSoon={calendarSoon} />}>
+      <RailWithParams dueTotal={dueTotal} isAdmin={isAdmin} calendarSoon={calendarSoon} />
     </Suspense>
   );
 }
 
-function RailWithParams({ dueTotal, isAdmin }: { dueTotal: number; isAdmin: boolean }) {
-  return <RailView dueTotal={dueTotal} isAdmin={isAdmin} modo={useSearchParams().get('modo')} />;
+function RailWithParams({ dueTotal, isAdmin, calendarSoon }: { dueTotal: number; isAdmin: boolean; calendarSoon: boolean }) {
+  return <RailView dueTotal={dueTotal} isAdmin={isAdmin} calendarSoon={calendarSoon} modo={useSearchParams().get('modo')} />;
 }
 
-function RailView({ dueTotal, modo, isAdmin }: { dueTotal: number; modo: string | null; isAdmin: boolean }) {
+function RailView({ dueTotal, modo, isAdmin, calendarSoon }: { dueTotal: number; modo: string | null; isAdmin: boolean; calendarSoon: boolean }) {
   const path = usePathname();
   // G01 T6: the challenge lives in the map (`/app/mapas/<id>?modo=desafio`) but belongs to Revisar (Desafio.dc.html)
   const challenge = path.startsWith('/app/mapas/') && modo === 'desafio';
@@ -58,6 +59,7 @@ function RailView({ dueTotal, modo, isAdmin }: { dueTotal: number; modo: string 
           label={t(i.label)}
           active={pending ? isActive(pending, i.href, false) : isActive(path, i.href, challenge)}
           {...(i.href === '/app/revisar' && dueTotal > 0 ? { badge: dueTotal, badgeLabel: t('review.badge', { n: dueTotal }) } : {})}
+          {...(i.href === '/app/calendario' && calendarSoon ? { dot: true, dotLabel: t('calendar.page.railDot') } : {})}
           {...(i.href === '/app/loja' ? { badge: t('store.soonTag') } : {})}
         />
       ))}

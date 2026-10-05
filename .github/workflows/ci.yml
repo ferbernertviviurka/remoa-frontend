@@ -4,11 +4,30 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# D-822: lint, typecheck, unit shards and e2e shards run as parallel jobs.
 # The backend is checked out side by side for the e2e (API + Supabase) and to check that packages/contracts
 # is still a faithful copy of remoa-backend/packages/contracts (D-699).
 # Private backend repo: add secret REMOA_BACKEND_TOKEN (fine-grained, read-only contents).
 jobs:
-  check:
+  lint:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: remoa-frontend } }
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: remoa-frontend }
+      - uses: pnpm/action-setup@v4
+        with: { package_json_file: remoa-frontend/package.json }
+      - uses: actions/setup-node@v4
+        with: { node-version-file: remoa-frontend/.nvmrc, cache: pnpm, cache-dependency-path: remoa-frontend/pnpm-lock.yaml }
+      - run: pnpm i --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm strings:check
+
+  typecheck:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: remoa-frontend } }
     steps:
@@ -22,14 +41,70 @@ jobs:
       - uses: pnpm/action-setup@v4
         with: { package_json_file: remoa-frontend/package.json }
       - uses: actions/setup-node@v4
-        with: { node-version-file: remoa-frontend/.nvmrc }
-      - run: pnpm -C ../remoa-backend i --frozen-lockfile && pnpm i --frozen-lockfile
+        with: { node-version-file: remoa-frontend/.nvmrc, cache: pnpm, cache-dependency-path: remoa-frontend/pnpm-lock.yaml }
+      - run: pnpm i --frozen-lockfile
       - run: pnpm contracts:check
-      - run: pnpm check
-      - run: pnpm strings:check
+      - run: pnpm typecheck
+
+  test:
+    name: test (${{ matrix.shard }}/3)
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: remoa-frontend } }
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: remoa-frontend }
+      - uses: pnpm/action-setup@v4
+        with: { package_json_file: remoa-frontend/package.json }
+      - uses: actions/setup-node@v4
+        with: { node-version-file: remoa-frontend/.nvmrc, cache: pnpm, cache-dependency-path: remoa-frontend/pnpm-lock.yaml }
+      - run: pnpm i --frozen-lockfile
+      # Vitest shards each package's files. Every `test` script has --passWithNoTests (a small package may get no file in a shard).
+      - run: pnpm turbo run test -- --shard=${{ matrix.shard }}/3
+
+  e2e:
+    name: e2e (${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: remoa-frontend } }
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: remoa-frontend }
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/remoa-backend
+          path: remoa-backend
+          token: ${{ secrets.REMOA_BACKEND_TOKEN || github.token }}
+      - uses: pnpm/action-setup@v4
+        with: { package_json_file: remoa-frontend/package.json }
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: remoa-frontend/.nvmrc
+          cache: pnpm
+          cache-dependency-path: |
+            remoa-frontend/pnpm-lock.yaml
+            remoa-backend/pnpm-lock.yaml
+      - run: pnpm -C ../remoa-backend i --frozen-lockfile && pnpm i --frozen-lockfile
       - uses: supabase/setup-cli@v1
-      - run: supabase start && pnpm db:migrate
+      # Studio, image proxy, edge functions and log collection are not used by the app.
+      - run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector && pnpm --silent db:env > .env && pnpm db:migrate
         working-directory: remoa-backend
       - run: pnpm env:local
-      - run: pnpm --filter @remoa/web exec playwright install --with-deps chromium
-      - run: pnpm test:e2e
+      # webkit: the iphone-12 project uses devices['iPhone 12'], which runs on WebKit.
+      - run: pnpm --filter @remoa/web exec playwright install --with-deps chromium webkit
+      # Playwright splits the specs across the 4 jobs; each job has its own Supabase, API and next dev.
+      - run: pnpm --filter @remoa/web exec playwright test --shard=${{ matrix.shard }}/4
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-${{ matrix.shard }}
+          path: |
+            remoa-frontend/apps/web/playwright-report
+            remoa-frontend/apps/web/test-results
+          retention-days: 7

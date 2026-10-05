@@ -2,6 +2,7 @@
 // Antes: o PDF comprimido saía vazio e o job falhava como pdf_unreadable. Precisa da API com AI=mock (o webServer do playwright passa).
 import { deflateSync } from 'node:zlib';
 import { expect, test } from '@playwright/test';
+import { psql } from './db';
 import { signUpAndLogin } from './visual/fixture';
 
 function compressedPdf(lines: string[]): Buffer {
@@ -31,7 +32,9 @@ test.use({ viewport: { width: 1440, height: 900 } });
 
 test('novo mapa por PDF comprimido gera o rascunho e abre o editor (AI=mock)', async ({ page, request }) => {
   test.setTimeout(120_000);
-  await signUpAndLogin(page, request);
+  const { userId } = await signUpAndLogin(page, request);
+  // o plano Free limita gerações por IA (402); este teste é do parser de PDF, não do limite
+  psql(`insert into subscriptions (user_id, plan, status) values ('${userId}','pro','active') on conflict (user_id) do update set plan='pro'`);
   await page.goto('/app/mapas/novo?caminho=pdf');
   await page.getByRole('button', { name: 'Continuar' }).click();
   const pdf = compressedPdf(['Insuficiencia cardiaca com fracao de ejecao reduzida', 'Tratamento inclui betabloqueador e inibidor da ECA']);

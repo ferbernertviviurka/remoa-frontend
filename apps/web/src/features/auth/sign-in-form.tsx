@@ -81,6 +81,7 @@ export function SignInForm({ next }: { next?: string }) {
         <FieldError id="si-email-err">{errs.email}</FieldError>
         <PasswordField label={t('auth.password')} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={!!errs.password} aria-describedby={errs.password ? 'si-pw-err' : undefined} />
         <FieldError id="si-pw-err">{errs.password}</FieldError>
+        <Link href="/recuperar-senha" className="inline-flex min-h-11 items-center self-start text-sm font-bold text-primary-deep underline">{t('auth.forgot.link')}</Link>
       </div>
       {error ? <p role="alert" className="m-0 text-sm font-semibold text-review-text">{error}</p> : null}
       <Button type="submit" size="touch" loading={busy === 'password' || navigating} loadingLabel={t('common.loading')} disabled={busy === 'magic'}>{t('auth.signIn.submit')}</Button>

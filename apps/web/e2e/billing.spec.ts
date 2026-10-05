@@ -7,7 +7,7 @@ test('assinar, cancelar, exportar e excluir a conta', async ({ page }) => {
   let token = '';
   page.on('request', (r) => {
     const a = r.headers()['authorization'];
-    if (a && r.url().startsWith('http://localhost:4000')) token = a;
+    if (a && r.url().startsWith(process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000")) token = a;
   });
 
   await signUpViaForm(page, `e2e-billing-${Date.now()}@remoa.test`);
@@ -51,7 +51,7 @@ test('assinar, cancelar, exportar e excluir a conta', async ({ page }) => {
     await expect(page).toHaveURL(/\/entrar$/); // G14 D-585
     await page.goto('/app/hoje');
     await expect(page).toHaveURL(/\/entrar/);
-    const res = await page.request.get('http://localhost:4000/v1/billing/entitlements', { headers: { authorization: token } });
+    const res = await page.request.get(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/v1/billing/entitlements`, { headers: { authorization: token } });
     // Sign-out revokes this session (401) before the deleted-account check (403, covered in the API's account.test.ts) is reached.
     expect([401, 403]).toContain(res.status());
   });

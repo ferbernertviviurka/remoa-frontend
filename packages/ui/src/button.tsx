@@ -23,6 +23,8 @@ export type ButtonProps = Omit<ComponentProps<'button'>, 'className'> & {
   iconEnd?: ReactNode;
   loading?: boolean;
   loadingLabel?: string;
+  /** `start` alinha ícone e rótulo à esquerda (botões de lateral). Padrão: centralizado. */
+  align?: 'center' | 'start';
 };
 
 const sizes = {
@@ -52,6 +54,7 @@ export function Button({
   iconEnd,
   loading = false,
   loadingLabel,
+  align = 'center',
   children,
   type = 'button',
   disabled,
@@ -67,7 +70,8 @@ export function Button({
       data-loading={loading || undefined}
       {...rest}
       className={clsx(
-        'inline-flex items-center justify-center gap-2 aria-disabled:opacity-50 aria-disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none disabled:hover:translate-y-0 disabled:active:scale-100 data-[loading=true]:opacity-100',
+        'inline-flex items-center gap-2 aria-disabled:opacity-50 aria-disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none disabled:hover:translate-y-0 disabled:active:scale-100 data-[loading=true]:opacity-100',
+        align === 'start' ? 'justify-start text-left' : 'justify-center',
         pressable,
         focusRing,
         buttonVariants[variant],

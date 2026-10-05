@@ -61,6 +61,6 @@ describe('PreferencesSection', () => {
     api.mockResolvedValue({ ok: true, data: { ...accountFreeFixture.preferences, reminderEnabled: true } });
     view(accountFreeFixture);
     fireEvent.click(screen.getByRole('switch', { name: 'Lembrete diário por e-mail' }));
-    expect(await screen.findByRole('radio', { name: '21h' })).toBeVisible();
+    expect(await screen.findByRole('radio', { name: '20h' })).toBeVisible();
   });
 });

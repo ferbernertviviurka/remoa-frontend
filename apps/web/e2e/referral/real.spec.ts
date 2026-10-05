@@ -2,7 +2,7 @@
 // O Supabase local confirma o e-mail no cadastro (enable_confirmations = false); o caminho "não confirmado" é forçado por SQL.
 import AxeBuilder from '@axe-core/playwright';
 import { randomUUID as uuid } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { referralSummaryFixtures } from '@remoa/contracts/mocks';
 import { t } from '@remoa/strings';
@@ -100,7 +100,13 @@ test('1. fluxo completo pela UI: A copia o link, B cadastra por /i/<code>, cria 
   }
   expect(Number(psql(`select count(*) from entitlement_grants where referral_id=(select id from referrals where referee_id='${b.id}')`))).toBe(2);
   // cartão do indicador soma 1 mês; e-mails de recompensa (outbox em memória da API: lido pelo log)
-  await expect.poll(() => (readFileSync(process.env.API_LOG ?? '/private/tmp/claude-501/api.log', 'utf8').match(/email \(not sent, no RESEND_API_KEY\).*1 mês de Pro grátis/g) ?? []).length).toBeGreaterThanOrEqual(2);
+  // API_LOG explícito (log do stdout da API) ou, sem ele, a pasta .emails/ do backend (outbox de dev: um .json por e-mail, `to` = <userId>@test.local)
+  const rewardMails = () => {
+    if (process.env.API_LOG) return (readFileSync(process.env.API_LOG, 'utf8').match(/email \((?:console|not sent, no RESEND_API_KEY)\).*1 mês de Pro grátis/g) ?? []).length;
+    const dir = process.env.EMAILS_DIR ?? '../../../remoa-backend/.emails';
+    return readdirSync(dir).filter((f) => f.endsWith('.json') && [idA, b.id].some((id) => readFileSync(`${dir}/${f}`, 'utf8').includes(`"to": "${id}@`)) && f.includes('referral-reward')).length;
+  };
+  await expect.poll(rewardMails).toBeGreaterThanOrEqual(2);
   await page.reload();
   await expect(page.getByText(t('referral.reward.label'))).toBeVisible();
   await expect(page.getByTestId('reward-months')).toHaveText('1');

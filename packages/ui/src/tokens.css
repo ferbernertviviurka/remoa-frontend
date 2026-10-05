@@ -52,6 +52,11 @@
   --state-watch-on-dark: #fcd34d;
   --state-steady-on-dark: #c9bfff;
   --state-unknown-on-dark: #7a6fb0;
+  /* F26 notificações: fundo do item não lido e rodapé; tons por tipo sem token de estado */
+  --soft: #fbfafe;
+  --notif-map-bg: #e4dff8;
+  --notif-support-bg: #ccfbf1;
+  --notif-support-text: #0f766e;
   --preview-edge: #c9c3e6; /* conexões na prévia do grafo */
 
   /* escala de calor do calendário de atividade (nível 0 = --divider; 4 = --primary) */
@@ -151,6 +156,10 @@
   --color-unknown-text: var(--state-unknown-text);
   --color-unknown-soft: var(--state-unknown-soft);
   --color-unknown-on-dark: var(--state-unknown-on-dark);
+  --color-soft: var(--soft);
+  --color-notif-map: var(--notif-map-bg);
+  --color-notif-support: var(--notif-support-bg);
+  --color-notif-support-text: var(--notif-support-text);
   --radius-btn: var(--radius-btn);
   --radius-field: var(--radius-field);
   --radius-map: var(--radius-map);

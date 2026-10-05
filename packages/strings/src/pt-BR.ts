@@ -16,6 +16,8 @@ import { personal } from './personal';
 import { challengeSetup } from './challenge-setup';
 import { mapState, challengeMode, challenge, editor, canvas, quiz, boundary } from './landing-shared';
 import { mapMobile } from './map-mobile';
+import { calendar } from './calendar';
+import { notifications } from './notifications';
 
 export const ptBR = {
   account,
@@ -34,6 +36,8 @@ export const ptBR = {
   personal,
   challengeSetup,
   mapMobile,
+  calendar,
+  notifications,
   // F17 — Importador Anki v2 (T1)
   ...f17,
   common: {
@@ -489,6 +493,25 @@ export const ptBR = {
       openMenu: 'Abrir menu',
     },
   },
+  devEmails: {
+    title: 'Prévia de e-mails',
+    templates: 'Modelos',
+    width: 'Largura da prévia',
+    desktop: '600 px',
+    mobile: '360 px',
+    view: 'Formato',
+    html: 'HTML',
+    text: 'Texto simples',
+    subject: 'Assunto',
+    preheader: 'Pré-cabeçalho',
+    class: 'Classe',
+    size: 'Tamanho',
+    frame: 'Prévia do e-mail',
+    loading: 'Carregando...',
+    error: 'Não foi possível carregar a prévia. A API está no ar?',
+    kb: '{kb} KB',
+    classes: { transactional: 'Transacional', reminder: 'Lembrete', list: 'Lista' },
+  },
   auth: {
     signIn: {
       title: 'Entrar',
@@ -516,6 +539,23 @@ export const ptBR = {
     emailInvalid: 'Informe um e-mail válido, como voce@exemplo.com.',
     passwordRequired: 'Informe sua senha.',
     passwordWeak: 'Use 8 ou mais caracteres, com letras e números.',
+    forgot: {
+      link: 'Esqueci minha senha',
+      title: 'Recuperar senha',
+      subtitle: 'Informe o e-mail da conta e enviaremos um link para criar uma nova senha.',
+      submit: 'Enviar link',
+      sentTitle: 'Verifique seu e-mail',
+      sentBody: 'Se houver uma conta com este e-mail, enviamos um link para redefinir a senha. Ele vale por pouco tempo.',
+      back: 'Voltar para entrar',
+    },
+    reset: {
+      title: 'Nova senha',
+      subtitle: 'Escolha uma senha nova para a sua conta.',
+      submit: 'Salvar nova senha',
+      invalidLink: 'Este link expirou ou já foi usado. Peça um novo.',
+      newLink: 'Pedir novo link',
+      saved: 'Senha atualizada.',
+    },
     generalError: {
       unauthorized: 'E-mail ou senha incorretos.',
       conflict: 'Já existe uma conta com este e-mail. Tente entrar.',
