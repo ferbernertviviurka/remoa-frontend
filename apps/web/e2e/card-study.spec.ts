@@ -15,9 +15,10 @@ test('suspender um card o tira do Revisar hoje; retomar o devolve; reiniciar ped
     await form.getByRole('button', { name: 'Salvar' }).click();
     await expect(form).toHaveCount(0);
   }
-  const queue = page.getByRole('list', { name: 'Fila por mapa' });
+  // D-621: o hub do Revisar mostra o tamanho da fila no título (a lista "Fila por mapa" saiu)
+  const queue = page.getByRole('heading', { level: 2 }).filter({ hasText: /para fixar hoje/ });
   await page.goto('/app/revisar');
-  await expect(queue).toContainText('2 Novos');
+  await expect(queue).toHaveText('2 cards para fixar hoje.');
   await page.goBack();
   await expect(page.locator('.react-flow__pane')).toBeVisible();
 
@@ -26,8 +27,8 @@ test('suspender um card o tira do Revisar hoje; retomar o devolve; reiniciar ped
   await page.getByRole('menuitem', { name: 'Suspender' }).click();
   await expect(panel.getByText('Suspenso: fora do Revisar hoje')).toBeVisible();
   await page.goto('/app/revisar');
-  await expect(queue).toContainText('1 Novo');
-  await expect(queue).not.toContainText('2 Novos');
+  await expect(queue).toHaveText('1 card para fixar hoje.');
+  await expect(queue).not.toHaveText('2 cards para fixar hoje.');
 
   await page.goBack();
   await page.getByRole('button', { name: 'Selecionar Sepse' }).first().click();
@@ -40,5 +41,5 @@ test('suspender um card o tira do Revisar hoje; retomar o devolve; reiniciar ped
   await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: 'Cancelar' }).click();
   await page.goto('/app/revisar');
-  await expect(queue).toContainText('2 Novos');
+  await expect(queue).toHaveText('2 cards para fixar hoje.');
 });

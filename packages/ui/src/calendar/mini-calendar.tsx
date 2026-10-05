@@ -52,7 +52,7 @@ export function MiniCalendar({ year, month, today, selected, eventDays, onMonthC
                     aria-current={isToday ? 'date' : undefined}
                     aria-pressed={isSel}
                     onClick={() => { onSelectDay(d); if (!inMonth) { const p = parseKey(d); onMonthChange(p.year, p.month); } }}
-                    className={`relative flex size-9 items-center justify-center rounded-full text-[13px] focus-visible:outline-2 focus-visible:outline-primary max-lg:size-11 ${isToday ? 'bg-primary font-extrabold text-on-primary' : `hover:bg-primary-tint ${inMonth ? 'text-ink' : 'text-unknown-soft'} ${isSel ? 'font-extrabold outline-2 -outline-offset-2 outline-primary' : 'font-medium'}`}`}
+                    className={`relative flex size-9 items-center justify-center rounded-full text-[13px] focus-visible:outline-2 focus-visible:outline-primary max-lg:size-11 ${isToday ? 'bg-primary font-extrabold text-on-primary' : `hover:bg-primary-tint ${inMonth ? 'text-ink' : 'text-muted'} ${isSel ? 'font-extrabold outline-2 -outline-offset-2 outline-primary' : 'font-medium'}`}`}
                   >
                     {parseKey(d).day}
                     {has && !isToday ? <span aria-hidden="true" className="absolute bottom-1 size-1 rounded-full bg-primary" /> : null}

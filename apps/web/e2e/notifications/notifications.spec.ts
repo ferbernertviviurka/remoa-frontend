@@ -40,7 +40,8 @@ test('bell: badge, popover, mark read, open the destination; page: remove and pr
   await expect(page).toHaveURL(/\/app\/notificacoes$/);
   await expect(page.getByRole('heading', { name: 'Notificações', level: 1 })).toBeVisible();
 
-  const before = await page.getByRole('button', { name: 'Remover notificação' }).count();
+  await expect(page.getByRole('button', { name: 'Remover notificação' })).toHaveCount(4); // 3 + 1 seeded after load: count() alone raced the first fetch (QA G18)
+  const before = 4;
   await page.getByRole('button', { name: 'Remover notificação' }).first().click();
   await expect(page.getByRole('button', { name: 'Remover notificação' })).toHaveCount(before - 1);
   await page.reload();

@@ -5,7 +5,7 @@ import type { CalendarLabel, CalendarSettings } from '@remoa/contracts';
 import { strings, t } from '@remoa/strings';
 import {
   Button, CalendarAgendaList, CalendarEmptyState, CalendarMonthGrid, CalendarSkeleton, CalendarTour, CalendarViewSwitch, CalendarWeekGrid, EventGalleryCard, Icon, IconButton,
-  LabelToggleRow, MiniCalendar, makeKey, monthTitle, parseKey, shortDate, weekDays, type CalendarTourCloseHow, type DayKey,
+  LabelToggleRow, MiniCalendar, makeKey, monthTitle, parseKey, weekTitle, type CalendarTourCloseHow, type DayKey,
 } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { calendarApi, downloadIcs } from './api';
@@ -60,7 +60,7 @@ export function CalendarView({ settings, labels: initialLabels, nowIso }: { sett
   };
 
   const title =
-    view === 'month' ? monthTitle(p.year, p.month) : view === 'week' ? `${shortDate(weekDays(anchor)[0]!)} – ${shortDate(weekDays(anchor)[6]!)}` : view === 'agenda' ? strings.calendar.agendaTitle : strings.calendar.galleryTitle;
+    view === 'month' ? monthTitle(p.year, p.month) : view === 'week' ? weekTitle(anchor) : view === 'agenda' ? strings.calendar.agendaTitle : strings.calendar.galleryTitle;
   const arrows = view === 'month' || view === 'week';
   const editing = modal?.mode === 'edit' ? cal.events.find((e) => e.id === modal.id) : undefined;
   const gallery = cal.visible.filter((e) => e.date >= today).sort((a, b) => a.startsAt.localeCompare(b.startsAt));

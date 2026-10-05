@@ -108,7 +108,7 @@ test('axe: Preços, Conta (e confirmação de exclusão) e Paywall de mapas', as
   expect(await axe(page), 'conta: confirmar exclusão').toEqual([]);
   await page.keyboard.press('Escape');
 
-  for (let i = 0; i < PLAN_LIMITS.free.limits.boards; i++) expect((await request.post('http://localhost:4000/v1/boards', { headers, data: { title: `M${i}` } })).status()).toBe(201);
+  for (let i = 0; i < PLAN_LIMITS.free.limits.boards; i++) expect((await request.post(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/v1/boards`, { headers, data: { title: `M${i}` } })).status()).toBe(201);
   await page.goto('/app/mapas/novo?caminho=blank'); // G14 17: já abre em "Sobre o mapa"
   await page.getByLabel('Nome do mapa').fill('Terceiro');
   await page.getByRole('button', { name: 'Criar mapa', exact: true }).click();

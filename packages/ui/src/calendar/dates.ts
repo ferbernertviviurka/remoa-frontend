@@ -45,6 +45,7 @@ const wdShort = f({ weekday: 'short' }), wdLong = f({ weekday: 'long' }), dmLong
 /** "Terça-feira, 6 de outubro" */ export const longDate = (key: DayKey) => cap(`${wdLong.format(utc(key))}, ${dmLong.format(utc(key))}`);
 /** "outubro" */ export const monthName = (key: DayKey) => monLong.format(utc(key));
 /** "Outubro de 2026" */ export const monthTitle = (year: number, month0: number) => cap(monYear.format(new Date(Date.UTC(year, month0, 1))));
+/** "4 – 10 de outubro de 2026" (título da semana) */ export const weekTitle = (key: DayKey) => { const d = weekDays(key); return new Intl.DateTimeFormat(LOCALE, { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' }).formatRange(utc(d[0]!), utc(d[6]!)); };
 /** "5 de outubro" */ export const dayMonth = (key: DayKey) => dmLong.format(utc(key));
 
 export function timeRange(e: CalendarEventItem, tz: string, allDayText: string) {

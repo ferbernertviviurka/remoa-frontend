@@ -3,7 +3,7 @@
 import { expect, test } from '@playwright/test';
 import { createSepseBoard, signUpAndLogin } from './visual/fixture';
 
-const API = 'http://localhost:4000';
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 test.use({ viewport: { width: 1440, height: 900 } });
 
 test('Privado: cookie httpOnly/Lax no escopo do link; troca de senha volta para a tela de senha (sem erro) e a nova libera', async ({ page, browser, request }) => {

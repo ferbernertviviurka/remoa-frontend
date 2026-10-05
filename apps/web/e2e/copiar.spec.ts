@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 import { createSepseBoard, signUpAndLogin } from './visual/fixture';
 import { formReady } from './sign-up';
 
-const API = 'http://localhost:4000';
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 test.use({ viewport: { width: 1440, height: 900 } });
 
 const publish = async (request: import('@playwright/test').APIRequestContext, headers: { authorization: string }, boardId: string) =>

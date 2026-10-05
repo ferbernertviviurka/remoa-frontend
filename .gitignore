@@ -1,5 +1,6 @@
 node_modules
 .next
+.next-*
 .turbo
 dist
 # test coverage output only (a bare `coverage` also ignored src/features/coverage, G08)

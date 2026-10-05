@@ -77,7 +77,7 @@ export function CalendarMonthGrid({ year, month, today, timeZone, events, labels
                   onClick={() => onDayClick(d)}
                   className={`flex min-h-[124px] cursor-pointer flex-col gap-1 border-b border-r border-divider p-1.5 outline-none last:border-r-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary max-lg:min-h-[88px] ${inMonth ? 'bg-surface' : 'bg-soft'}`}
                 >
-                  <span aria-hidden="true" className={`flex size-7 items-center justify-center rounded-full text-[13px] font-bold ${isToday ? 'bg-primary text-on-primary' : inMonth ? 'text-ink' : 'text-unknown-soft'}`}>{parseKey(d).day}</span>
+                  <span aria-hidden="true" className={`flex size-7 items-center justify-center rounded-full text-[13px] ${isToday ? 'bg-primary font-bold text-on-primary' : inMonth ? 'font-bold text-ink' : 'font-medium text-muted'}`}>{parseKey(d).day}</span>
                   <div className={`flex flex-col gap-1 ${inMonth ? '' : 'opacity-65'}`}>
                     {list.slice(0, 3).map((e) => {
                       const tone = labelTone(labelOf(e.labelId)?.color ?? '#8F8AAE');

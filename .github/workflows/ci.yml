@@ -8,7 +8,7 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# D-708: lint, typecheck, unit shards and e2e shards run as parallel jobs.
+# D-822: lint, typecheck, unit shards and e2e shards run as parallel jobs.
 # The backend is checked out side by side for the e2e (API + Supabase) and to check that packages/contracts
 # is still a faithful copy of remoa-backend/packages/contracts (D-699).
 # Private backend repo: add secret REMOA_BACKEND_TOKEN (fine-grained, read-only contents).

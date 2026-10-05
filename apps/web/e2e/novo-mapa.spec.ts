@@ -41,7 +41,7 @@ test('novo mapa: em branco cria e abre o editor com matrixItemIds; PDF, Anki e m
   await page.goto('/app/mapas/novo?item=00000000-0000-0000-0000-000000000000');
   await expect(page.getByRole('heading', { level: 1, name: 'Como você quer começar?' })).toBeVisible();
   const { headers } = auth;
-  const list = (await (await request.get('http://localhost:4000/v1/matrix/items?area=CM', { headers })).json()).data as { id: string; title: string; parentId: string | null }[];
+  const list = (await (await request.get(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/v1/matrix/items?area=CM`, { headers })).json()).data as { id: string; title: string; parentId: string | null }[];
   const leaf = list.filter((x) => !list.some((c) => c.parentId === x.id))[1]!;
   await page.goto(`/app/mapas/novo?item=${leaf.id}`);
   await expect(page.getByRole('heading', { level: 1, name: 'Sobre o mapa' })).toBeVisible();

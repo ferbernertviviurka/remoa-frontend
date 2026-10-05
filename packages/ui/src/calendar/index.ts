@@ -2,7 +2,7 @@
 // (`today`/`timeZone`), textos por props (strings em @remoa/strings, namespace `calendar`).
 export * from './types';
 export * from './palette';
-export { dayKeyOf, timeOf, addDays, diffDays, startOfWeek, weekDays, monthGrid, shiftMonth, makeKey, parseKey, monthTitle, longDate, shortDate, dayAria, layoutBlocks } from './dates';
+export { dayKeyOf, timeOf, addDays, diffDays, startOfWeek, weekDays, monthGrid, shiftMonth, makeKey, parseKey, monthTitle, weekTitle, longDate, shortDate, dayAria, layoutBlocks } from './dates';
 export * from './month-grid';
 export * from './week-grid';
 export * from './agenda-list';

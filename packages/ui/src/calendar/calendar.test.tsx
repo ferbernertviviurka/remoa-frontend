@@ -6,7 +6,7 @@ import { Dialog } from '../dialog';
 import {
   CalendarMonthGrid, CalendarWeekGrid, CalendarAgendaList, EventGalleryCard, MiniCalendar, CalendarViewSwitch, LabelToggleRow, LabelColorPicker,
   EventForm, EventDetails, CalendarTour, UpcomingEventsCard, CalendarBanner, CalendarEmptyState, CalendarSkeleton, validateEventForm, validateCoverFile, layoutBlocks,
-  dayKeyOf, monthGrid, weekDays, addDays, type EventFormValue, type CalendarView,
+  dayKeyOf, monthGrid, weekDays, weekTitle, addDays, type EventFormValue, type CalendarView,
 } from './index';
 import { NOW, TODAY, TZ, events, labels, manyOnOneDay, overlapping, text, tourDemo, tourSteps, tourText } from './fixtures';
 
@@ -20,6 +20,11 @@ describe('datas', () => {
     expect(g[0]).toBe('2026-09-27');
     expect(weekDays('2026-10-05')[0]).toBe('2026-10-04');
     expect(addDays('2026-10-31', 1)).toBe('2026-11-01');
+  });
+  it('título da semana: faixa curta no mesmo mês, com os dois meses quando atravessa', () => {
+    const w = (k: string) => weekTitle(k).replace(/\s/g, ' ');
+    expect(w('2026-10-07')).toBe('4 – 10 de outubro de 2026');
+    expect(w('2026-09-30')).toBe('27 de setembro – 3 de outubro de 2026');
   });
   it('dia no fuso do perfil (23:30 em SP ainda é o mesmo dia, mesmo já sendo o dia seguinte em UTC)', () => {
     expect(dayKeyOf('2026-10-06T02:30:00Z', TZ)).toBe('2026-10-05');
