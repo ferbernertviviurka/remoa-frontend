@@ -115,6 +115,16 @@ test('sheet de criar: 8 opções, fecha por Esc, scrim, alça e arrastar; foco v
   await page.mouse.move(195, box.y + 220, { steps: 10 });
   await page.mouse.up();
   await close();
+  // P-295: the floating bar rides over the scrim (inside the dialog) with "×", which closes the sheet; the sheet leaves room for it
+  await fab.click();
+  await page.waitForTimeout(800);
+  const x = sheet(page).getByRole('button', { name: 'Criar card' });
+  await expect(x).toHaveAttribute('aria-expanded', 'true');
+  const xb = (await x.boundingBox())!;
+  const last = (await sheet(page).getByRole('button', { name: /Importar do Anki/ }).boundingBox())!;
+  expect(last.y + last.height).toBeLessThanOrEqual(xb.y); // options end above the bar
+  await x.click();
+  await close();
 });
 
 test('limites de Entitlements: 50 cards no Free bloqueiam "Conceito" e abrem o paywall; sheet com IA/PDF Pro', async ({ page, request }) => {
