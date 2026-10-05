@@ -39,7 +39,11 @@ const typeOf = { concept: 'concept', flowchart: 'flow', case: 'case', image: 'im
  * ponytail: PDF, Anki and IA go to `/app/mapas/novo` (they create a NEW map); importing into the current map needs an API
  * that appends to a board (P-287).
  */
-export function useMobileCardCreator(host: CardCreatorHost): { openSheet: () => void; openEditor: (cardId: string) => void; sheetOpen: boolean; editorOpen: boolean; element: ReactNode } {
+export function useMobileCardCreator(
+  host: CardCreatorHost,
+  /** drawn over the sheet's scrim (the map's FloatingMapBar with "×", mock `mapa-mobile-criar`); `close` closes the sheet */
+  sheetFooter?: (close: () => void, open: boolean) => ReactNode,
+): { openSheet: () => void; openEditor: (cardId: string) => void; sheetOpen: boolean; editorOpen: boolean; element: ReactNode } {
   const [sheet, setSheet] = useState(false);
   const [editing, setEditing] = useState<{ id: string; isNew: boolean } | null>(null);
   const router = useRouter();
@@ -111,6 +115,7 @@ export function useMobileCardCreator(host: CardCreatorHost): { openSheet: () => 
           setSheet(false);
           paywall.show(blockedReason(kind));
         }}
+        footer={sheetFooter?.(() => setSheet(false), sheet)}
       />
       <input
         ref={file}

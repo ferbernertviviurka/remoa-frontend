@@ -137,3 +137,6 @@
 /* F23 map-mobile: anel do selo de vencidos (mock: box-shadow; aqui só transform + opacity, FR-21). */
 @keyframes mm-ring { from { opacity: 0.55; transform: scale(1); } 70%, to { opacity: 0; transform: scale(1.7); } }
 .mm-ring { animation: mm-ring 2s ease-out infinite; }
+/* "+" → "×" também quando a barra nasce aberta (a cópia por cima da sheet de criar): parte de 0° */
+@keyframes mm-fab-x { from { transform: rotate(0deg); } }
+.mm-fab-x { animation: mm-fab-x 400ms cubic-bezier(0.22, 1, 0.36, 1) both; }

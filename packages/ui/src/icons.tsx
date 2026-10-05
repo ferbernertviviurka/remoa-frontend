@@ -50,6 +50,10 @@ const paths = {
   pix: <><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><path d="M14 14h3v3h-3zM20 14v1M14 20h1M18 18v3h3" /></>,
   creditCard: <><rect x="3" y="5" width="18" height="14" rx="3" /><path d="M3 10h18M7 15h4" /></>,
   chevronDown: <><path d="M6 9l6 6 6-6" /></>,
+  // F23 aside (MapaMobileMenu): nav-row chevron, memory heat map (target), fit to screen (corners)
+  chevronRight: <><path d="M9 6l6 6-6 6" /></>,
+  target: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.5" fill="currentColor" /></>,
+  fit: <path d="M4 9V5a1 1 0 011-1h4M20 9V5a1 1 0 00-1-1h-4M4 15v4a1 1 0 001 1h4M20 15v4a1 1 0 01-1 1h-4" />,
   // F18 Indicação (Indicar.dc.html)
   gift: <><rect x="3" y="8" width="18" height="4" rx="1.2" /><path d="M12 8v13M5 12v8h14v-8M12 8C10 4 6 4.5 6 6.5S9.5 8 12 8zM12 8c2-4 6-3.5 6-1.5S14.5 8 12 8z" /></>,
   share: <><circle cx="6" cy="12" r="2.5" /><circle cx="18" cy="6" r="2.5" /><circle cx="18" cy="18" r="2.5" /><path d="M8.2 10.9l7.6-3.8M8.2 13.1l7.6 3.8" /></>,

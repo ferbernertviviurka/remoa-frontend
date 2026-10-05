@@ -21,13 +21,14 @@
     ".next-nav/types/**/*.ts",
     ".next-navprod/types/**/*.ts",
     ".next-navprod2/types/**/*.ts",
+    ".next-pill/types/**/*.ts",
     ".next-prod/types/**/*.ts",
     ".next-split/types/**/*.ts",
     ".next/types/**/*.ts",
     "e2e",
     "next-env.d.ts",
     "src",
-    ".next-pill/types/**/*.ts"
+    ".next-t10/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

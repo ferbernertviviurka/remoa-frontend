@@ -24,6 +24,13 @@ describe('toDraft', () => {
   });
 });
 
+describe('F23 FR-14: title of at least 2 characters', () => {
+  it('rejects 1 character, accepts 2', () => {
+    expect(buildSaveInput({ ...fresh('concept'), title: ' A ' }).ok).toBe(false);
+    expect(buildSaveInput({ ...fresh('concept'), title: 'AB' }).ok).toBe(true);
+  });
+});
+
 describe('G06: Conteúdo and images everywhere', () => {
   it('note: title, text and image only; never a back or a rubric payload', () => {
     const d = fresh('note');
@@ -36,11 +43,11 @@ describe('G06: Conteúdo and images everywhere', () => {
   it('answer image (concept/flow/case), step and stage images round-trip; an image on an empty stage goes with it', () => {
     const c = buildSaveInput({ ...fresh('concept'), backAssetId: asset });
     expect(c.ok && c.data.backAssetId).toBe(asset);
-    const f = toDraft({ id, type: 'flow', title: 'F', front: null, back: null, source: null, backAssetId: asset, payload: { steps: [{ id: 'a', text: 'um', assetId: asset }, { id: 'b', text: 'dois' }] } });
+    const f = toDraft({ id, type: 'flow', title: 'Fl', front: null, back: null, source: null, backAssetId: asset, payload: { steps: [{ id: 'a', text: 'um', assetId: asset }, { id: 'b', text: 'dois' }] } });
     expect(f.backAssetId).toBe(asset);
     const fb = buildSaveInput(f);
     expect(fb.ok && fb.data.type === 'flow' && fb.data.payload.steps).toEqual([{ id: 'a', text: 'um', assetId: asset }, { id: 'b', text: 'dois' }]);
-    const k = toDraft({ id, type: 'case', title: 'C', front: null, back: null, source: null, payload: { caseSteps: [{ stage: 'workup', text: 'ECG', assetId: asset }] } });
+    const k = toDraft({ id, type: 'case', title: 'Ca', front: null, back: null, source: null, payload: { caseSteps: [{ stage: 'workup', text: 'ECG', assetId: asset }] } });
     if (k.type !== 'case') throw new Error();
     expect(k.stageAssets.workup).toBe(asset);
     const kb = buildSaveInput({ ...k, stageAssets: { ...k.stageAssets, management: asset } }); // management has no text
@@ -102,6 +109,6 @@ describe('buildSaveInput', () => {
   });
 
   it('too long text gets a generic message', () => {
-    expect(buildSaveInput({ ...fresh('concept'), title: 'x', source: 'y'.repeat(1001) })).toEqual({ ok: false, errors: ['Algum campo passou do tamanho máximo.'] });
+    expect(buildSaveInput({ ...fresh('concept'), title: 'xx', source: 'y'.repeat(1001) })).toEqual({ ok: false, errors: ['Algum campo passou do tamanho máximo.'] });
   });
 });

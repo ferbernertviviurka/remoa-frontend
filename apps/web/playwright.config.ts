@@ -14,7 +14,7 @@ export default defineConfig({
     // baselines keep the pre-D-506 name (`<arg>-<platform>.png`, no project in it): P-210 forbids regenerating them without Fernando's OK
     { name: 'chromium', testIgnore: phone, snapshotPathTemplate: '{snapshotDir}/{testFileDir}/{testFileName}-snapshots/{arg}{-snapshotSuffix}{ext}' },
     { name: 'pixel-5', testMatch: phone, use: { ...devices['Pixel 5'] } },
-    { name: 'iphone-12', testMatch: ['**/mobile-review.spec.ts', '**/map-mobile/canvas.spec.ts', '**/map-mobile/menu.spec.ts', '**/map-mobile/selection.spec.ts'], use: { ...devices['iPhone 12'] } },
+    { name: 'iphone-12', testMatch: ['**/mobile-review.spec.ts', '**/map-mobile/canvas.spec.ts', '**/map-mobile/menu.spec.ts', '**/map-mobile/selection.spec.ts', '**/map-mobile/criteria.spec.ts'], use: { ...devices['iPhone 12'] } },
   ],
   // G14 D-606: the challenge tour opens on the first own map (flag in localStorage); specs start with it seen, tour.spec clears it
   use: {

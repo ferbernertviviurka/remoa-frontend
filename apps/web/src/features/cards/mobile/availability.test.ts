@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PLAN_LIMITS, type Entitlements } from '@remoa/contracts';
 import { createAvailability } from './availability';
 
-const ent = (plan: 'free' | 'pro', usage: Partial<Entitlements['usage']> = {}): Entitlements => ({
+const ent = (plan: 'free' | 'pro' | 'founder', usage: Partial<Entitlements['usage']> = {}): Entitlements => ({
   plan, status: null, ...PLAN_LIMITS[plan], usage: { ai_grades: 0, ai_generations: 0, boards: 0, cards: 0, ...usage },
   ankiImportsUsed: 0, renewsAt: null, cancelAtPeriodEnd: false, graceUntil: null,
 });
@@ -37,5 +37,17 @@ describe('createAvailability (D-668)', () => {
   it('null = unlimited: cards never block', () => {
     const e = ent('pro', { cards: 99999 });
     expect(createAvailability({ ...e, limits: { ...e.limits, cards: null } }).concept?.status).toBeUndefined();
+  });
+  it('Pro with a numeric monthly quota: hints "restam N no mês" / "N no mês" (mock mapa-mobile-criar), no pill', () => {
+    const a = createAvailability(ent('pro', { ai_generations: 2 }));
+    const n = PLAN_LIMITS.pro.limits.ai_generations - 2;
+    expect(a.ai).toEqual({ hint: `restam ${n} no mês` });
+    expect(a.pdf).toEqual({ hint: `${n} no mês` });
+  });
+  it('unlimited generations (Founder): no pill, AI says "sem limite", PDF no count', () => {
+    const a = createAvailability(ent('founder'));
+    expect(a.ai).toEqual({ hint: 'sem limite' });
+    expect(a.pdf).toEqual({});
+    expect(Object.values(a).some((v) => v?.status)).toBe(false);
   });
 });

@@ -7,6 +7,7 @@ import { MapGlyph } from './glyph';
  * FloatingMapBar (F23 FR-12, D-661): rodapé flutuante do mapa no celular, a 24 px do rodapé + safe area. À esquerda "Revisar" com o selo
  * de vencidos (pulsa); à direita a pílula com "Cards em lista" (alternância) e o botão circular de 60 px **Criar card**, o ÚNICO botão
  * de criação (o "+" gira 45° com a sheet aberta). Posiciona-se `absolute` no contêiner do mapa. `hidden` some a barra (editor aberto).
+ * Com a sheet de criar aberta, uma cópia com `createOpen` vai no `footer` da sheet (por cima do scrim) e o "×" fecha a sheet.
  * Textos por props. Só `transform`/`opacity` nos movimentos.
  */
 export type FloatingMapBarProps = {
@@ -59,10 +60,10 @@ export function FloatingMapBar(p: FloatingMapBarProps) {
           aria-label={p.createLabel}
           aria-haspopup="dialog"
           aria-expanded={!!p.createOpen}
-          onClick={p.onCreate}
+          onClick={(e) => { e.currentTarget.focus(); p.onCreate(); }} // Safari does not focus buttons on tap: the sheet returns focus to whoever had it
           className="flex size-[60px] cursor-pointer items-center justify-center rounded-full bg-primary text-on-primary shadow-[0_8px_20px_rgba(109,91,208,.5)] transition-transform duration-200 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-dark"
         >
-          <span aria-hidden="true" className="flex transition-transform duration-[400ms] ease-[cubic-bezier(.22,1,.36,1)]" style={{ transform: `rotate(${p.createOpen ? 45 : 0}deg)` }}>
+          <span aria-hidden="true" className={`flex ${p.createOpen ? 'mm-fab-x' : ''} transition-transform duration-[400ms] ease-[cubic-bezier(.22,1,.36,1)]`} style={{ transform: `rotate(${p.createOpen ? 45 : 0}deg)` }}>
             <MapGlyph name="plus" size={30} />
           </span>
         </button>

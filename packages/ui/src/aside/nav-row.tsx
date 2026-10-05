@@ -37,7 +37,7 @@ export function NavRow({ icon, label, description, href, onClick, soon, trailing
   const end = soon ? (
     <span className="shrink-0 rounded-pill bg-panel-dark px-2.5 py-[3px] text-[11.5px] font-extrabold text-on-dark">{soon}</span>
   ) : (
-    trailing ?? <Icon name="right" size={18} className="shrink-0 text-muted" />
+    trailing ?? <Icon name="chevronRight" size={20} className="shrink-0 text-muted" />
   );
   const body = <RowBody icon={icon} label={label} description={description} end={end} />;
   if (soon) return <button type="button" aria-disabled="true" disabled className={clsx(rowBase, 'cursor-not-allowed opacity-60')}>{body}</button>;
