@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { Rail } from './rail';
 
 const push = vi.fn();
@@ -38,10 +38,9 @@ describe('Rail', () => {
     search = new URLSearchParams();
   });
 
-  it('opens the account', () => {
+  it('leaves the account to the navbar (D-607)', () => {
     render(<Rail />);
-    fireEvent.click(screen.getByRole('button', { name: 'Minha conta' }));
-    expect(push).toHaveBeenCalledWith('/app/conta');
+    expect(screen.queryByRole('button', { name: 'Minha conta' })).toBeNull();
   });
 });
 

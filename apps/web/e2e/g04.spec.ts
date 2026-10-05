@@ -2,6 +2,7 @@
 // SHOTS=<dir> salva os screenshots do relatório (antes/depois).
 import { expect, test, type Page } from '@playwright/test';
 import { createMockSepse, createSepseBoard, signUpAndLogin } from './visual/fixture';
+import { padForChallenge } from './challenge-pad';
 
 const node = (page: Page, title: string) =>
   page.locator('.react-flow__node').filter({ has: page.getByRole('button', { name: `Selecionar ${title}`, exact: true }) });
@@ -92,11 +93,12 @@ test('formato: o nó muda na hora, grava sem "Salvar", Cancelar não desfaz e re
   await form.getByLabel('Título').fill('Lactato alterado sem salvar');
   const puts: string[] = [];
   page.on('request', (r) => r.method() === 'PUT' && /\/v1\/cards\//.test(r.url()) && puts.push(r.postData() ?? ''));
+  const before = (await node(page, 'Lactato').boundingBox())!.height; // G14 D-607: the navbar on the editor changes the fit zoom
   await form.getByRole('group', { name: 'Formato no mapa' }).getByRole('button', { name: 'Losango' }).click();
   // preview at once, before any response: data-shape and the React Flow measured size (edges follow it)
   const article = node(page, 'Lactato').locator('article');
   await expect(article).toHaveAttribute('data-shape', 'diamond');
-  await expect.poll(async () => (await node(page, 'Lactato').boundingBox())?.height ?? 0).toBeGreaterThan(200);
+  await expect.poll(async () => (await node(page, 'Lactato').boundingBox())?.height ?? 0).toBeGreaterThan(before * 1.2);
   await expect(form.getByRole('status').filter({ hasText: 'Formato salvo.' })).toBeVisible();
   expect(puts).toHaveLength(1);
   expect(JSON.parse(puts[0]!)).toMatchObject({ shape: 'diamond', title: 'Lactato' }); // the unsaved title stays out
@@ -122,6 +124,7 @@ test('desafio: "Pular" é um botão com borda e fundo, contraste ≥ 4,5:1 e alv
   test.setTimeout(120_000);
   const { userId, headers } = await signUpAndLogin(page, request);
   const board = await createMockSepse(request, headers, userId);
+  await padForChallenge(request, headers, board, 4); // G14 D-579: 10 cards to challenge
   await page.goto(`/app/mapas/${board}?modo=desafio`);
   const skip = page.getByRole('button', { name: 'Pular', exact: true });
   await expect(skip).toBeVisible();

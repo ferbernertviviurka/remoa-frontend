@@ -43,13 +43,15 @@ export const plans = {
     currentPlan: 'Seu plano atual',
     recommended: 'Recomendado',
     // Ilimitado concorda com o gênero da linha.
-    unlimited: { boards: 'Ilimitados', cards: 'Ilimitados', aiGrades: 'Ilimitadas' },
+    unlimited: { boards: 'Ilimitados', cards: 'Ilimitados', aiGrades: 'Ilimitadas', pdfMaps: 'Ilimitados', ankiImports: 'Ilimitadas', ankiImport: 'Ilimitados', newCards: 'Ilimitados' },
+    notIncluded: 'Não incluso',
     rows: {
       boards: { label: 'Mapas', sub: 'total na conta' },
       cards: { label: 'Cards', sub: 'total na conta' },
       aiGrades: { label: 'Correções por IA', sub: 'por dia' },
       pdfMaps: { label: 'Mapas gerados de PDF', sub: 'por mês' },
-      ankiImport: { label: 'Importação do Anki', sub: 'cards por arquivo' },
+      ankiImports: { label: 'Importações do Anki', sub: 'total na conta' },
+      ankiImport: { label: 'Cards por importação do Anki', sub: 'por arquivo' },
       newCards: { label: 'Novos cards por dia', sub: 'na fila de revisão' },
     },
     usage: {
@@ -129,9 +131,9 @@ export const plans = {
     subtitle: 'Seu plano foi atualizado. Tudo isto já está liberado.',
     benefits: {
       unlimited: 'Mapas e cards ilimitados',
-      aiGrades: 'Correções por IA sem limite diário',
+      aiGrades: '{n} correções por IA por dia',
       pdfMaps: '{n} mapas gerados de PDF por mês',
-      anki: 'Importação de até {n} cards do Anki',
+      anki: 'Importação do Anki ilimitada',
     },
     goToday: 'Ir para Hoje',
     createMap: 'Criar um mapa',

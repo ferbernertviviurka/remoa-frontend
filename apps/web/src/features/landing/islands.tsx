@@ -21,19 +21,19 @@ const keep = { __html: '' };
  * App Router re-renders made React drop those and show the (empty) fallback.
  * Don't use it above the fold: the re-rendered nodes would be a late LCP candidate (see hero-stage, D-356).
  */
-export function island<P extends object>(load: () => Promise<ComponentType<P>>) {
+export function island<P extends object>(load: () => Promise<ComponentType<P>>, opts?: { eager?: boolean }) {
   const ServerOnly = lazy(async () => ({ default: await load() }));
   return function Island(props: P) {
     const [Comp, setComp] = useState<ComponentType<P> | null>(null);
     useEffect(() => {
       let alive = true;
-      void afterLoadIdle().then(load).then((C) => { if (alive) setComp(() => C); });
+      void (opts?.eager ? load() : afterLoadIdle().then(load)).then((C) => { if (alive) setComp(() => C); });
       return () => { alive = false; };
     }, []);
     if (typeof window === 'undefined') return <div className="contents" data-island="pending"><Suspense><ServerOnly {...props} /></Suspense></div>;
     return Comp
       ? <div className="contents" data-island="ready"><Comp {...props} /></div>
-      : <div className="contents" data-island="pending" dangerouslySetInnerHTML={keep} suppressHydrationWarning />;
+      : <div className="contents" data-island="pending" dangerouslySetInnerHTML={keep} suppressHydrationWarning onSubmit={opts?.eager ? (e) => e.preventDefault() : undefined} />;
   };
 }
 
@@ -41,4 +41,5 @@ export const FeaturesIsland = island(() => import('./sections/features-section')
 export const DemoIsland = island(() => import('./demo/demo-section').then((m) => m.DemoSection));
 export const PlansIsland = island(() => import('./plans/plans-section').then((m) => m.PlansSectionView));
 export const FaqIsland = island(() => import('./plans/faq-section').then((m) => m.FaqSection));
-export const WaitlistIsland = island(() => import('./shell/waitlist-cta').then((m) => m.WaitlistCta));
+// eager: the form must work as soon as it is on screen (a click before the idle load used to submit the inert server form: page reload, nothing visible)
+export const WaitlistIsland = island(() => import('./shell/waitlist-cta').then((m) => m.WaitlistCta), { eager: true });

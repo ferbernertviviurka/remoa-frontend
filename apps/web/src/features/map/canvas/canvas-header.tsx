@@ -6,25 +6,19 @@ import { useRouter } from 'next/navigation';
 import type { Board } from '@remoa/contracts';
 import { boardTitleSchema } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
-import { Alert, Button, Icon, InlineTitle, Kbd, Menu, Segmented, useToast } from '@remoa/ui';
+import { CHALLENGE_MIN_CARDS } from '@remoa/contracts';
+import { Alert, Button, Icon, InlineTitle, Menu, Segmented, Tooltip, useToast } from '@remoa/ui';
+import { openChallengeTour } from '@/features/challenge/tour';
 import { api } from '@/lib/api';
 // F17 T7: ShareDialog (FR-12) — loaded only when the board is private and not a seed.
 import { MapPropertiesDialog } from '@/features/map/properties/map-properties-dialog';
 import { ShareDialog } from '@/features/map/share/share-dialog';
 import type { QueueStatus } from './op-queue';
+import { saveText } from './save-text';
+
+export { saveText };
 
 export type Mode = 'explore' | 'challenge';
-
-/** "Salvo há 2 min" (D-086: the editor shows its own save state). `savedAt` null = nothing saved this session → board.updatedAt. */
-export function saveText(status: Pick<QueueStatus, 'state' | 'savedAt'>, updatedAt: Date | string, now: number): string {
-  if (status.state === 'saving') return t('editor.saving');
-  if (status.state === 'offline') return t('map.save.offline');
-  if (status.state === 'error') return t('map.save.error');
-  const min = Math.max(0, Math.floor((now - (status.savedAt ?? new Date(updatedAt).getTime())) / 60_000));
-  if (min < 1) return t('editor.savedNow');
-  const time = min < 60 ? t('map.ago.minutes', { n: min }) : t('map.ago.hours', { n: Math.floor(min / 60) });
-  return t('editor.savedLabel', { time });
-}
 
 function useNow(everyMs: number) {
   const [now, setNow] = useState(() => Date.now());
@@ -41,7 +35,8 @@ type Props = {
   onRetry: () => void;
   mode: Mode;
   onMode: (m: Mode) => void;
-  onPalette: () => void;
+  /** D-579: challengeable cards still missing (> 0 = "Desafiar este mapa" blocked, with the reason in a tooltip). */
+  missing: number;
   /** F07 FR-5: "cobre X% de <item>", link to /cobertura. */
   coverage: { pct: number; item: string } | null;
   /** Cards due today: the CTA reads "Desafiar os N que vencem hoje" (D-098: it was the map panel's button). */
@@ -54,12 +49,8 @@ const dots = (
   </svg>
 );
 
-const modes = [
-  { value: 'explore', label: t('editor.explore') },
-  { value: 'challenge', label: t('editor.challenge') },
-] as const;
 
-/** Editor.dc.html header (68 px): back, area + inline title, "Salvo há", Explorar/Desafio, ⌘K, "Desafiar este mapa". */
+/** Editor.dc.html header (68 px): back, area + inline title, "Salvo há", Explorar/Desafio, "Desafiar este mapa". ⌘K moved to the app navbar (D-607). */
 export const CanvasHeader = memo(function CanvasHeader(p: Props) {
   const router = useRouter();
   const { toast } = useToast();
@@ -92,6 +83,15 @@ export const CanvasHeader = memo(function CanvasHeader(p: Props) {
 
   const failed = p.status.state === 'error';
   const challengeText = p.due > 0 ? t('quiz.challengeBoard', { n: p.due }) : t('vocab.challengeBoard');
+  const blocked = p.missing > 0;
+  const reason = p.missing === 1 ? t('challengeSetup.minCards.tooltipOne', { min: CHALLENGE_MIN_CARDS }) : t('challengeSetup.minCards.tooltip', { min: CHALLENGE_MIN_CARDS, n: p.missing });
+  const [tip, setTip] = useState(false);
+  const reasonId = `challenge-blocked-${p.board.id}`;
+  const modes = [
+    { value: 'explore', label: t('editor.explore') },
+    { value: 'challenge', label: t('editor.challenge'), disabled: blocked, describedBy: blocked ? reasonId : undefined },
+  ];
+  const tourItem = { label: t('challengeSetup.tour.replay'), onSelect: openChallengeTour };
   return (
     <>
       {/* phone (G02): back, truncated title, Explorar/Desafio and the rest in a "⋯" menu */}
@@ -123,27 +123,33 @@ export const CanvasHeader = memo(function CanvasHeader(p: Props) {
             </Link>
           </>
         ) : null}
+        <span id={reasonId} className="sr-only">{blocked ? reason : ''}</span>
         <span className="hidden grow md:block" />
         <span className="shrink-0 max-md:[&_button]:h-9 max-md:[&_button]:px-3 max-md:[&_button]:text-[13px]">
           <Segmented aria-label={t('map.toolbar.mode')} options={modes} value={p.mode} onValueChange={(v) => p.onMode(v as Mode)} />
         </span>
         <span className="hidden grow md:block" />
         <span className="hidden shrink-0 items-center gap-3.5 md:flex">
-          {/* Torph Button (rule 1): the mock's trigger is regular/muted text; ours is the secondary button weight. */}
-          <Button size="sm" variant="secondary" icon={<Icon name="search" size={18} />} iconEnd={<Kbd>{t('palette.keyboardHint')}</Kbd>} onClick={p.onPalette} aria-keyshortcuts="Meta+K Control+K">
-            {t('editor.commandPalette')}
-          </Button>
           {/* F17 T7 (FR-12): "Compartilhar" — only for private (student) boards, not seeds or archived. */}
           {canShare ? (
             <Button size="sm" variant="secondary" icon={<Icon name="link" size={18} />} onClick={() => setShareOpen(true)}>
               {t('share.headerButton')}
             </Button>
           ) : null}
-          {canShare ? <Menu trigger="icon" align="end" icon={dots} label={t('editor.moreActions')} items={[{ label: t('mapProps.menu'), onSelect: () => setPropsOpen(true) }]} /> : null}
+          <Menu trigger="icon" align="end" icon={dots} label={t('editor.moreActions')} items={[...(canShare ? [{ label: t('mapProps.menu'), onSelect: () => setPropsOpen(true) }] : []), tourItem]} />
           {p.mode === 'explore' ? (
-            <Button size="sm" icon={<Icon name="bolt" size={18} />} onClick={() => p.onMode('challenge')}>
-              {challengeText}
-            </Button>
+            blocked ? (
+              // aria-disabled keeps it focusable: the tooltip explains on hover, focus and tap (G14 ponto 18)
+              <Tooltip label={reason} open={tip} onOpenChange={setTip}>
+                <Button size="sm" icon={<Icon name="bolt" size={18} />} aria-disabled="true" aria-describedby={reasonId} onClick={(e) => { e.preventDefault(); setTip(true); }}>
+                  {challengeText}
+                </Button>
+              </Tooltip>
+            ) : (
+              <Button size="sm" icon={<Icon name="bolt" size={18} />} onClick={() => p.onMode('challenge')}>
+                {challengeText}
+              </Button>
+            )
           ) : (
             <Button size="sm" variant="secondary" icon={<Icon name="close" size={18} />} onClick={() => p.onMode('explore')}>
               {t('quiz.exit')}
@@ -157,10 +163,10 @@ export const CanvasHeader = memo(function CanvasHeader(p: Props) {
             icon={dots}
             label={t('editor.moreActions')}
             items={[
-              { label: t('editor.commandPalette'), onSelect: p.onPalette },
               ...(p.coverage ? [{ label: t('editor.coversMenu', { pct: p.coverage.pct, item: p.coverage.item }), onSelect: () => router.push('/app/cobertura') }] : []),
               ...(canShare ? [{ label: t('share.headerButton'), onSelect: () => setShareOpen(true) }, { label: t('mapProps.menu'), onSelect: () => setPropsOpen(true) }] : []),
-              p.mode === 'explore' ? { label: challengeText, onSelect: () => p.onMode('challenge') } : { label: t('quiz.exit'), onSelect: () => p.onMode('explore') },
+              p.mode === 'explore' ? { label: blocked ? `${challengeText} · ${reason}` : challengeText, onSelect: () => (blocked ? undefined : p.onMode('challenge')) } : { label: t('quiz.exit'), onSelect: () => p.onMode('explore') },
+              tourItem,
             ]}
           />
         </span>

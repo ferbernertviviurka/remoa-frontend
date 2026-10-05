@@ -1,4 +1,4 @@
-import { httpErrorBodySchema, type Result } from '@remoa/contracts';
+import { httpErrorBodySchema, type AppError, type Result } from '@remoa/contracts';
 import { readResultStream } from './sse';
 
 import { apiBase } from './base';
@@ -13,12 +13,39 @@ export async function apiFetch<T>(path: string, token: string | null, init: Requ
   const headers = new Headers(init.headers);
   if (token) headers.set('authorization', `Bearer ${token}`);
   if (init.body) headers.set('content-type', 'application/json');
-  const res = await fetch(`${apiBase()}${path}`, { ...init, headers, cache: 'no-store' });
-  if (res.ok && res.body && (res.headers.get('content-type') ?? '').includes('text/event-stream')) return readResultStream<T>(res.body, onFeedback);
+  const started = Date.now();
+  let res: Response;
+  try {
+    res = await fetch(`${apiBase()}${path}`, { ...init, headers, cache: 'no-store' });
+  } catch (e) {
+    trace(init.method, path, 0, started, { code: 'internal', message: `network: ${e instanceof Error ? e.message : String(e)}` });
+    throw e;
+  }
+  if (res.ok && res.body && (res.headers.get('content-type') ?? '').includes('text/event-stream')) {
+    trace(init.method, path, res.status, started);
+    return readResultStream<T>(res.body, onFeedback);
+  }
   const body: unknown = await res.json().catch(() => null);
-  if (res.ok) return body as Result<T>;
   const parsed = httpErrorBodySchema.safeParse(body);
-  return { ok: false, error: parsed.success ? parsed.data.error : { code: 'internal', message: `HTTP ${res.status}` } };
+  const result: Result<T> = res.ok ? (body as Result<T>) : { ok: false, error: parsed.success ? parsed.data.error : { code: 'internal', message: `HTTP ${res.status}` } };
+  trace(init.method, path, res.status, started, result.ok ? undefined : result.error);
+  return result;
+}
+
+export type ApiErrorDetail = { method: string; path: string; status: number; error: AppError };
+
+/**
+ * D-583 (dev only): every API call leaves one line. Calls made by the Next server (`serverApi`, Server Actions) never show in the
+ * browser's Network tab, so they print in the `pnpm dev` terminal; browser calls print in DevTools and also fire `remoa:api-error`
+ * (toasted when NEXT_PUBLIC_API_DEBUG=1, see DevApiToasts). Share/referral tokens are masked like in the API log.
+ */
+function trace(method = 'GET', path: string, status: number, started: number, error?: AppError) {
+  if (process.env.NODE_ENV !== 'development') return;
+  const safe = path.replace(/^(\/v1\/public\/(?:shared|referral)\/)[^/?]+/, '$1:token');
+  const line = `[api] ${method} ${safe} -> ${status} ${Date.now() - started}ms${error ? ` ${error.code}: ${error.message}` : ''}`;
+  // eslint-disable-next-line no-console -- dev-only trace (D-583), NODE_ENV guard above
+  (error ? console.warn : console.info)(line);
+  if (error && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent<ApiErrorDetail>('remoa:api-error', { detail: { method, path: safe, status, error } }));
 }
 
 /**

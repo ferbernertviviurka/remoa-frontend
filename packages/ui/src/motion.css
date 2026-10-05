@@ -92,3 +92,48 @@
 @keyframes inright { from { opacity: 0; transform: translateX(56px); } }
 .growy { transform-origin: 50% 100%; animation: growy 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .inright { animation: inright 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* F20 Loja (Fase A). Só transform/opacity; reduzir movimento zera tudo pelas regras gerais acima (estado final fica visível). */
+@keyframes st-shine { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes st-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes st-rise { from { opacity: 0; transform: translateY(24px); } }
+@keyframes st-ring { 0% { box-shadow: 0 0 0 0 rgba(109, 91, 208, 0.45); } 70%, 100% { box-shadow: 0 0 0 12px rgba(109, 91, 208, 0); } }
+@keyframes st-dot { 0% { left: 0; opacity: 0; } 12%, 88% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
+.st-shine { background-image: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%); background-size: 200% 100%; animation: st-shine 3s linear infinite; }
+.st-float { animation: st-float 6s ease-in-out infinite; }
+.st-rise { animation: st-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.st-ring { animation: st-ring 2s ease-out infinite; }
+.st-dot { animation: st-dot 2.6s linear infinite; }
+@keyframes st-flow { to { stroke-dashoffset: -12; } }
+.st-flow { stroke-dasharray: 4 4; animation: st-flow 1s linear infinite; } /* stroke-dashoffset; reduzir movimento zera a animação (tracejado estático) */
+
+/* F21 Revisar (charts/*). Só `from`: sem animação aparece o estado final. transform/opacity/stroke-dashoffset. */
+@keyframes rv-ring { from { stroke-dashoffset: var(--len); } }
+@keyframes rv-seg { from { stroke-dashoffset: var(--len); } }
+@keyframes rv-line { from { stroke-dashoffset: 1; } }
+@keyframes rv-fade { from { opacity: 0; } }
+@keyframes rv-popn { from { opacity: 0; transform: scale(0.88); } }
+.rv-ring { animation: rv-ring 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both; }
+.rv-seg { animation: rv-seg 1s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.rv-line { stroke-dasharray: 1; animation: rv-line 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both; }
+.rv-area { animation: rv-fade 1s ease 0.6s both; }
+.rv-popn { transform-origin: 50% 50%; animation: rv-popn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* F23 MapAside (MapaMobileMenu.dc.html): painel 500 ms, scrim 450 ms, itens em cascata (100 ms + 40 ms por item). Movimento reduzido já zera tudo acima. */
+@keyframes aside-in { from { transform: translateX(-100%); } }
+@keyframes aside-out { to { transform: translateX(-100%); } }
+@keyframes aside-item-fade { from { opacity: 0; } }
+@keyframes aside-item-slide { from { transform: translateX(-28px); } }
+.remoa-aside[data-state='open'] { animation: aside-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.remoa-aside[data-state='closed'] { animation: aside-out 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.remoa-aside-scrim[data-state='open'] { animation: remoa-fade-in 0.45s ease both; }
+.remoa-aside-scrim[data-state='closed'] { animation: remoa-fade-out 0.45s ease both; }
+@keyframes remoa-fade-out { to { opacity: 0; } }
+.remoa-aside[data-state='open'] > .remoa-aside-body > * {
+  animation: aside-item-fade 0.3s ease both, aside-item-slide 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(0.1s + 0.04s * var(--i, 0));
+}
+
+/* F23 map-mobile: anel do selo de vencidos (mock: box-shadow; aqui só transform + opacity, FR-21). */
+@keyframes mm-ring { from { opacity: 0.55; transform: scale(1); } 70%, to { opacity: 0; transform: scale(1.7); } }
+.mm-ring { animation: mm-ring 2s ease-out infinite; }

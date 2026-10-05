@@ -4,7 +4,7 @@ import { Avatar } from '../avatar';
 import { Button } from '../button';
 import { Icon } from '../icons';
 import {
-  AvatarCropper, ChoiceChip, CompletenessRing, DangerCard, InlineField, NumberStepper, PasswordMeter, SettingsNav, SettingsNavAction, UsageMeter, UsageWarning,
+  AvatarCropper, ChoiceChip, ChoiceChipMulti, CompletenessRing, DangerCard, InlineField, NumberStepper, PasswordMeter, SettingsNav, SettingsNavAction, UsageMeter, UsageWarning,
   type AvatarCropperHandle,
 } from './index';
 
@@ -114,3 +114,10 @@ function CropperDemo() {
   }
 
 export const Recorte: S = { render: () => <CropperDemo /> };
+
+function MultiDemo() {
+  const [v, setV] = useState<string[]>(['2027.1']);
+  return <ChoiceChipMulti label="Objetivos de prova" values={v} onValuesChange={setV} full={v.length >= 3} options={[{ value: '2027.1', label: 'Enamed 2027.1' }, { value: '2027.2', label: 'Enamed 2027.2' }, { value: 'x', label: 'Ainda não sei' }, { value: 'y', label: 'USP' }]} />;
+}
+
+export const ChipsMultiplos: S = { render: () => <MultiDemo /> };

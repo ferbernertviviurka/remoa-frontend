@@ -29,7 +29,8 @@ export type QuestionPanelProps = {
   /** Inert/decorative uses (landing hero) render the question as a paragraph so the page keeps a single heading outline (P-177). */
   questionAs?: 'h2' | 'p';
   modeLabel: string;
-  modes: readonly { value: AnswerMode; label: string }[];
+  /** `disabled` + `badge` (ex.: Voz "Em breve", G14): não seleciona, mostra a pílula. */
+  modes: readonly { value: AnswerMode; label: string; disabled?: boolean; badge?: string }[];
   mode: AnswerMode;
   onModeChange: (m: AnswerMode) => void;
   answerLabel: string;
@@ -79,10 +80,12 @@ export function QuestionPanel(p: QuestionPanelProps) {
                   key={m.value}
                   type="button"
                   aria-pressed={m.value === p.mode}
+                  disabled={m.disabled}
                   onClick={() => p.onModeChange(m.value)}
-                  className={clsx('h-10 flex-1 cursor-pointer rounded-[11px] text-[13.5px] font-bold', focusRing, m.value === p.mode ? 'bg-surface text-primary-deep' : 'text-muted hover:text-(--cv-ink)')}
+                  className={clsx('inline-flex h-10 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-[11px] text-[13.5px] font-bold disabled:cursor-not-allowed', focusRing, m.value === p.mode ? 'bg-surface text-primary-deep' : 'text-muted enabled:hover:text-(--cv-ink)')}
                 >
                   {m.label}
+                  {m.badge ? <Tag tone="unknown">{m.badge}</Tag> : null}
                 </button>
               ))}
             </div>

@@ -50,10 +50,42 @@ describe('BoardsView', () => {
     await openMenu('Arquivar');
     expect(api).not.toHaveBeenCalled();
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Arquivar' }));
-    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/boards/b1', { method: 'PATCH', body: JSON.stringify({ archived: true }) }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Desfazer' }));
-    await waitFor(() => expect(api).toHaveBeenLastCalledWith('/v1/boards/b1', { method: 'PATCH', body: JSON.stringify({ archived: false }) }));
+    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/boards/b1', { method: 'PATCH', body: JSON.stringify({ archived: true }) }), { timeout: 5000 });
+    fireEvent.click(await screen.findByRole('button', { name: 'Desfazer' }, { timeout: 5000 }));
+    await waitFor(() => expect(api).toHaveBeenLastCalledWith('/v1/boards/b1', { method: 'PATCH', body: JSON.stringify({ archived: false }) }), { timeout: 5000 });
     expect(refresh).toHaveBeenCalledTimes(2);
+  });
+
+  it('excludes only after typing the map name, warns it is permanent, and shows feedback', async () => {
+    api.mockResolvedValue({ ok: true, data: { id: 'b1' } });
+    view([board]);
+    await openMenu('Excluir');
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText(/Não dá para desfazer/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/histórico de revisão/)).toBeInTheDocument();
+    const confirm = within(dialog).getByRole('button', { name: 'Excluir' });
+    expect(confirm).toBeDisabled();
+    fireEvent.change(within(dialog).getByLabelText('Para confirmar, digite o nome do mapa'), { target: { value: 'Sep' } });
+    expect(confirm).toBeDisabled();
+    fireEvent.change(within(dialog).getByLabelText('Para confirmar, digite o nome do mapa'), { target: { value: 'Sepse' } });
+    fireEvent.click(confirm);
+    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/boards/b1', { method: 'DELETE' }));
+    expect(await screen.findByText('Mapa excluído')).toBeInTheDocument();
+    expect(refresh).toHaveBeenCalled();
+  });
+
+  it('filters archived maps via ?status= and unarchives from the menu', async () => {
+    const old: BoardSummary = { ...board, id: 'b9', title: 'Velho', archivedAt: new Date('2026-09-01T00:00:00Z') };
+    api.mockImplementation(async (path: string) => (path.startsWith('/v1/boards?status=') ? { ok: true, data: [old] } : { ok: true, data: old }));
+    view([board]);
+    fireEvent.click(screen.getByRole('radio', { name: 'Arquivados' }));
+    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/boards?status=archived'));
+    expect(await screen.findByRole('link', { name: 'Abrir Velho' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Abrir Sepse' })).not.toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Mais ações de Velho' }), { key: 'Enter' });
+    expect(screen.queryByRole('menuitem', { name: 'Arquivar' })).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Desarquivar' }));
+    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/boards/b9', { method: 'PATCH', body: JSON.stringify({ archived: false }) }));
   });
 
   it('renames and duplicates from the menu', async () => {

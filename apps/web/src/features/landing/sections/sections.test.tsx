@@ -33,7 +33,7 @@ describe('landing sections', () => {
       expect(selected()).toBe(0);
       act(() => fire(true));
       expect(document.querySelector('.lp-step-fill')).toBeTruthy();
-      act(() => vi.advanceTimersByTime(6000));
+      act(() => vi.advanceTimersByTime(4000));
       expect(selected()).toBe(1);
       act(() => fire(false));
       act(() => vi.advanceTimersByTime(12000));

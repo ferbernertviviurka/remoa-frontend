@@ -1,6 +1,7 @@
 import { landing } from './landing';
 import { mapState, challengeMode, challenge, editor, canvas, quiz, boundary } from './landing-shared';
 import { format, type Vars } from './format';
+export { format };
 
 /** Subset of the dictionary used by the landing client components; `@remoa/strings/landing` keeps the rest of pt-BR out of the page bundle (P-174). */
 export const strings = { landing, mapState, challengeMode, challenge, editor, canvas, quiz, boundary } as const;

@@ -21,15 +21,20 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const { data } = await supabase.auth.getUser(); // refreshes the session cookies
   const { pathname, search, searchParams } = request.nextUrl;
+  // D-565: RSC navigations, prefetches and server actions verify the JWT locally (getClaims: JWKS, no Auth round trip; it still
+  // refreshes an expired token through the cookies); the API checks the session on every call anyway. Full page loads and the
+  // auth forms keep getUser(): a revoked session (D-124) then lands on /entrar with its cookies cleared, and /entrar never
+  // bounces a revoked session back into /app (no redirect loop).
+  const soft = !isAuthForm(pathname) && (request.headers.has('rsc') || request.headers.has('next-router-prefetch') || request.headers.has('next-action'));
+  const signedIn = soft ? !!(await supabase.auth.getClaims()).data?.claims.sub : !!(await supabase.auth.getUser()).data.user;
   const redirect = (to: string) => {
     const res = NextResponse.redirect(new URL(to, request.url));
-    response.cookies.getAll().forEach((c) => res.cookies.set(c)); // keep a token refreshed by getUser()
+    response.cookies.getAll().forEach((c) => res.cookies.set(c)); // keep a token refreshed by getUser()/getClaims()
     return res;
   };
-  if (!data.user && isProtected(pathname)) return redirect(`/entrar?next=${encodeURIComponent(pathname + search)}`);
-  if (data.user && isAuthForm(pathname)) return redirect(safeNext(searchParams.get('next')));
+  if (!signedIn && isProtected(pathname)) return redirect(`/entrar?next=${encodeURIComponent(pathname + search)}`);
+  if (signedIn && isAuthForm(pathname)) return redirect(safeNext(searchParams.get('next')));
   return response;
 }
 

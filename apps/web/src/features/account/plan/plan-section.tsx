@@ -81,8 +81,8 @@ export function PlanSection() {
   const price = prices ? formatCents(prices[period].amount).replace(/,00$/, '') : t('account.plan.priceUnavailable');
   const perks = [
     t('account.plan.perks.unlimited'),
-    t('account.plan.perks.ai'),
-    t('account.plan.perks.pdf', { n: PLAN_LIMITS.pro.limits.ai_generations }),
+    t('account.plan.perks.ai', { n: PLAN_LIMITS.pro.limits.ai_grades ?? 0 }),
+    t('account.plan.perks.pdf', { n: PLAN_LIMITS.pro.limits.ai_generations ?? 0 }),
     t('account.plan.perks.seeds'),
   ];
 
@@ -97,10 +97,11 @@ export function PlanSection() {
         : r.key === 'ai_generations'
           ? t('account.plan.usage.pdfSub', { date: formatDate(nextMonth()) })
           : t('account.plan.usage.totalSub');
-    const value = unlimited ? t(m.masc ? 'account.plan.usage.unlimitedMasc' : 'account.plan.usage.unlimitedFem') : t('account.plan.usage.value', { used: r.used, limit: limit ?? 0 });
+    const notIncluded = limit === 0;
+    const value = notIncluded ? t('account.plan.usage.notIncluded') : unlimited ? t(m.masc ? 'account.plan.usage.unlimitedMasc' : 'account.plan.usage.unlimitedFem') : t('account.plan.usage.value', { used: r.used, limit: limit ?? 0 });
     const tone = unlimited ? 'unlimited' : r.tone === 'full' ? 'danger' : r.tone;
     const warning =
-      !pro && r.tone !== 'normal' ? (
+      !pro && !notIncluded && r.tone !== 'normal' ? (
         <UsageWarning action={<Button size="sm" variant="secondary" onClick={() => upgrade('usage_nudge')}>{t('account.plan.seePro')}</Button>}>
           {t(r.tone === 'full' ? 'account.plan.atLimit' : 'account.plan.nearLimit')}
         </UsageWarning>
@@ -122,7 +123,7 @@ export function PlanSection() {
             <p className="m-0 max-w-[360px]">{t('account.plan.founderText')}</p>
           ) : pro ? (
             <>
-              <p className="m-0 max-w-[360px]">{t('account.plan.proText', { pdf: PLAN_LIMITS.pro.limits.ai_generations, date: renewal ?? '' })}</p>
+              <p className="m-0 max-w-[360px]">{t('account.plan.proText', { ai: PLAN_LIMITS.pro.limits.ai_grades ?? 0, pdf: PLAN_LIMITS.pro.limits.ai_generations ?? 0, date: renewal ?? '' })}</p>
               {renewal && ent.cancelAtPeriodEnd ? <p className="m-0 text-sm">{t('billing.account.cancelsAt', { date: renewal })}</p> : null} {/* the active state already reads "Renova em …" in proText, as in the mock */}
               <div className="mt-auto flex flex-wrap gap-2">
                 <Button variant="outline-light" loading={busy === 'portal'} onClick={() => void portal(false)}>{t('account.plan.manage')}</Button>

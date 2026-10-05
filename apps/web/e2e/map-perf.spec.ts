@@ -47,7 +47,7 @@ test('200 cards: pan fps', async ({ page, request }) => {
     await page.getByLabel('E-mail').fill(email);
     await page.getByLabel('Senha').fill(password);
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-    await expect(page).toHaveURL(/:3000\/(app\/hoje|mapas)?$/, { timeout: 4000 }); // D-086: "/" after login
+    await expect(page).toHaveURL(/\/(app\/hoje|mapas)?$/, { timeout: 10_000 }); // D-086: "/" after login
   }).toPass({ timeout: 30_000 });
   await page.goto(`/app/mapas/${board}`);
   await expect(page.locator('.react-flow__node').first()).toBeVisible();

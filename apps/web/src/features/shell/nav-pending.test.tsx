@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MainSlot, NavPendingProvider } from './nav-pending';
-import { Rail } from './rail';
+import { Rail, items } from './rail';
+import { BottomNav } from './bottom-nav';
 
 let pathname = '/';
 vi.mock('next/navigation', () => ({ usePathname: () => pathname, useRouter: () => ({ push: vi.fn() }), useSearchParams: () => new URLSearchParams() }));
@@ -35,10 +36,54 @@ describe('MainSlot', () => {
     expect(screen.getByText('página real')).toBeInTheDocument();
   });
 
-  it('tabs without a skeleton keep the current page', () => {
-    pathname = '/';
+  it.each(items.map((i) => i.href))('rail %s: active + skeleton on the click itself, page on the route change', (href) => {
+    pathname = href === '/app/hoje' ? '/app/mapas' : '/app/hoje';
+    const { rerender } = render(app());
+    const link = screen.getAllByRole('link').find((a) => a.getAttribute('href') === href)!;
+    fireEvent.click(link, { button: 0 });
+    expect(link).toHaveAttribute('aria-current', 'page');
+    expect(screen.getAllByRole('link').filter((a) => a.getAttribute('aria-current') === 'page')).toHaveLength(1);
+    expect(screen.queryByText('página real')).toBeNull();
+    expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true');
+    pathname = href;
+    rerender(app());
+    expect(screen.getByText('página real')).toBeInTheDocument();
+    expect(link).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('the item of the current page, a ⌘-click or a click from a sub-route that stays put show no skeleton', () => {
+    pathname = '/app/mapas';
     render(app());
-    fireEvent.click(screen.getByRole('link', { name: 'Loja' }), { button: 0 });
+    fireEvent.click(screen.getByRole('link', { name: 'Mapas' }), { button: 0 });
+    fireEvent.click(screen.getByRole('link', { name: /^Revisar/ }), { button: 0, metaKey: true });
+    expect(screen.getByText('página real')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Mapas' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('from the map editor, Mapas shows the boards skeleton (the item was already lit)', () => {
+    pathname = '/app/mapas/00000000-0000-4000-8000-000000000001';
+    render(app());
+    fireEvent.click(screen.getByRole('link', { name: 'Mapas' }), { button: 0 });
+    expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true');
+  });
+});
+
+describe('BottomNav', () => {
+  const phone = () => (
+    <NavPendingProvider>
+      <BottomNav />
+      <MainSlot><p>página real</p></MainSlot>
+    </NavPendingProvider>
+  );
+  it.each(['/app/revisar', '/app/mapas', '/app/cobertura', '/app/loja', '/app/conta/perfil'])('%s: active + skeleton on the click', (href) => {
+    pathname = '/app/hoje';
+    const { rerender } = render(phone());
+    const link = screen.getAllByRole('link').find((a) => a.getAttribute('href') === href)!;
+    fireEvent.click(link, { button: 0 });
+    expect(link).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true');
+    pathname = href;
+    rerender(phone());
     expect(screen.getByText('página real')).toBeInTheDocument();
   });
 });

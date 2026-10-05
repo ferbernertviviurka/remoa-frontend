@@ -8,6 +8,7 @@ import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { SectionCard, SettingRow } from '../shared/section-card';
 import { useAccount } from '../shell/account-context';
+import { StoreWaitlistSetting } from '../../store/account-setting';
 import { applyMotion, useMotionSync } from './motion';
 
 const hourLabel = (h: number) => `${String(h).padStart(2, '0')}h`;
@@ -103,6 +104,7 @@ export function PreferencesSection() {
           <Switch size="lg" hideLabel label={t('account.prefs.emailNews')} checked={prefs.emailProductNews} onCheckedChange={(c) => void save({ emailProductNews: c }, t('account.prefs.saved'))} />
         </SettingRow>
       </SectionCard>
+      <StoreWaitlistSetting />
     </div>
   );
 }

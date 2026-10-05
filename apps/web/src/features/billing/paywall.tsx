@@ -10,6 +10,7 @@ const reasonOfQuota: Record<QuotaKey, PaywallReason> = { ai_grades: 'ai_quota', 
 /** Maps an API error (HTTP 402 `{code: 'quota_exceeded', message: <QuotaKey>}`) to the paywall reason; null for any other error. */
 export function paywallFromError(error: { code: string; message?: string }): PaywallReason | null {
   if (error.code !== 'quota_exceeded') return null;
+  if (error.message === 'anki') return 'anki'; // D-648: per-account Anki import cap
   return reasonOfQuota[error.message as QuotaKey] ?? 'ai_quota';
 }
 

@@ -1,3 +1,4 @@
+// Sem analytics externo (decisão do Fernando): eventos só ficam em window.__remoaEvents (lidos pelos e2e).
 import type { BaseEventProps, Track } from '@remoa/contracts';
 
 type Sent = { event: string; props: Record<string, unknown> };
@@ -6,15 +7,6 @@ declare global {
     __remoaEvents?: Sent[];
   }
 }
-
-const token = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN;
-
-let loaded: Promise<typeof import('mixpanel-browser').default> | undefined;
-const mixpanel = () =>
-  (loaded ??= import('mixpanel-browser').then(({ default: mp }) => {
-    mp.init(token!, { property_blacklist: ['$current_url', '$referrer', '$initial_referrer'] }); // P-238: /m/<token> e ?next= nunca vão ao Mixpanel
-    return mp;
-  }));
 
 // D-505: next.config.ts copies package.json's version into NEXT_PUBLIC_APP_VERSION at build.
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.0.0';
@@ -72,14 +64,12 @@ function baseProps(): BaseEventProps {
 }
 
 function send(event: string, props: Record<string, unknown>) {
-  const payload = { ...props, ...baseProps() };
-  if (token) void mixpanel().then((mp) => mp.track(event, payload));
-  else (window.__remoaEvents ??= []).push({ event, props: payload });
+  (window.__remoaEvents ??= []).push({ event, props: { ...props, ...baseProps() } });
 }
 
 /**
  * Typed by contracts/events.ts (compile time). Runtime zod validation runs only outside production, behind a dynamic import, so the
- * validator (~13 KB gzip) is not in the landing bundle (P-175, D-372). Without a token it records into window.__remoaEvents (used by e2e).
+ * validator (~13 KB gzip) is not in the landing bundle (P-175, D-372). Records into window.__remoaEvents (used by e2e).
  */
 export const track: Track = (event, props) => {
   if (process.env.NODE_ENV === 'production') return send(event, props as Record<string, unknown>);
@@ -90,11 +80,7 @@ export const track: Track = (event, props) => {
   });
 };
 
-export function identify(userId: string) {
-  if (token) void mixpanel().then((mp) => mp.identify(userId));
-}
-
-/** FR-19: defer tracking to browser idle so Mixpanel (lazy import) never competes with LCP. The landing must use this for `landing_viewed` and `scroll_depth`. */
+/** FR-19: defer tracking to browser idle so it never competes with LCP. The landing must use this for `landing_viewed` and `scroll_depth`. */
 export const trackWhenIdle: Track = (event, props) => {
   const run = () => track(event, props);
   if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 4000 });

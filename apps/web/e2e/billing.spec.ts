@@ -48,7 +48,7 @@ test('assinar, cancelar, exportar e excluir a conta', async ({ page }) => {
     await dialog.getByLabel('Digite EXCLUIR para confirmar').fill('EXCLUIR');
     await dialog.getByRole('button', { name: 'Excluir conta' }).click();
     await page.getByRole('button', { name: 'Sair da conta' }).click();
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/entrar$/); // G14 D-585
     await page.goto('/app/hoje');
     await expect(page).toHaveURL(/\/entrar/);
     const res = await page.request.get('http://localhost:4000/v1/billing/entitlements', { headers: { authorization: token } });

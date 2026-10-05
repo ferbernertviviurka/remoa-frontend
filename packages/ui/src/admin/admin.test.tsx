@@ -19,6 +19,7 @@ describe('AdminSidebar', () => {
     expect(screen.getByText('9 chamados abertos')).toHaveClass('sr-only');
     expect(screen.getByText('ADMIN')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Voltar ao app' })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: 'remoa' })).toHaveAttribute('href', '/'); // G14: the logo goes back to the app too
     expect(await violations(container)).toEqual([]);
   });
 });

@@ -10,7 +10,8 @@ import {
 import { exportAdminCsv, runAdminAction } from '../shared/actions';
 import { fetchAdminDetail } from '../list-kit/detail-action';
 import { useListParams } from '../list-kit/use-list-params';
-import { formatBRL, formatWhen } from '../shared/format';
+import { formatBRL } from '../shared/format';
+import { When } from '../shared/when';
 import { downloadCsv } from '../list-kit/download';
 import { formatDateTime, pageSummary } from './helpers';
 
@@ -120,7 +121,7 @@ export function PaymentsView({ data, query }: { data: AdminPaymentPage | null; q
             { key: 'method', header: t('admin.payments.table.columns.method'), cell: methodWithCoupon },
             { key: 'status', header: t('admin.payments.table.columns.status'), cell: (r) => <StatusPill size="sm" tone={tone[r.status]}>{statusLabel(r.status)}</StatusPill> },
             { key: 'amount', header: t('admin.payments.table.columns.amount'), cell: (r) => <b className="tabular-nums">{formatBRL(r.amountCents)}</b> },
-            { key: 'when', header: t('admin.payments.table.columns.when'), cell: (r) => <span className="text-[13.5px] text-muted" suppressHydrationWarning>{formatWhen(r.createdAt)}</span> },
+            { key: 'when', header: t('admin.payments.table.columns.when'), cell: (r) => <span className="text-[13.5px] text-muted" ><When iso={r.createdAt} /></span> },
           ]}
           {...(data ? { pagination: { page: data.page, pageSize: data.pageSize, total: data.total, onPageChange: (p: number) => url.push({ page: String(p) }), summary: pageSummary('admin.payments.pagination.summary', data), navLabel: t('admin.payments.pagination.nav'), prevLabel: t('admin.payments.pagination.prev'), nextLabel: t('admin.payments.pagination.next') } } : {})}
         />

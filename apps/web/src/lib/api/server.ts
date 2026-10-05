@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { redirect } from 'next/navigation';
 import type { Result } from '@remoa/contracts';
 import { createClient } from '@/lib/supabase/server';
 import { getRequestId } from '@/lib/request-id';
@@ -19,5 +20,10 @@ async function call<T>(path: string, init: RequestInit): Promise<Result<T>> {
   const headers = new Headers(init.headers);
   headers.set('x-request-id', await getRequestId());
   for (const [k, v] of Object.entries(await clientIpHeaders())) headers.set(k, v); // D-537: rate limits/audit see the browser, not this server
-  return apiFetch<T>(path, data.session?.access_token ?? null, { ...init, headers });
+  const token = data.session?.access_token ?? null;
+  const r = await apiFetch<T>(path, token, { ...init, headers });
+  // D-565: soft navigations only verify the JWT locally, so a revoked session is caught here, by the API. /entrar runs getUser() in the
+  // middleware, which clears the dead cookies (no loop).
+  if (token && !r.ok && r.error.code === 'unauthorized') redirect('/entrar');
+  return r;
 }

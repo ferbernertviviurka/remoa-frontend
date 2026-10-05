@@ -6,7 +6,11 @@ export const admin = {
     sealBadge: 'ADMIN',
     ariaLabel: 'Painel de administração',
     backToApp: 'Voltar ao app',
+    signOut: 'Sair',
   },
+
+  // Falha transitória (429/5xx/rede): error boundary do painel
+  error: { title: 'Não foi possível carregar', body: 'Muitas consultas seguidas ou instabilidade momentânea. Tente de novo em instantes.', retry: 'Tentar de novo' },
 
   // FR-12: Casca
   shell: {
@@ -445,6 +449,18 @@ export const admin = {
   },
 
   // FR-17: Indicações
+  waitlist: {
+    label: 'Lista de espera',
+    subtitle: 'Pessoas que pediram acesso na página inicial. O e-mail é dado pessoal: o acesso a esta lista fica registrado na auditoria.',
+    search: { placeholder: 'Buscar por e-mail' },
+    summaryTotal: 'na lista',
+    ariaLabel: 'Lista de espera',
+    drawerLabel: 'Detalhes da inscrição',
+    columns: { email: 'E-mail', segment: 'Momento', origin: 'Origem', date: 'Data' },
+    store: { total: 'na lista da loja', buy: 'querem comprar', sell: 'querem vender', teacher: 'vendedores professores', student_resident: 'vendedores alunos ou residentes', physician: 'vendedores médicos', export: 'Exportar CSV da loja' },
+    segment: { y3_4: '3º/4º ano', y5_6: '5º/6º ano', graduated: 'Recém-formado' },
+    drawer: { email: 'E-mail', segment: 'Momento', origin: 'Origem', variant: 'Variante de preço', createdAt: 'Inscrito em', none: 'Não informado' },
+  },
   referrals: {
     label: 'Indicações',
     title: 'Gerenciar indicações',
@@ -703,6 +719,8 @@ export const admin = {
       ticket: { reply: 'Respondeu chamado', internal_note: 'Anotou no chamado', assign: 'Atribuiu chamado', resolve: 'Resolveu chamado' },
       export: { csv: 'Exportou CSV' },
       admin: { access: 'Tentou acessar o painel' },
+      waitlist: { view: 'Consultou a lista de espera' },
+      store_waitlist: { view: 'Consultou a lista de espera da loja' },
     },
     table: {
       ariaLabel: 'Log de auditoria',
@@ -765,6 +783,15 @@ export const admin = {
     recentAuth: 'Reautenticação necessária',
     recentAuthDesc: 'Esta ação exige uma autenticação recente. Faça login novamente.',
     reauth: 'Autenticar novamente',
+    expiredTitle: 'Sua sessão de administrador expirou',
+    expiredDesc: 'Por segurança, a sessão de administração dura 12 horas desde o último login. Entre de novo para continuar.',
+    signInAgain: 'Entrar de novo',
+    confirmTitle: 'Confirme sua senha para continuar',
+    confirmDesc: 'A sessão de administração dura 12 horas desde o último login. Confirme sua senha e continue de onde parou.',
+    password: 'Senha',
+    confirm: 'Confirmar',
+    wrongPassword: 'Senha incorreta. Tente de novo.',
+    otherMethod: 'Entrei com Google ou link por e-mail',
   },
 
   // FR-21: Segurança

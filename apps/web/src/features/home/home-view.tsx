@@ -171,6 +171,13 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart, ch
                 <span className="text-[13px] text-muted">{t('referral.homeCardDesc')}</span>
               </span>
             </Link>
+            <Link href="/app/loja" className="lift flex items-center gap-3.5 rounded-[18px] border-[1.5px] border-dashed border-border-strong bg-canvas p-3 text-ink no-underline">
+              <span aria-hidden="true" className="flex size-11 items-center justify-center rounded-[14px] bg-primary-tint text-primary-deep"><Icon name="store" size={22} /></span>
+              <span className="flex flex-col leading-[1.3]">
+                <span className="font-bold">{t('store.homeCard')}</span>
+                <span className="text-[13px] text-muted">{t('store.homeCardDesc')}</span>
+              </span>
+            </Link>
           </section>
         </aside>
       </div>

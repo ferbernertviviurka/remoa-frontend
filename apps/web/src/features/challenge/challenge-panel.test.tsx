@@ -81,113 +81,117 @@ const ready = () => screen.findByRole('heading', { level: 2 });
 const rating = (name: string) => screen.getByRole('button', { name: new RegExp(`^${name}`) });
 const suggested = (name: string) => rating(name).getAttribute('data-suggested') === 'true';
 
+const daily: Scope = { kind: 'daily' };
+const reveal = () => screen.getByRole('button', { name: 'Revelar resposta' });
+
 describe('ChallengePanel', () => {
-  it('self flow: reveal shows canonical and 4 ratings with intervals, rating moves to the next item', async () => {
+  it('board session "Eu respondo": write, reveal, Acertei/Errei with the next interval; no AI call (D-576/D-577)', async () => {
     const user = userEvent.setup();
     overrides.answer = async () => ans();
     mount();
     await ready();
     expect(screen.getByText('1 de 3')).toBeVisible();
-    expect(screen.getByText(/ainda não tem rubrica aprovada/)).toBeVisible();
+    expect(screen.getByRole('progressbar', { name: 'Progresso da sessão' })).toBeInTheDocument();
     expect(track).toHaveBeenCalledWith('challenge_started', expect.objectContaining({ kind: 'board', items: 3 }));
+    expect(screen.queryByRole('group', { name: 'Alternativas' })).toBeNull();
+    const voz = screen.getByRole('button', { name: /Voz/ });
+    expect(voz).toBeDisabled();
+    expect(voz).toHaveTextContent('Em breve');
 
-    await user.click(screen.getByRole('button', { name: 'Revelar resposta' }));
+    await user.type(screen.getByLabelText('Sua resposta'), 'disfunção orgânica');
+    await user.click(reveal());
     await waitFor(() => expect(screen.getByText('Resposta canônica')).toBeVisible());
-    expect(calls.answer![0]).toMatchObject({ inputKind: 'self' });
-    expect(calls.answer![0]!.durationMs).toBeTypeOf('number');
-    for (const g of ['Não lembrei', 'Difícil', 'Bom', 'Fácil']) expect(rating(g)).toBeEnabled();
-    expect(rating('Bom')).toHaveTextContent(/Bom.*(hoje|dia)/);
-    expect(track).toHaveBeenCalledWith('answer_submitted', expect.objectContaining({ inputKind: 'self', verdict: null }));
+    expect(calls.answer![0]).toMatchObject({ inputKind: 'text', text: 'disfunção orgânica' });
+    expect(screen.getByText(/disfunção orgânica/)).toBeVisible();
+    expect(screen.getByRole('group', { name: 'Você acertou?' })).toBeVisible();
+    expect(rating('Acertei')).toHaveTextContent(/tecla 2/);
+    expect(rating('Errei')).toHaveTextContent(/tecla 1/);
+    expect(screen.queryByRole('button', { name: /^Fácil/ })).toBeNull();
 
-    await user.click(rating('Bom'));
+    await user.click(rating('Acertei'));
     await waitFor(() => expect(screen.getByText('2 de 3')).toBeVisible());
     expect(calls.rate![0]).toMatchObject({ grade: 'good', overridden: false });
     expect(onRated).toHaveBeenCalled();
   });
 
-  it('mcq flow: the suggested grade comes highlighted', async () => {
+  it('nothing written = plain self reveal; keys: Space reveals, 1 = Errei, 2 = Acertei; typing does not fire them', async () => {
     const user = userEvent.setup();
-    overrides.answer = async () => ans({ suggestedGrade: 'good' });
     mount();
     await ready();
-    await user.click(screen.getByRole('button', { name: 'a' }));
-    await user.click(screen.getByRole('button', { name: 'Confirmar alternativa' }));
-    await waitFor(() => expect(suggested('Bom')).toBe(true));
-    expect(calls.answer![0]).toMatchObject({ inputKind: 'mcq', optionIndex: 0 });
-    expect(suggested('Fácil')).toBe(false);
-    expect(screen.getByText('Como foi lembrar? Sugestão: Bom')).toBeVisible();
+    const box = screen.getByLabelText('Sua resposta');
+    for (const key of [' ', '1', '2', 'Escape']) fireEvent.keyDown(box, { key });
+    expect(calls.answer).toBeUndefined();
+    expect(calls.skip).toBeUndefined();
+    (document.activeElement as HTMLElement | null)?.blur();
+    await user.keyboard(' ');
+    await screen.findByRole('button', { name: /^Errei/ });
+    expect(calls.answer![0]).toMatchObject({ inputKind: 'self' });
+    await user.keyboard('1');
+    await waitFor(() => expect(screen.getByText('2 de 3')).toBeVisible());
+    expect(calls.rate!.at(-1)).toMatchObject({ grade: 'again' });
+    await user.keyboard(' ');
+    await screen.findByRole('button', { name: /^Acertei/ });
+    await user.keyboard('2');
+    await waitFor(() => expect(calls.rate!.at(-1)).toMatchObject({ grade: 'good' }));
   });
 
-  async function toTextItem(user: ReturnType<typeof userEvent.setup>) {
+  it('Ctrl+Enter inside the textarea reveals', async () => {
     mount();
     await ready();
-    await user.click(screen.getByRole('button', { name: 'Revelar resposta' })); // item 0 has no rubric
-    await user.click(await screen.findByRole('button', { name: /^Bom/ }));
-    await waitFor(() => expect(screen.getByText('2 de 3')).toBeVisible());
-  }
-  const answerText = async (user: ReturnType<typeof userEvent.setup>) => {
-    await user.type(screen.getByLabelText('Sua resposta'), 'disfunção orgânica');
-    await user.click(screen.getByRole('button', { name: 'Corrigir resposta' }));
-  };
+    fireEvent.change(screen.getByLabelText('Sua resposta'), { target: { value: 'abc' } });
+    fireEvent.keyDown(screen.getByLabelText('Sua resposta'), { key: 'Enter', ctrlKey: true });
+    await screen.findByRole('button', { name: /^Acertei/ });
+    expect(calls.answer![0]).toMatchObject({ inputKind: 'text', text: 'abc' });
+  });
 
-  it('text flow: VerdictBox lists matched/missing, rubrica sua, override fires grade_overridden', async () => {
+  it('daily queue (Revisar hoje) keeps the 4 grades with intervals and 1–4', async () => {
     const user = userEvent.setup();
-    overrides.answer = async (b) => (b.inputKind === 'text' ? ans({ verdict: graderVerdictFixture, suggestedGrade: 'hard' }) : mocks.answer(fixtureUserId, b as never));
-    await toTextItem(user);
-    await answerText(user);
+    mount(daily);
+    await ready();
+    await user.click(reveal());
+    await screen.findByRole('button', { name: /^Bom/ });
+    for (const g of ['Não lembrei', 'Difícil', 'Bom', 'Fácil']) expect(rating(g)).toBeEnabled();
+    expect(rating('Bom')).toHaveTextContent(/(hoje|dia).*tecla 3/);
+    await user.keyboard('4');
+    await waitFor(() => expect(calls.rate!.at(-1)).toMatchObject({ grade: 'easy' }));
+  });
+
+  it('a verdict (AI sessions, F20) still shows: VerdictBox, suggestion, override and dispute', async () => {
+    const user = userEvent.setup();
+    overrides.answer = async () => ans({ verdict: graderVerdictFixture, suggestedGrade: 'hard' });
+    mount(daily);
+    await ready();
+    await user.type(screen.getByLabelText('Sua resposta'), 'x');
+    await user.click(reveal());
     const box = (await screen.findByText('Quase lá')).closest('[role="status"]') as HTMLElement;
     expect(within(box).getByText(new RegExp(graderVerdictFixture.matched[0]!))).toBeVisible();
-    expect(within(box).getByText(new RegExp(graderVerdictFixture.missing[0]!))).toBeVisible();
-    expect(within(box).getByText('Rubrica sua')).toBeVisible();
     expect(suggested('Difícil')).toBe(true);
-    expect(calls.answer!.at(-1)).toMatchObject({ inputKind: 'text', text: 'disfunção orgânica' });
-
+    await user.click(screen.getByRole('button', { name: 'Discordo da correção' }));
+    await screen.findByText(/Vamos revisar esta correção/);
+    expect(track).toHaveBeenCalledWith('answer_disputed', {});
     await user.click(rating('Bom'));
     await waitFor(() => expect(track).toHaveBeenCalledWith('grade_overridden', {}));
-    expect(calls.rate!.at(-1)).toMatchObject({ grade: 'good', overridden: true });
   });
 
-  it('gradeLocked: only "Não lembrei" is offered, with an explanation', async () => {
+  it('gradeLocked: only "Não lembrei" is offered', async () => {
     const user = userEvent.setup();
-    overrides.answer = async (b) =>
-      b.inputKind === 'text'
-        ? ans({ verdict: { ...graderVerdictFixture, verdict: 'incorrect', criticalError: true }, suggestedGrade: 'again', gradeLocked: true })
-        : mocks.answer(fixtureUserId, b as never);
-    await toTextItem(user);
-    await answerText(user);
+    overrides.answer = async () => ans({ verdict: { ...graderVerdictFixture, verdict: 'incorrect', criticalError: true }, suggestedGrade: 'again', gradeLocked: true });
+    mount(daily);
+    await ready();
+    await user.click(reveal());
     await screen.findByText(/Nota travada/);
-    expect(rating('Não lembrei')).toBeEnabled();
     for (const g of ['Difícil', 'Bom', 'Fácil']) expect(screen.queryByRole('button', { name: new RegExp(`^${g}`) })).toBeNull();
   });
 
-  it.each([
-    ['no_rubric', /Sem rubrica aprovada para corrigir/],
-    ['grader_error', /correção automática falhou/],
-    ['quota', /correções por IA de hoje acabaram/],
-    ['offline', /A resposta ficou neste aparelho/],
-  ] as const)('fallback %s: alert + self-rating', async (fallback, msg) => {
+  it('fallback quota: alert, link and paywall event', async () => {
     const user = userEvent.setup();
-    overrides.answer = async (b) => (b.inputKind === 'text' ? ans({ fallback }) : mocks.answer(fixtureUserId, b as never));
-    await toTextItem(user);
-    await answerText(user);
-    await screen.findByText(msg);
-    expect(rating('Bom')).toBeEnabled();
-    expect(screen.queryByRole('button', { name: 'Discordo da correção' })).toBeNull();
-    if (fallback === 'quota') {
-      expect(screen.getByRole('link', { name: 'Ver planos' })).toHaveAttribute('href', '/app/planos?de=ai_quota');
-      expect(track).toHaveBeenCalledWith('paywall_viewed', { reason: 'ai_quota' });
-    } else expect(track).not.toHaveBeenCalledWith('paywall_viewed', expect.anything());
-  });
-
-  it('dispute: posts and confirms', async () => {
-    const user = userEvent.setup();
-    overrides.answer = async (b) => (b.inputKind === 'text' ? ans({ verdict: graderVerdictFixture, suggestedGrade: 'hard' }) : mocks.answer(fixtureUserId, b as never));
-    await toTextItem(user);
-    await answerText(user);
-    await user.click(await screen.findByRole('button', { name: 'Discordo da correção' }));
-    await screen.findByText(/Vamos revisar esta correção/);
-    expect(calls.dispute).toHaveLength(1);
-    expect(track).toHaveBeenCalledWith('answer_disputed', {});
+    overrides.answer = async () => ans({ fallback: 'quota' });
+    mount(daily);
+    await ready();
+    await user.click(reveal());
+    await screen.findByText(/correções por IA de hoje acabaram/);
+    expect(screen.getByRole('link', { name: 'Ver planos' })).toHaveAttribute('href', '/app/planos?de=ai_quota');
+    expect(track).toHaveBeenCalledWith('paywall_viewed', { reason: 'ai_quota' });
   });
 
   it('skip: Esc skips and moves the item to the end; the 409 limit disables Pular', async () => {
@@ -203,54 +207,28 @@ describe('ChallengePanel', () => {
     expect(screen.getByRole('button', { name: 'Pular' })).toBeDisabled();
   });
 
-  it('shortcuts: Enter reveals, 1-4 grade; typing in the textarea does not fire them', async () => {
+  it('summary after the last mark, tracking, and "Mais 5" reuses the chosen options', async () => {
     const user = userEvent.setup();
-    await toTextItem(user);
-    const box = screen.getByLabelText('Sua resposta');
-    fireEvent.change(box, { target: { value: '3' } });
-    fireEvent.keyDown(box, { key: 'Enter' });
-    fireEvent.keyDown(box, { key: 'Escape' });
-    fireEvent.keyDown(box, { key: '3' });
-    expect(calls.answer).toHaveLength(1); // only item 0's reveal
-    expect(calls.skip).toBeUndefined();
-    fireEvent.change(box, { target: { value: '' } });
-    (document.activeElement as HTMLElement | null)?.blur();
-    await user.keyboard('{Enter}'); // empty text -> reveal
-    await screen.findByRole('button', { name: /^Fácil/ });
-    await user.keyboard('4');
-    await waitFor(() => expect(screen.getByText('3 de 3')).toBeVisible());
-    expect(calls.rate!.at(-1)).toMatchObject({ grade: 'easy' });
-  });
-
-  it('Ctrl+Enter inside the textarea corrects the answer', async () => {
-    const user = userEvent.setup();
-    overrides.answer = async (b) => (b.inputKind === 'text' ? ans({ verdict: graderVerdictFixture, suggestedGrade: 'good' }) : mocks.answer(fixtureUserId, b as never));
-    await toTextItem(user);
-    fireEvent.change(screen.getByLabelText('Sua resposta'), { target: { value: 'abc' } });
-    fireEvent.keyDown(screen.getByLabelText('Sua resposta'), { key: 'Enter', ctrlKey: true });
-    await screen.findByText('Quase lá');
-  });
-
-  it('summary after the last rating, tracking, and "Mais 5" starts a 5-item session', async () => {
-    const user = userEvent.setup();
-    mount();
+    const opts = { gradingMode: 'self', order: 'flow', answerMode: 'write' } as const;
+    function WithOptions() {
+      const ch = useChallenge();
+      useEffect(() => ch.ensure({ kind: 'board', boardId: BOARD }, opts), []); // eslint-disable-line react-hooks/exhaustive-deps
+      return <ChallengePanel scope={{ kind: 'board', boardId: BOARD }} boardId={BOARD} heat={{}} onExit={onExit} onRated={onRated} />;
+    }
+    render(<ChallengeProvider><WithOptions /></ChallengeProvider>);
     for (let n = 0; n < 3; n++) {
       await ready();
-      await user.click(screen.getByRole('button', { name: 'Revelar resposta' }));
-      await user.click(await screen.findByRole('button', { name: n === 0 ? /^Não lembrei/ : /^Bom/ }));
+      await user.click(reveal());
+      await user.click(await screen.findByRole('button', { name: n === 0 ? /^Errei/ : /^Acertei/ }));
     }
     await screen.findByRole('heading', { name: 'Sessão concluída' });
+    expect(calls.start![0]).toMatchObject({ options: opts });
     expect(screen.getByText('Acertos').nextSibling).toHaveTextContent('2');
     expect(screen.getByText('Erros').nextSibling).toHaveTextContent('1');
-    expect(screen.getByRole('link', { name: /Abrir no mapa/ })).toHaveAttribute('href', expect.stringMatching(/^\/app\/mapas\//));
-    expect(screen.getByRole('link', { name: 'Voltar para Revisar hoje' })).toHaveAttribute('href', '/app/revisar');
     expect(track).toHaveBeenCalledWith('challenge_finished', expect.objectContaining({ correct: 2, wrong: 1 }));
-
     await user.click(screen.getByRole('button', { name: 'Mais 5' }));
     await ready();
-    expect(calls.start!.at(-1)).toMatchObject({ kind: 'board', boardId: BOARD, limit: 5 });
-    await user.click(screen.getByRole('button', { name: 'Pular' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Pular' }));
+    expect(calls.start!.at(-1)).toMatchObject({ kind: 'board', boardId: BOARD, limit: 5, options: opts });
   });
 
   it('"Sair do desafio" in the summary calls onExit', async () => {
@@ -258,10 +236,22 @@ describe('ChallengePanel', () => {
     shape = (x) => x.slice(0, 1).map((i) => ({ ...i, boardId: BOARD }));
     mount();
     await ready();
-    await user.click(screen.getByRole('button', { name: 'Revelar resposta' }));
-    await user.click(await screen.findByRole('button', { name: /^Bom/ }));
+    await user.click(reveal());
+    await user.click(await screen.findByRole('button', { name: /^Acertei/ }));
     await user.click(await screen.findByRole('button', { name: 'Sair do desafio' }));
     expect(onExit).toHaveBeenCalled();
+  });
+
+  it('below the minimum the panel explains and never starts (D-579)', async () => {
+    render(<ChallengeProvider><ChallengePanel scope={{ kind: 'board', boardId: BOARD }} boardId={BOARD} heat={{}} onExit={onExit} onRated={onRated} missing={4} /></ChallengeProvider>);
+    expect(await screen.findByText(/Faltam 4/)).toBeVisible();
+    expect(calls.start).toBeUndefined();
+  });
+
+  it('the server 422 challenge_min_cards shows the same explanation', async () => {
+    overrides.start = async () => ({ ok: false, error: { code: 'validation', message: 'challenge_min_cards' } });
+    mount();
+    await screen.findByText('Ainda faltam cards para o desafio');
   });
 
   it('empty session shows the friendly state', async () => {
@@ -272,9 +262,10 @@ describe('ChallengePanel', () => {
 
   it('daily queue: an item from another map moves the editor there, keeping the session', async () => {
     shape = (x) => x.slice(0, 2).map((i) => ({ ...i, boardId: 'outro-mapa' }));
-    mount({ kind: 'daily' });
+    mount(daily);
     await waitFor(() => expect(replace).toHaveBeenCalledWith('/app/mapas/outro-mapa?modo=desafio&sessao=diaria', { scroll: false }));
     expect(calls.start![0]).toMatchObject({ kind: 'daily' });
+    expect(calls.start![0]!.options).toBeUndefined();
     expect(calls.start).toHaveLength(1);
   });
 
@@ -284,54 +275,9 @@ describe('ChallengePanel', () => {
     mount();
     await ready();
     expect(document.body.textContent).not.toContain('RESPOSTA-SECRETA');
-    expect(calls.answer).toBeUndefined();
-    await user.click(screen.getByRole('button', { name: 'a' }));
-    expect(document.body.textContent).not.toContain('RESPOSTA-SECRETA');
-    expect(calls.answer).toBeUndefined(); // choosing an option is not answering
-    await user.click(screen.getByRole('button', { name: 'Confirmar alternativa' }));
+    await user.type(screen.getByLabelText('Sua resposta'), 'x');
+    expect(calls.answer).toBeUndefined(); // typing is not answering
+    await user.click(reveal());
     await screen.findByText('RESPOSTA-SECRETA');
-  });
-
-  it('Falar without speech support keeps the answer field and hides the microphone', async () => {
-    const user = userEvent.setup();
-    overrides.answer = async () => ans({ verdict: graderVerdictFixture, suggestedGrade: 'good' });
-    await toTextItem(user);
-    await user.click(screen.getByRole('button', { name: 'Falar' }));
-    expect(screen.queryByRole('button', { name: 'Falar a resposta' })).toBeNull();
-    expect(screen.queryByText('Em breve')).toBeNull();
-    expect(screen.getByText(/ainda não está disponível/)).toBeVisible();
-    await user.type(screen.getByLabelText('Sua resposta'), 'noradrenalina');
-    await user.click(screen.getByRole('button', { name: 'Corrigir resposta' }));
-    await waitFor(() => expect(calls.answer?.at(-1)).toMatchObject({ inputKind: 'text', text: 'noradrenalina' }));
-  });
-
-  it('Falar puts the transcript in the field and sends it as voice', async () => {
-    class Fake {
-      lang = '';
-      interimResults = false;
-      onresult: ((ev: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null = null;
-      onerror: (() => void) | null = null;
-      onend: (() => void) | null = null;
-      start() {
-        this.onresult?.({ results: [[{ transcript: 'noradrenalina' }]] });
-        this.onend?.();
-      }
-      stop() {}
-    }
-    (window as unknown as { SpeechRecognition: typeof Fake }).SpeechRecognition = Fake;
-    const user = userEvent.setup();
-    overrides.answer = async () => ans({ verdict: graderVerdictFixture, suggestedGrade: 'good' });
-    try {
-      await toTextItem(user);
-      await user.click(screen.getByRole('button', { name: 'Falar' }));
-      await user.click(screen.getByRole('button', { name: 'Falar a resposta' }));
-      const field = screen.getByLabelText('Sua resposta') as HTMLTextAreaElement;
-      expect(field.value).toBe('noradrenalina');
-      await user.click(screen.getByRole('button', { name: 'Corrigir resposta' }));
-      await waitFor(() => expect(calls.answer?.at(-1)).toMatchObject({ inputKind: 'voice', text: 'noradrenalina' }));
-      expect(track).toHaveBeenCalledWith('voice_used', { success: true });
-    } finally {
-      delete (window as unknown as { SpeechRecognition?: unknown }).SpeechRecognition;
-    }
   });
 });

@@ -24,12 +24,16 @@ export type CardEditorProps = {
   onClose: () => void;
   /** G04: the map node takes the picked shape at once (preview), and the saved one back if the shape autosave fails. */
   onShape?: (cardId: string, shape: CardShape) => void;
+  /** F23 T7: the mobile sheet owns Cancel/Save in its header (`<button type="submit" form={formId}>`); the bottom buttons and the shortcut hint go away. */
+  formId?: string;
+  /** F23 T7: true while the draft differs from what the server has (the sheet asks before discarding). */
+  onDirty?: (dirty: boolean) => void;
 };
 
 type Load = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; rubric: Rubric | null };
 
 /** Inline editor hosted by the inspector: loads GET /v1/cards/:id, validates with the contract, PUTs. */
-export function CardEditor({ card, subs, prepare, onSaved, onClose, onShape }: CardEditorProps) {
+export function CardEditor({ card, subs, prepare, onSaved, onClose, onShape, formId, onDirty }: CardEditorProps) {
   const [load, setLoad] = useState<Load>({ state: 'loading' });
   const [draft, setDraft] = useState<Draft | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
@@ -58,6 +62,10 @@ export function CardEditor({ card, subs, prepare, onSaved, onClose, onShape }: C
       live = false;
     };
   }, [card.id, prepare, attempt]);
+
+  useEffect(() => {
+    if (draft && saved.current) onDirty?.(JSON.stringify(draft) !== JSON.stringify(saved.current));
+  }, [draft, onDirty]);
 
   const save = useCallback(
     async (d: Draft): Promise<boolean> => {
@@ -167,7 +175,7 @@ export function CardEditor({ card, subs, prepare, onSaved, onClose, onShape }: C
   };
 
   return (
-    <form aria-label={t('cards.editorLabel', { title: card.title })} className="flex flex-col gap-4" onSubmit={onSubmit} onKeyDown={onKeyDown} noValidate>
+    <form id={formId} aria-label={t('cards.editorLabel', { title: card.title })} className="flex flex-col gap-4" onSubmit={onSubmit} onKeyDown={onKeyDown} noValidate>
       <Input label={t('cards.fields.title')} value={d.title} maxLength={200} required onChange={(e) => set({ title: e.target.value })} />
 
       {d.type === 'concept' ? (
@@ -279,15 +287,19 @@ export function CardEditor({ card, subs, prepare, onSaved, onClose, onShape }: C
 
       {d.type === 'note' ? null : <RubricView rubric={load.rubric} />}
 
-      <p className="text-xs text-muted">{t('cards.shortcuts')}</p>
-      <div className="flex justify-end gap-2">
-        <Button variant="secondary" onClick={onClose}>
-          {t('common.cancel')}
-        </Button>
-        <Button type="submit" loading={busy} loadingLabel={t('cards.saving')}>
-          {t('common.save')}
-        </Button>
-      </div>
+      {formId ? null : (
+        <>
+          <p className="text-xs text-muted">{t('cards.shortcuts')}</p>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={onClose}>
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" loading={busy} loadingLabel={t('cards.saving')}>
+              {t('common.save')}
+            </Button>
+          </div>
+        </>
+      )}
     </form>
   );
 }

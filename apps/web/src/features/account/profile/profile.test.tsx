@@ -12,6 +12,7 @@ vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
 vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
 const putFile = vi.fn();
 vi.mock('@/features/cards/upload', () => ({ putFile: (...a: unknown[]) => putFile(...a) }));
+vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} }); // Radix Select/Checkbox in jsdom
 URL.createObjectURL = vi.fn(() => 'blob:x');
 URL.revokeObjectURL = vi.fn();
 
@@ -91,22 +92,42 @@ describe('study choices', () => {
   it('saves on click and reverts when the server fails', async () => {
     api.mockResolvedValue(boom);
     view();
-    const group = screen.getByRole('radiogroup', { name: /^Objetivo de prova: Enamed/ });
-    expect(within(group).getByRole('radio', { name: 'Enamed 2027.1' })).toBeChecked();
-    fireEvent.click(within(group).getByRole('radio', { name: 'Enamed 2027.2' }));
-    expect(within(group).getByRole('radio', { name: 'Enamed 2027.2' })).toBeChecked(); // optimistic
-    await waitFor(() => expect(within(group).getByRole('radio', { name: 'Enamed 2027.1' })).toBeChecked()); // reverted
+    const group = screen.getByRole('group', { name: /^Objetivo de prova: Enamed/ });
+    expect(within(group).getByRole('button', { name: 'Enamed 2027.1' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(within(group).getByRole('button', { name: 'Enamed 2027.2' }));
+    expect(within(group).getByRole('button', { name: 'Enamed 2027.2' })).toHaveAttribute('aria-pressed', 'true'); // optimistic
+    await waitFor(() => expect(within(group).getByRole('button', { name: 'Enamed 2027.2' })).toHaveAttribute('aria-pressed', 'false')); // reverted
+    expect(within(group).getByRole('button', { name: 'Enamed 2027.1' })).toHaveAttribute('aria-pressed', 'true');
     expect(await screen.findByText('Não conseguimos concluir agora. Tente de novo.')).toBeVisible();
   });
 
-  it('goal groups (G06): choosing in another group moves the single selection', async () => {
+  it('G14 13: several objectives across groups, sent as goals (up to 5)', async () => {
     api.mockResolvedValue({ ok: true, data: {} });
     view();
-    const enamed = screen.getByRole('radiogroup', { name: /^Objetivo de prova: Enamed/ });
-    const residency = screen.getByRole('radiogroup', { name: /^Objetivo de prova: Resid/ });
-    fireEvent.click(within(residency).getByRole('radio', { name: 'ENARE' }));
-    expect(within(residency).getByRole('radio', { name: 'ENARE' })).toBeChecked();
-    expect(within(enamed).queryAllByRole('radio', { checked: true })).toHaveLength(0);
+    const residency = screen.getByRole('group', { name: /^Objetivo de prova: Resid/ });
+    fireEvent.click(within(residency).getByRole('button', { name: 'ENARE' }));
+    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/account/profile', { method: 'PATCH', body: JSON.stringify({ goals: ['enamed_2027_1', 'residencia_enare'] }) }));
+    expect(within(residency).getByRole('button', { name: 'ENARE' })).toHaveAttribute('aria-pressed', 'true');
+    const enamed = screen.getByRole('group', { name: /^Objetivo de prova: Enamed/ });
+    expect(within(enamed).getByRole('button', { name: 'Enamed 2027.1' })).toHaveAttribute('aria-pressed', 'true'); // both stay
+    for (const n of ['Enamed 2027.2', 'Enamed 2028.1', 'Enamed 2028.2']) fireEvent.click(within(enamed).getByRole('button', { name: n }));
+    expect(within(residency).getByRole('button', { name: 'USP' })).toBeDisabled(); // 5 of 5
+    expect(screen.getByText(/Você já escolheu 5 objetivos/)).toBeVisible();
+  });
+});
+
+describe('personal data (G14 15)', () => {
+  it('shows the saved data and PATCHes edits with null for cleared phone/address', async () => {
+    api.mockResolvedValue({ ok: true, data: {} });
+    view({ ...accountFreeFixture, profile: { ...accountFreeFixture.profile, userType: 'aluno', sex: null, phone: '+5511912345678', address: null } });
+    expect((screen.getByLabelText('Telefone (opcional)') as HTMLInputElement).value).toBe('(11) 91234-5678');
+    expect(screen.getByRole('radio', { name: 'Aluno' })).toBeChecked();
+    fireEvent.change(screen.getByLabelText('Telefone (opcional)'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('radio', { name: 'Professor' }));
+    const card = screen.getByRole('region', { name: 'Dados pessoais' });
+    fireEvent.click(within(card).getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/account/profile', { method: 'PATCH', body: JSON.stringify({ userType: 'professor', phone: null, address: null }) }));
+    expect(await screen.findByText('Dados salvos.')).toBeVisible();
   });
 });
 

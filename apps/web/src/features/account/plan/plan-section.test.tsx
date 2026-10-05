@@ -64,7 +64,7 @@ describe('PlanSection', () => {
     view(withUsage(accountProFixture, { boards: 9, cards: 900, ai_grades: 80, ai_generations: 2 }));
     expect(screen.getByRole('button', { name: 'Gerenciar assinatura' })).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Assinar o Pro' })).toBeNull();
-    expect(screen.getAllByText(/Ilimitad/).length).toBeGreaterThanOrEqual(3);
+    expect(screen.getAllByText(/Ilimitad/).length).toBeGreaterThanOrEqual(2);
   });
 
   it('80% warns with "Ver o Pro"; 100% says the limit was reached', () => {

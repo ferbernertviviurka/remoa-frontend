@@ -8,14 +8,14 @@ import { exportAdminCsv } from '../shared/actions';
 import { downloadCsv } from './download';
 
 /** "Exportar CSV" button + reason dialog: sends the filters in the URL (`keys`) to POST /v1/admin/export (FR-21). */
-export function ExportCsv({ resource, keys, file }: { resource: 'users' | 'maps' | 'referrals'; keys: readonly string[]; file: string }) {
+export function ExportCsv({ resource, keys, file, label }: { resource: 'users' | 'maps' | 'referrals' | 'waitlist' | 'store_waitlist'; keys: readonly string[]; file: string; label?: string }) {
   const sp = useSearchParams();
   const [open, setOpen] = useState(false);
   return (
     <>
       <Button variant="secondary" onClick={() => setOpen(true)}>
         <Icon name="download" size={18} />
-        {t('admin.lists.exportCsv')}
+        {label ?? t('admin.lists.exportCsv')}
       </Button>
       <ReasonDialog
         open={open}

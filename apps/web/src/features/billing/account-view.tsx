@@ -131,14 +131,14 @@ export function AccountView({ email, ent, notice }: { email: string; ent: Entitl
             const limit = ent.limits[key];
             const used = ent.usage[key];
             const name = `${t(`billing.pricing.${label}`)} (${t(`billing.account.${window}`)})`;
-            const text = limit === null ? t('billing.account.usageUnlimited', { used }) : t('billing.account.usageLine', { used, limit });
+            const text = limit === 0 ? t('billing.account.usageNotIncluded') : limit === null ? t('billing.account.usageUnlimited', { used }) : t('billing.account.usageLine', { used, limit });
             return (
               <div key={key} className="flex flex-col gap-1">
                 <div className="flex justify-between gap-2 text-sm">
                   <span>{name}</span>
                   <span className="font-semibold">{text}</span>
                 </div>
-                {limit === null ? null : <Progress aria-label={name} value={used} max={Math.max(limit, 1)} />}
+                {limit === null || limit === 0 ? null : <Progress aria-label={name} value={used} max={Math.max(limit, 1)} />}
               </div>
             );
           })}

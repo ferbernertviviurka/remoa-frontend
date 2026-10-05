@@ -11,7 +11,7 @@ import '../shell/shell.css';
 /** ids match the `feature_tab_selected` enum in contracts. */
 export const FEATURE_IDS = ['map', 'cards', 'challenge', 'grading', 'fsrs', 'enamed'] as const;
 const FILES = ['mapa', 'cards', 'desafio', 'correcao', 'fsrs', 'enamed'];
-const AUTO_MS = 6000;
+const AUTO_MS = 4000;
 
 /**
  * Auto-advances the tabs every AUTO_MS while the section is on screen (desktop only: on mobile the accordion would jump the page).

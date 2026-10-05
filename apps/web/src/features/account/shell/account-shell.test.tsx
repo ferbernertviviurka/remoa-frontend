@@ -11,7 +11,8 @@ let segment: string | null = 'perfil';
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push, refresh: vi.fn(), replace: vi.fn() }), useSelectedLayoutSegment: () => segment, useSearchParams: () => new URLSearchParams() }));
 vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
 vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
-vi.mock('@/server/auth/actions', () => ({ signOut: vi.fn(async () => ({ ok: true })) }));
+const signOutToLogin = vi.fn(async () => true);
+vi.mock('@/features/auth/sign-out', () => ({ signOutToLogin: () => signOutToLogin() }));
 vi.mock('next/link', () => ({ default: ({ href, children, ...p }: { href: string; children: React.ReactNode }) => <a href={href} {...p}>{children}</a> }));
 
 const view = (initial = accountFreeFixture) => render(<Wrap initial={initial}><AccountShell><p>conteudo</p></AccountShell></Wrap>);
@@ -68,5 +69,14 @@ describe('AccountShell', () => {
   it('has "Sair da conta" at the end of the subnav', () => {
     view();
     expect(screen.getByRole('button', { name: 'Sair da conta' })).toBeVisible();
+  });
+
+  it('Sair da conta signs out from the browser; a refusal keeps the user here with a toast (G14 D-585)', async () => {
+    view();
+    fireEvent.click(screen.getByRole('button', { name: 'Sair da conta' }));
+    await waitFor(() => expect(signOutToLogin).toHaveBeenCalledTimes(1));
+    signOutToLogin.mockResolvedValueOnce(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Sair da conta' }));
+    expect(await screen.findByText('Não conseguimos concluir agora. Tente de novo.')).toBeInTheDocument();
   });
 });

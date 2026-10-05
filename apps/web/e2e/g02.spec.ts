@@ -3,6 +3,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { createMockSepse, signUpAndLogin } from './visual/fixture';
+import { padForChallenge } from './challenge-pad';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 const node = (page: Page, title: string) => page.locator('.react-flow__node').filter({ has: page.getByRole('button', { name: `Selecionar ${title}` }) });
@@ -201,6 +202,7 @@ test.describe('desktop 1440x900', () => {
     test.setTimeout(240_000);
     const { userId, headers } = await signUpAndLogin(page, request);
     const board = await createMockSepse(request, headers, userId);
+    await padForChallenge(request, headers, board, 4); // G14 D-579: 10 cards to challenge
     await page.goto(`/app/mapas/${board}?modo=desafio`);
     await expect(page.getByRole('button', { name: /Revelar resposta|Corrigir resposta/ }).first()).toBeVisible();
     const answers = ['Vasopressor para PAM', 'Disfunção orgânica grave', 'SIRS, NEWS2']; // case stages before the hidden one are context, not asserted
@@ -248,8 +250,8 @@ test.describe('desktop 1440x900', () => {
       }
       if (n === 0) expect(await axe(page), 'desafio com blur').toEqual([]);
       await reveal.first().click();
-      await expect(page.getByRole('group', { name: /^Como foi lembrar/ })).toBeVisible();
-      await page.getByRole('button', { name: /^Bom/ }).click();
+      await expect(page.getByRole('group', { name: 'Você acertou?' })).toBeVisible(); // G14 D-605
+      await page.getByRole('button', { name: /^Acertei/ }).click();
     }
     // the edge item is covered in challenge.spec on its own board; here it is a bonus when the mock session reaches one
     test.info().annotations.push({ type: 'edge-item-seen', description: String(sawEdge) });

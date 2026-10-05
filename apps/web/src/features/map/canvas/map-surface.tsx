@@ -4,10 +4,10 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { BoardGraph } from '@remoa/contracts';
 import { LazyMapCanvas } from './lazy-canvas';
-import { MobileCardList } from '../mobile-list';
+import { LazyMobileMap } from '../mobile/canvas/lazy-mobile-map';
 
-/** Phone map is a list. The challenge still uses the canvas sheet, which already lays out for a phone. */
-export function mobileListInsteadOfCanvas(desktop: boolean, challenge: boolean) {
+/** F23 (D-660): below 768 px the map is the phone canvas. The challenge still uses the editor's phone sheet layout. */
+export function phoneMap(desktop: boolean, challenge: boolean) {
   return !desktop && !challenge;
 }
 
@@ -22,7 +22,7 @@ function Surface({ graph }: { graph: BoardGraph }) {
     return () => mq.removeEventListener('change', apply);
   }, []);
   if (desktop === null) return null;
-  if (mobileListInsteadOfCanvas(desktop, challenge)) return <MobileCardList graph={graph} />;
+  if (phoneMap(desktop, challenge)) return <LazyMobileMap graph={graph} />;
   return <LazyMapCanvas graph={graph} />;
 }
 

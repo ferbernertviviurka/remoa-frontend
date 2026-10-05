@@ -10,11 +10,11 @@ import {
   type XYPosition,
 } from '@xyflow/react';
 import {
-  CARD_SIZE_MAX, CARD_SIZE_MIN, MAX_CARDS_PER_BOARD, type BoardGraph, type CardDetail, type CardShape, type CardStudyAction, type CardStudyState, type CardSize, type CardType, type CoverageRow, type MapOp, type MatrixItem, type RetrievabilityMap, type SaveCardInput,
+  CARD_SIZE_MAX, CARD_SIZE_MIN, CHALLENGE_MIN_CARDS, MAX_CARDS_PER_BOARD, type BoardGraph, type ChallengeOptions, type CardDetail, type CardShape, type CardStudyAction, type CardStudyState, type CardSize, type CardType, type CoverageRow, type MapOp, type MatrixItem, type RetrievabilityMap, type SaveCardInput,
 } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import {
-  Button, CanvasToolbar, CommandPalette, Dialog, Input, LayerSwitch, Legend, stepZoom, ZOOM_MAX, ZOOM_MIN, ZoomControl,
+  Button, CanvasToolbar, Dialog, Input, LayerSwitch, Legend, stepZoom, ZOOM_MAX, ZOOM_MIN, ZoomControl,
   useToast, type CommandItem, type NodeLayer, type ToolbarItem,
 } from '@remoa/ui';
 import { previewOf } from '@/features/cards/draft';
@@ -28,14 +28,19 @@ import { MatrixLinkButton } from '@/features/coverage/matrix-suggestions';
 import { CanvasHeader, type Mode } from './canvas-header';
 import { primeCardDetail } from './card-detail';
 import { CardNodeView, FocusCard } from './card-node';
-import { applyOps, freshen, invertAll, patchCard, snapPos, toEdge, toNode, type CardCache, type CardNode, type Graph, type LinkEdge } from './graph';
+import { applyOps, freshen, invertAll, patchCard, snapPos, type CardCache, type CardNode, type Graph, type LinkEdge } from './graph';
 import { emptyHistory, push, redo, undo, type History } from './history';
 import { Inspector, type Connection as PanelConnection } from './inspector';
 import { autoLayout, CARD_H, CARD_W, sizeOf } from './layout';
 import { LinkEdgeView } from './link-edge';
 import { quizView } from './quiz-view';
-import { openSupport } from '@/features/support/open';
-import { createOpQueue, loadPending, type OpQueue, type QueueStatus } from './op-queue';
+import { ChallengeSetupDialog } from '@/features/challenge/setup-dialog';
+import { maybeShowChallengeTour } from '@/features/challenge/tour';
+import { usePaletteCommands } from '@/features/shell/command-palette';
+import { createOpQueue, type OpQueue, type QueueStatus } from './op-queue';
+import { initialGraph, storage } from './initial-graph';
+import { challengeZoom } from './challenge-camera';
+import { cameraMove } from '../mobile/canvas/view';
 
 const nodeTypes = { card: CardNodeView };
 const edgeTypes = { link: LinkEdgeView };
@@ -95,34 +100,10 @@ const ariaLabelConfig = {
   'handle.ariaLabel': t('map.a11y.handle'),
 };
 
-function storage() {
-  try {
-    return window.localStorage;
-  } catch {
-    return null;
-  }
-}
-
 const isTyping = (el: EventTarget | null) =>
   el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName));
 /** Keys inside a dialog (e.g. Delete in the mask editor) belong to the dialog, never to the canvas. */
 const inDialog = (el: EventTarget | null) => el instanceof Element && !!el.closest('[role="dialog"]');
-
-/** Server graph → local graph: lays out cards without position (imports), then replays ops left offline. */
-function initialGraph(data: BoardGraph, cache: CardCache): { graph: Graph; layout: MapOp[] } {
-  const placed = data.cards.filter((c) => c.position);
-  const loose = data.cards.filter((c) => !c.position);
-  const right = placed.reduce((m, c) => Math.max(m, c.position!.x + sizeOf(c).w + 96), 0);
-  const pos = loose.length
-    ? autoLayout(loose.map((c) => ({ id: c.id, width: sizeOf(c).w, height: sizeOf(c).h })), data.edges.map((e) => ({ source: e.fromCardId, target: e.toCardId })), { x: right, y: 0 })
-    : new Map<string, XYPosition>();
-  const nodes = data.cards.map((c) => toNode(c, c.position ?? pos.get(c.id)!));
-  const layout: MapOp[] = loose.length
-    ? [{ op: 'moveCards', opId: uuid(), boardId: data.board.id, moves: [...pos].map(([cardId, position]) => ({ cardId, position })) }]
-    : [];
-  const graph = applyOps({ nodes, edges: data.edges.map(toEdge) }, loadPending(data.board.id, storage()), cache);
-  return { graph, layout };
-}
 
 /** Connections per card; returns `prev` when nothing changed so the node context (and every node) stays put. */
 export function countEdges(edges: readonly { source: string; target: string }[], prev?: ReadonlyMap<string, number>): ReadonlyMap<string, number> {
@@ -184,7 +165,8 @@ function Canvas({ data }: { data: BoardGraph }) {
   const [matrixItemId, setMatrixItemId] = useState(board.matrixItemId); // F07: set in place by a one-click link
   const [confirmDelete, setConfirmDelete] = useState<MapOp[] | null>(null);
   const [labelEdit, setLabelEdit] = useState<string | null>(null);
-  const [palette, setPalette] = useState(false);
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [chOptions, setChOptions] = useState<ChallengeOptions | undefined>(undefined);
   const [editing, setEditing] = useState<string | null>(null);
   const [tool, setToolState] = useState<Tool>('select');
   const [touch] = useState(isTouch); // canvas is client-only (lazy, ssr: false), so no hydration mismatch
@@ -529,11 +511,6 @@ function Canvas({ data }: { data: BoardGraph }) {
     const onKey = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
       const key = e.key.toLowerCase();
-      if (mod && key === 'k' && !inDialog(e.target)) { // ⌘K works while typing too, like the mock
-        e.preventDefault();
-        setPalette(true);
-        return;
-      }
       if (isTyping(e.target) || inDialog(e.target) || confirmDelete) return;
       if (e.key === 'Escape') {
         // D-098: Esc closes the card panel (deselects); in "Ligar" it first drops the tool
@@ -582,6 +559,29 @@ function Canvas({ data }: { data: BoardGraph }) {
     },
     [router, pathname, resetChallenge],
   );
+  // G14 D-603/D-604: a board challenge needs CHALLENGE_MIN_CARDS live, non-note, active cards, and starts from the options dialog.
+  // Direct links (`?modo=desafio` from Hoje, Progresso…) start with the defaults; the server re-checks the minimum (422).
+  const challengeable = useMemo(() => graph.nodes.reduce((n, x) => n + (x.data.card.type !== 'note' && !x.data.card.suspendedAt ? 1 : 0), 0), [graph.nodes]);
+  const missing = scope.kind === 'board' ? Math.max(0, CHALLENGE_MIN_CARDS - challengeable) : 0;
+  const requestMode = useCallback(
+    (m: Mode) => {
+      if (m === 'explore') return setMode(m);
+      if (missing === 0) setSetupOpen(true);
+    },
+    [setMode, missing],
+  );
+  const startChallenge = useCallback(
+    (o: ChallengeOptions) => {
+      setSetupOpen(false);
+      setChOptions(o);
+      resetChallenge(); // a new choice always starts a fresh session
+      setMode('challenge');
+    },
+    [resetChallenge, setMode],
+  );
+  useEffect(() => {
+    if (board.status === 'private') maybeShowChallengeTour(); // G14 ponto 19: once, on the student's first own map
+  }, [board.status]);
 
   const retry = useCallback(() => {
     if (queue.current?.status().dropped) window.location.reload(); // the API rejected edits: resync with the server
@@ -599,7 +599,7 @@ function Canvas({ data }: { data: BoardGraph }) {
     [onConnect, setLinkFrom],
   );
 
-  const enterChallenge = useCallback(() => setMode('challenge'), [setMode]);
+  const enterChallenge = useCallback(() => requestMode('challenge'), [requestMode]);
   const reviewCard = enterChallenge; // ponytail: the session picks its items; F04 has no per-card session
 
   const goToCard = useCallback(
@@ -615,11 +615,11 @@ function Canvas({ data }: { data: BoardGraph }) {
   );
 
   useEffect(() => {
-    if (mode === 'challenge') ensureChallenge(scope);
-  }, [mode, scope, ensureChallenge]);
+    if (mode === 'challenge' && missing === 0) ensureChallenge(scope, chOptions);
+  }, [mode, scope, ensureChallenge, chOptions, missing]);
   const current = mode === 'challenge' && chState.phase === 'running' ? chState.items.find((i) => i.id === chState.queue[0]) : undefined;
   const quiz = useMemo(() => quizView(current, graph), [current, graph]);
-  // the camera follows the tested card only when it is not already in the free area (the mock keeps the editor framing)
+  // D-689: each tested card gets a smooth zoom-in (450 ms, --map-ease; none with reduced motion), unless it is already well framed
   const currentCard = quiz?.cardId;
   useEffect(() => {
     const n = currentCard ? g.current.nodes.find((x) => x.id === currentCard) : undefined;
@@ -630,11 +630,12 @@ function Canvas({ data }: { data: BoardGraph }) {
     const b = rf.flowToScreenPosition({ x: n.position.x + w, y: n.position.y + h });
     // same free area as the fit: below the layers bar, above the toolbar, clear of the challenge panel
     const f = freeArea(true, pane.height, true);
-    const visible = a.x >= pane.left + f.left && a.y >= pane.top + f.top && b.x <= pane.right - f.right && b.y <= pane.bottom - f.bottom;
-    if (visible) return;
-    // centre of the free area, at 100% or smaller when the card does not fit there (phone: above the sheet)
-    const k = clampZoom(Math.min(1, (pane.width - f.left - f.right) / w, (pane.height - f.top - f.bottom) / h));
-    void rf.setCenter(n.position.x + w / 2 + (f.right - f.left) / 2 / k, n.position.y + h / 2 + (f.bottom - f.top) / 2 / k, { zoom: k, duration: 300 });
+    const inside = a.x >= pane.left + f.left && a.y >= pane.top + f.top && b.x <= pane.right - f.right && b.y <= pane.bottom - f.bottom;
+    const target = challengeZoom({ card: { w, h }, free: { w: pane.width - f.left - f.right, h: pane.height - f.top - f.bottom }, zoom: rf.getZoom(), inside });
+    if (target === null) return;
+    const k = clampZoom(target);
+    // centre of the free area (phone: above the sheet)
+    void rf.setCenter(n.position.x + w / 2 + (f.right - f.left) / 2 / k, n.position.y + h / 2 + (f.bottom - f.top) / 2 / k, { zoom: k, ...cameraMove() });
   }, [currentCard, rf]);
 
   const edgeCountsRef = useRef<ReadonlyMap<string, number>>(new Map());
@@ -674,8 +675,6 @@ function Canvas({ data }: { data: BoardGraph }) {
       ...(['link', 'organize', 'challenge'] as const).map((k) => ({ id: `map:${k}`, group: t('palette.groups.map'), label: t(`palette.${k}.label`), hint: t(`palette.${k}.hint`) })),
       ...(['structure', 'recall', 'coverage'] as const).map((k) => ({ id: `layer:${k}`, group: t('palette.groups.layers'), label: t(`palette.${k}.label`), hint: t(`palette.${k}.hint`) })),
       ...graph.nodes.map((n) => ({ id: `card:${n.id}`, group: t('palette.groups.cards'), label: n.data.card.title, hint: t('palette.card') })),
-      ...(['home', 'maps', 'newMap', 'review'] as const).map((k) => ({ id: `go:${k}`, group: t('palette.groups.goTo'), label: t(`palette.${k}.label`), hint: t(`palette.${k}.hint`) })),
-      { id: 'support', group: t('palette.groups.goTo'), label: t('support.navigation.talkToSupport') },
     ],
     [graph.nodes],
   );
@@ -685,14 +684,13 @@ function Canvas({ data }: { data: BoardGraph }) {
       if (kind === 'create') createCard(arg as CardType);
       else if (kind === 'layer') changeLayer(arg as NodeLayer);
       else if (kind === 'card') goToCard(arg);
-      else if (c.id === 'support') openSupport('command');
       else if (c.id === 'map:link') setTool('connect');
       else if (c.id === 'map:organize') organize();
-      else if (c.id === 'map:challenge') setMode('challenge');
-      else router.push(({ home: '/app/hoje', maps: '/app/mapas', newMap: '/app/mapas/novo', review: '/app/revisar' } as Record<string, string>)[arg] ?? '/app/hoje');
+      else if (c.id === 'map:challenge') requestMode('challenge');
     },
-    [changeLayer, createCard, goToCard, organize, router, setMode, setTool],
+    [changeLayer, createCard, goToCard, organize, requestMode, setTool],
   );
+  usePaletteCommands(commands, runCommand); // D-607: the global ⌘K (navbar) gets this map's commands while it is open
 
   const tools = useMemo<ToolbarItem[]>(
     () => [
@@ -786,7 +784,7 @@ function Canvas({ data }: { data: BoardGraph }) {
   return (
     // The shell <main> pads its children: bleed to the edges (rail on the left), full viewport height.
     // touch-action: the page itself never pinch-zooms here (the map does); panels still scroll.
-    <div className="relative -m-4 flex h-[calc(100dvh-80px)] min-h-[480px] flex-col bg-canvas [touch-action:pan-x_pan-y] md:-m-6 md:h-dvh">
+    <div className="relative -m-4 flex h-[calc(100dvh-80px)] min-h-[480px] flex-col bg-canvas [touch-action:pan-x_pan-y] md:-m-6 md:h-[calc(100dvh-4rem)]">
       <CanvasHeader
         board={board}
         coverage={coverage ? { pct: Math.round(coverage.coverage), item: coverage.title } : null}
@@ -794,8 +792,8 @@ function Canvas({ data }: { data: BoardGraph }) {
         status={status}
         onRetry={retry}
         mode={mode}
-        onMode={setMode}
-        onPalette={() => setPalette(true)}
+        onMode={requestMode}
+        missing={missing}
       />
       <section
         ref={wrap}
@@ -894,7 +892,7 @@ function Canvas({ data }: { data: BoardGraph }) {
               board={board}
               challengePanel={
                 mode === 'challenge' ? (
-                  <ChallengePanel scope={scope} boardId={board.id} heat={retrievability} onExit={() => setMode('explore')} onRated={loadHeat} />
+                  <ChallengePanel scope={scope} boardId={board.id} heat={retrievability} onExit={() => setMode('explore')} onRated={loadHeat} missing={missing} />
                 ) : null
               }
               card={selected}
@@ -915,17 +913,7 @@ function Canvas({ data }: { data: BoardGraph }) {
             />
         </div>
       </section>
-      <CommandPalette
-        open={palette}
-        onOpenChange={setPalette}
-        title={t('editor.commandPalette')}
-        inputLabel={t('palette.placeholder')}
-        placeholder={t('editor.searchLabel')}
-        escText={t('palette.esc')}
-        emptyText={t('palette.notFound')}
-        items={commands}
-        onSelect={runCommand}
-      />
+      <ChallengeSetupDialog open={setupOpen} onOpenChange={setSetupOpen} onStart={startChallenge} />
       <Dialog
         open={!!editedEdge}
         onOpenChange={(o) => !o && setLabelEdit(null)}

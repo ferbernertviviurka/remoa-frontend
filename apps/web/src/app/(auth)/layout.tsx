@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import { t } from '@remoa/strings';
 import { Card, Constellation, Logo } from '@remoa/ui';
 
@@ -19,7 +20,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
       <aside className="hidden flex-col justify-between gap-10 bg-panel-dark p-12 text-on-dark lg:flex">
-        <Logo size={36} withWordmark onDark />
+        <Link href="/" aria-label={t('landing.nav.wordmark.aria')} className="inline-flex min-h-11 items-center self-start no-underline"><Logo size={36} withWordmark onDark /></Link>
         <div className="flex flex-col items-start gap-8">
           <Constellation nodes={nodes} edges={edges} />
           <div className="flex max-w-[420px] flex-col gap-3">
@@ -29,7 +30,8 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       </aside>
       <main className="flex flex-col items-center justify-center gap-6 px-4 py-8 sm:p-8">
-        <div className="lg:hidden"><Logo size={32} withWordmark /></div>
+        {/* G14 (D-587): signed-in users never see these forms (middleware), so the logo always goes to the site. */}
+        <Link href="/" aria-label={t('landing.nav.wordmark.aria')} className="inline-flex min-h-11 items-center no-underline lg:hidden"><Logo size={32} withWordmark /></Link>
         <div className="w-full max-w-[480px]">
           <Card radius="list" padded={false}>
             <div className="p-6 sm:p-8">{children}</div>

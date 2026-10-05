@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { formReady } from './sign-up';
+import { fillAbout, formReady } from './sign-up';
 import AxeBuilder from '@axe-core/playwright';
 
 const axe = async (page: Page) => {
@@ -14,7 +14,7 @@ test('onboarding: cadastro novo cai nos 4 passos, "em branco" leva ao Novo mapa 
   await page.getByLabel('E-mail').fill(`e2e-onb-${Date.now()}@remoa.test`);
   await page.getByLabel('Senha').fill('senha-forte-123');
   await page.getByRole('button', { name: 'Continuar' }).click();
-  await page.getByRole('button', { name: 'Continuar' }).click();
+  await fillAbout(page);
   await page.getByRole('checkbox').click();
   await page.getByRole('button', { name: 'Criar conta' }).click();
 
@@ -24,12 +24,17 @@ test('onboarding: cadastro novo cai nos 4 passos, "em branco" leva ao Novo mapa 
   await page.getByRole('button', { name: '5º–6º ano' }).click();
   await page.getByRole('button', { name: 'Continuar' }).click();
   await page.getByRole('button', { name: 'Enamed 2027.1' }).click();
+  await page.getByRole('button', { name: 'USP' }).click(); // G14 13: mais de um objetivo
   await page.getByRole('button', { name: 'Continuar' }).click();
+  for (const area of ['Cirurgia', 'Ginecologia e Obstetrícia', 'Pediatria', 'Medicina Preventiva e Saúde Coletiva']) {
+    await expect(page.getByRole('button', { name: new RegExp(`^${area}`) })).toBeDisabled(); // G14 16: "Em breve"
+  }
   await page.getByRole('button', { name: 'Clínica Médica' }).click();
   await page.getByRole('button', { name: 'Continuar' }).click();
   await page.getByRole('button', { name: /Em branco/ }).click();
   await page.getByRole('button', { name: 'Ir para o primeiro mapa' }).click();
   await expect(page).toHaveURL(/\/app\/mapas\/novo\?caminho=blank&de=onboarding$/);
+  await expect(page.getByLabel('Nome do mapa')).toBeVisible(); // G14 17: direto no passo 2 (Sobre o mapa)
 
   // done: Hoje is not redirected, the onboarding page itself sends back to Hoje, and the checklist is there
   await page.goto('/app/hoje');

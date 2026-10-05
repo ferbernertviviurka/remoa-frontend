@@ -1,15 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { ApkgSummary } from '@remoa/contracts';
+import { PLAN_LIMITS, type ApkgSummary } from '@remoa/contracts';
 import { AnkiImportFlow } from './anki-import-flow';
 import { useAnkiImport } from './use-anki-import';
 
 const api = vi.fn();
 const track = vi.fn();
 const handle = vi.fn();
+const show = vi.fn();
 vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
 vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
-vi.mock('@/features/billing/paywall', () => ({ usePaywall: () => ({ show: vi.fn(), handle }) }));
+vi.mock('@/features/billing/paywall', () => ({ usePaywall: () => ({ show: (r: string) => show(r), handle }) }));
 vi.mock('./upload', () => ({ putApkg: async () => true }));
 
 // Radix Select under jsdom
@@ -148,5 +149,30 @@ describe('Anki import', () => {
     render(<Harness />);
     fireEvent.click(screen.getByText('go'));
     expect((await screen.findByRole('alert')).textContent).toContain('versões antigas');
+  });
+
+  it('Free with its import used: paywall "anki" before any upload (D-648)', async () => {
+    routes({ '/v1/billing/entitlements': { ok: true, data: { ankiImportMaxCards: PLAN_LIMITS.free.ankiImportMaxCards, ankiImports: PLAN_LIMITS.free.ankiImports, ankiImportsUsed: PLAN_LIMITS.free.ankiImports } } });
+    render(<Harness />);
+    fireEvent.click(screen.getByText('go'));
+    await waitFor(() => expect(show).toHaveBeenCalledWith('anki'));
+    expect(api.mock.calls.some((c) => c[0] === '/v1/imports/anki/sign')).toBe(false);
+    expect(screen.queryByTestId('import-summary')).toBeNull();
+  });
+
+  it('a 402 from the server on sign opens the paywall instead of an error', async () => {
+    routes({ '/v1/imports/anki/sign': { ok: false, error: { code: 'quota_exceeded', message: 'anki' } } });
+    handle.mockReturnValue(true);
+    render(<Harness />);
+    fireEvent.click(screen.getByText('go'));
+    await waitFor(() => expect(handle).toHaveBeenCalledWith({ code: 'quota_exceeded', message: 'anki' }));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('Pro (no per-file cap, unlimited imports): goes to the summary without the cap alert', async () => {
+    routes({ '/v1/billing/entitlements': { ok: true, data: { ankiImportMaxCards: null, ankiImports: null, ankiImportsUsed: 4 } } });
+    await toPreview();
+    expect(show).not.toHaveBeenCalled();
+    expect(screen.queryByText('Acima do limite do plano')).toBeNull();
   });
 });

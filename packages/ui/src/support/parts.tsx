@@ -95,7 +95,7 @@ export type ThreadMessage = {
   /** "Você", "Equipe Remoa", nome do usuário */
   author: string;
   /** "agora", "há 18 min" */
-  when: string;
+  when: ReactNode;
   body: ReactNode;
   /** `self` = balão roxo à direita; `other` = balão claro à esquerda */
   side: 'self' | 'other';

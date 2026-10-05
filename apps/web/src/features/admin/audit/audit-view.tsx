@@ -5,7 +5,8 @@ import { adminActions, formatAuditId, auditResults, type AdminAction, type Audit
 import { t } from '@remoa/strings';
 import { AdminHeader, AdminSearch, Button, DataTable, Drawer, DrawerFacts, FilterGroup, Icon, JsonDiff, ReasonDialog, Select, StatusPill, SummaryChip } from '@remoa/ui';
 import { exportAdminCsv } from '../shared/actions';
-import { formatCount, formatWhen } from '../shared/format';
+import { formatCount } from '../shared/format';
+import { When } from '../shared/when';
 import { downloadCsv } from '../list-kit/download';
 import { formatDateTime, pageSummary } from '../payments/helpers';
 import { useListParams } from '../list-kit/use-list-params';
@@ -81,7 +82,7 @@ export function AuditView({ data, query, meId, from }: { data: AuditPage | null;
             { key: 'reason', header: t('admin.audit.table.columns.reason'), cell: (e) => <span className="block max-w-[220px] truncate">{e.reason ?? t('admin.audit.noReason')}</span> },
             { key: 'result', header: t('admin.audit.table.columns.result'), cell: (e) => <StatusPill size="sm" tone={e.result === 'success' ? 'info' : 'warn'}>{resultLabel(e.result)}</StatusPill> },
             { key: 'origin', header: t('admin.audit.table.columns.origin'), cell: (e) => <b>{e.ipHash ? t('admin.audit.origin', { hash: e.ipHash.slice(-4) }) : t('admin.audit.noReason')}</b> },
-            { key: 'when', header: t('admin.audit.table.columns.when'), cell: (e) => <span className="text-[13.5px] text-muted" suppressHydrationWarning>{formatWhen(e.createdAt)}</span> },
+            { key: 'when', header: t('admin.audit.table.columns.when'), cell: (e) => <span className="text-[13.5px] text-muted" ><When iso={e.createdAt} /></span> },
           ]}
           {...(data ? { pagination: { page: data.page, pageSize: data.pageSize, total: data.total, onPageChange: (p: number) => url.push({ page: String(p) }), summary: pageSummary('admin.audit.pagination.summary', data), navLabel: t('admin.audit.pagination.nav'), prevLabel: t('admin.audit.pagination.prev'), nextLabel: t('admin.audit.pagination.next') } } : {})}
         />

@@ -1,22 +1,24 @@
 'use client';
 
 import { PendingLink } from '@/features/shell/nav-pending';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useNavigate } from '@/features/shell/use-navigate';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { Board, BoardSummary } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
-import { Button, Card, Dialog, FilterChip, Icon, Input, LockedSlideCard, MapTile, Menu, NewMapSlideCard, Pill, StateBar, useToast, ViewToggle } from '@remoa/ui';
+import { Button, Card, Dialog, FilterChip, Icon, Input, LockedSlideCard, MapTile, Menu, NewMapSlideCard, Pill, Segmented, StateBar, useToast, ViewToggle } from '@remoa/ui';
 import { api } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import { useEntitlements } from '@/features/shell/entitlements';
 import { usePaywall } from '@/features/billing/paywall';
 import { fold, savedAgo } from './saved-ago';
 
-type Modal = { kind: 'rename' | 'archive'; board: BoardSummary } | null;
+type Modal = { kind: 'rename' | 'archive' | 'delete'; board: BoardSummary } | null;
 type Row = { b: BoardSummary; area: string; saved: string; due: { text: string; tone: 'review' | 'unknown' } };
 
-export function BoardsView({ boards }: { boards: BoardSummary[] }) {
-  const router = useRouter();
+type Status = 'active' | 'archived' | 'all';
+
+export function BoardsView({ boards: activeBoards }: { boards: BoardSummary[] }) {
+  const [navigating, router] = useNavigate();
   const paywall = usePaywall();
   const { toast } = useToast();
   const [modal, setModal] = useState<Modal>(null);
@@ -28,6 +30,16 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
   const [view, setView] = useState('grid');
   const [area, setArea] = useState('all');
   const [q, setQ] = useState('');
+  const [status, setStatus] = useState<Status>('active');
+  const [fetched, setFetched] = useState<BoardSummary[]>([]);
+  // G14 D-573: "Ativos" is the server-rendered list; the other filters read `?status=` and reload after every change.
+  const loadStatus = useCallback(async (st: Status) => {
+    if (st === 'active') return;
+    const r = await api<BoardSummary[]>(`/v1/boards?status=${st}`);
+    if (r.ok) setFetched(r.data);
+  }, []);
+  const boards = status === 'active' ? activeBoards : fetched;
+  useEffect(() => void loadStatus(status), [status, loadStatus]);
   const { entitlements, refresh } = useEntitlements();
   useEffect(() => void refresh(), [refresh]); // maps created/archived elsewhere change usage.boards; the shell copy is only the layout's first read
   // F14 FR-20/21 (D-108/D-112): null limit = unlimited; no entitlements (error) = behave as before, no lock.
@@ -52,6 +64,7 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
         return null;
       }
       router.refresh();
+      void loadStatus(status);
       return r.data;
     } catch {
       setError(t('errors.internal'));
@@ -82,6 +95,20 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
       setUndo(board);
       toast({ title: t('boards.archived') });
     }
+  }
+
+  async function onDelete() {
+    if (modal?.kind !== 'delete') return;
+    const board = modal.board;
+    if (name.trim() !== board.title.trim()) return;
+    if (await run(() => api<{ id: string }>(`/v1/boards/${board.id}`, { method: 'DELETE' }))) {
+      setModal(null);
+      toast({ title: t('boards.deleted') });
+    }
+  }
+
+  async function onUnarchive(b: BoardSummary) {
+    if (await run(() => patch(b.id, { archived: false }))) toast({ title: t('boards.unarchived') });
   }
 
   async function onUndo() {
@@ -129,13 +156,16 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
       items={[
         { label: t('boards.rename'), onSelect: () => openModal({ kind: 'rename', board: b }, b.title) },
         { label: t('boards.duplicate'), onSelect: () => void onDuplicate(b) },
-        { label: t('boards.archive'), onSelect: () => openModal({ kind: 'archive', board: b }) },
+        b.archivedAt
+          ? { label: t('boards.unarchive'), onSelect: () => void onUnarchive(b) }
+          : { label: t('boards.archive'), onSelect: () => openModal({ kind: 'archive', board: b }) },
+        { label: t('boards.delete'), onSelect: () => openModal({ kind: 'delete', board: b }) },
       ]}
     />
   );
   /** FR-19: shown only when the map is not "Só eu". */
   const accessBadge = (b: BoardSummary) =>
-    b.access === 'owner' ? null : (
+    b.archivedAt ? <Pill tone="unknown">{t('boards.archivedBadge')}</Pill> : b.access === 'owner' ? null : (
       <Pill tone={b.access === 'password' ? 'watch' : 'brand'}>
         <Icon name={b.access === 'password' ? 'lock' : 'link'} size={14} aria-hidden="true" />
         <span className="ml-1.5">{t(`boardsAccess.${b.access}`)}</span>
@@ -170,6 +200,17 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
         </div>
       </div>
 
+      <Segmented
+        aria-label={t('boards.statusLabel')}
+        value={status}
+        onValueChange={(v) => setStatus(v as Status)}
+        options={[
+          { value: 'active', label: t('boards.statusActive') },
+          { value: 'archived', label: t('boards.statusArchived') },
+          { value: 'all', label: t('boards.statusAll') },
+        ]}
+      />
+
       <div role="group" aria-label={t('library.filterArea')} className="flex flex-wrap gap-2.5">
         <FilterChip pressed={area === 'all'} count={boards.length} onClick={() => setArea('all')}>{t('library.all')}</FilterChip>
         {areas.map((a) => (
@@ -181,7 +222,7 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
 
       {rows.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-list border-[1.5px] border-dashed border-border-strong bg-surface px-6 py-14 text-center">
-          <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-ink">{t('library.noMaps')}</h2>
+          <h2 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-ink">{status === 'archived' ? t('boards.emptyArchived') : t('library.noMaps')}</h2>
           <p className="text-muted">{t('library.noMapsDesc')}</p>
           <Button onClick={goNew}>{t('library.newMapButton')}</Button>
         </div>
@@ -274,7 +315,7 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
           <Card>
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-semibold">{t('boards.archived')}: {undo.title}</span>
-              <Button variant="secondary" disabled={busy} onClick={() => void onUndo()}>{t('boards.undo')}</Button>
+              <Button variant="secondary" disabled={busy || navigating} onClick={() => void onUndo()}>{t('boards.undo')}</Button>
             </div>
             {errorText}
           </Card>
@@ -285,7 +326,21 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
         <form onSubmit={(e) => void onRename(e)} className="flex flex-col gap-3">
           <Input label={t('boards.titleLabel')} placeholder={t('boards.titlePlaceholder')} value={name} onChange={(e) => setName(e.target.value)} maxLength={120} required autoFocus />
           {errorText}
-          <Button type="submit" loading={busy} loadingLabel={t('common.loading')} disabled={!name.trim()}>{t('boards.rename')}</Button>
+          <Button type="submit" loading={busy || navigating} loadingLabel={t('common.loading')} disabled={!name.trim()}>{t('boards.rename')}</Button>
+        </form>
+      </Dialog>
+
+      <Dialog
+        open={modal?.kind === 'delete'}
+        onOpenChange={close}
+        title={t('boards.deleteTitle', { title: modal?.kind === 'delete' ? modal.board.title : '' })}
+        description={t('boards.deleteBody')}
+        closeLabel={t('common.close')}
+      >
+        <form onSubmit={(e) => { e.preventDefault(); void onDelete(); }} className="flex flex-col gap-3">
+          <Input label={t('boards.deleteConfirmLabel')} value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" autoFocus />
+          {errorText}
+          <Button type="submit" variant="danger" loading={busy || navigating} loadingLabel={t('common.loading')} disabled={modal?.kind !== 'delete' || name.trim() !== modal.board.title.trim()}>{t('boards.delete')}</Button>
         </form>
       </Dialog>
 
@@ -298,7 +353,7 @@ export function BoardsView({ boards }: { boards: BoardSummary[] }) {
       >
         <div className="flex flex-col gap-3">
           {errorText}
-          <Button variant="danger" loading={busy} loadingLabel={t('common.loading')} onClick={() => void onArchive()}>{t('boards.archive')}</Button>
+          <Button variant="danger" loading={busy || navigating} loadingLabel={t('common.loading')} onClick={() => void onArchive()}>{t('boards.archive')}</Button>
         </div>
       </Dialog>
     </div>

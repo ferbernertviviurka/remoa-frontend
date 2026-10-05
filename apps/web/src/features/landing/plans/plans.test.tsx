@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { PLAN_LIMITS, annualDiscountPercent, type PublicPriceBook } from '@remoa/contracts';
+import { PLAN_LIMITS, annualDiscountPercent, planDefinition, type PublicPriceBook } from '@remoa/contracts';
 import { strings } from '@remoa/strings';
 
 const track = vi.fn();
@@ -37,6 +37,24 @@ describe('PlansSection', () => {
     fireEvent.click(screen.getByRole('button', { name: new RegExp(strings.landing.plans.period.annual) }));
     expect(screen.getByText(/R\$\s*349/)).toBeTruthy();
     expect(track).toHaveBeenCalledWith('pricing_toggled', { period: 'annual' });
+  });
+
+  it('Free, Pro and Founder lists come from planDefinition (no typed numbers); Founder has the store line', () => {
+    const free = planDefinition('free');
+    const pro = planDefinition('pro');
+    render(<PlansSection priceBook={book} flags={flags} />);
+    const list = (name: string) => within(screen.getByRole('article', { name }));
+    const f = list(strings.landing.plans.free.name);
+    for (const s of [`${free.boards} mapas`, `${free.cards} cards`, 'Sem mapas gerados por PDF', `${free.anki_imports} importação do Anki de até ${free.anki_import_cards} cards`, `${free.new_cards_per_day} novos cards por dia`, `${free.ai_grades} correções por IA por dia`]) {
+      expect(f.getByText(s)).toBeTruthy();
+    }
+    const p = list(strings.landing.plans.pro.name);
+    for (const s of ['Mapas e cards ilimitados', `${pro.ai_grades} correções por IA por dia`, `${pro.ai_generations} mapas gerados de PDF por mês`, 'Importação do Anki ilimitada', 'Novos cards por dia: ilimitados']) {
+      expect(p.getByText(s)).toBeTruthy();
+    }
+    const fd = list(strings.landing.plans.founder.name);
+    expect(fd.getByText('Loja de mapas liberada (Em breve)')).toBeTruthy();
+    expect(fd.getByText('Mapas gerados de PDF ilimitados')).toBeTruthy();
   });
 
   it('Mensal/Anual: preço, período e nota trocam via Torph; com movimento reduzido a troca é direta', async () => {

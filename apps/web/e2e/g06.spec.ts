@@ -2,6 +2,7 @@
 // tooltip do caso por teclado, painel com data-state open/closed, Falar "Em breve". SHOTS=<dir> salva prints.
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { createMockSepse, signUpAndLogin } from './visual/fixture';
+import { padForChallenge } from './challenge-pad';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 const shot = (page: Page, name: string) => (process.env.SHOTS ? page.screenshot({ path: `${process.env.SHOTS}/${name}.png` }) : undefined);
@@ -104,9 +105,9 @@ test('2. Conteúdo: criado pela barra, sem virar nem rubrica; fora do desafio', 
   await saved(page);
   await shot(page, 'g06-conteudo');
 
-  // only a Conteúdo card on the map: the challenge has nothing to ask
+  // only a Conteúdo card on the map: nothing to challenge (G14 D-579: Conteúdo does not count toward the 10)
   await page.goto(`/app/mapas/${id}?modo=desafio`);
-  await expect(panel(page).getByRole('heading', { level: 2, name: 'Nada para revisar agora' })).toBeVisible();
+  await expect(panel(page).getByRole('heading', { level: 2, name: 'Ainda faltam cards para o desafio' })).toBeVisible();
   await expect(panel(page).getByRole('button', { name: 'Corrigir resposta' })).toHaveCount(0);
   await expect(panel(page).getByRole('button', { name: 'Revelar resposta' })).toHaveCount(0);
 });
@@ -176,11 +177,12 @@ test('5. desafio: no modo Falar aparece o botão de gravar com a nota certa para
   test.setTimeout(120_000);
   const { userId, headers } = await signUpAndLogin(page, request);
   const sepse = await createMockSepse(request, headers, userId);
+  await padForChallenge(request, headers, sepse, 4); // G14 D-579
   await page.goto(`/app/mapas/${sepse}?modo=desafio`);
-  await expect(page.getByRole('button', { name: 'Corrigir resposta' })).toBeVisible();
-  await page.getByRole('group', { name: 'Como responder' }).getByRole('button', { name: 'Falar' }).click();
-  await expect(page.getByRole('button', { name: 'Falar a resposta' })).toBeVisible();
-  const supported = await page.evaluate(() => 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
-  await expect(panel(page).getByText(supported ? 'O texto aparece no campo' : 'Responder falando ainda não está disponível')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Revelar resposta' })).toBeVisible();
+  // G14 D-605: Voz is "Em breve" (disabled) until answerMode.voice is available
+  const voz = page.getByRole('group', { name: 'Como responder' }).getByRole('button', { name: /Voz/ });
+  await expect(voz).toBeDisabled();
+  await expect(voz).toContainText('Em breve');
   await shot(page, 'g06-falar');
 });

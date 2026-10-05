@@ -5,12 +5,17 @@ import { plan } from './plan';
 import { plans } from './plans';
 import { landing } from './landing';
 import { referral } from './referral';
+import { store } from './store';
+import { reviewHub } from './review';
 import { support } from './support';
 import { admin } from './admin';
 import { f17 } from './f17';
 import { legal } from './legal';
 import { onboarding, cardStudy } from './onboarding';
+import { personal } from './personal';
+import { challengeSetup } from './challenge-setup';
 import { mapState, challengeMode, challenge, editor, canvas, quiz, boundary } from './landing-shared';
+import { mapMobile } from './map-mobile';
 
 export const ptBR = {
   account,
@@ -20,11 +25,15 @@ export const ptBR = {
   plans,
   landing,
   referral,
+  store,
   legal,
   support,
   admin,
   onboarding,
   cardStudy,
+  personal,
+  challengeSetup,
+  mapMobile,
   // F17 — Importador Anki v2 (T1)
   ...f17,
   common: {
@@ -54,6 +63,11 @@ export const ptBR = {
     hoje: 'Revisar hoje',
   },
   review: {
+    eyebrow: 'Revisar hoje',
+    heroEyebrow: 'Fila do dia',
+    heroTitle: '{n, plural, one {# conceito na fila} other {# conceitos na fila}}',
+    estimate: 'Cerca de {min} min em {boards, plural, one {# mapa} other {# mapas}}. Dê uma nota ao fim de cada conceito.',
+    share: '{board}: {n} de {total} na fila',
     headlineNone: 'Nada vence hoje',
     headlineOne: '1 conceito vence hoje',
     headlineMany: '{due} conceitos vencem hoje',
@@ -66,7 +80,8 @@ export const ptBR = {
     unknownBoard: 'Mapa sem nome',
     savedOffline: 'Esta é a última fila salva neste aparelho. A correção por IA volta quando a rede voltar.',
     empty: { title: 'Nada para revisar hoje', body: 'Volte amanhã ou adicione conceitos a um mapa.', cta: 'Ir para Meus mapas' },
-    badge: '{n, plural, one {# vence hoje} other {# vencem hoje}}',
+    badge: '{n, plural, one {# card na fila de hoje} other {# cards na fila de hoje}}',
+    hub: reviewHub,
   },
   mapState,
   grade: {
@@ -258,11 +273,13 @@ export const ptBR = {
     generating: '{stage}… {n}%',
     generatingLabel: 'Progresso da geração do mapa',
     pdfUnreadable: 'Não foi possível ler este PDF. Envie um arquivo com texto selecionável.',
+    aiNotConfigured: 'A geração de mapas por IA não está disponível neste ambiente. Crie o mapa em branco ou tente mais tarde.',
     pdfTooLarge: 'O PDF passa de 10 MB. Envie um arquivo menor ou divida o material.',
     pdfInvalid: 'Este arquivo não é um PDF. Escolha um arquivo .pdf.',
     generateTimeout: 'A geração passou de 10 minutos e foi interrompida. A cota foi devolvida.',
     stage: { ocr: 'Lendo o PDF', extract: 'Extraindo conceitos', layout: 'Organizando o mapa' },
     previewLabel: 'Prévia do seu mapa',
+    limits: { notIncluded: 'não incluso', unlimited: 'sem limite', perMonth: '{n} por mês' },
     info: {
       howLabel: 'Como funciona',
       getsLabel: 'Você recebe',
@@ -274,7 +291,7 @@ export const ptBR = {
         s2: 'A IA extrai conceitos, fluxogramas de conduta e as conexões entre eles.',
         s3: 'Tudo chega marcado como “rascunho não revisado”, para você conferir.',
         gets: 'Um mapa editável, com rubricas de correção sugeridas. Cada card leva a marca de rascunho até a sua revisão.',
-        limit: 'Gerações de mapa por mês: {free} no Free, {pro} no Pro.',
+        limit: 'Mapas gerados de PDF: {free} no Free, {pro} no Pro.',
         status: 'Em breve: a geração por IA ainda não está ativa.',
       },
       anki: {
@@ -284,7 +301,7 @@ export const ptBR = {
         s2: 'Cada nota vira um card. O cloze mantém as lacunas; a oclusão de imagem vira card de imagem com máscaras.',
         s3: 'Você dá nome ao mapa, confere o resumo e importa. Os baralhos viram colunas.',
         gets: 'Um mapa só, com os baralhos como colunas e as imagens. O agendamento do Anki não é trazido: a repetição espaçada começa do zero.',
-        limit: 'Até {free} cards por importação no Free e {pro} no Pro. As tags do Anki não entram.',
+        limit: 'Free: {freeImports, plural, one {# importação} other {# importações}} de até {free} cards. Pro: {pro}. As tags do Anki não entram.',
         status: 'Disponível agora.',
       },
       seed: {
@@ -514,24 +531,24 @@ export const ptBR = {
     },
     about: {
       title: 'Sobre você',
-      subtitle: 'Opcional. Ajuda a preparar o seu começo.',
+      subtitle: 'Só o tipo de usuário é obrigatório. O resto você completa depois no perfil.',
       name: 'Como podemos te chamar?',
       nameInvalid: 'Use de 2 a 60 caracteres, só letras, espaço, hífen ou apóstrofo.',
-      stage: 'Em que momento você está?',
-      goal: 'Qual é o seu objetivo?',
     },
     review: {
       title: 'Confirme e crie sua conta',
       subtitle: 'Confira os dados antes de criar.',
       emailRow: 'E-mail',
       nameRow: 'Nome',
-      stageRow: 'Momento',
-      goalRow: 'Objetivo',
+      userTypeRow: 'Você é',
+      sexRow: 'Sexo',
+      phoneRow: 'Telefone',
+      addressRow: 'Endereço',
       empty: 'Não informado',
       consent: 'Concordo com os {terms} e a {privacy}, e com o tratamento dos meus dados conforme a LGPD.',
       consentTerms: 'Termos de uso',
       consentPrivacy: 'Política de Privacidade',
-      consentRequired: 'Marque a caixa para criar a conta.',
+      consentRequired: 'Para criar a conta, marque que você concorda com os termos e a política de privacidade.',
     },
     magicLink: 'Enviar link mágico',
     google: 'Entrar com Google',
@@ -613,6 +630,19 @@ export const ptBR = {
     archiveTitle: 'Arquivar “{title}”?',
     archiveBody: 'O mapa sai de Meus mapas. Cards e revisões continuam guardados.',
     archived: 'Mapa arquivado',
+    unarchive: 'Desarquivar',
+    unarchived: 'Mapa desarquivado',
+    archivedBadge: 'Arquivado',
+    delete: 'Excluir',
+    deleteTitle: 'Excluir “{title}” para sempre?',
+    deleteBody: 'Isso apaga o mapa, todos os cards e o histórico de revisão dele. Não dá para desfazer.',
+    deleteConfirmLabel: 'Para confirmar, digite o nome do mapa',
+    deleted: 'Mapa excluído',
+    statusLabel: 'Mostrar mapas',
+    statusActive: 'Ativos',
+    statusArchived: 'Arquivados',
+    statusAll: 'Todos',
+    emptyArchived: 'Nenhum mapa arquivado',
     undo: 'Desfazer',
     sidebarLabel: 'Seus mapas',
     area: {
@@ -620,7 +650,7 @@ export const ptBR = {
       CIR: 'Cirurgia',
       GO: 'Ginecologia e Obstetrícia',
       PED: 'Pediatria',
-      MP: 'Medicina Preventiva',
+      MP: 'Medicina Preventiva e Saúde Coletiva',
     },
   },
   coverage: {
@@ -1018,10 +1048,11 @@ export const ptBR = {
     plan: { free: 'Free', pro: 'Pro', founder: 'Founder' },
     paywall: {
       title: 'Você chegou ao limite do Free',
-      ai_quota: 'Você usou as {n} correções por IA de hoje. No Pro, elas são ilimitadas.',
+      ai_quota: 'Você usou as {n} correções por IA de hoje. No Pro, são {pro} por dia.',
       boards: 'Você chegou ao limite de {n} mapas do Free. No Pro, os mapas são ilimitados.',
       cards: 'Você chegou ao limite de {n} cards do Free. No Pro, os cards são ilimitados.',
-      pdf: 'A geração de mapa por PDF do Free já foi usada. No Pro, são {n} por mês.',
+      pdf: 'Mapas gerados de PDF não vêm no Free. No Pro, são {n} por mês; no Founder, sem limite.',
+      anki: '{n, plural, one {Você já usou a importação do Anki do Free} other {Você já usou as # importações do Anki do Free}}. No Pro, as importações são ilimitadas.',
       cta: 'Assinar o Pro',
       dismiss: 'Continuar no Free',
     },
@@ -1071,6 +1102,7 @@ export const ptBR = {
       usageTitle: 'Uso do plano',
       usageLine: '{used} de {limit}',
       usageUnlimited: '{used} (sem limite)',
+      usageNotIncluded: 'Não incluso',
       daily: 'hoje',
       monthly: 'neste mês',
       total: 'no total',

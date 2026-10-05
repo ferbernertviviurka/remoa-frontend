@@ -9,7 +9,7 @@ import { Alert, Button, Icon, SettingsNav, SettingsNavAction, useToast, type Set
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { openSupport } from '@/features/support/open';
-import { signOut } from '@/server/auth/actions';
+import { signOutToLogin } from '@/features/auth/sign-out';
 import { PhotoDialogProvider } from '../profile/photo-dialog';
 import { AccountHero } from './account-hero';
 import { useAccount } from './account-context';
@@ -67,6 +67,7 @@ function useAccountTransitions() {
 /** Banner, hero and subnav live in the layout, so switching sections never remounts them (FR-1). */
 export function AccountShell({ children }: { children: ReactNode }) {
   const { account } = useAccount();
+  const { toast } = useToast();
   const online = useOnline();
   const segment = useSelectedLayoutSegment();
   useAccountTransitions();
@@ -101,9 +102,7 @@ export function AccountShell({ children }: { children: ReactNode }) {
               <SettingsNavAction
                 icon={<Icon name="logout" size={20} />}
                 onClick={async () => {
-                  const res = await signOut();
-                  // Full navigation: push + refresh re-rendered the protected /conta first and bounced to /entrar?next=/conta (G08).
-                  if (res.ok) window.location.assign('/');
+                  if (!(await signOutToLogin())) toast({ title: t('account.genericError'), tone: 'danger' });
                 }}
               >
                 {t('account.nav.signOut')}

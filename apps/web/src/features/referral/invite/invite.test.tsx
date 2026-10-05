@@ -102,7 +102,7 @@ describe('InviteView', () => {
     vi.resetModules();
     vi.doMock('@/server/auth/actions', () => ({ signUp: (...a: unknown[]) => signUp(...a), signInWithGoogle: vi.fn() }));
     vi.doMock('./actions', () => ({ claimInvite: vi.fn(async () => ({ valid: true })), attributeReferral: (...a: unknown[]) => attribute(...a) }));
-    vi.doMock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a), identify: vi.fn() }));
+    vi.doMock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
     vi.doMock('@/lib/supabase/client', () => ({ createClient: () => ({ auth: { getUser: async () => ({ data: { user: { id: 'u1' } } }) } }) }));
     signUp.mockResolvedValue({ ok: true });
   });

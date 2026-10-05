@@ -59,8 +59,9 @@ test('sair num aparelho não derruba a sessão do outro', async ({ page, browser
   const phone = await other.newPage();
   await signIn(phone, email);
   await phone.goto('/app/conta');
+  await phone.waitForLoadState('networkidle'); // the button is client-only: a click before hydration is lost
   await phone.getByRole('button', { name: 'Sair' }).click();
-  await expect(phone).toHaveURL(/\/$/);
+  await expect(phone).toHaveURL(/\/entrar$/); // G14 D-585
   await other.close();
 
   await page.goto('/app/mapas');

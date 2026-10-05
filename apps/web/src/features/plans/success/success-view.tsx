@@ -50,9 +50,9 @@ export function SuccessView({ sessionId, initial, plan: initialPlan = 'pro' }: {
       ? [t('plans.success.founder.benefits.pro'), t('plans.success.founder.benefits.aiGrades'), t('plans.success.founder.benefits.pdfMaps'), t('plans.success.founder.benefits.early')]
       : [
           t('plans.success.benefits.unlimited'),
-          t('plans.success.benefits.aiGrades'),
-          t('plans.success.benefits.pdfMaps', { n: pro.limits.ai_generations }),
-          t('plans.success.benefits.anki', { n: new Intl.NumberFormat('pt-BR').format(pro.ankiImportMaxCards) }),
+          t('plans.success.benefits.aiGrades', { n: pro.limits.ai_grades ?? 0 }),
+          t('plans.success.benefits.pdfMaps', { n: pro.limits.ai_generations ?? 0 }),
+          t('plans.success.benefits.anki'),
         ];
     return (
       <Dialog open size="bare" srOnlyHeader title={title} description={subtitle} closeLabel={t('common.close')} onOpenChange={(o) => o || router.push('/app/planos')}>

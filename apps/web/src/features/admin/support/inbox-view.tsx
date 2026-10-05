@@ -7,7 +7,7 @@ import { formatTicketNumber, type AdminTicketDetail, type AdminTicketMessage, ty
 import { t } from '@remoa/strings';
 import { AdminHeader, AdminSearch, Button, Icon, StatusPill, Switch, Textarea, Thread, type StatusTone, type ThreadMessage } from '@remoa/ui';
 import { runAdminAction } from '../shared/actions';
-import { formatWhen } from '../shared/format';
+import { When } from '../shared/when';
 
 const tone: Record<SupportTicketStatus, StatusTone> = { open: 'warn', in_review: 'info', answered: 'ok', resolved: 'muted' };
 const statusLabel: Record<SupportTicketStatus, string> = {
@@ -86,7 +86,7 @@ export function InboxView({ page, ticket, query }: { page: AdminTicketPage; tick
                     <StatusPill tone={tone[k.status]} size="sm">{statusLabel[k.status]}</StatusPill>
                   </span>
                   <span className="flex items-center gap-2 text-[13px] text-muted">
-                    <span>{formatTicketNumber(k.number)}</span><span aria-hidden="true">·</span><span>{person(k.user)}</span><span aria-hidden="true">·</span><span suppressHydrationWarning>{formatWhen(k.lastUserMessageAt)}</span>
+                    <span>{formatTicketNumber(k.number)}</span><span aria-hidden="true">·</span><span>{person(k.user)}</span><span aria-hidden="true">·</span><When iso={k.lastUserMessageAt} />
                   </span>
                   {k.preview ? <span className="truncate text-[13.5px] text-muted">{k.preview}</span> : null}
                 </button>
@@ -105,7 +105,7 @@ function threadOf(ms: AdminTicketMessage[], owner: AdminTicketDetail['user']): T
   return ms.map((m) => ({
     id: m.id,
     author: m.authorType === 'user' ? person(m.author ?? owner) : m.authorType === 'system' ? t('admin.support.detail.system') : (m.author?.name ?? t('admin.support.detail.team')),
-    when: formatWhen(m.createdAt),
+    when: <When iso={m.createdAt} />,
     side: m.authorType === 'user' ? 'other' : 'self',
     internal: m.internal,
     body: (

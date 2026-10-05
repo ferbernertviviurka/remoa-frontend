@@ -1,9 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import type { Entitlements, RedirectUrl } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { Alert, AppNavbar, Avatar, Button, Icon, PlanChip, PlanPopover, type LimitMeterProps } from '@remoa/ui';
@@ -11,10 +10,15 @@ import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { PLAN_LIMITS } from '@remoa/contracts';
 import { initialsOf } from '@/features/account/shell/format';
+import { PaletteButton } from './command-palette';
 import { useEntitlements } from './entitlements';
-import type { RailIdentity } from './rail';
+import { PendingLink, useNavPending } from './nav-pending';
+import { ACCOUNT_HOME, type RailIdentity } from './rail';
 
-/** D-109/D-111: the navbar lives on shell routes only; the map editor (`/app/mapas/<id>`) is full-bleed. */
+/**
+ * Shell route = not the map editor (`/app/mapas/<id>`). D-109/D-111 hid the navbar there; G14 D-607 shows the navbar on every
+ * /app screen (it carries the global "Buscar ou comandar"), so this now only keeps the support FAB off the editor.
+ */
 export const showNavbar = (path: string) => !/^\/app\/mapas\/[^/]+/.test(path);
 
 const dateOf = (iso: Date | string) => new Date(iso).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -22,7 +26,7 @@ const meter = (label: string, used: number, limit: number | null): LimitMeterPro
   label,
   used,
   limit,
-  value: limit == null ? t('plan.popover.meters.unlimited') : t('plan.popover.meters.value', { used, limit }),
+  value: limit == null ? t('plan.popover.meters.unlimited') : limit === 0 ? t('plan.popover.meters.notIncluded') : t('plan.popover.meters.value', { used, limit }),
 });
 
 export function buildMeters(e: Entitlements): LimitMeterProps[] {
@@ -36,17 +40,21 @@ export function buildMeters(e: Entitlements): LimitMeterProps[] {
 const benefits = [
   { icon: 'maps', lead: t('plan.popover.benefits.unlimited'), text: t('plan.popover.benefits.unlimitedDesc', { maps: PLAN_LIMITS.free.limits.boards ?? 0, cards: PLAN_LIMITS.free.limits.cards ?? 0 }) },
   { icon: 'sparkle', lead: t('plan.popover.benefits.ai'), text: t('plan.popover.benefits.aiDesc') },
-  { icon: 'book', lead: t('plan.popover.benefits.pdf'), text: t('plan.popover.benefits.pdfDesc') },
+  { icon: 'book', lead: t('plan.popover.benefits.pdf'), text: t('plan.popover.benefits.pdfDesc', { n: PLAN_LIMITS.pro.limits.ai_generations ?? 0 }) },
 ] as const;
 
 export function Navbar({ account = null }: { account?: RailIdentity }) {
-  const path = usePathname();
-  if (!showNavbar(path)) return null;
   return <NavbarView account={account} />;
 }
 
 function NavbarView({ account }: { account: RailIdentity }) {
   const router = useRouter();
+  const { setPending } = useNavPending();
+  // the popover CTAs answer like the rail: destination skeleton on the click, the route streams in after
+  const go = (href: string) => {
+    setPending(href);
+    router.push(href);
+  };
   const { entitlements: e, status, refresh } = useEntitlements();
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -56,7 +64,7 @@ function NavbarView({ account }: { account: RailIdentity }) {
 
   const upgrade = (source: 'navbar_upgrade' | 'plan_popover') => {
     track('upgrade_clicked', { source });
-    router.push(`/app/planos?de=${source}`);
+    go(`/app/planos?de=${source}`);
   };
   const portal = async () => {
     setBusy(true);
@@ -81,7 +89,7 @@ function NavbarView({ account }: { account: RailIdentity }) {
 
   return (
     <AppNavbar
-      home={{ href: '/app/hoje', label: t('nav.wordmark.aria'), as: Link }}
+      home={{ href: '/app/hoje', label: t('nav.wordmark.aria'), as: PendingLink }}
       chip={
         <PlanPopover
           trigger={<PlanChip plan={pro ? 'pro' : 'free'} aria-label={t('nav.planChip.aria')}>{t(founder ? 'nav.planChip.founder' : pro ? 'nav.planChip.pro' : 'nav.planChip.free')}</PlanChip>}
@@ -95,7 +103,7 @@ function NavbarView({ account }: { account: RailIdentity }) {
           cta={
             <>
               {free ? ctaFree : founder ? null : <Button variant="secondary" size="lg" loading={busy} onClick={() => void portal()}>{t('plan.popover.pro.manage')}</Button>}
-              <Button variant="quiet" size="lg" icon={<Icon name="gift" size={18} />} onClick={() => router.push('/app/indicar?de=plan_panel')}>{t('referral.panelLink')}</Button>
+              <Button variant="quiet" size="lg" icon={<Icon name="gift" size={18} />} onClick={() => go('/app/indicar?de=plan_panel')}>{t('referral.panelLink')}</Button>
             </>
           }
           state={refreshing ? 'loading' : status === 'error' ? 'error' : 'ready'}
@@ -106,13 +114,14 @@ function NavbarView({ account }: { account: RailIdentity }) {
       }
       actions={
         <>
-          <Button variant="secondary" size="touch" aria-label={t('referral.navCta')} icon={<Icon name="gift" size={18} />} onClick={() => router.push('/app/indicar?de=navbar')}>
+          <PaletteButton />
+          <Button variant="secondary" size="touch" aria-label={t('referral.navCta')} icon={<Icon name="gift" size={18} />} onClick={() => go('/app/indicar?de=navbar')}>
             <span className="hidden md:inline">{t('referral.navCta')}</span>
           </Button>
           {free ? <Button size="sm" icon={<Icon name="sparkle" size={18} />} onClick={() => upgrade('navbar_upgrade')}>{t('nav.upgradeButton')}</Button> : null}
-          <Link href="/app/conta" aria-label={t('rail.account')} className="flex size-11 items-center justify-center rounded-full">
+          <PendingLink href={ACCOUNT_HOME} aria-label={t('rail.account')} className="flex size-11 items-center justify-center rounded-full">
             <Avatar name={account?.name ?? account?.email ?? ''} fallback={account ? initialsOf(account.name, account.email) : ''} src={account?.src} color={account?.color} size={40} plain />
-          </Link>
+          </PendingLink>
         </>
       }
     />
@@ -121,6 +130,5 @@ function NavbarView({ account }: { account: RailIdentity }) {
 
 /** Rail column: under the 64 px navbar it starts below it (D-111). */
 export function RailSlot({ children }: { children: ReactNode }) {
-  const bar = showNavbar(usePathname());
-  return <div className={`sticky hidden md:flex ${bar ? 'top-16 h-[calc(100dvh-4rem)]' : 'top-0 h-dvh'}`}>{children}</div>;
+  return <div className="sticky top-16 hidden h-[calc(100dvh-4rem)] md:flex">{children}</div>;
 }

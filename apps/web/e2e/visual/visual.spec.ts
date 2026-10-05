@@ -32,8 +32,7 @@ test('visual v2: Hoje, Meus mapas, Novo mapa (3 passos) e Editor', async ({ page
   await shot('novo-mapa.png');
   await page.getByRole('button', { name: 'Continuar' }).click();
   await shot('novo-mapa-2.png'); // F17: PDF file step (was Detalhes); baseline to regenerate with Fernando's OK
-  await page.goto('/app/mapas/novo?caminho=blank');
-  await page.getByRole('button', { name: 'Continuar' }).click();
+  await page.goto('/app/mapas/novo?caminho=blank'); // G14 17: já abre em "Sobre o mapa"
   await shot('novo-mapa-3.png'); // F17: Sobre o mapa
 
   await page.goto(`/app/mapas/${sepse}`);

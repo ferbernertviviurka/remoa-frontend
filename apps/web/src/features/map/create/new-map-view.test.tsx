@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { MatrixItem } from '@remoa/contracts';
+import { PLAN_LIMITS, type MatrixItem } from '@remoa/contracts';
 import { NewMapView } from './new-map-view';
 
 const push = vi.fn();
@@ -10,7 +10,10 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
 vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
 const handle = vi.fn<(e: { code: string; message?: string }) => boolean>(() => false);
-vi.mock('@/features/billing/paywall', () => ({ usePaywall: () => ({ show: vi.fn(), handle: (e: { code: string; message?: string }) => handle(e) }) }));
+const show = vi.fn();
+let ent: { limits: { ai_generations: number | null } } | null = null; // useEntitlements without a provider = null (no client-side gate)
+vi.mock('@/features/shell/entitlements', () => ({ useEntitlements: () => ({ entitlements: ent }) }));
+vi.mock('@/features/billing/paywall', () => ({ usePaywall: () => ({ show: (r: string) => show(r), handle: (e: { code: string; message?: string }) => handle(e) }) }));
 vi.mock('@/features/import/upload', () => ({ putApkg: async () => true }));
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({ auth: { getSession: async () => ({ data: { session: { access_token: 'tok' } } }) } }),
@@ -33,6 +36,7 @@ const posted = (path: string) => JSON.parse((api.mock.calls.find((c) => c[0] ===
 Object.assign(Element.prototype, { scrollIntoView: () => undefined, hasPointerCapture: () => false, releasePointerCapture: () => undefined });
 
 afterEach(() => {
+  ent = null;
   cleanup();
   vi.clearAllMocks();
 });
@@ -58,6 +62,21 @@ describe('NewMapView: "Sobre o mapa" (F17)', () => {
     expect(track).toHaveBeenCalledWith('board_created', {});
     expect(track).toHaveBeenCalledWith('board_linked_to_matrix', { count: 2, suggestedCount: 0 });
     expect(track).toHaveBeenCalledWith('board_access_changed', { from: 'owner', to: 'public', source: 'create' });
+  });
+
+  it('keeps the Criar mapa button loading after the POST until the navigation resolves', async () => {
+    api.mockImplementation(async (path: string) => (path === '/v1/boards' ? { ok: true, data: { id: 'new1' } } : { ok: true, data: [] }));
+    let arrive!: () => void;
+    push.mockReturnValueOnce(new Promise<void>((r) => (arrive = r))); // router.push in a transition: pending until the route renders
+    render(<NewMapView items={items} initialPath="blank" />);
+    next();
+    fireEvent.change(name(), { target: { value: 'Meu mapa' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Criar mapa' }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/app/mapas/new1'));
+    await new Promise((r) => setTimeout(r, 20)); // busy already false (finally ran)
+    expect(document.querySelector('[data-loading]')).not.toBeNull();
+    arrive();
+    await waitFor(() => expect(document.querySelector('[data-loading]')).toBeNull());
   });
 
   it('empty name and Privado without password block the CTA with the errors on the fields (FR-3, FR-7)', async () => {
@@ -148,6 +167,21 @@ describe('NewMapView: "Sobre o mapa" (F17)', () => {
     expect(api.mock.calls.filter((c) => c[0] === '/v1/imports/anki/sign')).toHaveLength(1);
   });
 
+  it('PDF on Free (ai_generations 0): the paywall opens with reason pdf and nothing is uploaded', async () => {
+    ent = { limits: { ai_generations: PLAN_LIMITS.free.limits.ai_generations } };
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    api.mockResolvedValue({ ok: true, data: [] });
+    render(<NewMapView items={items} initialPath="pdf" />);
+    next();
+    fireEvent.change(document.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.pdf', { type: 'application/pdf' })] } });
+    next();
+    fireEvent.click(screen.getByRole('button', { name: 'Gerar rascunho do mapa' }));
+    await waitFor(() => expect(show).toHaveBeenCalledWith('pdf'));
+    expect(fetchMock).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
   it('PDF path: file first, then "Sobre o mapa"; area, items and access go in the multipart `board` (D-532)', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       json: async () => ({ ok: true, data: { boardId: 'pdf1', cards: 3, edges: 2 } }),
@@ -179,6 +213,8 @@ describe('NewMapView: "Sobre o mapa" (F17)', () => {
     [422, { code: 'validation', message: 'pdf_too_large' }, 'O PDF passa de 10 MB. Envie um arquivo menor ou divida o material.'],
     [422, { code: 'validation', message: 'pdf_invalid' }, 'Este arquivo não é um PDF. Escolha um arquivo .pdf.'],
     [429, { code: 'rate_limited', message: 'x' }, 'Muitas tentativas. Espere um pouco e tente de novo.'],
+    [503, { code: 'ai_unavailable', message: 'ai_not_configured' }, 'A geração de mapas por IA não está disponível neste ambiente. Crie o mapa em branco ou tente mais tarde.'],
+    [503, { code: 'ai_unavailable', message: 'provider down' }, 'A IA está indisponível agora. Tente em instantes.'],
   ])('PDF %i before the job starts shows its own message (D-499)', async (status, error, text) => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ status, json: async () => ({ error }) }));
     api.mockResolvedValue({ ok: true, data: [] });
@@ -256,10 +292,10 @@ describe('NewMapView: painel explicativo', () => {
     render(<NewMapView items={items} initialPath="pdf" />);
     const panel = () => [...document.querySelectorAll('h2[torph-root] [torph-sr]')].map((e) => e.textContent); // TextMorph keeps the real text in torph-sr
     expect(panel()).toContain('Do PDF ao rascunho');
-    expect(screen.getAllByText(/Gerações de mapa por mês: 1 no Free, 20 no Pro/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(new RegExp(`Mapas gerados de PDF: não incluso no Free, ${PLAN_LIMITS.pro.limits.ai_generations} por mês no Pro`)).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: /Do meu Anki/ }));
     expect(panel()).toContain('Do Anki para o mapa');
-    expect(screen.getAllByText(/Até 5\.000 cards por importação no Free e 20\.000 no Pro/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(new RegExp(`Free: ${PLAN_LIMITS.free.ankiImports} importação de até ${PLAN_LIMITS.free.ankiImportMaxCards} cards\\. Pro: sem limite`)).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: /De um mapa pronto/ }));
     expect(panel()).toContain('Mapas prontos e revisados');
     expect(screen.getAllByText(/A lista mostra a edição já publicada pela revisão editorial/).length).toBeGreaterThan(0);

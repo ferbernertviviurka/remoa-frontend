@@ -10,7 +10,8 @@ import {
   type StatusPillProps,
 } from '@remoa/ui';
 import { exportAdminCsv } from '../shared/actions';
-import { formatBRL, formatCount, formatDelta, formatPct, formatTime, formatWhen } from '../shared/format';
+import { When } from '../shared/when';
+import { formatBRL, formatCount, formatDelta, formatPct, formatTime } from '../shared/format';
 
 const REFRESH_MS = 60_000;
 const tone: Record<AdminOverview['latestPayments'][number]['status'], NonNullable<StatusPillProps['tone']>> = { paid: 'ok', pending: 'warn', failed: 'bad', refunded: 'muted' };
@@ -57,7 +58,7 @@ export function OverviewView({ data, period }: { data: AdminOverview; period: Ov
   ] as const;
   const open = attention.filter((x) => x.n > 0);
 
-  const when = (iso: Date | string) => <span className="text-[13.5px] text-muted" suppressHydrationWarning>{formatWhen(iso)}</span>;
+  const when = (iso: Date | string) => <span className="text-[13.5px] text-muted" ><When iso={iso} /></span>;
 
   return (
     <>

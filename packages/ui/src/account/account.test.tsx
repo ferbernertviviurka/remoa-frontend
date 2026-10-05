@@ -5,7 +5,7 @@ import { Avatar } from '../avatar';
 import { Switch } from '../switch';
 import { violations } from '../test-utils';
 import {
-  AvatarCropper, ChoiceChip, CompletenessRing, DangerCard, InlineField, NumberStepper, PasswordMeter, SettingsNav, SettingsNavAction, UsageMeter, UsageWarning,
+  AvatarCropper, ChoiceChip, ChoiceChipMulti, CompletenessRing, DangerCard, InlineField, NumberStepper, PasswordMeter, SettingsNav, SettingsNavAction, UsageMeter, UsageWarning,
   type AvatarCropperHandle,
 } from './index';
 
@@ -202,5 +202,22 @@ describe('AvatarCropper', () => {
   it('sem axe', async () => {
     const { container } = render(<AvatarCropper src="blob:x" areaLabel="Área" zoomLabel="Zoom" />);
     expect(await violations(container)).toEqual([]);
+  });
+});
+
+describe('ChoiceChipMulti', () => {
+  const opts = [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }, { value: 'c', label: 'C' }];
+  it('marca e desmarca vários, na ordem escolhida', async () => {
+    const fn = vi.fn();
+    render(<ChoiceChipMulti label="Objetivos" values={['b']} onValuesChange={fn} options={opts} />);
+    await userEvent.click(screen.getByRole('button', { name: 'A' }));
+    expect(fn).toHaveBeenLastCalledWith(['b', 'a']);
+    await userEvent.click(screen.getByRole('button', { name: 'B' }));
+    expect(fn).toHaveBeenLastCalledWith([]);
+  });
+  it('no limite trava os não marcados, mas deixa desmarcar', () => {
+    render(<ChoiceChipMulti label="Objetivos" values={['a', 'b']} full onValuesChange={() => {}} options={opts} />);
+    expect(screen.getByRole('button', { name: 'C' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'A' })).toBeEnabled();
   });
 });

@@ -6,7 +6,7 @@ import { PersonCell, StatusPill, type StatusPillProps } from '@remoa/ui';
 import { act, AdminList, auditLine, type ActionSpec } from '../list-kit/admin-list';
 import { formatDay } from '../list-kit/download';
 import { ExportCsv } from '../list-kit/export-csv';
-import { formatWhen } from '../shared/format';
+import { When } from '../shared/when';
 
 const tone: Record<AdminReferralRow['status'], NonNullable<StatusPillProps['tone']>> = { invited: 'muted', signed_up: 'warn', qualified: 'ok', in_review: 'warn', rejected: 'bad', expired: 'muted' };
 const labels = strings.admin.referrals.auditActions;
@@ -101,7 +101,7 @@ export function ReferralsView({ data, error, page }: Props) {
         { key: 'signals', header: t('admin.referrals.table.columns.signals'), cell: signals },
         { key: 'status', header: t('admin.referrals.table.columns.status'), cell: pill },
         { key: 'reward', header: t('admin.referrals.table.columns.reward'), cell: (r) => <b>{reward(r)}</b> },
-        { key: 'when', header: t('admin.referrals.table.columns.date'), cell: (r) => <span className="whitespace-nowrap text-[13.5px] text-muted" suppressHydrationWarning>{formatWhen(r.createdAt)}</span> },
+        { key: 'when', header: t('admin.referrals.table.columns.date'), cell: (r) => <span className="whitespace-nowrap text-[13.5px] text-muted" ><When iso={r.createdAt} /></span> },
       ]}
       rows={data?.items ?? []}
       total={data?.total ?? 0}

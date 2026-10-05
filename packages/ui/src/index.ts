@@ -27,6 +27,7 @@ export * from './empty';
 export * from './breadcrumb';
 export * from './rating';
 export * from './tooltip';
+export * from './challenge-tour';
 export * from './tabs';
 export * from './accordion';
 export * from './select';
@@ -81,3 +82,11 @@ export * from './referral';
 // F19 Suporte e painel admin (admin/admin-shell.tsx).
 export * from './support';
 export * from './admin';
+// F20 Loja de mapas (Fase A, Em breve).
+export * from './store';
+export * from './charts';
+export * from './sheet';
+// F23 Mapa no celular: aside (MapAside, ProgressSummary, ToggleRow, NavRow).
+export * from './aside';
+// F23 Mapa no celular: cabeçalho em pílula, IconPill e barra flutuante (map-mobile).
+export * from './map-mobile';

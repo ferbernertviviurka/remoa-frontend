@@ -25,6 +25,9 @@ test('admin: audit filter, open an entry, export; axe on both pages', async ({ p
   await expect(page.getByRole('heading', { level: 1, name: 'Auditoria' })).toBeVisible();
   await page.getByRole('group', { name: 'Resultado' }).getByRole('button', { name: 'Sucesso' }).click();
   await expect(page).toHaveURL(/result=success/);
+  // the DB is shared with other runs: keep only this admin's own entries, so the first row is the seed above
+  await page.getByRole('group', { name: 'Quem' }).getByRole('button', { name: 'Você (admin)' }).click();
+  await expect(page).toHaveURL(/actor=me/);
   const row = page.getByRole('button', { name: /Abrir registro a_\d+/ }).first();
   await expect(row).toBeVisible();
   await row.click();

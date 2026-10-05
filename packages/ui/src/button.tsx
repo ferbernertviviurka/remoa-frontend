@@ -13,6 +13,7 @@ import { buttonVariants, focusRing, pressable } from './button-styles';
  * `primary` desabilitado vira cinza-lilás chapado (como no mock do Novo mapa).
  * `icon` fica antes do texto, `iconEnd` depois. Os dois são decorativos.
  * `loading` troca o ícone inicial pelo Spinner e, se `loadingLabel` vier, o Torph anima a troca do rótulo.
+ * `aria-disabled` (sem `disabled`) esmaece mas mantém o foco: para explicar o bloqueio numa Tooltip.
  * Sem className livre.
  */
 export type ButtonProps = Omit<ComponentProps<'button'>, 'className'> & {
@@ -66,7 +67,7 @@ export function Button({
       data-loading={loading || undefined}
       {...rest}
       className={clsx(
-        'inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none disabled:hover:translate-y-0 disabled:active:scale-100 data-[loading=true]:opacity-100',
+        'inline-flex items-center justify-center gap-2 aria-disabled:opacity-50 aria-disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none disabled:hover:translate-y-0 disabled:active:scale-100 data-[loading=true]:opacity-100',
         pressable,
         focusRing,
         buttonVariants[variant],

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useNavigate } from '@/features/shell/use-navigate';
 import { useEffect, useRef, useState } from 'react';
 import type { Board, BoardGenerationProgress, ImportBoardInput, ImportTarget, MatrixItem } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
@@ -9,6 +9,7 @@ import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
 import { usePaywall } from '@/features/billing/paywall';
+import { useEntitlements } from '@/features/shell/entitlements';
 import { useMatrixSuggestions } from '@/features/coverage/matrix-suggestions';
 import Link from 'next/link';
 import { AnkiImportFlow } from '@/features/import/anki-import-flow';
@@ -30,9 +31,10 @@ const OPTS = { pdf: ['flows', 'rubrics'] } as const;
 type Props = { items: MatrixItem[]; initialPath?: Path; initialItemId?: string; initialStep?: 0 | 1 | 2 };
 
 export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 }: Props) {
-  const router = useRouter();
+  const [navigating, router] = useNavigate();
   const paywall = usePaywall();
   const anki = useAnkiImport();
+  const { entitlements } = useEntitlements();
   const h1 = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     if (anki.state.kind !== 'idle') h1.current?.focus(); // each import stage announces itself by moving focus to its heading
@@ -81,6 +83,7 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
 
   async function generatePdf() {
     if (!file) return;
+    if (entitlements?.limits.ai_generations === 0) return paywall.show('pdf'); // D-647: PDF maps are not in the Free plan; nothing is uploaded
     setBusy(true);
     setError(null);
     setProgress(0);
@@ -105,8 +108,9 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
         // D-499: quota (402 → paywall), size/type (422) and rate limit (429) come back before the job starts.
         const e = body.error;
         if (paywall.handle(e)) return;
-        const msg = { pdf_unreadable: 'newMap.pdfUnreadable', pdf_too_large: 'newMap.pdfTooLarge', pdf_invalid: 'newMap.pdfInvalid' }[e.message ?? ''];
-        setError(msg ? t(msg as StringKey) : e.code === 'rate_limited' ? t('errors.rate_limited') : e.code === 'validation' ? t('errors.validation') : t('errors.internal'));
+        // D-580: 503 ai_unavailable (`ai_not_configured` = the API has no OPENROUTER_API_KEY and no AI=mock); any other code says its own typed message.
+        const msg = { pdf_unreadable: 'newMap.pdfUnreadable', pdf_too_large: 'newMap.pdfTooLarge', pdf_invalid: 'newMap.pdfInvalid', ai_not_configured: 'newMap.aiNotConfigured' }[e.message ?? ''];
+        setError(t((msg ?? `errors.${e.code}`) as StringKey));
         return;
       }
       if (body.data.boardId && !body.data.jobId) {
@@ -120,7 +124,7 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
       for (;;) {
         const job = await api<BoardGenerationProgress & { cards?: number; edges?: number; pages?: number }>(`/v1/ai/jobs/${body.data.jobId}`);
         if (!job.ok) {
-          setError(t('errors.internal'));
+          setError(t(`errors.${job.error.code}` as StringKey));
           return;
         }
         setProgress(job.data.progress);
@@ -354,7 +358,7 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
             <span className="max-sm:hidden" />
           )}
           {last && path !== 'seed' ? (
-            <Button size="lg" disabled={!canFinish} loading={busy} loadingLabel={t('common.loading')} iconEnd={path === 'blank' ? <Icon name="right" size={20} /> : undefined} onClick={() => void submit()}>
+            <Button size="lg" disabled={!canFinish} loading={busy || navigating} loadingLabel={t('common.loading')} iconEnd={path === 'blank' ? <Icon name="right" size={20} /> : undefined} onClick={() => void submit()}>
               {cta}
             </Button>
           ) : !last ? (

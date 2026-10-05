@@ -73,14 +73,14 @@ export function LandingHeader({ phase, signedIn: signedInProp = false, account: 
 
   return (
     <SiteHeader
-      brand={<Link href="/" aria-label={t('landing.nav.wordmark.aria')} className="inline-flex min-h-11 items-center no-underline"><Logo size={30} withWordmark /></Link>}
+      brand={<Link href={signedIn ? '/app/hoje' : '/'} aria-label={t(signedIn ? 'landing.nav.wordmark.ariaApp' : 'landing.nav.wordmark.aria')} className="inline-flex min-h-11 items-center no-underline"><Logo size={30} withWordmark /></Link>}
       links={ANCHORS.map(([id, key]) => ({ href: `#${id}`, label: t(key), active: active === id }))}
       menuLabel={t('landing.nav.menu.aria')}
       navLabel={t('landing.nav.navLabel')}
       actions={signedIn ? <>
         <Link href="/app" onClick={trackCta('header', 'open_app')} className={`${btn} bg-primary text-on-primary hover:brightness-110`}>{t('landing.nav.openApp')}</Link>
         {account ? (
-          <Link href="/app/conta" aria-label={t('landing.nav.account')} className="flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+          <Link href="/app/conta/perfil" aria-label={t('landing.nav.account')} className="flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
             <Avatar name={account.name ?? account.email} fallback={initialsOf(account.name, account.email)} src={account.src} color={account.color} size={40} plain />
           </Link>
         ) : null}

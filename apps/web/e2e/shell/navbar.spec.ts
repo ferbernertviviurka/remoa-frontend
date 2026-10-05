@@ -44,5 +44,6 @@ test('navbar: presença por rota, painel do plano Free (hover, clique, Esc, Tab)
   await page.screenshot({ path: test.info().outputPath('navbar-painel-free.png') });
 
   await page.goto(`/app/mapas/${board}`);
-  await expect(page.getByRole('banner')).toHaveCount(0);
+  // G14 22 (D-607): a navbar global também aparece no editor (com o ⌘K)
+  await expect(page.getByRole('banner').getByRole('button', { name: 'Buscar ou comandar' })).toBeVisible();
 });

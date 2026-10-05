@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { Entitlements } from '@remoa/contracts';
+import { PLAN_LIMITS, type Entitlements } from '@remoa/contracts';
 import { Navbar, showNavbar } from './navbar';
 import { EntitlementsProvider } from './entitlements';
 
@@ -14,10 +14,9 @@ vi.mock('next/image', () => ({ default: ({ alt }: { alt: string }) => <img alt={
 afterEach(() => { cleanup(); vi.clearAllMocks(); pathname = '/'; });
 
 const free: Entitlements = {
-  plan: 'free', status: null, limits: { ai_grades: 20, ai_generations: 1, boards: 2, cards: 200 }, usage: { ai_grades: 20, ai_generations: 0, boards: 1, cards: 170 },
-  newCardsPerDay: 10, ankiImportMaxCards: 5000, renewsAt: null, cancelAtPeriodEnd: false, graceUntil: null,
+  plan: 'free', status: null, ...PLAN_LIMITS.free, limits: { ...PLAN_LIMITS.free.limits, cards: 200 }, usage: { ai_grades: 20, ai_generations: 0, boards: 1, cards: 170 }, ankiImportsUsed: 0, renewsAt: null, cancelAtPeriodEnd: false, graceUntil: null,
 };
-const pro: Entitlements = { ...free, plan: 'pro', status: 'active', limits: { ai_grades: null, ai_generations: 20, boards: null, cards: null }, usage: { ...free.usage, ai_generations: 3 }, renewsAt: new Date('2026-11-15T12:00:00Z') };
+const pro: Entitlements = { ...free, plan: 'pro', status: 'active', ...PLAN_LIMITS.pro, usage: { ...free.usage, ai_generations: 3 }, renewsAt: new Date('2026-11-15T12:00:00Z') };
 
 const founder: Entitlements = { ...pro, plan: 'founder', renewsAt: null, limits: { ...pro.limits, ai_generations: null } };
 
@@ -31,17 +30,18 @@ describe('showNavbar', () => {
     for (const p of ['/', '/app/hoje', '/app/mapas', '/app/revisar', '/app/conta/plano']) expect(showNavbar(p)).toBe(true);
     expect(showNavbar('/app/mapas/abc')).toBe(false);
   });
-  it('renders nothing in the editor', () => {
+  it('renders in the editor too (D-607: global "Buscar ou comandar")', () => {
     pathname = '/app/mapas/abc';
     render(<EntitlementsProvider initial={free}><Navbar /></EntitlementsProvider>);
-    expect(screen.queryByRole('banner')).toBeNull();
+    expect(screen.getByRole('banner')).toBeInTheDocument();
+    pathname = '/app/hoje';
   });
 });
 
 describe('Navbar avatar', () => {
   it('links to /conta with the account name and photo', () => {
     render(<EntitlementsProvider initial={free}><Navbar account={{ name: 'Ana Souza', email: 'a@b.c', color: 1 }} /></EntitlementsProvider>);
-    expect(screen.getByRole('link', { name: 'Minha conta' })).toHaveAttribute('href', '/app/conta');
+    expect(screen.getByRole('link', { name: 'Minha conta' })).toHaveAttribute('href', '/app/conta/perfil'); // G14 D-584
     expect(screen.getByText('AS')).toBeInTheDocument();
   });
 });
@@ -78,6 +78,7 @@ describe('Navbar plan panel', () => {
     expect(track).toHaveBeenCalledWith('plan_popover_opened', { trigger: 'keyboard' });
     expect(screen.getByText('1 de 2')).toBeInTheDocument();
     expect(screen.getByText('170 de 200')).toBeInTheDocument();
+    expect(screen.getByText('Não incluso')).toBeInTheDocument(); // Free: mapas de PDF (ai_generations 0)
     expect(screen.getByText('Com o Pro você ganha')).toBeInTheDocument();
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Fazer upgrade' }));
     expect(track).toHaveBeenCalledWith('upgrade_clicked', { source: 'plan_popover' });
@@ -86,8 +87,9 @@ describe('Navbar plan panel', () => {
   it('Pro: renewal date, unlimited meters, manage, no upgrade or benefits', () => {
     open(pro);
     expect(screen.getByText(/Renova em 15 de novembro de 2026/)).toBeInTheDocument();
-    expect(screen.getByText('3 de 20')).toBeInTheDocument();
-    expect(screen.getAllByText('Ilimitados')).toHaveLength(3);
+    expect(screen.getByText(`3 de ${PLAN_LIMITS.pro.limits.ai_generations}`)).toBeInTheDocument();
+    expect(screen.getByText(`20 de ${PLAN_LIMITS.pro.limits.ai_grades}`)).toBeInTheDocument();
+    expect(screen.getAllByText('Ilimitados')).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'Gerenciar assinatura' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Fazer upgrade' })).toBeNull();
     expect(screen.queryByText('Com o Pro você ganha')).toBeNull();

@@ -3,36 +3,19 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { caseStages, type AnswerOutput, type ChallengeItemPublic, type Grade, type MapState, type RetrievabilityMap } from '@remoa/contracts';
+import { CHALLENGE_MIN_CARDS, SELF_MARK_GRADE, caseStages, challengeErrors, type AnswerOutput, type ChallengeItemPublic, type Grade, type MapState, type RetrievabilityMap } from '@remoa/contracts';
 import { t } from '@remoa/strings';
-import { Alert, Button, QuestionPanel, RatingButton, RatingGroup, Skeleton, Tag, VerdictBox, type AnswerMode } from '@remoa/ui';
+import { Alert, Button, QuestionPanel, RatingButton, RatingGroup, Skeleton, Tag, VerdictBox } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import type { AnswerPayload } from './client';
 import { Occlusion } from './occlusion';
 import { MAX_SKIPS, useChallenge, type Scope } from './provider';
-import { useSpeech } from './speech';
 import { countSession } from '@/features/shell/pwa';
 import { Summary } from './summary';
 
 const grades = ['again', 'hard', 'good', 'easy'] as const;
-const letters = ['A', 'B', 'C', 'D'];
 const fallbackText = { no_rubric: 'challenge.fallbackNoRubric', grader_error: 'challenge.fallbackGraderError', quota: 'challenge.fallbackQuota', offline: 'challenge.fallbackOffline' } as const;
 const subjectOf = { next_step: 'step', case: 'stage', occlusion: 'region', edge: 'card', hidden_card: 'card' } as const;
-
-function SpeakFeedback({ text }: { text: string }) {
-  useEffect(() => {
-    if (typeof speechSynthesis === 'undefined') return;
-    const reduced = document.documentElement.dataset.motion === 'reduced' || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) return;
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'pt-BR';
-    speechSynthesis.cancel();
-    speechSynthesis.speak(utterance);
-    return () => speechSynthesis.cancel();
-  }, [text]);
-  return null;
-}
-
 
 function interval(days: number) {
   const n = Math.round(days);
@@ -47,10 +30,12 @@ type Props = {
   onExit: () => void;
   /** After each rating: the map refreshes the recall colours. */
   onRated: () => void;
+  /** D-579: cards still missing for a board challenge (> 0 = blocked here, no request). */
+  missing?: number;
 };
 
 /** Painel do desafio (Desafio.dc.html): sessão F04 dentro do editor. Troca de mapa quando o item da fila diária é de outro. */
-export function ChallengePanel({ scope, boardId, heat, onExit, onRated }: Props) {
+export function ChallengePanel({ scope, boardId, heat, onExit, onRated, missing = 0 }: Props) {
   const ch = useChallenge();
   const router = useRouter();
   const s = ch.state;
@@ -69,6 +54,15 @@ export function ChallengePanel({ scope, boardId, heat, onExit, onRated }: Props)
       <Skeleton lines={5} />
     </div>
   );
+  const blocked = (body: string) => (
+    <div className="flex flex-col gap-3 p-5">
+      <h2 className="m-0 font-display text-[21px] font-bold">{t('challengeSetup.minCards.title')}</h2>
+      <p className="m-0 text-sm text-muted">{body}</p>
+      <Button variant="secondary" onClick={onExit}>{t('quiz.exit')}</Button>
+    </div>
+  );
+  if (missing > 0) return blocked(t('challengeSetup.minCards.body', { min: CHALLENGE_MIN_CARDS, n: missing }));
+  if (s.phase === 'error' && s.code === challengeErrors.minCards) return blocked(t('challengeSetup.answer.minCardsError'));
   if (s.phase === 'idle' || s.phase === 'loading' || s.phase === 'finishing' || elsewhere) return loading;
   if (s.phase === 'error')
     return (
@@ -101,27 +95,34 @@ export function ChallengePanel({ scope, boardId, heat, onExit, onRated }: Props)
       done={done}
       state={state}
       canSkip={s.queue.length > 1 && (s.skips[item!.id] ?? 0) < MAX_SKIPS}
+      // D-576: a board session in "Eu respondo" is marked Acertei/Errei; the daily queue (Revisar hoje) keeps the 4 grades
+      selfMark={scope.kind === 'board' && ch.options?.gradingMode !== 'ai'}
       onRated={onRated}
     />
   );
 }
 
 type Busy = AnswerPayload['inputKind'] | 'rate' | 'skip' | null;
+type ItemProps = { item: ChallengeItemPublic; n: number; total: number; done: number; state: MapState | undefined; canSkip: boolean; selfMark: boolean; onRated: () => void };
 
-function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item: ChallengeItemPublic; n: number; total: number; done: number; state: MapState | undefined; canSkip: boolean; onRated: () => void }) {
+const marks = [
+  { grade: SELF_MARK_GRADE.wrong, label: 'challengeSetup.answer.wrong', key: '1' },
+  { grade: SELF_MARK_GRADE.correct, label: 'challengeSetup.answer.correct', key: '2' },
+] as const;
+
+/**
+ * One item. G14 C1: answer by writing (Voz "Em breve"), reveal the card's answer (Space / Ctrl+Enter), then
+ * Acertei/Errei (1/2, board session in "Eu respondo") or the 4 grades with their next interval (1–4, daily queue).
+ * The server only grades with `gradingMode: 'ai'` (F20); a verdict, when present, is still shown.
+ */
+function ItemQuestion({ item, n, total, done, state, canSkip, selfMark, onRated }: ItemProps) {
   const ch = useChallenge();
-  const canWrite = item.grading !== 'none';
-  const canPick = !!item.options;
-  const selfOnly = !canWrite && !canPick;
-  const modes = [...(canWrite || selfOnly ? [{ value: 'write' as const, label: t('challenge.write') }] : []), ...(canPick ? [{ value: 'options' as const, label: t('challenge.options') }] : []), ...(canWrite ? [{ value: 'speak' as const, label: t('quiz.speak') }] : [])];
-  const [mode, setMode] = useState<AnswerMode>(modes[0]!.value);
+  const ai = ch.options?.gradingMode === 'ai';
+  const modes = [
+    { value: 'write' as const, label: t('challenge.write') },
+    { value: 'speak' as const, label: t('challengeSetup.answer.voice'), disabled: true, badge: t('challengeSetup.dialog.soon') },
+  ];
   const [text, setText] = useState('');
-  const speech = useSpeech(
-    (value) => { setText(value); setFromVoice(true); track('voice_used', { success: true }); },
-    () => track('voice_used', { success: false }),
-  );
-  const [fromVoice, setFromVoice] = useState(false);
-  const [picked, setPicked] = useState<string | null>(null);
   const [busy, setBusy] = useState<Busy>(null);
   const [answered, setAnswered] = useState<{ out: AnswerOutput; kind: AnswerPayload['inputKind'] } | null>(null);
   const [live, setLive] = useState('');
@@ -147,18 +148,13 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
     setBusy(p.inputKind);
     setError(null);
     setLive('');
-    const r = await ch.answer(item, p, Math.round(performance.now() - start.current), (chunk) => setLive((prev) => prev + chunk));
+    const r = await ch.answer(item, p, Math.round(performance.now() - start.current), ai ? (chunk) => setLive((prev) => prev + chunk) : undefined);
     setBusy(null);
     if (r.ok) setAnswered({ out: r.data, kind: p.inputKind });
     else setError(t('challenge.answerError'));
   }
-  const showWrite = mode === 'write';
-  const submitText = () => text.trim() && void submit({ inputKind: fromVoice ? 'voice' : 'text', text: text.trim() });
-  const submitPick = () => picked !== null && void submit({ inputKind: 'mcq', optionIndex: Number(picked) });
-  const reveal = () => void submit({ inputKind: 'self' });
-  const spoken = mode === 'speak';
-  const check = () => (selfOnly ? reveal() : showWrite || spoken ? submitText() : submitPick());
-  const canCheck = !busy && (selfOnly || (showWrite || spoken ? !!text.trim() : picked !== null));
+  // what was written goes with the reveal (kept, D-123); nothing written = plain self-assessment
+  const reveal = () => void submit(text.trim() ? { inputKind: 'text', text: text.trim() } : { inputKind: 'self' });
 
   async function rate(g: Grade) {
     if (!answered || busy || (answered.out.gradeLocked && g !== 'again')) return;
@@ -179,27 +175,30 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
     if (r === 'error') setError(t('challenge.skipError'));
   }
 
-  // FR-10. Typing in a field only honours Ctrl/Cmd+Enter; focused buttons keep their native Enter.
-  const latest = useRef({ rate, skip, check, reveal });
-  latest.current = { rate, skip, check, reveal };
+  // FR-10 + G14: typing only honours Ctrl/Cmd+Enter; focused buttons keep their native Enter/Space.
+  const latest = useRef({ rate, skip, reveal });
+  latest.current = { rate, skip, reveal };
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const el = e.target as HTMLElement;
       const typing = el.tagName === 'TEXTAREA' || el.tagName === 'INPUT' || el.isContentEditable;
       const h = latest.current;
-      if (e.repeat) return; // a held Enter must not reveal and then confirm the suggested grade
+      if (e.repeat) return; // a held key must not reveal and then grade
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-        if (answered || (!showWrite && !spoken)) return;
+        if (answered) return;
         e.preventDefault();
-        return void (text.trim() && h.check());
+        return h.reveal();
       }
       if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'Escape') return void h.skip();
-      if (e.key >= '1' && e.key <= '4' && answered) return void h.rate(grades[Number(e.key) - 1]!);
-      if (e.key === 'Enter' && !el.closest('button, a, [role="radio"]')) {
-        if (answered) return void (answered.out.suggestedGrade && h.rate(answered.out.suggestedGrade));
-        if (!selfOnly && (showWrite || spoken) && text.trim()) return h.check();
-        if (!selfOnly && !showWrite && !spoken && picked !== null) return h.check();
+      if (answered) {
+        const g = selfMark ? marks.find((m) => m.key === e.key)?.grade : e.key >= '1' && e.key <= '4' ? grades[Number(e.key) - 1] : undefined;
+        if (g) return void h.rate(g);
+        if (e.key === 'Enter' && answered.out.suggestedGrade && !el.closest('button, a')) return void h.rate(answered.out.suggestedGrade);
+        return;
+      }
+      if ((e.key === ' ' || e.key === 'Enter') && !el.closest('button, a, [role="radio"]')) {
+        e.preventDefault();
         h.reveal();
       }
     }
@@ -215,18 +214,16 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
   const suggested = out?.suggestedGrade ?? null;
   const v = out?.verdict;
   const list = (xs: string[], key: 'matched' | 'missing') => (xs.length ? `${t(`challenge.verdict.${key}`)}: ${xs.join('; ')}` : undefined);
+  const hint = (g: Grade, key: string) => t('challengeSetup.answer.gradeHint', { interval: interval(out!.preview[g].intervalDays), key });
 
   const resultNode = out ? (
-    <div ref={result} tabIndex={-1} className="flex flex-col gap-4 outline-none">
-      {answered.kind === 'text' || answered.kind === 'voice' ? (
-        <p className="m-0 text-sm text-muted"><strong>{t('challenge.yourAnswer')}:</strong> {text}</p>
-      ) : null}
-      {answered.kind === 'voice' && v ? (
-        <SpeakFeedback text={v.feedback ? `${t(`challenge.verdict.title.${v.verdict}`)}. ${v.feedback}` : t(`challenge.verdict.title.${v.verdict}`)} />
+    <div ref={result} tabIndex={-1} className="slide flex flex-col gap-4 outline-none">
+      {answered.kind === 'text' ? (
+        <p className="m-0 rounded-[14px] border border-border px-4 py-3 text-sm"><strong>{t('challenge.yourAnswer')}:</strong> {text}</p>
       ) : null}
       <div className="rounded-[14px] bg-primary-tint px-4 py-3 text-primary-deep">
         <p className="m-0 text-xs font-bold uppercase tracking-[.13em]">{t('challenge.canonical')}</p>
-        <p className="mb-0 mt-1 whitespace-pre-wrap font-semibold">{out.canonical}</p>
+        <p className="mb-0 mt-1 whitespace-pre-wrap text-[17px] font-semibold leading-[1.45]">{out.canonical}</p>
       </div>
       {v ? (
         <VerdictBox
@@ -256,13 +253,21 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
         </Alert>
       ) : null}
       {out.gradeLocked ? <Alert tone="review" title={t('challenge.gradeLocked')} /> : null}
-      <RatingGroup label={suggested ? t('quiz.ratingLabelSuggested', { grade: t(`grade.${suggested}`) }) : t('quiz.ratingLabel')}>
-        {grades.map((g, i) =>
-          out.gradeLocked && g !== 'again' ? null : ( // RatingButton v2 has no `disabled` (CCR): a locked grade is not offered
-            <RatingButton key={g} label={t(`grade.${g}`)} hint={interval(out.preview[g].intervalDays)} shortcut={String(i + 1)} suggested={suggested === g} onClick={() => void rate(g)} />
-          ),
-        )}
-      </RatingGroup>
+      {selfMark && !v ? (
+        <RatingGroup label={t('challengeSetup.answer.markLabel')}>
+          {marks.map((m) => (
+            <RatingButton key={m.grade} label={t(m.label)} hint={hint(m.grade, m.key)} shortcut={m.key} onClick={() => void rate(m.grade)} />
+          ))}
+        </RatingGroup>
+      ) : (
+        <RatingGroup label={suggested ? t('quiz.ratingLabelSuggested', { grade: t(`grade.${suggested}`) }) : t('quiz.ratingLabel')}>
+          {grades.map((g, i) =>
+            out.gradeLocked && g !== 'again' ? null : ( // RatingButton v2 has no `disabled` (CCR): a locked grade is not offered
+              <RatingButton key={g} label={t(`grade.${g}`)} hint={hint(g, String(i + 1))} shortcut={String(i + 1)} suggested={suggested === g} onClick={() => void rate(g)} />
+            ),
+          )}
+        </RatingGroup>
+      )}
       {error ? <Alert tone="review" role="alert" title={error} /> : null}
     </div>
   ) : undefined;
@@ -277,10 +282,10 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
       ) : null}
       {item.context.neighbors.length ? (
         <ul aria-label={t('challenge.context')} className="m-0 flex max-h-36 shrink-0 list-none flex-col gap-1.5 overflow-auto border-b border-border px-5 py-3">
-          {item.context.neighbors.map((n) => (
-            <li key={`${n.title}-${n.label ?? ''}`} className="rounded-xl bg-canvas px-3 py-2 text-sm">
-              <span className="font-semibold">{n.title}</span>
-              {n.label ? <span className="ml-2 text-muted">{n.label}</span> : null}
+          {item.context.neighbors.map((nb) => (
+            <li key={`${nb.title}-${nb.label ?? ''}`} className="rounded-xl bg-canvas px-3 py-2 text-sm">
+              <span className="font-semibold">{nb.title}</span>
+              {nb.label ? <span className="ml-2 text-muted">{nb.label}</span> : null}
             </li>
           ))}
         </ul>
@@ -305,37 +310,31 @@ function ItemQuestion({ item, n, total, done, state, canSkip, onRated }: { item:
           question={question}
           modeLabel={t('challenge.answerMode')}
           modes={modes}
-          mode={mode}
-          onModeChange={(m) => { setMode(m); if (m !== 'speak') setFromVoice(false); }}
+          mode="write"
+          onModeChange={() => undefined}
           answerLabel={t('challenge.textLabel')}
           answer={text}
           onAnswerChange={setText}
           optionsLabel={t('challenge.optionsLabel')}
-          options={(item.options ?? []).map((o, i) => ({ id: String(i), key: letters[i]!, text: o }))}
-          selectedOption={picked}
-          onSelectOption={setPicked}
-          checkLabel={busy === 'text' || busy === 'voice' ? t('challenge.grading') : selfOnly ? t('challenge.reveal') : showWrite || spoken ? t('challenge.submitText') : t('challenge.submitOption')}
-          canCheck={canCheck}
-          onCheck={check}
-          voice={speech.supported
-            ? { recordLabel: t('quiz.voiceRecord'), note: t('quiz.voiceNote'), onRecord: () => { if (!speech.start()) track('voice_used', { success: false }); } }
-            : { recordLabel: t('quiz.voiceRecord'), note: t('quiz.voiceSoonNote') }}
+          options={[]}
+          selectedOption={null}
+          onSelectOption={() => undefined}
+          checkLabel={busy === 'text' && ai ? t('challenge.grading') : ai && text.trim() ? t('challenge.submitText') : t('challenge.reveal')}
+          canCheck={!busy}
+          onCheck={reveal}
           result={resultNode}
         />
       </div>
       {!out ? (
         <div className="flex shrink-0 flex-col gap-1.5 border-t border-border px-5 py-3">
-          {live && !out ? <p role="status" className="m-0 text-sm">{live}</p> : null}
+          {live ? <p role="status" className="m-0 text-sm">{live}</p> : null}
           {error ? <Alert tone="review" role="alert" title={error} /> : null}
-          {item.grading === 'none' ? <p className="m-0 text-xs text-muted">{t('challenge.noRubricBody')}</p> : null}
+          {ai && item.grading === 'none' ? <p className="m-0 text-xs text-muted">{t('challenge.noRubricBody')}</p> : null}
           <div className="flex gap-2">
-            {!selfOnly ? (
-              <Button variant="secondary" size="sm" loading={busy === 'self'} disabled={!!busy} onClick={reveal}>{t('challenge.reveal')}</Button>
-            ) : null}
             <Button variant="secondary" size="sm" disabled={!canSkip || skipLimit || !!busy} onClick={() => void skip()}>{t('challenge.skip')}</Button>
           </div>
           {skipLimit || !canSkip ? <p role="status" className="m-0 text-xs text-muted">{t('challenge.skipLimit')}</p> : null}
-          <p className="m-0 text-xs text-muted">{t('challenge.shortcuts')}</p>
+          <p className="m-0 text-xs text-muted">{selfMark ? t('challengeSetup.answer.shortcutsSelf') : t('challengeSetup.answer.shortcutsDaily')}</p>
         </div>
       ) : null}
     </div>

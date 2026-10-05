@@ -111,6 +111,6 @@ test('signed in: the static landing swaps Entrar for the way back into the app, 
   await gotoLanding(page, '/');
   const header = page.getByRole('banner');
   await expect(header.getByRole('link', { name: L.nav.openApp }).first()).toHaveAttribute('href', '/app');
-  await expect(header.getByRole('link', { name: L.nav.account })).toHaveAttribute('href', '/app/conta');
+  await expect(header.getByRole('link', { name: L.nav.account })).toHaveAttribute('href', '/app/conta/perfil');
   await expect(header.getByRole('link', { name: L.nav.signIn })).toHaveCount(0);
 });

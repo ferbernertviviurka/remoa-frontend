@@ -14,8 +14,8 @@ export function anchor(n: Rect, side: Side): Point {
   return [n.x + n.w / 2, n.y + n.h];
 }
 
-/** Caminho entre dois pontos já ancorados. `as` (lado de saída) decide a orientação: l/r = horizontal-vertical-horizontal. */
-export function routePoints(p: Point, as: Side, q: Point): Route {
+/** Caminho entre dois pontos já ancorados (`maxRadius`: 14 no desktop, 12 no celular). `as` (lado de saída) decide a orientação: l/r = horizontal-vertical-horizontal. */
+export function routePoints(p: Point, as: Side, q: Point, maxRadius: number = MAX_RADIUS): Route {
   const [x1, y1] = p;
   const [x2, y2] = q;
   if (as === 'l' || as === 'r') {
@@ -23,7 +23,7 @@ export function routePoints(p: Point, as: Side, q: Point): Route {
     const dy = y2 - y1;
     const dx = x2 - x1;
     if (Math.abs(dy) < 1) return { d: `M ${x1} ${y1} L ${x2} ${y2}`, lx: xm, ly: y1 };
-    const r = Math.min(MAX_RADIUS, Math.abs(dy) / 2, Math.abs(dx) / 2);
+    const r = Math.min(maxRadius, Math.abs(dy) / 2, Math.abs(dx) / 2);
     const sy = dy > 0 ? 1 : -1;
     const sx = dx > 0 ? 1 : -1;
     return {
@@ -36,7 +36,7 @@ export function routePoints(p: Point, as: Side, q: Point): Route {
   const dx = x2 - x1;
   const dy = y2 - y1;
   if (Math.abs(dx) < 1) return { d: `M ${x1} ${y1} L ${x2} ${y2}`, lx: x1, ly: ym };
-  const r = Math.min(MAX_RADIUS, Math.abs(dx) / 2, Math.abs(dy) / 2);
+  const r = Math.min(maxRadius, Math.abs(dx) / 2, Math.abs(dy) / 2);
   const sx = dx > 0 ? 1 : -1;
   const sy = dy > 0 ? 1 : -1;
   return {

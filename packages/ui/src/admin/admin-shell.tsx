@@ -34,14 +34,20 @@ export type AdminSidebarProps = {
   backLabel: string;
   backHref: string;
   as?: LinkLike;
+  /** G14: "Sair" no cartão do admin; só aparece com os dois. */
+  signOutLabel?: string;
+  onSignOut?: () => void;
 };
 
-export function AdminSidebar({ brandLabel, badge, items, activeId, account, backLabel, backHref, as, ...rest }: AdminSidebarProps) {
+export function AdminSidebar({ brandLabel, badge, items, activeId, account, backLabel, backHref, as, signOutLabel, onSignOut, ...rest }: AdminSidebarProps) {
   const As: LinkLike = as ?? 'a';
   return (
-    <nav aria-label={rest['aria-label']} className="flex w-[264px] shrink-0 flex-col gap-1.5 bg-admin-nav px-4 py-[22px] text-on-dark-muted">
+    <nav aria-label={rest['aria-label']} className="sticky top-0 box-border flex h-dvh w-[264px] shrink-0 self-start flex-col gap-1.5 overflow-y-auto bg-admin-nav px-4 py-[22px] text-on-dark-muted">
       <div className="flex items-center gap-2.5 px-2.5 pb-[18px]">
-        <Logo title={brandLabel} withWordmark onDark size={28} />
+        {/* G14 (D-587): the logo goes back to the app (Hoje), like the wordmark everywhere else when signed in. */}
+        <As href={backHref} className={`flex min-h-11 items-center rounded-[10px] ${focusRing}`}>
+          <Logo title={brandLabel} withWordmark onDark size={28} />
+        </As>
         <span className="ml-auto rounded-pill bg-review px-2.5 py-[3px] text-[11px] font-extrabold tracking-[0.08em] text-white">{badge}</span>
       </div>
       {items.map((it) => {
@@ -72,6 +78,12 @@ export function AdminSidebar({ brandLabel, badge, items, activeId, account, back
           <Icon name="left" size={18} />
           {backLabel}
         </As>
+        {signOutLabel && onSignOut ? (
+          <button type="button" onClick={onSignOut} className={`flex h-11 cursor-pointer items-center gap-2 rounded-[12px] border border-white/20 bg-transparent px-3 text-sm font-bold text-white hover:bg-white/10 ${focusRing}`}>
+            <Icon name="logout" size={18} />
+            {signOutLabel}
+          </button>
+        ) : null}
       </div>
     </nav>
   );

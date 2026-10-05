@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
-import type { Goal, OnboardingAnswersPatch, OnboardingState, Segment } from '@remoa/contracts';
+import { AREA_OPTIONS, MAX_GOALS, userTypes, type Goal, type OnboardingAnswersPatch, type OnboardingState, type Segment, type UserType } from '@remoa/contracts';
 import { t, type StringKey } from '@remoa/strings';
 import { Alert, Button, ChoiceCard, ChoiceRow, Logo, Stepper } from '@remoa/ui';
 import { track } from '@/lib/analytics';
@@ -17,11 +17,14 @@ const PATHS: ReadonlyArray<{ id: Path; icon: 'file' | 'archive' | 'book' | 'plus
   { id: 'blank', icon: 'plus' },
 ];
 const STEPS = ['segment', 'goal', 'area', 'start'] as const;
+type StepKey = 'userType' | (typeof STEPS)[number];
 
-export function OnboardingView({ initial }: { initial: Pick<OnboardingState, 'answers'> }) {
+/** `needsUserType`: Google sign-up (or a pre-G14 account) has no userType yet; the first step asks it (D-597). */
+export function OnboardingView({ initial, needsUserType = false }: { initial: Pick<OnboardingState, 'answers'>; needsUserType?: boolean }) {
   const [step, setStep] = useState(0);
   const [segment, setSegment] = useState<Segment | undefined>(initial.answers.segment);
-  const [goal, setGoal] = useState<Goal | undefined>(initial.answers.goal as Goal | undefined);
+  const [userType, setUserType] = useState<UserType | undefined>();
+  const [picked, setGoals] = useState<Goal[]>(initial.answers.goals ?? (initial.answers.goal ? [initial.answers.goal as Goal] : []));
   const [area, setArea] = useState<'CM' | undefined>(initial.answers.area === 'CM' ? 'CM' : undefined);
   const [path, setPath] = useState<Path | undefined>(initial.answers.startPath);
   const [busy, setBusy] = useState(false);
@@ -33,8 +36,11 @@ export function OnboardingView({ initial }: { initial: Pick<OnboardingState, 'an
     else h1.current?.focus();
   }, [step]);
 
-  const key = STEPS[step]!;
-  const value = [segment, goal, area, path][step];
+  const keys: readonly StepKey[] = needsUserType ? ['userType', ...STEPS] : STEPS;
+  const key = keys[step]!;
+  const last = keys.length - 1;
+  const value = { userType, segment, goal: picked.length > 0 || undefined, area, start: path }[key];
+  const toggleGoal = (g: Goal) => setGoals((p) => (p.includes(g) ? p.filter((x) => x !== g) : p.length < MAX_GOALS ? [...p, g] : p));
 
   async function save(patch: OnboardingAnswersPatch): Promise<boolean> {
     if (Object.keys(patch).length === 0) return true;
@@ -45,13 +51,16 @@ export function OnboardingView({ initial }: { initial: Pick<OnboardingState, 'an
   async function next(skip: boolean) {
     setBusy(true);
     setFailed(false);
-    const patch: OnboardingAnswersPatch = skip ? {} : { ...[{ segment }, { goal }, { area }, {}][step] };
-    if (!(await save(patch))) {
+    const patch: OnboardingAnswersPatch = skip ? {} : { segment: { segment }, goal: { goals: picked }, area: { area }, start: {}, userType: {} }[key];
+    const ok = key === 'userType' && !skip && userType
+      ? !!(await api('/v1/account/profile', { method: 'PATCH', body: JSON.stringify({ userType }) }).catch(() => null))?.ok
+      : await save(patch);
+    if (!ok) {
       setFailed(true);
       setBusy(false);
       return;
     }
-    track('onboarding_step', { step: step + 1 });
+    track('onboarding_step', { step: step + 1 - (needsUserType ? 1 : 0) }); // the extra userType step keeps the old numbering (PII-free)
     setStep(step + 1);
     setBusy(false);
   }
@@ -72,7 +81,7 @@ export function OnboardingView({ initial }: { initial: Pick<OnboardingState, 'an
     setBusy(false);
   }
 
-  const steps = STEPS.map((s) => t(`onboarding.step.${s}` as StringKey));
+  const steps = keys.map((s) => t(`onboarding.step.${s}` as StringKey));
   const title = t(`onboarding.${key}.title` as StringKey);
   return (
     <div className="flex min-h-dvh flex-col bg-canvas text-ink">
@@ -90,7 +99,15 @@ export function OnboardingView({ initial }: { initial: Pick<OnboardingState, 'an
             <p className="m-0 text-base text-muted">{t(`onboarding.${key}.desc` as StringKey)}</p>
           </div>
 
-          {step === 0 ? (
+          {key === 'userType' ? (
+            <div role="group" aria-label={title} className="flex flex-col gap-2.5">
+              {userTypes.map((u) => (
+                <ChoiceRow key={u} indicator="radio" selected={userType === u} onSelect={() => setUserType(u)}>{t(`personal.userType.${u}`)}</ChoiceRow>
+              ))}
+            </div>
+          ) : null}
+
+          {key === 'segment' ? (
             <div role="group" aria-label={title} className="flex flex-col gap-2.5">
               {SEGMENTS.map((s) => (
                 <ChoiceRow key={s.id} indicator="radio" selected={segment === s.id} onSelect={() => setSegment(s.id)}>{t(s.label)}</ChoiceRow>
@@ -98,26 +115,31 @@ export function OnboardingView({ initial }: { initial: Pick<OnboardingState, 'an
             </div>
           ) : null}
 
-          {step === 1 ? (
+          {key === 'goal' ? (
             <div className="flex flex-col gap-5">
+              <p role="status" className="m-0 text-sm font-semibold text-muted">{t('onboarding.goalCount', { n: picked.length, max: MAX_GOALS })}</p>
               {GOAL_GROUPS.map((g) => (
                 <div key={g.title} role="group" aria-label={t(g.title)} className="flex flex-col gap-2.5">
                   <h2 className="m-0 text-xs font-bold uppercase tracking-[.12em] text-muted">{t(g.title)}</h2>
                   {g.goals.map((o) => (
-                    <ChoiceRow key={o.id} indicator="radio" selected={goal === o.id} onSelect={() => setGoal(o.id)}>{t(o.label)}</ChoiceRow>
+                    <ChoiceRow key={o.id} indicator="check" selected={picked.includes(o.id)} disabled={!picked.includes(o.id) && picked.length >= MAX_GOALS} onSelect={() => toggleGoal(o.id)}>{t(o.label)}</ChoiceRow>
                   ))}
                 </div>
               ))}
             </div>
           ) : null}
 
-          {step === 2 ? (
+          {key === 'area' ? (
             <div role="group" aria-label={title} className="flex flex-col gap-2.5">
-              <ChoiceRow indicator="radio" selected={area === 'CM'} onSelect={() => setArea('CM')}>{t('boards.area.CM')}</ChoiceRow>
+              {AREA_OPTIONS.map((a) => (
+                <ChoiceRow key={a.id} indicator="radio" selected={a.available && area === a.id} disabled={!a.available} badge={a.available ? undefined : t('common.comingSoon')} onSelect={() => a.id === 'CM' && setArea('CM')}>
+                  {t(`boards.area.${a.id}`)}
+                </ChoiceRow>
+              ))}
             </div>
           ) : null}
 
-          {step === 3 ? (
+          {key === 'start' ? (
             <div role="group" aria-label={title} className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
               {PATHS.map((p) => (
                 <ChoiceCard
@@ -137,7 +159,7 @@ export function OnboardingView({ initial }: { initial: Pick<OnboardingState, 'an
 
           <div className="flex flex-wrap items-center gap-3">
             {step > 0 ? <Button variant="secondary" disabled={busy} onClick={() => setStep(step - 1)}>{t('onboarding.back')}</Button> : null}
-            {step < 3 ? (
+            {step < last ? (
               <>
                 <Button loading={busy} disabled={!value} onClick={() => void next(false)}>{t('onboarding.next')}</Button>
                 <Button variant="secondary" disabled={busy} onClick={() => void next(true)}>{t('onboarding.skipStep')}</Button>

@@ -30,4 +30,12 @@ describe('Checkbox / Switch', () => {
     expect(c).not.toBeChecked();
     expect(await violations(container)).toEqual([]);
   });
+  it('invalid marca aria-invalid; rótulo longo mantém linha de 44 px e é clicável', async () => {
+    const { container } = render(<Checkbox invalid label="Concordo com os termos e com a política de privacidade, conforme a LGPD, e quero criar a minha conta agora." />);
+    const c = screen.getByRole('checkbox');
+    expect(c).toHaveAttribute('aria-invalid', 'true');
+    await userEvent.click(screen.getByText(/Concordo com os termos/));
+    expect(c).toBeChecked();
+    expect(await violations(container)).toEqual([]);
+  });
 });

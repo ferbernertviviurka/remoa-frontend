@@ -7,7 +7,7 @@ import { PersonCell, StatusPill, type StatusPillProps } from '@remoa/ui';
 import { act, ActionError, AdminList, auditLine, type ActionSpec } from '../list-kit/admin-list';
 import { formatDay } from '../list-kit/download';
 import { ExportCsv } from '../list-kit/export-csv';
-import { formatWhen } from '../shared/format';
+import { When } from '../shared/when';
 import { AuditMapViewer } from './audit-map-viewer';
 
 const tone: Record<AdminMapRow['status'], NonNullable<StatusPillProps['tone']>> = { private: 'muted', seed_draft: 'warn', seed_approved: 'info', archived: 'bad' };
@@ -70,7 +70,7 @@ export function MapsView({ data, error, page }: Props) {
         { key: 'cards', header: t('admin.maps.table.columns.cardsEdges'), cell: (m) => <span className="whitespace-nowrap">{t('admin.maps.drawer.cardsEdges', { cards: m.cards, edges: m.edges })}</span> },
         { key: 'status', header: t('admin.maps.table.columns.status'), cell: (m) => <StatusPill size="sm" tone={tone[m.status]}>{statusLabel(m.status)}</StatusPill> },
         { key: 'origin', header: t('admin.maps.table.columns.origin'), cell: (m) => <b className="whitespace-nowrap">{t(`admin.maps.filters.origin_${m.origin}`)}</b> },
-        { key: 'created', header: t('admin.maps.table.columns.created'), cell: (m) => <span className="whitespace-nowrap text-[13.5px] text-muted" suppressHydrationWarning>{formatWhen(m.createdAt)}</span> },
+        { key: 'created', header: t('admin.maps.table.columns.created'), cell: (m) => <span className="whitespace-nowrap text-[13.5px] text-muted" ><When iso={m.createdAt} /></span> },
       ]}
       rows={data?.items ?? []}
       total={data?.total ?? 0}

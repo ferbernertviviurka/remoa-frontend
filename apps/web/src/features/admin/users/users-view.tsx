@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import type { AdminUserDetail, AdminUserPage, AdminUserRow } from '@remoa/contracts';
 import { strings, t } from '@remoa/strings';
 import { PersonCell, StatusPill, type StatusPillProps } from '@remoa/ui';
-import { formatWhen } from '../shared/format';
+import { When } from '../shared/when';
 import { act, AdminList, auditLine, type ActionSpec } from '../list-kit/admin-list';
 import { formatDay } from '../list-kit/download';
 import { ExportCsv } from '../list-kit/export-csv';
@@ -51,7 +51,7 @@ function drawerOf(u: AdminUserRow, d: AdminUserDetail | null) {
     { k: t('admin.users.drawer.createdAt'), v: formatDay(u.createdAt) },
   ];
   if (d) {
-    facts.push({ k: t('admin.users.drawer.lastSignIn'), v: d.lastSignInAt ? <span suppressHydrationWarning>{formatWhen(d.lastSignInAt)}</span> : '—' }, { k: t('admin.users.drawer.role'), v: t(`admin.users.role.${d.role}`) });
+    facts.push({ k: t('admin.users.drawer.lastSignIn'), v: d.lastSignInAt ? <When iso={d.lastSignInAt} /> : '—' }, { k: t('admin.users.drawer.role'), v: t(`admin.users.role.${d.role}`) });
     if (d.suspendedReason) facts.push({ k: t('admin.users.drawer.suspendedReason'), v: d.suspendedReason });
   }
   return {
@@ -94,7 +94,7 @@ export function UsersView({ data, error, page }: Props) {
           { key: 'maps', header: t('admin.users.table.columns.mapsCards'), cell: (u) => <span className="whitespace-nowrap">{t('admin.users.mapsCount', { maps: u.maps, cards: u.cards })}</span> },
           { key: 'status', header: t('admin.users.table.columns.status'), cell: (u) => <StatusPill size="sm" tone={tone[u.status]}>{t(`admin.users.status.${u.status}`)}</StatusPill> },
           { key: 'origin', header: t('admin.users.table.columns.origin'), cell: (u) => <b>{t(`admin.users.origin.${u.origin}`)}</b> },
-          { key: 'created', header: t('admin.users.table.columns.created'), cell: (u) => <span className="whitespace-nowrap text-[13.5px] text-muted" suppressHydrationWarning>{formatWhen(u.createdAt)}</span> },
+          { key: 'created', header: t('admin.users.table.columns.created'), cell: (u) => <span className="whitespace-nowrap text-[13.5px] text-muted" ><When iso={u.createdAt} /></span> },
         ]}
         rows={data?.items ?? []}
         total={data?.total ?? 0}

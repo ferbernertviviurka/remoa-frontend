@@ -4,6 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { accountUser } from './account/fixture';
 import { makeBoards } from './plans/fixture';
 import { createMockSepse } from './visual/fixture';
+import { padForChallenge } from './challenge-pad';
 
 test.use({ viewport: { width: 1440, height: 900 }, colorScheme: 'light' });
 const axe = async (page: Page) => {
@@ -48,6 +49,7 @@ test('axe: editor com painel do card aberto e desafio', async ({ page, request }
   await page.locator('.react-flow__node').first().dblclick();
   await expect(page.getByRole('form').first()).toBeVisible();
   expect(await axe(page), 'editor com painel do card').toEqual([]);
+  await padForChallenge(request, headers, sepse, 4); // G14 D-579: 10 cards to challenge
   await page.goto(`/app/mapas/${sepse}?modo=desafio`);
   await expect(page.getByRole('button', { name: 'Pular', exact: true })).toBeVisible();
   expect(await axe(page), 'desafio').toEqual([]);

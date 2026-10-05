@@ -82,3 +82,13 @@ export async function signOut(): Promise<AuthResult> {
   const { error } = await supabase.auth.signOut({ scope: 'local' });
   return error ? fromSupabase(error) : { ok: true };
 }
+
+/** G14/D-588: admin session > 12 h. New password sign-in for the CURRENT user (email from the session, never from the client) renews the amr timestamp the API checks. */
+export async function reauthenticate(password: string): Promise<AuthResult> {
+  if (!password) return invalid();
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user?.email) return fail('unauthorized', 'no session');
+  const { error } = await supabase.auth.signInWithPassword({ email: data.user.email, password });
+  return error ? fromSupabase(error) : { ok: true };
+}

@@ -117,13 +117,14 @@ describe('PlansView', () => {
     view({ ent: withUsage(free, { boards: 2, ai_grades: 3, ai_generations: 1 }) });
     expect(screen.getByText('Você usa 2 de 2')).toBeInTheDocument();
     expect(screen.getByText('Hoje: 3 de 20')).toBeInTheDocument();
-    expect(screen.getByText('Neste mês: 1 de 1')).toBeInTheDocument();
+    expect(screen.queryByText(/Neste mês/)).toBeNull(); // Free: PDF maps not included (0), no "1 de 0" line
+    expect(screen.getAllByText('Não incluso').length).toBeGreaterThan(0);
     expect(screen.queryByText(/Você tem/)).toBeNull();
     cleanup();
     view({ ent: pro });
     expect(screen.queryByText(/Você usa/)).toBeNull();
     expect(screen.getByText('Você tem 7 mapas')).toBeInTheDocument();
-    expect(screen.getByText('Sem limite diário')).toBeInTheDocument();
+    expect(screen.getByText(`Hoje: ${pro.usage.ai_grades} de ${pro.limits.ai_grades}`)).toBeInTheDocument();
   });
 
   it('entitlements failed: matrix without any usage line (FR-12)', () => {

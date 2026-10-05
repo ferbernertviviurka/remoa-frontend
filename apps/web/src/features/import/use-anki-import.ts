@@ -43,19 +43,29 @@ export function useAnkiImport() {
       adjusted.current = false;
       set({ kind: 'uploading', pct: 0 });
       try {
+        // D-648: the account's Anki import allowance (Free: 1) is checked before uploading anything; the server also answers 402 'anki'.
+        const ent = await api<Entitlements>('/v1/billing/entitlements').catch(() => null);
+        if (run.current !== id) return;
+        if (ent?.ok && ent.data.ankiImports !== null && ent.data.ankiImportsUsed >= ent.data.ankiImports) {
+          paywall.show('anki');
+          return set({ kind: 'idle' });
+        }
         const sign = await post<{ url: string; key: string }>('/v1/imports/anki/sign', { sizeBytes: file.size });
-        if (!sign.ok) return set({ kind: 'error', message: sign.error.message || t('import.errors.upload') });
+        if (!sign.ok) {
+          if (paywall.handle(sign.error)) return set({ kind: 'idle' });
+          return set({ kind: 'error', message: sign.error.message || t('import.errors.upload') });
+        }
         if (!(await putApkg(sign.data.url, file, (pct) => run.current === id && set({ kind: 'uploading', pct })))) return set({ kind: 'error', message: t('import.errors.upload') });
         set({ kind: 'inspecting' });
-        const [insp, ent] = await Promise.all([post<ApkgSummary>('/v1/imports/anki/inspect', { key: sign.data.key }), api<Entitlements>('/v1/billing/entitlements').catch(() => null)]);
+        const insp = await post<ApkgSummary>('/v1/imports/anki/inspect', { key: sign.data.key });
         if (run.current !== id) return;
         if (!insp.ok) return set({ kind: 'error', message: insp.error.message || t('errors.internal') });
-        set({ kind: 'preview', key: sign.data.key, summary: insp.data, plan: defaultPlan(insp.data), maxCards: ent?.ok ? ent.data.ankiImportMaxCards : null });
+        set({ kind: 'preview', key: sign.data.key, summary: insp.data, plan: defaultPlan(insp.data), maxCards: ent?.ok ? ent.data.ankiImportMaxCards : null }); // null = no per-file cap
       } catch {
         set({ kind: 'error', message: t('errors.internal') });
       }
     },
-    [set],
+    [set, paywall],
   );
 
   const setPlan = useCallback((plan: Plan) => setState((s) => (s.kind === 'preview' ? { ...s, plan } : s)), []);

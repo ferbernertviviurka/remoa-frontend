@@ -4,13 +4,15 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { planDefinition } from '@remoa/contracts';
 import type { LandingPriceBook } from '../shell/pricebook';
-import { strings, t } from '@remoa/strings/landing';
+import { format, strings, t } from '@remoa/strings/landing';
 import { PlanCards, Section, formatBRL, type PlanCardPeriod } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { trackCta } from '../analytics';
 import type { LandingFlags } from '../flags';
 
 const num = (n: number | null) => (n ?? 0).toLocaleString('pt-BR');
+/** null = ilimitado: a palavra concorda com o gênero da linha. */
+const orUnlimited = (n: number | null, gender: 'unlimitedF' | 'unlimitedM') => (n === null ? t(`landing.plans.limit.${gender}`) : num(n));
 
 export type PlansSectionProps = { priceBook: LandingPriceBook; flags: Pick<LandingFlags, 'launchPhase' | 'betaFounder' | 'approvedContent'> };
 type PlanLimits = ReturnType<typeof planDefinition>;
@@ -36,18 +38,17 @@ export function PlansSectionView({ priceBook, flags, facts }: PlansSectionProps 
   const open = flags.launchPhase === 'open';
   const href = open ? '/cadastro' : '#cta';
 
-  const freeFeatures = [
-    t('landing.plans.free.features.0', { maps: num(free.boards) }),
-    t('landing.plans.free.features.1', { cards: num(free.cards) }),
-    t('landing.plans.free.features.2', { aiCorrections: num(free.ai_grades) }),
-    t('landing.plans.free.features.3', { pdfMaps: num(free.ai_generations) }),
-    t('landing.plans.free.features.4', { ankiCards: num(free.anki_import_cards) }),
-    t('landing.plans.free.features.5', { dailyNewCards: num(free.new_cards_per_day) }),
-  ];
+  const freeVars = { maps: num(free.boards), cards: num(free.cards), aiCorrections: num(free.ai_grades), pdfMaps: free.ai_generations ?? 0, ankiImports: free.anki_imports ?? 0, ankiCards: num(free.anki_import_cards), dailyNewCards: num(free.new_cards_per_day) };
+  const freeFeatures = strings.landing.plans.free.features.map((f) => format(f, freeVars));
   // D-236: `featuresApproved` (strings) replaces the default list only with the approved-content flag; same placeholders.
   const proStrings: { features: readonly string[]; featuresApproved?: readonly string[] } = strings.landing.plans.pro;
-  const vars = { pdfMaps: num(pro.ai_generations), ankiCardsProto: num(pro.anki_import_cards), dailyNewCardsPro: num(pro.new_cards_per_day) };
-  const proFeatures = (flags.approvedContent && proStrings.featuresApproved ? proStrings.featuresApproved : proStrings.features).map((f) => f.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? vars[k as keyof typeof vars] : m)));
+  const proVars = {
+    aiCorrections: num(pro.ai_grades),
+    pdfMaps: num(pro.ai_generations),
+    ankiPro: pro.anki_import_cards === null ? t('landing.plans.limit.unlimitedF') : t('landing.plans.limit.upTo', { n: num(pro.anki_import_cards) }),
+    dailyNewCardsPro: orUnlimited(pro.new_cards_per_day, 'unlimitedM'),
+  };
+  const proFeatures = (flags.approvedContent && proStrings.featuresApproved ? proStrings.featuresApproved : proStrings.features).map((f) => format(f, proVars));
 
   const founderFeatures = [...strings.landing.plans.founder.features];
 
