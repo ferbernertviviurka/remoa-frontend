@@ -134,6 +134,43 @@ function MobileMapInner({ data }: { data: BoardGraph }) {
     [doc, graphRef, rf],
   );
 
+  // --- review (FR-12/FR-19): this map's session through the existing challenge flow -------------------------------------
+  const queueCount = useBoardQueueCount(board.id);
+  const dueCount = queueCount ?? graph.nodes.reduce((k, n) => k + (isDue(doc.heat[n.id]?.due, endOfToday) ? 1 : 0), 0);
+  const challengeable = useMemo(() => graph.nodes.reduce((k, n) => k + (n.data.card.type !== 'note' && !n.data.card.suspendedAt ? 1 : 0), 0), [graph.nodes]);
+  const review = useCallback(() => {
+    const missing = CHALLENGE_MIN_CARDS - challengeable;
+    if (missing > 0) {
+      toast({ title: missing === 1 ? t('challengeSetup.minCards.tooltipOne', { min: CHALLENGE_MIN_CARDS }) : t('challengeSetup.minCards.tooltip', { min: CHALLENGE_MIN_CARDS, n: missing }) });
+      return;
+    }
+    resetChallenge();
+    router.push(`${pathname}?modo=desafio`);
+  }, [challengeable, pathname, resetChallenge, router, toast]);
+
+  // FR-12: one bar; with the create sheet open a copy rides over the scrim (mock `mapa-mobile-criar`) and its "×" closes the sheet
+  const list = prefs.view === 'list';
+  const bar = (createOpen: boolean, onCreate: () => void, closeSheet?: () => void) => (
+    <FloatingMapBar
+      reviewLabel={t('mapMobile.floatingBar.review')}
+      reviewAriaLabel={dueCount > 0 ? t('mapMobile.floatingBar.reviewLabel', { count: dueCount }) : t('mapMobile.floatingBar.reviewNoDueLabel')}
+      dueCount={dueCount}
+      onReview={() => {
+        closeSheet?.();
+        review();
+      }}
+      listLabel={list ? t('mapMobile.floatingBar.listLabelOff') : t('mapMobile.floatingBar.listLabel')}
+      listActive={list}
+      onToggleList={() => {
+        closeSheet?.();
+        setPrefs((p) => ({ ...p, view: p.view === 'list' ? 'canvas' : 'list' }));
+      }}
+      createLabel={t('mapMobile.floatingBar.createLabel')}
+      onCreate={onCreate}
+      createOpen={createOpen}
+    />
+  );
+
   // --- create (T7 owns the sheet and the editor; the map places the card) -------------------------------------------------
   const creator = useMobileCardCreator({
     createCard: (type) => {
@@ -150,21 +187,7 @@ function MobileMapInner({ data }: { data: BoardGraph }) {
     onSaved: doc.onCardSaved,
     focusCard,
     subs: (id) => doc.heat[id]?.subs,
-  });
-
-  // --- review (FR-12/FR-19): this map's session through the existing challenge flow -------------------------------------
-  const queueCount = useBoardQueueCount(board.id);
-  const dueCount = queueCount ?? graph.nodes.reduce((k, n) => k + (isDue(doc.heat[n.id]?.due, endOfToday) ? 1 : 0), 0);
-  const challengeable = useMemo(() => graph.nodes.reduce((k, n) => k + (n.data.card.type !== 'note' && !n.data.card.suspendedAt ? 1 : 0), 0), [graph.nodes]);
-  const review = useCallback(() => {
-    const missing = CHALLENGE_MIN_CARDS - challengeable;
-    if (missing > 0) {
-      toast({ title: missing === 1 ? t('challengeSetup.minCards.tooltipOne', { min: CHALLENGE_MIN_CARDS }) : t('challengeSetup.minCards.tooltip', { min: CHALLENGE_MIN_CARDS, n: missing }) });
-      return;
-    }
-    resetChallenge();
-    router.push(`${pathname}?modo=desafio`);
-  }, [challengeable, pathname, resetChallenge, router, toast]);
+  }, (close, open) => bar(open, close, close));
 
   // T6: peek, hold-to-move, connect by touch and the label field
   const selection = useMapSelection({
@@ -181,7 +204,6 @@ function MobileMapInner({ data }: { data: BoardGraph }) {
   );
 
   const fit = useCallback(() => void rf.fitView({ padding: FIT_PADDING, maxZoom: 1, minZoom: MOBILE_MAP_ZOOM_MIN, ...cameraMove() }), [rf]);
-  const list = prefs.view === 'list';
   const cards = useMemo(() => graph.nodes.map((n) => n.data.card), [graph.nodes]);
   const positions = useMemo(() => graph.nodes.map((n) => ({ id: n.id, x: n.position.x, y: n.position.y })), [graph.nodes]);
   // FR-17: a list row hands the card to the map: back to the canvas, selected and centered once React Flow is there
@@ -208,7 +230,11 @@ function MobileMapInner({ data }: { data: BoardGraph }) {
       setPrefs((p) => ({ ...p, view: 'canvas' }));
     } else fit();
   }, [fit, prefs.view, setPrefs]);
-  const openAside = useCallback(() => setAsideOpen(true), []);
+  const openAside = useCallback(() => {
+    // the aside returns focus to whoever had it: iOS taps and the edge swipe do not focus the hamburger, so do it here (FR-15)
+    document.querySelector<HTMLElement>('[data-mobile-map] header [aria-haspopup="dialog"]')?.focus();
+    setAsideOpen(true);
+  }, []);
   useEdgeSwipe(openAside, !asideOpen);
   const closeSearch = useCallback(() => {
     setSearchOpen(false);
@@ -295,19 +321,7 @@ function MobileMapInner({ data }: { data: BoardGraph }) {
         </>
       )}
 
-      <FloatingMapBar
-        reviewLabel={t('mapMobile.floatingBar.review')}
-        reviewAriaLabel={dueCount > 0 ? t('mapMobile.floatingBar.reviewLabel', { count: dueCount }) : t('mapMobile.floatingBar.reviewNoDueLabel')}
-        dueCount={dueCount}
-        onReview={review}
-        listLabel={list ? t('mapMobile.floatingBar.listLabelOff') : t('mapMobile.floatingBar.listLabel')}
-        listActive={list}
-        onToggleList={() => setPrefs((p) => ({ ...p, view: p.view === 'list' ? 'canvas' : 'list' }))}
-        createLabel={t('mapMobile.floatingBar.createLabel')}
-        onCreate={creator.openSheet}
-        createOpen={creator.sheetOpen}
-        hidden={creator.editorOpen}
-      />
+      {creator.editorOpen ? null : bar(creator.sheetOpen, creator.openSheet)}
       {creator.element}
       {selection.element}
 

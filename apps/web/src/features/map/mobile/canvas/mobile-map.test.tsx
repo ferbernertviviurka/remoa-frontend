@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MOBILE_MAP_PREFS_KEY, type BoardGraph, type Card } from '@remoa/contracts';
 import { retrievabilityFixture, sepseBoard, sepseCards, sepseEdges } from '@remoa/contracts/mocks';
@@ -111,5 +111,16 @@ describe('MobileMap (F23 T5)', () => {
     mount();
     fireEvent.click(screen.getByRole('button', { name: 'Abrir o menu do mapa' }));
     expect(await screen.findByRole('dialog', { name: 'Menu do mapa' })).toBeTruthy();
+  });
+
+  it('create sheet: the floating bar rides over the scrim with "×" (aria-expanded) and closes the sheet (mock mapa-mobile-criar)', async () => {
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: 'Criar card' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Criar card' });
+    const fab = within(sheet).getByRole('button', { name: 'Criar card' }); // the map's own bar is aria-hidden under the scrim
+    expect(fab.getAttribute('aria-expanded')).toBe('true');
+    expect(within(sheet).getByRole('button', { name: /^Revisar este mapa/ })).toBeTruthy();
+    fireEvent.click(fab);
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Criar card' })).toBeNull());
   });
 });

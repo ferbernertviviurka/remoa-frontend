@@ -12,7 +12,9 @@ vi.mock('@xyflow/react', async (orig) => ({
   useStore: (sel: (s: { transform: number[] }) => unknown) => sel({ transform: [0, 0, zoom.value] }),
   useInternalNode: () => undefined,
   Handle: () => null,
-  BaseEdge: ({ path }: { path: string }) => <path d={path} data-testid="edge" />,
+  BaseEdge: ({ path, markerEnd, style }: { path: string; markerEnd?: string; style?: { strokeWidth?: number } }) => (
+    <path d={path} data-testid="edge" data-marker={markerEnd ?? ''} data-width={style?.strokeWidth} />
+  ),
   EdgeLabelRenderer: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 vi.mock('@/lib/api', () => ({ api: vi.fn(async () => ({ ok: false })) }));
@@ -112,5 +114,16 @@ describe('conexões do celular (FR-7)', () => {
     expect(container.querySelector('marker path')).toHaveAttribute('fill', 'var(--state-unknown-soft)');
     rerender(<svg>{withCtx(ctx({ selectedId: 'c2' }), <MobileLinkEdge {...edge('a')} />)}</svg>);
     expect(container.querySelector('marker path')).toHaveAttribute('fill', 'var(--primary)');
+  });
+  it('visão geral (< 80%): conexão sem seta e com traço mais grosso (MapaMobileVisao)', () => {
+    const { container, rerender } = render(<svg>{withCtx(ctx(), <MobileLinkEdge {...edge('a')} />)}</svg>);
+    expect(screen.getByTestId('edge')).toHaveAttribute('data-marker', 'url(#mm-arrow-e1)');
+    expect(screen.getByTestId('edge')).toHaveAttribute('data-width', '2.2');
+    zoom.value = 0.6;
+    rerender(<svg>{withCtx(ctx(), <MobileLinkEdge {...edge('a')} />)}</svg>);
+    expect(container.querySelector('marker')).toBeNull();
+    expect(screen.getByTestId('edge')).toHaveAttribute('data-marker', '');
+    expect(screen.getByTestId('edge')).toHaveAttribute('data-width', '3.6');
+    zoom.value = 1;
   });
 });

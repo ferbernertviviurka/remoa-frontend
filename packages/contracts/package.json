@@ -1,0 +1,10 @@
+{
+  "name": "@remoa/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Copy of remoa-backend/packages/contracts (D-699). Do not edit here: change it in remoa-backend, then run `pnpm contracts:sync`.",
+  "type": "module",
+  "exports": { ".": "./src/index.ts", "./mocks": "./src/mocks/index.ts", "./events": "./src/events.ts", "./referral": "./src/referral.ts" },
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": { "zod": "^3.25.76" }
+}

@@ -119,6 +119,7 @@ test.describe('desempenho (PERF=1)', () => {
     if (browserName === 'chromium') {
       const cdp = await page.context().newCDPSession(page);
       await cdp.send('Network.enable');
+      await cdp.send('Network.setCacheDisabled', { cacheDisabled: true }); // cold bundles: the worst case, not a warm reload
       await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 150, downloadThroughput: (9 * 1024 * 1024) / 8, uploadThroughput: (1.5 * 1024 * 1024) / 8 });
       const t0 = Date.now();
       await page.goto(`/app/mapas/${board}`);

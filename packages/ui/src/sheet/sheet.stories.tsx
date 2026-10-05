@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { BottomSheet } from './bottom-sheet';
 import { CreateCardSheet, type CreateCardSheetProps } from './create-card-sheet';
+import { FloatingMapBar } from '../map-mobile/floating-map-bar';
 
 /**
  * Regra de uso (F23): um bottom sheet por vez, aberto por um botão (o foco volta a ele ao fechar).
@@ -62,3 +63,17 @@ export const AlturaMeia: StoryObj = {
     </BottomSheet>
   ),
 };
+/** Como no mapa (mock `mapa-mobile-criar`): a barra flutuante fica por cima do scrim e da sheet, com o "×" que fecha. */
+function WithBar() {
+  const [open, setOpen] = useState(true);
+  const bar = (o: boolean, onCreate: () => void) => (
+    <FloatingMapBar reviewLabel="Revisar" dueCount={2} onReview={() => {}} listLabel="Cards em lista" onToggleList={() => {}} createLabel="Criar card" createOpen={o} onCreate={onCreate} />
+  );
+  return (
+    <div className="relative h-[844px]">
+      {bar(open, () => setOpen(true))}
+      <CreateCardSheet {...base} open={open} onOpenChange={setOpen} footer={bar(open, () => setOpen(false))} availability={{ ai: { hint: 'restam 4 no mês' }, pdf: { hint: '4 no mês' } }} />
+    </div>
+  );
+}
+export const ComBarraDoMapa: StoryObj = { render: () => <WithBar /> };

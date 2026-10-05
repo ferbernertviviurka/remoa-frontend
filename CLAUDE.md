@@ -13,7 +13,7 @@ packages/strings/    strings pt-BR: pt-BR.ts, t(), regra eslint remoa/no-literal
 .claude/agents/      frontend, frontend-deep, design-system
 ```
 
-`@remoa/contracts` vem de `../remoa-backend/packages/contracts` (`link:`): instale o backend antes (`pnpm -C ../remoa-backend i`).
+`@remoa/contracts` é uma cópia de `../remoa-backend/packages/contracts` em `packages/contracts` (D-699), para o web buildar sozinho na Vercel. Não edite a cópia: mude no backend e rode `pnpm contracts:sync`; `pnpm contracts:check` (no CI) falha se ela divergir.
 
 ## Comandos
 

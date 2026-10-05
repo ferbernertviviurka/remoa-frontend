@@ -40,6 +40,7 @@ const DRAG_CLOSE = 80;
 
 export function MapAside({ open, onOpenChange, label, closeLabel, backLabel, backHref, onBack, title, subtitle, ownerInitial, favorite, preview, progress, children, detailsTitle, details }: MapAsideProps) {
   const start = useRef<{ x: number; y: number } | null>(null);
+  const opener = useRef<HTMLElement | null>(null);
   const [dx, setDx] = useState(0);
   const onDown = (e: PointerEvent) => { start.current = { x: e.clientX, y: e.clientY }; };
   const onMove = (e: PointerEvent) => {
@@ -65,6 +66,8 @@ export function MapAside({ open, onOpenChange, label, closeLabel, backLabel, bac
         <RD.Overlay className="remoa-aside-scrim fixed inset-0 z-[80] bg-[rgba(26,21,51,.55)]" />
         <RD.Content
           aria-describedby={undefined}
+          onOpenAutoFocus={() => { opener.current = document.activeElement as HTMLElement | null; }}
+          onCloseAutoFocus={(e) => { e.preventDefault(); opener.current?.focus(); }} // aberto por estado (sem trigger): devolve ao hambúrguer
           onPointerDown={onDown}
           onPointerMove={onMove}
           onPointerUp={onUp}

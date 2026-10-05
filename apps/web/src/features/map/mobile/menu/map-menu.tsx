@@ -168,9 +168,9 @@ export function MobileMapMenu({ open, onOpenChange, board, cards, nodes, edgeCou
         ]}
       >
         <NavRow icon="list" label={t('mapMobile.asideContent.listMode')} description={t('mapMobile.asideContent.listModeBody')} onClick={then(() => onPrefs((p) => ({ ...p, view: 'list' })))} />
-        <ToggleRow icon="layers" label={t('mapMobile.asideContent.heatmap')} description={t('mapMobile.asideContent.heatmapBody')} checked={prefs.heat} onCheckedChange={(v) => onPrefs((p) => ({ ...p, heat: v }))} />
+        <ToggleRow icon="target" label={t('mapMobile.asideContent.heatmap')} description={t('mapMobile.asideContent.heatmapBody')} checked={prefs.heat} onCheckedChange={(v) => onPrefs((p) => ({ ...p, heat: v }))} />
         <ToggleRow icon="link" label={t('mapMobile.asideContent.labels')} description={t('mapMobile.asideContent.labelsBody')} checked={prefs.labels} onCheckedChange={(v) => onPrefs((p) => ({ ...p, labels: v }))} />
-        <NavRow icon="grid" label={t('mapMobile.asideContent.fitScreen')} onClick={then(onFit)} />
+        <NavRow icon="fit" label={t('mapMobile.asideContent.fitScreen')} onClick={then(onFit)} />
         {canShare ? <NavRow icon="share" label={t('mapMobile.asideContent.share')} description={t('mapMobile.asideContent.shareBody')} onClick={then(() => setShareOpen(true))} /> : null}
         {aiOn ? (
           <NavRow icon="sparkle" label={t('mapMobile.asideContent.genAi')} description={aiLeft === null ? t('mapMobile.asideContent.genAiPro') : t('mapMobile.asideContent.genAiFree', { n: aiLeft })} onClick={then(onCreate)} />

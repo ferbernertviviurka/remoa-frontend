@@ -125,6 +125,7 @@ export type Built = { ok: true; data: SaveCardInput } | { ok: false; errors: str
 
 /** FR-8: validates client-side with the same schema as the API; invalid input never leaves the browser. */
 export function buildSaveInput(d: Draft): Built {
+  if (d.title.trim().length === 1) return { ok: false, errors: [t('cards.errors.title')] }; // F23 FR-14: at least 2 characters (the contract only asks for 1, P-287)
   const r = saveCardInputSchema.safeParse(toInput(d));
   if (r.success) return { ok: true, data: r.data };
   const errors = r.error.issues.map((i) => {

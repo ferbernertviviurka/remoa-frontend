@@ -146,7 +146,7 @@ export const mapMobile = {
       },
       ai: {
         title: 'Gerar com IA',
-        subFree: 'restam {n} hoje',
+        subFree: 'restam {n} no mês', // ai_generations é mensal (D-647)
         subPro: 'sem limite',
       },
       pdf: {

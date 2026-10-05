@@ -39,5 +39,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // D-707: Vercel services reject Edge Function output, so the middleware runs on Node (stable since Next 15.5).
+  runtime: 'nodejs',
   matcher: ['/((?!_next/static|_next/image|favicon.ico|sw\\.js|offline\\.html|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)'],
 };

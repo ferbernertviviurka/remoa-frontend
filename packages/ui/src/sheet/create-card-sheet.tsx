@@ -19,7 +19,7 @@ export const createCardFast: CreateCardKind[] = ['photo', 'ai', 'pdf', 'anki'];
  */
 export type CreateCardAvailability = {
   status?: 'available' | 'pro' | 'limit' | 'soon';
-  /** texto de apoio sob o título; sobrepõe `labels[kind].description` (ex.: "restam 20 hoje") */
+  /** texto de apoio sob o título; sobrepõe `labels[kind].description` (ex.: "restam 5 no mês") */
   hint?: string;
 };
 
@@ -36,6 +36,8 @@ export type CreateCardSheetProps = {
   availability?: Partial<Record<CreateCardKind, CreateCardAvailability>>;
   onSelect: (kind: CreateCardKind) => void;
   onBlocked?: (kind: CreateCardKind, reason: 'pro' | 'limit') => void;
+  /** por cima do scrim e do painel, parado (ver `BottomSheet.footer`): a barra do mapa com o "×" */
+  footer?: ReactNode;
 };
 
 const icons: Record<Exclude<CreateCardKind, 'concept'>, IconName> = {
@@ -57,7 +59,7 @@ function ConceptIcon() {
   );
 }
 
-export function CreateCardSheet({ open, onOpenChange, trigger, title, closeLabel, groups, labels, badges, availability, onSelect, onBlocked }: CreateCardSheetProps) {
+export function CreateCardSheet({ open, onOpenChange, trigger, title, closeLabel, groups, labels, badges, availability, onSelect, onBlocked, footer }: CreateCardSheetProps) {
   const option = (kind: CreateCardKind, fast: boolean) => {
     const a = availability?.[kind] ?? {};
     const status = a.status ?? 'available';
@@ -97,7 +99,7 @@ export function CreateCardSheet({ open, onOpenChange, trigger, title, closeLabel
     </section>
   );
   return (
-    <BottomSheet open={open} onOpenChange={onOpenChange} trigger={trigger} title={title} showTitle closeLabel={closeLabel}>
+    <BottomSheet open={open} onOpenChange={onOpenChange} trigger={trigger} title={title} showTitle closeLabel={closeLabel} footer={footer}>
       {group('create-card-scratch', groups.scratch, createCardScratch, false)}
       {group('create-card-fast', groups.fast, createCardFast, true)}
     </BottomSheet>

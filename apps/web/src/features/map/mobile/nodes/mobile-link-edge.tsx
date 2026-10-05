@@ -14,6 +14,8 @@ export const MOBILE_EDGE_RADIUS = 12;
 const side: Record<Position, Side> = { [Position.Left]: 'l', [Position.Right]: 'r', [Position.Top]: 't', [Position.Bottom]: 'b' };
 const COLOR = 'var(--state-unknown-soft)';
 const HOT = 'var(--primary)';
+/** Visão geral (< 80%, `MapaMobileVisao`): sem seta e traço que continua ≈ 2,2 px na tela a 60% (o mock não escala a linha). */
+const OVERVIEW_WIDTH = { base: 3.6, hot: 5 };
 
 /**
  * Conexão ortogonal do mapa no celular (`route()` de `MapaMobileMapa.dc.html`, raio 12), com seta. As do card selecionado: cor da marca e
@@ -36,12 +38,14 @@ export const MobileLinkEdge = memo(function MobileLinkEdge(p: EdgeProps<LinkEdge
   const marker = `mm-arrow-${p.id}`;
   return (
     <>
-      <defs>
-        <marker id={marker} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-          <path d="M 1 1 L 9 5 L 1 9 z" fill={color} />
-        </marker>
-      </defs>
-      <BaseEdge id={p.id} path={d} markerEnd={`url(#${marker})`} style={{ stroke: color, strokeWidth: hot ? 3 : 2.2, strokeLinecap: 'round', strokeLinejoin: 'round', transition: 'stroke .3s ease' }} />
+      {overview ? null : (
+        <defs>
+          <marker id={marker} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M 1 1 L 9 5 L 1 9 z" fill={color} />
+          </marker>
+        </defs>
+      )}
+      <BaseEdge id={p.id} path={d} markerEnd={overview ? undefined : `url(#${marker})`} style={{ stroke: color, strokeWidth: overview ? (hot ? OVERVIEW_WIDTH.hot : OVERVIEW_WIDTH.base) : hot ? 3 : 2.2, strokeLinecap: 'round', strokeLinejoin: 'round', transition: 'stroke .3s ease' }} />
       {labels && !overview ? (
         <EdgeLabelRenderer>
           <div className="nodrag nopan absolute" style={{ transform: `translate(-50%, -50%) translate(${lx}px, ${ly}px)`, pointerEvents: editLabel ? 'all' : 'none' }}>

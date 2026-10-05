@@ -4,7 +4,8 @@ on:
   push:
     branches: [main]
 
-# @remoa/contracts comes from remoa-backend (link:), so both repos are checked out side by side.
+# The backend is checked out side by side for the e2e (API + Supabase) and to check that packages/contracts
+# is still a faithful copy of remoa-backend/packages/contracts (D-699).
 # Private backend repo: add secret REMOA_BACKEND_TOKEN (fine-grained, read-only contents).
 jobs:
   check:
@@ -23,6 +24,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version-file: remoa-frontend/.nvmrc }
       - run: pnpm -C ../remoa-backend i --frozen-lockfile && pnpm i --frozen-lockfile
+      - run: pnpm contracts:check
       - run: pnpm check
       - run: pnpm strings:check
       - uses: supabase/setup-cli@v1

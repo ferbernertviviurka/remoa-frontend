@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type FocusEvent } from 'react';
 import type { Card, CardDetail, CardShape, MapState, SaveCardInput } from '@remoa/contracts';
 import { t } from '@remoa/strings';
-import { Button, Dialog, Icon, useToast } from '@remoa/ui';
+import { Button, Dialog, FullSheet, Icon, useToast } from '@remoa/ui';
 import { api } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import { usePaywall } from '@/features/billing/paywall';
@@ -25,7 +25,7 @@ const FORM = 'mobile-card-editor';
 const titleKey = { concept: 'Concept', note: 'Concept', flow: 'Flow', case: 'Case', image: 'Image' } as const;
 
 /**
- * F23 FR-14: full-height editor over the map. Reuses F02's `CardEditor` (fields, images, flow steps, case stages, the
+ * F23 FR-14: full-height editor over the map, in `@remoa/ui`'s `FullSheet` (52 px from the top, map dimmed, no X). Reuses F02's `CardEditor` (fields, images, flow steps, case stages, the
  * contract schema) and only swaps its chrome: Cancelar / title / Salvar in a header, confirmation before discarding.
  */
 export function MobileCardEditor({ card, isNew, subs, prepare, onSaved, onClose, onShape }: MobileCardEditorProps) {
@@ -94,27 +94,32 @@ export function MobileCardEditor({ card, isNew, subs, prepare, onSaved, onClose,
   const heading = t(`mapMobile.editor.title.${isNew ? 'new' : 'edit'}${titleKey[card.type]}`);
   return (
     <>
-      <Dialog open title={heading} closeLabel={t('common.close')} size="full" srOnlyHeader onOpenChange={(o) => !o && request()}>
-        <header className="-mt-2 flex shrink-0 items-center justify-between gap-2 border-b border-border pb-3 pr-12">
+      <FullSheet
+        open
+        title={heading}
+        onOpenChange={(o) => !o && request()}
+        start={
           <Button variant="quiet" onClick={request}>
             {t('mapMobile.editor.closeLabel')}
           </Button>
-          <h2 className="m-0 min-w-0 flex-1 text-center font-display text-base font-extrabold leading-tight">{heading}</h2>
+        }
+        end={
           <Button type="submit" form={FORM}>
             {t('mapMobile.editor.saveLabel')}
           </Button>
-        </header>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pt-4" style={{ paddingBottom: kb }} onFocusCapture={focusIn}>
+        }
+      >
+        <div className="px-[18px] pt-5" style={{ paddingBottom: Math.max(24, kb) }} onFocusCapture={focusIn}>
           <CardEditor card={card} subs={subs} prepare={prepare} onSaved={saved} onClose={request} onShape={onShape} formId={FORM} onDirty={setDirty} />
           {card.type === 'note' ? null : (
-            <div className="mt-4">
+            <div className="mt-4 [&>button]:w-full">
               <Button variant="secondary" loading={rubricBusy} loadingLabel={t('cards.saving')} icon={<Icon name="sparkle" size={20} />} onClick={() => void rubric()}>
                 {t('mapMobile.editor.genRubricLabel')}
               </Button>
             </div>
           )}
         </div>
-      </Dialog>
+      </FullSheet>
       <Dialog open={confirm} onOpenChange={setConfirm} title={t('mapMobile.editor.discardTitle')} description={t('mapMobile.editor.discardBody')} closeLabel={t('common.close')}>
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setConfirm(false)}>
