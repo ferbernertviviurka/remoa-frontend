@@ -1,6 +1,26 @@
 // F16 FR-15 (D-513): Termos de uso e Política de Privacidade. Rascunho até o parecer jurídico (Q-016).
 // Escrito só com fatos do repositório; dados da empresa são marcadores [entre colchetes] a preencher pelo Fernando.
 export const legal = {
+  // F25: Páginas legais públicas
+  pages: {
+    print: 'Imprimir',
+    version: 'Versão {version} · Atualizado em {date}',
+    tableOfContents: 'Índice',
+    draftWarning: 'Versão preliminar — aguardando revisão jurídica. O texto pode mudar antes da publicação.',
+  },
+
+  // F25: Aceite no cadastro
+  signup: {
+    acceptance: 'Ao criar a conta você aceita os Termos de Uso e a Política de Privacidade',
+    termsLink: 'Termos de Uso',
+    privacyLink: 'Política de Privacidade',
+  },
+
+  // F25: Link em Minha conta
+  account: {
+    legalDocuments: 'Documentos legais',
+  },
+
   draftBadge: 'Versão preliminar',
   draftNote: 'Versão preliminar — aguardando revisão jurídica (Q-016). O texto pode mudar antes da publicação.',
   updatedAt: 'Última atualização: [data de publicação]',

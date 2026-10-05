@@ -18,6 +18,8 @@ import { mapState, challengeMode, challenge, editor, canvas, quiz, boundary } fr
 import { mapMobile } from './map-mobile';
 import { calendar } from './calendar';
 import { notifications } from './notifications';
+import { blog } from './blog';
+import { adminBlog } from './admin-blog';
 
 export const ptBR = {
   account,
@@ -31,6 +33,8 @@ export const ptBR = {
   legal,
   support,
   admin,
+  blog,
+  adminBlog,
   onboarding,
   cardStudy,
   personal,
