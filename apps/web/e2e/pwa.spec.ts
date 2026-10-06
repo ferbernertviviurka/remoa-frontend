@@ -99,7 +99,8 @@ test('modo avião: 3 respostas feitas offline sincronizam ao voltar a rede', asy
   await page.context().setOffline(true);
   for (const path of ['/app/m/revisar', '/app/revisar']) {
     const res = await page.goto(path);
-    expect(res?.status(), path).toBe(200);
+    // the SW answers offline; Chromium sometimes reports that navigation with no response object (null): the heading below is the proof
+    if (res) expect(res.status(), path).toBe(200);
     await expect(page.getByRole('heading', { name: 'Revisão neste aparelho' })).toBeVisible();
   }
   for (let i = 0; i < 3; i += 1) {
