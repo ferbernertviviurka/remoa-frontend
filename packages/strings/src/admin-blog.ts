@@ -213,7 +213,7 @@ export const adminBlog = {
     saveDraft: 'Salvar rascunho',
     publish: 'Publicar',
 
-    // T7: editor em blocos (D-943–D-947)
+    // T7: editor em blocos (D-944–D-947)
     ui: {
       subtitle: '/blog/{slug} · {template}',
       titleCount: '{count} caracteres',
