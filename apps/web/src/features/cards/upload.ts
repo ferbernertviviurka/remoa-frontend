@@ -14,8 +14,8 @@ export function checkFile(f: Pick<File, 'type' | 'size'>): FileProblem | null {
 
 const fail = (code: ErrorCode = 'internal'): Result<never> => ({ ok: false, error: { code, message: 'upload failed' } });
 
-/** POST multipart to the API with the session token; XHR (not fetch) for upload progress. 413 = over IMAGE_MAX_BYTES. */
-function postForm<T>(path: string, token: string | null, form: FormData, onProgress: (pct: number) => void): Promise<Result<T>> {
+/** POST a body (multipart or a raw file) to the API with the session token; XHR (not fetch) for upload progress. 413 = over the route's cap. */
+export function postUpload<T>(path: string, token: string | null, body: FormData | Blob, onProgress: (pct: number) => void): Promise<Result<T>> {
   return new Promise((resolve) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `${apiBase()}${path}`);
@@ -34,7 +34,7 @@ function postForm<T>(path: string, token: string | null, form: FormData, onProgr
     };
     xhr.onerror = () => resolve(fail());
     xhr.onabort = () => resolve(fail());
-    xhr.send(form);
+    xhr.send(body);
   });
 }
 
@@ -48,7 +48,7 @@ export async function uploadImage(
     form.append('file', file);
     form.append('license', meta.license);
     if (meta.attribution) form.append('attribution', meta.attribution);
-    return await postForm<AssetRef>('/v1/uploads/direct', await sessionToken(), form, onProgress);
+    return await postUpload<AssetRef>('/v1/uploads/direct', await sessionToken(), form, onProgress);
   } catch {
     return fail(); // network down
   }

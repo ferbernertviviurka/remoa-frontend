@@ -1,13 +1,13 @@
-/** PUT of the .apkg to the presigned url (XHR for progress). Resolves false on any failure. */
-export function putApkg(url: string, file: File, onProgress: (pct: number) => void): Promise<boolean> {
-  return new Promise((resolve) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('PUT', url);
-    xhr.setRequestHeader('Content-Type', 'application/octet-stream');
-    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(Math.round((e.loaded / e.total) * 100));
-    xhr.onload = () => resolve(xhr.status >= 200 && xhr.status < 300);
-    xhr.onerror = () => resolve(false);
-    xhr.onabort = () => resolve(false);
-    xhr.send(file);
-  });
+// D-1443: the .apkg goes to the API (raw body, streamed to storage there), never straight to the bucket: no storage CORS involved.
+import type { Result } from '@remoa/contracts';
+import { sessionToken } from '@/lib/api';
+import { postUpload } from '@/features/cards/upload';
+
+/** POST of the .apkg to /v1/imports/anki/direct (XHR for progress). Errors: `quota_exceeded` 'anki' (D-648), 413/422 `validation`, network `internal`. */
+export async function uploadApkg(file: File, onProgress: (pct: number) => void): Promise<Result<{ key: string }>> {
+  try {
+    return await postUpload<{ key: string }>('/v1/imports/anki/direct', await sessionToken(), file, onProgress);
+  } catch {
+    return { ok: false, error: { code: 'internal', message: 'upload failed' } };
+  }
 }

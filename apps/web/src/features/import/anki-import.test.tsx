@@ -11,7 +11,8 @@ const show = vi.fn();
 vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
 vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
 vi.mock('@/features/billing/paywall', () => ({ usePaywall: () => ({ show: (r: string) => show(r), handle }) }));
-vi.mock('./upload', () => ({ putApkg: async () => true }));
+const upload = vi.fn();
+vi.mock('./upload', () => ({ uploadApkg: (...a: unknown[]) => upload(...a) }));
 
 // Radix Select under jsdom
 Object.assign(Element.prototype, { scrollIntoView: () => undefined, hasPointerCapture: () => false, releasePointerCapture: () => undefined });
@@ -25,9 +26,9 @@ const summary: ApkgSummary = {
 const report = { importId: 'i1', boardIds: ['b1'], imported: 4, skippedDuplicate: 1, skippedEmpty: 0, missingMedia: 1, durationMs: 2500 };
 
 function routes(over: Record<string, unknown> = {}) {
+  upload.mockResolvedValue({ ok: true, data: { key: 'k' } });
   api.mockImplementation(async (path: string) => {
     if (path in over) return over[path];
-    if (path === '/v1/imports/anki/sign') return { ok: true, data: { url: 'http://u', key: 'k' } };
     if (path === '/v1/imports/anki/inspect') return { ok: true, data: summary };
     if (path === '/v1/billing/entitlements') return { ok: true, data: { ankiImportMaxCards: 3 } };
     if (path === '/v1/imports/anki') return { ok: true, data: { importId: 'i1' } };
@@ -156,17 +157,28 @@ describe('Anki import', () => {
     render(<Harness />);
     fireEvent.click(screen.getByText('go'));
     await waitFor(() => expect(show).toHaveBeenCalledWith('anki'));
-    expect(api.mock.calls.some((c) => c[0] === '/v1/imports/anki/sign')).toBe(false);
+    expect(upload).not.toHaveBeenCalled();
     expect(screen.queryByTestId('import-summary')).toBeNull();
   });
 
-  it('a 402 from the server on sign opens the paywall instead of an error', async () => {
-    routes({ '/v1/imports/anki/sign': { ok: false, error: { code: 'quota_exceeded', message: 'anki' } } });
+  it('a 402 from the server on upload opens the paywall instead of an error', async () => {
+    routes();
+    upload.mockResolvedValue({ ok: false, error: { code: 'quota_exceeded', message: 'anki' } });
     handle.mockReturnValue(true);
     render(<Harness />);
     fireEvent.click(screen.getByText('go'));
     await waitFor(() => expect(handle).toHaveBeenCalledWith({ code: 'quota_exceeded', message: 'anki' }));
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('a failed upload (413, not a zip, network) shows the upload error and inspects nothing (D-1443)', async () => {
+    routes();
+    upload.mockResolvedValue({ ok: false, error: { code: 'validation', message: 'file_too_large' } });
+    handle.mockReturnValue(false);
+    render(<Harness />);
+    fireEvent.click(screen.getByText('go'));
+    expect((await screen.findByRole('alert')).textContent).toContain('Não conseguimos enviar o arquivo');
+    expect(api.mock.calls.some((c) => c[0] === '/v1/imports/anki/inspect')).toBe(false);
   });
 
   it('Pro (no per-file cap, unlimited imports): goes to the summary without the cap alert', async () => {

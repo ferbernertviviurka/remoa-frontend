@@ -6,7 +6,7 @@ const api = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
 vi.mock('@/lib/analytics', () => ({ track: vi.fn() }));
-vi.mock('./upload', () => ({ putApkg: async () => true }));
+vi.mock('./upload', () => ({ uploadApkg: async () => ({ ok: true, data: { key: 'k' } }) }));
 Object.assign(Element.prototype, { scrollIntoView: () => undefined, hasPointerCapture: () => false, releasePointerCapture: () => undefined });
 
 const summary = { decks: [{ id: 'd', name: 'CM', cardCount: 1, noteCount: 1 }], noteTypes: [{ id: 'n', name: 'Basic', kind: 'basic', fields: ['Front', 'Back'], noteCount: 1, samples: [{ Front: 'a', Back: 'b' }] }], cardCount: 1, mediaCount: 0 };
@@ -19,7 +19,6 @@ afterEach(() => {
 describe('import focus', () => {
   it('moves focus to the new heading at each stage', async () => {
     api.mockImplementation(async (path: string) => {
-      if (path === '/v1/imports/anki/sign') return { ok: true, data: { url: 'u', key: 'k' } };
       if (path === '/v1/imports/anki/inspect') return { ok: true, data: summary };
       if (path === '/v1/imports/anki') return { ok: true, data: { importId: 'i1' } };
       if (path === '/v1/imports/i1') return { ok: true, data: { importId: 'i1', status: 'failed', processed: 0, total: 1, error: 'falhou' } };

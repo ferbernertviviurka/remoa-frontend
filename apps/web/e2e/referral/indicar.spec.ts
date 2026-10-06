@@ -109,7 +109,8 @@ test.describe('/app/indicar', () => {
     await mockApi(page, referralSummaryFixtures.inProgress);
     await page.goto('/app/indicar');
     await expect(page.getByTestId('reward-months')).toHaveText('1');
-    const art = page.getByTestId('referral-hero-art');
+    // inside <main>: while the RSC stream swaps the Suspense boundary a hidden copy of the hero can exist outside it (strict-mode flake)
+    const art = page.getByRole('main').getByTestId('referral-hero-art');
     await expect(art.getByText(t('referral.page.heroReward'))).toHaveCSS('opacity', '1');
   });
 
