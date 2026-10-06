@@ -69,6 +69,7 @@ export function PostEditor({ post: initialPost, categories, me, site }: PostEdit
     extensions: blogExtensions(t('adminBlog.editor.ui.content.placeholder')),
     content: initialPost.content,
     immediatelyRender: false,
+    editorProps: { attributes: { 'aria-label': t('adminBlog.editor.ui.content.label') } }, // axe aria-input-field-name
     onCreate: ({ editor: e }) => setJson(e.getJSON()),
     onUpdate: ({ editor: e }) => setJson(e.getJSON()),
   });
