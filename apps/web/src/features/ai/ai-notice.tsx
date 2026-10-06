@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import type { AiGradeFlag, AiInfo } from '@remoa/contracts';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Alert, Button } from '@remoa/ui';
 import { api } from '@/lib/api';
 import { trackAi } from '@/lib/analytics';
-import { isLimit, type AiMeta, type AiUsage } from './types';
+import { isLimit, isRateLimited } from './types';
 
 const t = withStrings({ ai: more.ai });
 
@@ -33,16 +34,16 @@ export function AiStreaming({ text }: { text: string }) {
 }
 
 /** Fallback / error (with retry) / limit / 80% notice. Renders nothing for a plain ok result. */
-export function AiNotice({ ai, usage, onRetry }: { ai?: AiMeta | null; usage?: AiUsage; onRetry?: () => void }) {
+export function AiNotice({ ai, onRetry }: { ai?: AiInfo | null; onRetry?: () => void }) {
   const failed = ai?.status === 'error';
   useEffect(() => {
-    if (failed) trackAi('ai_error', { type: ai?.code ?? 'unknown' });
+    if (failed) trackAi('ai_error_shown', { type: ai?.code ?? 'unknown' });
   }, [failed, ai?.code]);
-  if (isLimit(ai, usage))
+  if (isLimit(ai))
     return (
       <Alert tone="watch" title={t('ai.limitTitle')}>
-        <span>{t('ai.limitResets')}</span>
-        <Link href="/app/planos?de=ai_quota" className="font-semibold underline">{t('ai.limitCta')}</Link>
+        <span>{t(isRateLimited(ai) ? 'ai.limitWait' : 'ai.limitResets')}</span>
+        {isRateLimited(ai) ? null : <Link href="/app/planos?de=ai_quota" className="font-semibold underline">{t('ai.limitCta')}</Link>}
       </Alert>
     );
   if (failed)
@@ -52,11 +53,11 @@ export function AiNotice({ ai, usage, onRetry }: { ai?: AiMeta | null; usage?: A
       </Alert>
     );
   if (ai?.status === 'fallback') return <Alert tone="unknown" title={t('ai.fallback')} />;
-  if (usage?.warn80 && usage.remaining != null) return <Alert tone="watch" title={t('ai.warn80', { n: usage.remaining })} />;
+  const q = ai?.quota;
+  if (q?.nearLimit && q.remaining != null) return <Alert tone="watch" title={t('ai.warn80', { n: q.remaining })} />;
   return null;
 }
 
-// TODO(CCR): use the contract type for the flag when @remoa/contracts has it.
 type FlagState = 'idle' | 'busy' | 'sent' | 'error';
 
 /** "Essa correção está errada": POST /v1/ai/grades/:id/flag. No user text goes to telemetry. */
@@ -66,7 +67,7 @@ export function FlagGradeButton({ gradeId }: { gradeId: string }) {
   async function send() {
     setState('busy');
     try {
-      const r = await api(`/v1/ai/grades/${encodeURIComponent(gradeId)}/flag`, { method: 'POST', body: JSON.stringify({}) });
+      const r = await api<AiGradeFlag>(`/v1/ai/grades/${encodeURIComponent(gradeId)}/flag`, { method: 'POST', body: JSON.stringify({}) });
       if (r.ok) trackAi('ai_grade_flagged', {});
       setState(r.ok ? 'sent' : 'error');
     } catch {

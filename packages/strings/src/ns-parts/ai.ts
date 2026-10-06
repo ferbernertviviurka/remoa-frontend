@@ -10,6 +10,7 @@ export const ai = {
   retry: 'Tentar de novo',
   limitTitle: 'Você chegou ao limite de usos da IA.',
   limitResets: 'O limite reinicia à meia-noite, no horário do seu perfil.',
+  limitWait: 'Muitos pedidos seguidos. Aguarde um instante e tente de novo.',
   limitCta: 'Ver planos',
   warn80: 'Você já usou 80% do limite de IA. Restam {n}.',
   flag: 'Essa correção está errada',

@@ -35,7 +35,7 @@ describe('AI states', () => {
   });
 
   it('fallback says it was the automatic correction without AI', () => {
-    render(<AiNotice ai={{ status: 'fallback', code: 'provider', message: null }} />);
+    render(<AiNotice ai={{ status: 'fallback', code: 'provider_error', message: null }} />);
     expect(screen.getByText(/correção automática, sem IA/)).toBeVisible();
   });
 
@@ -45,18 +45,24 @@ describe('AI states', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Demorou demais. Tente de novo.');
     fireEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }));
     expect(onRetry).toHaveBeenCalledOnce();
-    expect(trackAi).toHaveBeenCalledWith('ai_error', { type: 'timeout' });
+    expect(trackAi).toHaveBeenCalledWith('ai_error_shown', { type: 'timeout' });
     expect(await violations(container)).toEqual([]);
   });
 
   it('limit tells when it resets and links to the plans', () => {
-    render(<AiNotice ai={{ status: 'error', code: 'quota_exceeded', message: null }} usage={{ remaining: 0 }} />);
+    render(<AiNotice ai={{ status: 'error', code: 'quota_exceeded', message: null, quota: { key: 'ai_grades', used: 5, limit: 5, remaining: 0, nearLimit: true, period: '2026-10-06' } }} />);
     expect(screen.getByText(/meia-noite/)).toBeVisible();
     expect(screen.getByRole('link', { name: 'Ver planos' })).toHaveAttribute('href', expect.stringContaining('/app/planos'));
   });
 
+  it('rate limit asks to wait, with no plans link', () => {
+    render(<AiNotice ai={{ status: 'error', code: 'rate_limited', message: null }} />);
+    expect(screen.getByText(/Aguarde um instante/)).toBeVisible();
+    expect(screen.queryByRole('link', { name: 'Ver planos' })).toBeNull();
+  });
+
   it('warns at 80% with what is left', () => {
-    render(<AiNotice ai={{ status: 'ok', code: null, message: null }} usage={{ remaining: 4, warn80: true }} />);
+    render(<AiNotice ai={{ status: 'ok', code: null, message: null, quota: { key: 'ai_grades', used: 16, limit: 20, remaining: 4, nearLimit: true, period: '2026-10-06' } }} />);
     expect(screen.getByText(/80%.*Restam 4/)).toBeVisible();
   });
 

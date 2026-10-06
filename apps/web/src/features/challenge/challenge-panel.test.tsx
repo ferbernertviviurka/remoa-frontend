@@ -194,23 +194,19 @@ describe('ChallengePanel', () => {
     expect(track).toHaveBeenCalledWith('paywall_viewed', { reason: 'ai_quota' });
   });
 
-  it('AI result: warning, escaped source, flag button, fallback notice (G22)', async () => {
+  it('AI result: warning, escaped feedback, flag button, fallback notice (G22)', async () => {
     const user = userEvent.setup();
     overrides.answer = async () =>
       ans({
-        verdict: { ...graderVerdictFixture, feedback: '<img src=x onerror="window.hacked=1">ok' },
+        verdict: { ...graderVerdictFixture, feedback: '<img src=x onerror="window.hacked=1">ok', ai: { status: 'fallback', code: 'provider_error', message: null, callId: 'g-9' } },
         suggestedGrade: 'good',
-        ai: { status: 'fallback', code: 'provider', message: null },
-        gradeId: 'g-9',
-        sourceQuote: '<script>x</script>trecho',
-      } as Partial<AnswerOutput>);
+      });
     mount(daily);
     await ready();
     await user.type(screen.getByLabelText('Sua resposta'), 'x');
     await user.click(reveal());
     await screen.findByText(/correção automática, sem IA/);
     expect(screen.getByText('A IA pode errar. Confira a fonte.')).toBeVisible();
-    expect(screen.getByText(/trecho/)).toBeVisible();
     expect(document.querySelector('script, img[onerror]')).toBeNull();
     expect(screen.getByRole('button', { name: 'Essa correção está errada' })).toBeVisible();
   });

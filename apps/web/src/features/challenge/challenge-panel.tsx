@@ -8,8 +8,7 @@ import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Alert, Button, QuestionPanel, RatingButton, RatingGroup, Skeleton, Tag, VerdictBox } from '@remoa/ui';
 import { track } from '@/lib/analytics';
-import { AiNotice, AiSource, AiStreaming, AiWarning, FlagGradeButton } from '@/features/ai/ai-notice';
-import type { AiExtra } from '@/features/ai/types';
+import { AiNotice, AiStreaming, AiWarning, FlagGradeButton } from '@/features/ai/ai-notice';
 import type { AnswerPayload } from './client';
 import { Occlusion } from './occlusion';
 import { MAX_SKIPS, useChallenge, type Scope } from './provider';
@@ -155,7 +154,7 @@ function ItemQuestion({ item, n, total, done, state, canSkip, selfMark, onRated 
   }, []);
 
   const out = answered?.out;
-  const x: AiExtra = (out ?? {}) as AiExtra; // TODO(CCR): AnswerOutput gains ai/gradeId/sourceQuote/remaining
+  const aiInfo = out?.verdict?.ai;
   useEffect(() => {
     if (out) result.current?.focus(); // the clicked button just unmounted: keep focus (and the announcement) on the result
   }, [out]);
@@ -257,10 +256,9 @@ function ItemQuestion({ item, n, total, done, state, canSkip, selfMark, onRated 
           note={item.grading === 'rubric_own' ? t('challenge.ownRubric') : undefined}
         >
           {v.feedback ? <p className="m-0 text-sm">{v.feedback}</p> : null}
-          <AiSource quote={x.sourceQuote ?? (v as { sourceQuote?: string | null }).sourceQuote} />
           <AiWarning />
-          {x.gradeId ? (
-            <FlagGradeButton gradeId={x.gradeId} />
+          {aiInfo?.callId ? (
+            <FlagGradeButton gradeId={aiInfo.callId} />
           ) : dispute === 'done' ? (
             <p role="status" className="m-0 text-sm font-semibold">{t('challenge.disputed')}</p>
           ) : (
@@ -273,8 +271,8 @@ function ItemQuestion({ item, n, total, done, state, canSkip, selfMark, onRated 
           )}
         </VerdictBox>
       ) : null}
-      {x.ai || x.remaining != null ? <AiNotice ai={x.ai} usage={x} /> : null}
-      {out.fallback && !x.ai ? (
+      {aiInfo ? <AiNotice ai={aiInfo} /> : null}
+      {out.fallback && !aiInfo ? (
         <Alert tone={out.fallback === 'quota' ? 'watch' : 'unknown'} title={t(fallbackText[out.fallback])}>
           {out.fallback === 'quota' ? <Link href="/app/planos?de=ai_quota" className="font-semibold underline">{t('challenge.quotaCta')}</Link> : null}
         </Alert>

@@ -1,9 +1,5 @@
-/** Shape the API lane returns next to an AI result (G22). TODO(CCR): replace with the @remoa/contracts type when it lands. */
-export type AiMeta = { status: 'ok' | 'fallback' | 'error'; code: string | null; message: string | null };
-/** `remaining`: uses left in the period; `warn80`: 80% of the limit used. */
-export type AiUsage = { remaining?: number | null; warn80?: boolean };
-/** Optional AI fields on a grading answer. */
-export type AiExtra = { ai?: AiMeta; gradeId?: string; sourceQuote?: string | null } & AiUsage;
+import type { AiInfo } from '@remoa/contracts';
 
-const LIMIT_CODES = ['quota', 'quota_exceeded', 'rate_limited'];
-export const isLimit = (ai?: AiMeta | null, u?: AiUsage) => (ai ? LIMIT_CODES.includes(ai.code ?? '') : false) || u?.remaining === 0;
+/** Quota gone (402/429 `quota_exceeded`, or nothing left) vs. too many requests at once (429 `rate_limited`). */
+export const isRateLimited = (ai?: AiInfo | null) => ai?.code === 'rate_limited';
+export const isLimit = (ai?: AiInfo | null) => ai?.code === 'quota_exceeded' || isRateLimited(ai) || ai?.quota?.remaining === 0;
