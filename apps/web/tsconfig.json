@@ -28,6 +28,7 @@
     ".next-p410b/types/**/*.ts",
     ".next-p410c/types/**/*.ts",
     ".next-p410d/types/**/*.ts",
+    ".next-p410e/types/**/*.ts",
     ".next-perf/types/**/*.ts",
     ".next-pill/types/**/*.ts",
     ".next-prod/types/**/*.ts",
@@ -41,7 +42,7 @@
     "e2e",
     "next-env.d.ts",
     "src",
-    ".next-p410e/types/**/*.ts"
+    ".next-p410f/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
