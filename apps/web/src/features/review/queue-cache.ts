@@ -1,14 +1,9 @@
-import { queueItemSchema } from '@remoa/contracts';
-import { z } from 'zod';
+import type { z } from 'zod';
+import type { savedSchema } from './queue-cache-schema';
 
 const KEY = '/revisar/fila.json';
 const LEGACY = '/revisar/fila';
 const CACHE = 'remoa-queue';
-
-const savedSchema = z.object({
-  items: z.array(queueItemSchema),
-  boardTitles: z.record(z.string(), z.string()),
-});
 
 export type SavedQueue = z.infer<typeof savedSchema>;
 
@@ -27,9 +22,10 @@ async function readSaved(cache: Cache, key: string): Promise<SavedQueue | null> 
   const hit = await cache.match(key);
   if (!hit) return null;
   const body: unknown = await hit.json();
+  const { savedSchema, legacySchema } = await import('./queue-cache-schema');
   const saved = savedSchema.safeParse(body);
   if (saved.success) return saved.data;
-  const legacy = z.array(queueItemSchema).safeParse(body);
+  const legacy = legacySchema.safeParse(body);
   return legacy.success ? { items: legacy.data, boardTitles: {} } : null;
 }
 

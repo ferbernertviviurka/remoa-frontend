@@ -1,4 +1,5 @@
-import { httpErrorBodySchema, type AppError, type Result } from '@remoa/contracts';
+import type { AppError, Result } from '@remoa/contracts';
+import { readErrorBody } from './error-body';
 import { readResultStream } from './sse';
 import { logTiming, parseServerTiming, type ApiTiming } from '@/lib/perf';
 
@@ -31,8 +32,7 @@ export async function apiFetch<T>(path: string, token: string | null, init: Requ
     return readResultStream<T>(res.body, onFeedback);
   }
   const body: unknown = await res.json().catch(() => null);
-  const parsed = httpErrorBodySchema.safeParse(body);
-  const result: Result<T> = res.ok ? (body as Result<T>) : { ok: false, error: parsed.success ? parsed.data.error : { code: 'internal', message: `HTTP ${res.status}` } };
+  const result: Result<T> = res.ok ? (body as Result<T>) : { ok: false, error: readErrorBody(body) ?? { code: 'internal', message: `HTTP ${res.status}` } };
   trace(init.method, path, res.status, started, result.ok ? undefined : result.error, timing);
   return result;
 }

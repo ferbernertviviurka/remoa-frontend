@@ -4,7 +4,6 @@ import type {
   CalendarLabelList, CalendarLabelPatch, CalendarSettings, CalendarTourSeen, CalendarView, EventRemindersInput, Result, UpcomingEvents,
 } from '@remoa/contracts';
 import { api, apiBase } from '@/lib/api';
-import { uploadImage } from '@/features/cards/upload';
 
 const json = (method: string, body?: unknown): RequestInit => ({ method, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
 const base = '/v1/calendar';
@@ -27,7 +26,8 @@ export const calendarApi = {
 };
 
 /** Cover: same multipart upload as card images (D-1202); the server makes the WebP variants. */
-export const uploadCover = (file: File): Promise<Result<AssetRef>> => uploadImage(file, { license: 'own', attribution: null }, () => {});
+// P-507 (D-1070): the upload client (and the zod it pulls) loads only when a cover is picked.
+export const uploadCover = async (file: File): Promise<Result<AssetRef>> => (await import('@/features/cards/upload')).uploadImage(file, { license: 'own', attribution: null }, () => {});
 
 /** FR-18: GET /v1/calendar/events/:id.ics needs the Bearer token, so it is fetched and saved as a file (not a plain link). */
 export async function downloadIcs(id: string): Promise<boolean> {

@@ -1,15 +1,13 @@
 // F25: pure helpers between the API contract (`@remoa/contracts/calendar`) and the presentational `@remoa/ui` calendar components.
-import {
-  CALENDAR_PALETTE,
-  CALENDAR_REMINDER_RULES,
-  calendarColors,
-  type CalendarColor,
-  type CalendarEvent,
-  type CalendarEventInput,
-  type CalendarLabel,
-  type CalendarReminderKind,
-  type ReminderPlan,
-  type UpcomingEvent,
+import { CALENDAR_PALETTE, CALENDAR_REMINDER_RULES, calendarColors } from '@/lib/contracts-lite'; // zod-free (P-507)
+import type {
+  CalendarColor,
+  CalendarEvent,
+  CalendarEventInput,
+  CalendarLabel,
+  CalendarReminderKind,
+  ReminderPlan,
+  UpcomingEvent,
 } from '@remoa/contracts';
 import { addDays, dayKeyOf, makeKey, parseKey, shiftMonth, type CalendarEventItem, type CalendarLabelItem, type CalendarView, type DayKey, type EventFormValue } from '@remoa/ui';
 

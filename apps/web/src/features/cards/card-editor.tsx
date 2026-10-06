@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { TextMorph } from 'torph/react';
 import { caseStages, type Card, type CardDetail, type CardShape, type MapState, type Rubric, type SaveCardInput } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, Button, Input, Skeleton, Tag, Textarea } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
@@ -13,6 +14,8 @@ import { CaseStageHelp } from './case-stage-help';
 import { AnswerImage, ImageField, ImageSlot, QuestionImage } from './image-field';
 import { ShapePicker } from './shape-picker';
 import { Markdown } from './markdown';
+
+const t = withStrings({ canvas: more.canvas, cards: more.cards, map: more.map });
 
 export type CardEditorProps = {
   card: Card;

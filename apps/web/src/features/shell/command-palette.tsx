@@ -3,7 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { t } from '@remoa/strings';
-import { Button, CommandPalette, Icon, IconButton, Kbd, type CommandItem } from '@remoa/ui';
+import dynamic from 'next/dynamic';
+import { Button, Icon, IconButton, Kbd, type CommandItem } from '@remoa/ui';
 import { openChallengeTour } from '@/features/challenge/tour';
 import { openSupport } from '@/features/support/open';
 
@@ -25,6 +26,8 @@ const GLOBAL: CommandItem[] = [
   { id: 'support', group: t('palette.groups.goTo'), label: t('support.navigation.talkToSupport') },
 ];
 
+const CommandPalette = dynamic(() => import('./palette-dialog').then((m) => m.CommandPalette), { ssr: false });
+
 const inOtherDialog = (el: EventTarget | null) => el instanceof Element && !!el.closest('[role="dialog"]');
 
 /**
@@ -34,6 +37,8 @@ const inOtherDialog = (el: EventTarget | null) => el instanceof Element && !!el.
 export function CommandPaletteProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [used, setUsed] = useState(false); // mount the (lazy) dialog on the first open and keep it, so closing still animates
+  if (open && !used) setUsed(true);
   const [extra, setExtra] = useState<Extra | null>(null);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -59,7 +64,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
   return (
     <PaletteCtx.Provider value={ctx}>
       {children}
-      <CommandPalette
+      {used ? <CommandPalette
         open={open}
         onOpenChange={setOpen}
         title={t('editor.commandPalette')}
@@ -69,7 +74,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
         emptyText={t('palette.notFound')}
         items={items}
         onSelect={onSelect}
-      />
+      /> : null}
     </PaletteCtx.Provider>
   );
 }
