@@ -96,6 +96,45 @@ describe('create sheet → editor', () => {
     expect(screen.queryByRole('form')).toBeNull();
   });
 
+  it('D-1206: the header Salvar shows "Salvando…" and is disabled while the PUT runs (no double submit)', async () => {
+    let release: (v: unknown) => void = () => undefined;
+    api.mockImplementation(async (p: string, i?: RequestInit) => (i?.method === 'PUT' ? new Promise((r) => (release = () => r(route(p, i)))) : route(p, i)));
+    open();
+    await pick('Conceito');
+    await editorOpen();
+    fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Lactato' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    const pending = await screen.findByRole('button', { name: 'Salvando…' });
+    expect(pending).toBeDisabled();
+    fireEvent.click(pending);
+    expect(api.mock.calls.filter(([, i]) => i?.method === 'PUT')).toHaveLength(1);
+    release(null);
+    await waitFor(() => expect(host.onSaved).toHaveBeenCalledOnce());
+  });
+
+  it('D-1205: the sheet header stays put; focusing a field scrolls only the sheet body', async () => {
+    open();
+    await pick('Conceito');
+    await editorOpen();
+    const dialog = screen.getByRole('dialog', { name: 'Novo conceito' });
+    const body = dialog.querySelector<HTMLElement>('[data-sheet-body]')!;
+    expect(dialog.className).toContain('overflow-clip'); // not a scroll container: focus/scrollIntoView cannot slide the header away
+    expect(body.contains(dialog.querySelector('header'))).toBe(false);
+    const bodyScroll = vi.fn();
+    body.scrollBy = bodyScroll as never;
+    const input = screen.getByLabelText('Título');
+    input.scrollIntoView = vi.fn();
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    try {
+      fireEvent.focus(input);
+      vi.advanceTimersByTime(300);
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(bodyScroll).toHaveBeenCalledOnce();
+    expect(input.scrollIntoView).not.toHaveBeenCalled();
+  });
+
   it('Fluxograma: steps are required and validated per field; nothing is sent', async () => {
     as('flow', { steps: [{ id: 'a', text: '' }, { id: 'b', text: '' }] });
     open();

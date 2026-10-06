@@ -53,8 +53,10 @@ test(`${N} cards: pan fps`, async ({ page, request }) => {
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
     await expect(page).toHaveURL(/\/(app\/hoje|mapas)?$/, { timeout: 10_000 }); // D-086: "/" after login
   }).toPass({ timeout: 30_000 });
+  const tOpen = Date.now(); // G16: "abrir mapa de 500 cards < 1,5 s" = navigation until the first node is painted
   await page.goto(`/app/mapas/${board}`);
   await expect(page.locator('.react-flow__node').first()).toBeVisible();
+  console.log(`PERF[open] ${N} cards: ${Date.now() - tOpen} ms to the first node`);
   // D-098: no card selected = no panel (the 200/199 summary it showed is gone); the canvas has the whole width
   await expect(page.getByRole('complementary', { name: 'Painel do mapa' })).toHaveCount(0);
 

@@ -1,9 +1,9 @@
-// FR-3: image upload sign → presigned PUT (XHR for progress) → complete. Plus a per-asset cache of signed GET urls.
+// FR-3 / D-1202: image upload as multipart to the API (XHR for progress), which compresses to WebP. Plus a per-asset cache of signed GET urls.
 import { useEffect, useState } from 'react';
-import { imageMimes, type AssetLicense, type AssetRef, type AssetView, type ErrorCode, type Result } from '@remoa/contracts';
-import { api } from '@/lib/api';
+import { IMAGE_MAX_BYTES, httpErrorBodySchema, imageMimes, type AssetLicense, type AssetRef, type AssetView, type ErrorCode, type Result } from '@remoa/contracts';
+import { api, apiBase, sessionToken } from '@/lib/api';
 
-export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = IMAGE_MAX_BYTES;
 
 export type FileProblem = 'badType' | 'tooBig';
 /** Checked before anything is sent. */
@@ -12,21 +12,31 @@ export function checkFile(f: Pick<File, 'type' | 'size'>): FileProblem | null {
   return f.size > MAX_IMAGE_BYTES ? 'tooBig' : null;
 }
 
-/** PUT to the presigned URL with the signed Content-Type; the browser sets Content-Length. */
-export function putFile(url: string, file: File, onProgress: (pct: number) => void): Promise<boolean> {
+const fail = (code: ErrorCode = 'internal'): Result<never> => ({ ok: false, error: { code, message: 'upload failed' } });
+
+/** POST multipart to the API with the session token; XHR (not fetch) for upload progress. 413 = over IMAGE_MAX_BYTES. */
+function postForm<T>(path: string, token: string | null, form: FormData, onProgress: (pct: number) => void): Promise<Result<T>> {
   return new Promise((resolve) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('PUT', url);
-    xhr.setRequestHeader('Content-Type', file.type);
+    xhr.open('POST', `${apiBase()}${path}`);
+    if (token) xhr.setRequestHeader('authorization', `Bearer ${token}`);
     xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(Math.round((e.loaded / e.total) * 100));
-    xhr.onload = () => resolve(xhr.status >= 200 && xhr.status < 300);
-    xhr.onerror = () => resolve(false);
-    xhr.onabort = () => resolve(false);
-    xhr.send(file);
+    xhr.onload = () => {
+      let body: unknown = null;
+      try {
+        body = JSON.parse(xhr.responseText);
+      } catch {
+        /* non-JSON (proxy error page) */
+      }
+      if (xhr.status >= 200 && xhr.status < 300 && body) return resolve(body as Result<T>);
+      const parsed = httpErrorBodySchema.safeParse(body);
+      resolve(parsed.success ? { ok: false, error: parsed.data.error } : fail(xhr.status === 413 ? 'validation' : 'internal'));
+    };
+    xhr.onerror = () => resolve(fail());
+    xhr.onabort = () => resolve(fail());
+    xhr.send(form);
   });
 }
-
-const fail = (code: ErrorCode = 'internal'): Result<never> => ({ ok: false, error: { code, message: 'upload failed' } });
 
 export async function uploadImage(
   file: File,
@@ -34,13 +44,11 @@ export async function uploadImage(
   onProgress: (pct: number) => void,
 ): Promise<Result<AssetRef>> {
   try {
-    const sign = await api<{ url: string; key: string }>('/v1/uploads/sign', {
-      method: 'POST',
-      body: JSON.stringify({ mime: file.type, sizeBytes: file.size }),
-    });
-    if (!sign.ok) return sign;
-    if (!(await putFile(sign.data.url, file, onProgress))) return fail();
-    return await api<AssetRef>('/v1/uploads/complete', { method: 'POST', body: JSON.stringify({ key: sign.data.key, ...meta }) });
+    const form = new FormData();
+    form.append('file', file);
+    form.append('license', meta.license);
+    if (meta.attribution) form.append('attribution', meta.attribution);
+    return await postForm<AssetRef>('/v1/uploads/direct', await sessionToken(), form, onProgress);
   } catch {
     return fail(); // network down
   }

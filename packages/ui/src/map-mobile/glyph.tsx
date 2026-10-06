@@ -7,6 +7,7 @@ const extra = {
   redo: <><path d="M15 14l5-5-5-5" /><path d="M20 9H10a6 6 0 000 12h3" /></>,
   concept: <><rect x="4" y="5" width="16" height="14" rx="3" /><path d="M8 10h8M8 14h5" /></>,
   fit: <path d="M4 9V5a1 1 0 011-1h4M20 9V5a1 1 0 00-1-1h-4M4 15v4a1 1 0 001 1h4M20 15v4a1 1 0 01-1 1h-4" />,
+  resize: <path d="M20 12l-8 8M20 17l-3 3M20 7L7 20" />,
 } as const;
 
 export type MapGlyphName = IconName | keyof typeof extra;

@@ -16,6 +16,6 @@ for (const [name, width, height] of [['1440', 1440, 900], ['390', 390, 844]] as 
     // lazy images below the fold: scroll through once so the full-page shot has them
     await page.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 600) { scrollTo(0, y); await new Promise((r) => setTimeout(r, 60)); } scrollTo(0, 0); });
     await page.waitForLoadState('networkidle');
-    await expect(page).toHaveScreenshot(`landing-${name}.png`, { fullPage: true, animations: 'disabled', mask: [page.locator('nextjs-portal')], maxDiffPixelRatio: 0.02 });
+    await expect(page).toHaveScreenshot(`landing-${name}.png`, { fullPage: true, animations: 'disabled', mask: [page.locator('nextjs-portal')], stylePath: 'e2e/landing/hide-blog.css', maxDiffPixelRatio: 0.02 });
   });
 }

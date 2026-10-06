@@ -83,7 +83,7 @@ export default async function Page() {
   // The hero needs only /home + /boards. Everything else streams in its own Suspense.
   const [home, boards] = await Promise.all([
     serverApi<HomeSummary>("/v1/home"),
-    serverApi<BoardSummary[]>("/v1/boards"),
+    serverApi<BoardSummary[]>("/v1/boards?include=preview"),
   ]);
   if (!home.ok)
     return <EmptyState title={t("pages.home")} body={t("home.loadError")} />;

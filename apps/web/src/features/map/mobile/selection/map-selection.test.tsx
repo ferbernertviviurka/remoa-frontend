@@ -25,6 +25,14 @@ beforeAll(() => {
   globalThis.DOMMatrixReadOnly ??= class {
     m22 = 1;
   } as unknown as typeof DOMMatrixReadOnly;
+  // jsdom has no PointerEvent: without it fireEvent drops clientX and pointerId
+  window.PointerEvent ??= class extends MouseEvent {
+    pointerId: number;
+    constructor(type: string, init: PointerEventInit = {}) {
+      super(type, init);
+      this.pointerId = init.pointerId ?? 0;
+    }
+  } as unknown as typeof PointerEvent;
 });
 beforeEach(() => {
   window.localStorage.clear();
@@ -120,5 +128,52 @@ describe('conectar por toque (FR-10, Q-086)', () => {
     expect(await screen.findByText('Esses dois cards já estão conectados.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Cancelar conexão' })).toBeTruthy();
     act(() => undefined);
+  });
+});
+
+describe('alças do card selecionado (D-1207)', () => {
+  const node = (i: number) => document.querySelector<HTMLElement>(`.react-flow__node[data-id="${sepseCards[i]!.id}"]`)!;
+  const handle = (i: number, name: RegExp) => [...node(i).querySelectorAll<HTMLElement>('button')].find((b) => name.test(b.getAttribute('aria-label') ?? ''));
+
+  it('só o selecionado mostra as alças; a bolinha entra no modo conectar e os outros cards viram destino', async () => {
+    mount();
+    expect(handle(0, /^Conectar/)).toBeUndefined();
+    fireEvent.click(card(0));
+    await screen.findByRole('region', { name: 'Card selecionado' });
+    expect(handle(1, /^Conectar/)).toBeUndefined();
+    fireEvent.click(handle(0, /^Conectar/)!);
+    expect(screen.getByText(/Toque no card que se liga a/)).toBeTruthy();
+    expect(card(1).dataset.connectTarget).toBe('true');
+    expect(card(0).dataset.connectTarget).toBeUndefined();
+    expect(handle(0, /^Conectar/)).toBeUndefined(); // no handles while connecting
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar conexão' }));
+    expect(card(1).dataset.connectTarget).toBeUndefined();
+  });
+
+  it('arrastar a alça do canto muda o tamanho ao vivo, salva um resizeCards ao soltar e desfazer volta', async () => {
+    mount();
+    fireEvent.click(card(0));
+    await screen.findByRole('region', { name: 'Card selecionado' });
+    const before = parseInt(card(0).style.width, 10);
+    const grip = handle(0, /^Redimensionar/)!;
+    fireEvent.pointerDown(grip, { pointerId: 1, clientX: 0, clientY: 0 });
+    fireEvent.pointerMove(grip, { pointerId: 1, clientX: 400, clientY: 400 });
+    const live = parseInt(card(0).style.width, 10);
+    expect(live).toBeGreaterThan(before);
+    expect(undo().getAttribute('aria-disabled')).toBe('true'); // nothing committed mid-gesture
+    fireEvent.pointerUp(grip, { pointerId: 1 });
+    expect(parseInt(card(0).style.width, 10)).toBe(live);
+    expect(undo().getAttribute('aria-disabled')).toBeNull();
+    fireEvent.click(undo());
+    expect(parseInt(card(0).style.width, 10)).toBe(before);
+  });
+
+  it('setas no teclado mudam o tamanho em passos de 8 px', async () => {
+    mount();
+    fireEvent.click(card(0));
+    await screen.findByRole('region', { name: 'Card selecionado' });
+    const before = parseInt(card(0).style.width, 10);
+    fireEvent.keyDown(handle(0, /^Redimensionar/)!, { key: 'ArrowRight' });
+    expect(parseInt(card(0).style.width, 10)).toBe(before + 8);
   });
 });

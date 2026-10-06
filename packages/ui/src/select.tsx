@@ -30,7 +30,7 @@ export function Select({
           <RS.Icon className="text-muted" aria-hidden="true">▾</RS.Icon>
         </RS.Trigger>
         <RS.Portal>
-          <RS.Content className="remoa-pop z-50 max-h-[min(320px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-map border border-border bg-surface p-1 shadow-lift" position="popper" sideOffset={6}>
+          <RS.Content className="remoa-pop z-[90] max-h-[min(320px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-map border border-border bg-surface p-1 shadow-lift" position="popper" sideOffset={6}>
             <RS.Viewport>
               {options.map((option) => (
                 <RS.Item

@@ -2,7 +2,7 @@
 // Next 15.5: unstable_cache + revalidateTag(tag). Moving to Next 16 (`use cache`, cacheTag/cacheLife, updateTag) changes only this file (Q-146).
 // Global data only (landing, blog, legal, public prices, catalog): user data is cached in the API (L1), never here (D-979).
 // Catalog of tags/TTLs: @remoa/contracts cache.ts. Server-only: do not import from a client component.
-import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
+import { revalidatePath, revalidateTag, unstable_cache, unstable_noStore } from 'next/cache';
 import { cacheTtl, type CacheTtl, type WebTag } from '@remoa/contracts';
 
 export type GlobalWebCacheDef = {
@@ -34,3 +34,6 @@ export function revalidateTags(tags: readonly string[]) {
 export function revalidatePaths(paths: readonly string[]) {
   for (const p of new Set(paths)) revalidatePath(p);
 }
+
+/** Opt this render out of the Data Cache/ISR (e.g. a failed API call must not be cached: D-968/D-1201). */
+export const noStore = () => unstable_noStore();

@@ -81,6 +81,7 @@ export const plans = {
       label: 'Forma de pagamento',
       pix: { label: 'Pix', desc: 'Pague pelo app do seu banco, com QR code ou copia e cola.' },
       card: { label: 'Cartão', desc: 'Crédito, com cobrança automática a cada período.' },
+      soon: 'Em breve',
       // D-101: Pix é pagamento único do período e não renova sozinho.
       pixNote: 'No Pix, você paga um período e renova quando quiser. Ele não renova sozinho.',
     },

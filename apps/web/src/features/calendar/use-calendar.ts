@@ -13,8 +13,6 @@ type Range = { from: DayKey; to: DayKey };
 export type Failure = { message: string; retry: () => void };
 export type LabelOutcome = 'ok' | 'limit' | 'error';
 
-const isNarrow = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches;
-
 /**
  * The state behind /app/calendario: events of the loaded range (visible ± 1 month, FR-22), labels, optimistic writes (FR-22) and the
  * offline queue (FR-19: a network failure keeps the optimistic row and replays when the browser is back online).
@@ -46,10 +44,9 @@ export function useCalendar(init: { settings: CalendarSettings; labels: Calendar
     return () => clearInterval(id);
   }, []);
 
-  // first visit with no saved view: Agenda on the phone, Month on the desktop (FR-3)
+  // the default view (FR-3) is already resolved by the server page, so there is no swap after hydration
   useEffect(() => {
-    if (init.settings.view === null && isNarrow()) setViewState('agenda');
-    track('calendar_opened', { view: init.settings.view ?? (isNarrow() ? 'agenda' : 'month') });
+    track('calendar_opened', { view: init.settings.view ?? 'month' });
   }, [init.settings.view]);
 
   // load only what is visible ± 1 month

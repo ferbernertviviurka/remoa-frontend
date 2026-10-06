@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext } from 'react';
-import type { RetrievabilityMap } from '@remoa/contracts';
+import type { CardSize, RetrievabilityMap } from '@remoa/contracts';
 
 /**
  * Lido pelos nós e conexões do mapa no celular (T5 monta o provider). Muda só com busca, camadas, seleção ou dados;
@@ -24,6 +24,11 @@ export type MobileNodesCtx = {
   editLabel?: (edgeId: string) => void;
   /** Espera o card criado no mapa chegar à API antes de buscar o detalhe (passos do fluxograma). */
   prepare: (cardId: string) => Promise<boolean>;
+  /** Modo conectar: card de origem (os outros viram destino). */
+  connectFrom?: string | null;
+  /** D-1207: se presentes, o card selecionado mostra a bolinha de conectar e a alça de tamanho. */
+  startConnect?: (cardId: string) => void;
+  resizeCard?: (cardId: string, size: CardSize) => void;
 };
 
 const noop = () => undefined;

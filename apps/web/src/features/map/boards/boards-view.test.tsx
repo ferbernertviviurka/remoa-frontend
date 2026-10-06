@@ -50,12 +50,16 @@ describe('BoardsView', () => {
     await openMenu('Arquivar');
     expect(api).not.toHaveBeenCalled();
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Arquivar' }));
-    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/boards/b1', { method: 'PATCH', body: JSON.stringify({ archived: true }) }), { timeout: 5000 });
-    fireEvent.click(await screen.findByRole('button', { name: 'Desfazer' }, { timeout: 5000 }));
-    await waitFor(() => expect(api).toHaveBeenLastCalledWith('/v1/boards/b1', { method: 'PATCH', body: JSON.stringify({ archived: false }) }), { timeout: 5000 });
+    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/boards/b1', { method: 'PATCH', body: JSON.stringify({ archived: true }) }));
+    // "Desfazer" is disabled while the mutation / router transition is pending; clicking a disabled button is a silent no-op,
+    // which made this test flaky under load (P-496). Wait for the enabled state, not for the element to merely exist.
+    const undo = await screen.findByRole('button', { name: 'Desfazer' });
+    await waitFor(() => expect(undo).toBeEnabled());
+    fireEvent.click(undo);
+    await waitFor(() => expect(api).toHaveBeenLastCalledWith('/v1/boards/b1', { method: 'PATCH', body: JSON.stringify({ archived: false }) }));
     // refresh runs after the PATCH resolves, a tick after the call is recorded.
     await waitFor(() => expect(refresh).toHaveBeenCalledTimes(2));
-  }, 20_000); // three 5 s waits above must fit inside the test timeout under load
+  });
 
   it('excludes only after typing the map name, warns it is permanent, and shows feedback', async () => {
     api.mockResolvedValue({ ok: true, data: { id: 'b1' } });
@@ -80,7 +84,7 @@ describe('BoardsView', () => {
     api.mockImplementation(async (path: string) => (path.startsWith('/v1/boards?status=') ? { ok: true, data: [old] } : { ok: true, data: old }));
     view([board]);
     fireEvent.click(screen.getByRole('radio', { name: 'Arquivados' }));
-    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/boards?status=archived'));
+    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/boards?status=archived&include=preview'));
     expect(await screen.findByRole('link', { name: 'Abrir Velho' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Abrir Sepse' })).not.toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole('button', { name: 'Mais ações de Velho' }), { key: 'Enter' });

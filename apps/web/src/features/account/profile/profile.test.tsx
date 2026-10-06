@@ -10,8 +10,6 @@ const track = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }), useSearchParams: () => new URLSearchParams() }));
 vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
 vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
-const putFile = vi.fn();
-vi.mock('@/features/cards/upload', () => ({ putFile: (...a: unknown[]) => putFile(...a) }));
 vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} }); // Radix Select/Checkbox in jsdom
 URL.createObjectURL = vi.fn(() => 'blob:x');
 URL.revokeObjectURL = vi.fn();
@@ -185,8 +183,8 @@ describe('photo dialog', () => {
     const input = dialog.querySelector<HTMLInputElement>('input[type="file"]')!;
     fireEvent.change(input, { target: { files: [file('application/pdf')] } });
     expect(within(dialog).getByRole('alert')).toHaveTextContent('Esse arquivo não é uma imagem JPG, PNG ou WebP.');
-    fireEvent.change(input, { target: { files: [file('image/png', 6 * 1024 * 1024)] } });
-    expect(within(dialog).getByRole('alert')).toHaveTextContent('passa de 5 MB');
+    fireEvent.change(input, { target: { files: [file('image/png', 101 * 1024 * 1024)] } });
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('passa de 100 MB');
     expect(within(dialog).getByRole('button', { name: 'Salvar foto' })).toBeDisabled();
   });
 

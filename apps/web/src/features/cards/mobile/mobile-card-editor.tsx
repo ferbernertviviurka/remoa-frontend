@@ -32,6 +32,7 @@ export function MobileCardEditor({ card, isNew, subs, prepare, onSaved, onClose,
   const [dirty, setDirty] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [kb, setKb] = useState(0);
+  const [saving, setSaving] = useState(false);
   const done = useRef(false);
   const paywall = usePaywall();
   const { toast } = useToast();
@@ -71,7 +72,13 @@ export function MobileCardEditor({ card, isNew, subs, prepare, onSaved, onClose,
     const el = e.target;
     if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return;
     const calm = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    setTimeout(() => el.scrollIntoView?.({ block: 'center', behavior: calm ? 'auto' : 'smooth' }), 250); // after the keyboard opened
+    // Only the sheet body scrolls: scrollIntoView would also scroll the sheet box and the page, taking the fixed header away (D-1205).
+    setTimeout(() => {
+      const body = el.closest<HTMLElement>('[data-sheet-body]');
+      if (!body) return;
+      const [b, r] = [body.getBoundingClientRect(), el.getBoundingClientRect()];
+      body.scrollBy?.({ top: r.top - b.top - (b.height - r.height) / 2, behavior: calm ? 'auto' : 'smooth' });
+    }, 250); // after the keyboard opened
   };
 
   const [rubricBusy, setRubricBusy] = useState(false);
@@ -104,13 +111,13 @@ export function MobileCardEditor({ card, isNew, subs, prepare, onSaved, onClose,
           </Button>
         }
         end={
-          <Button type="submit" form={FORM}>
+          <Button type="submit" form={FORM} loading={saving} loadingLabel={t('cards.saving')}>
             {t('mapMobile.editor.saveLabel')}
           </Button>
         }
       >
         <div className="px-[18px] pt-5" style={{ paddingBottom: Math.max(24, kb) }} onFocusCapture={focusIn}>
-          <CardEditor card={card} subs={subs} prepare={prepare} onSaved={saved} onClose={request} onShape={onShape} formId={FORM} onDirty={setDirty} />
+          <CardEditor card={card} subs={subs} prepare={prepare} onSaved={saved} onClose={request} onShape={onShape} formId={FORM} onDirty={setDirty} onBusy={setSaving} />
           {card.type === 'note' ? null : (
             <div className="mt-4 [&>button]:w-full">
               <Button variant="secondary" loading={rubricBusy} loadingLabel={t('cards.saving')} icon={<Icon name="sparkle" size={20} />} onClick={() => void rubric()}>

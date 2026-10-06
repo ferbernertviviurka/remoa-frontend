@@ -31,12 +31,14 @@
     ".next-p410e/types/**/*.ts",
     ".next-p410f/types/**/*.ts",
     ".next-p410g/types/**/*.ts",
+    ".next-p410x/types/**/*.ts",
     ".next-perf/types/**/*.ts",
     ".next-pill/types/**/*.ts",
     ".next-prod/types/**/*.ts",
     ".next-qa/types/**/*.ts",
     ".next-qa2/types/**/*.ts",
     ".next-qa2/types/**/*.ts",
+    ".next-qa3257/types/**/*.ts",
     ".next-split/types/**/*.ts",
     ".next-t10/types/**/*.ts",
     ".next-t9/types/**/*.ts",
@@ -44,7 +46,7 @@
     "e2e",
     "next-env.d.ts",
     "src",
-    ".next-p410x/types/**/*.ts"
+    ".next-qa3267/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

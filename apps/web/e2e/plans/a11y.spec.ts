@@ -71,10 +71,12 @@ test('teclado: período, forma de pagamento, cupom e FAQ; aria-live só com o to
   await page.keyboard.press('Enter');
   await expect(live).toHaveText('R$ 349,00');
 
-  // forma de pagamento: setas movem a seleção; foco visível
+  // forma de pagamento (D-982): o Pix está desabilitado e fora das setas; a seleção fica no cartão e o foco chega a ele
   const pix = s.getByRole('radio', { name: /^Pix/ });
   const card = s.getByRole('radio', { name: /^Cartão/ });
-  await pix.focus();
+  await expect(pix).toBeDisabled();
+  await expect(card).toBeChecked();
+  await card.focus();
   await page.keyboard.press('ArrowRight');
   await expect(card).toBeChecked();
   await expect(card).toBeFocused();

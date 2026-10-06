@@ -12,8 +12,8 @@ import { Icon } from '../icons';
 
 const brl = (c: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(c / 100);
 const methods = [
-  { value: 'pix', label: 'Pix', description: 'Aprovação na hora', icon: <Icon name="grid" /> },
   { value: 'card', label: 'Cartão', description: 'Crédito, renova sozinho', icon: <Icon name="file" /> },
+  { value: 'pix', label: 'Pix', description: 'Aprovação na hora', icon: <Icon name="grid" />, disabled: true, badge: 'Em breve' },
 ];
 
 const meta = { title: 'Planos/Checkout' } satisfies Meta;
@@ -23,7 +23,7 @@ type S = StoryObj;
 /** Regra de uso: o servidor valida o código (`onApply`); a UI só mostra o resultado. Data de cobrança também vem do servidor. */
 function ResumoDemo() {
     const [annual, setAnnual] = useState(false);
-    const [method, setMethod] = useState('pix');
+    const [method, setMethod] = useState('card');
     const [applied, setApplied] = useState(false);
     const price = (annual ? 34900 : 3900) - (applied ? (annual ? 5000 : 1000) : 0);
     return (

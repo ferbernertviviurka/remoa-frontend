@@ -122,7 +122,11 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version-file: remoa-frontend/.nvmrc, cache: pnpm, cache-dependency-path: remoa-frontend/pnpm-lock.yaml }
       - run: pnpm i --frozen-lockfile
-      - run: pnpm --filter @remoa/web build
+      # G21 FR-55 (P-483): the same build feeds the bundle budget (apps/web/perf-budgets.json: ceiling per route = size on 2026-10-06 + 5%;
+      # the F26 goal of 170 KB is informational until reached). `shell: bash` = pipefail, so a failed build is not hidden by tee.
+      - run: pnpm --filter @remoa/web build 2>&1 | tee build.log
+        shell: bash
+      - run: node apps/web/scripts/check-bundle.mjs build.log
       - run: |
           pnpm --filter @remoa/web start > /tmp/web.log 2>&1 &
           for i in $(seq 1 60); do curl -sf http://localhost:3000/robots.txt > /dev/null && break; sleep 1; done

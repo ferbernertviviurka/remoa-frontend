@@ -15,9 +15,12 @@ type Handler = (p: { eventType: string; new: Record<string, unknown> }) => void;
 let realtime: Handler | null = null;
 let status: ((s: string) => void) | undefined;
 const getUser = vi.fn(async () => ({ data: { user: { id: 'u1' } } }));
+const getSession = vi.fn(async () => ({ data: { session: { access_token: 'jwt-1' } } }));
+const setAuth = vi.fn();
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
-    auth: { getUser },
+    auth: { getUser, getSession },
+    realtime: { setAuth },
     channel: () => ({ on: (_e: string, _f: unknown, h: Handler) => ((realtime = h), { subscribe: (cb?: (s: string) => void) => (status = cb, {}) }) }),
     removeChannel: () => undefined,
   }),
@@ -115,6 +118,19 @@ describe('Realtime x poll (P-442)', () => {
     await screen.findByRole('button', { name: 'Notificações, 3 não lidas' });
     await waitFor(() => expect(realtime).not.toBeNull());
     expect(getUser).not.toHaveBeenCalled();
+  });
+  it('puts the session JWT on the Realtime socket before joining (otherwise RLS drops every event)', async () => {
+    wrap(<NotificationBell />);
+    await waitFor(() => expect(realtime).not.toBeNull());
+    expect(setAuth).toHaveBeenCalledWith('jwt-1');
+  });
+  it('without a session it never joins as anon (Realtime: "invalid column for filter user_id"), the poll covers it', async () => {
+    getSession.mockResolvedValueOnce({ data: { session: null } } as never);
+    wrap(<NotificationBell />);
+    await screen.findByRole('button', { name: 'Notificações, 3 não lidas' });
+    await act(async () => { await Promise.resolve(); });
+    expect(realtime).toBeNull();
+    expect(setAuth).not.toHaveBeenCalled();
   });
   it('does not poll while the channel is connected, polls again when it drops', async () => {
     wrap(<NotificationBell />);
