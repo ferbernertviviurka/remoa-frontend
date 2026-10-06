@@ -44,6 +44,17 @@ export const adminBlog = {
       actions: 'Ações',
     },
 
+    ariaLabel: 'Lista de posts do blog',
+    filtersLabel: 'Filtrar por status',
+    summaryLabel: 'Resumo por status',
+    noCover: 'Post sem capa',
+    loadError: 'Não foi possível carregar os posts. Tente de novo.',
+    retry: 'Tentar de novo',
+    pageSummary: 'Página {page} de {pages}',
+    prev: 'Anterior',
+    next: 'Próxima',
+    duplicateError: 'Não foi possível duplicar o post.',
+
     // Estados da tabela
     noResults: 'Nenhum post com esses filtros.',
     noPost: 'Nenhum post publicado ainda',
@@ -80,6 +91,10 @@ export const adminBlog = {
       type: 'Tipo',
       lastmod: 'lastmod',
     },
+    neverGenerated: 'ainda não gerado',
+    loadError: 'Não foi possível carregar o sitemap.',
+    refreshError: 'Não foi possível atualizar o sitemap.',
+    types: { home: 'Início', blog: 'Blog', category: 'Categoria', post: 'Post', legal: 'Página legal' },
     sitemapLink: 'sitemap.xml',
     regenerateButton: 'Atualizar agora',
     toast: 'Sitemap atualizado',
@@ -114,6 +129,8 @@ export const adminBlog = {
     templateHint: 'Dá para trocar o template depois, com a prévia ao vivo.',
     createButton: 'Criar e abrir o editor',
     cancel: 'Cancelar',
+    closeLabel: 'Fechar',
+    createError: 'Não foi possível criar o post.',
   },
 
   // FR-5 a FR-8: Editor
@@ -306,6 +323,11 @@ export const adminBlog = {
     button: 'Despublicar e registrar',
     cancel: 'Cancelar',
     success: 'Artigo despublicado',
+    tooShort: 'Escreva o motivo com pelo menos 8 caracteres.',
+    error: 'Não foi possível despublicar. Tente de novo.',
+    reauth: 'Esta ação exige uma autenticação recente. Faça login novamente.',
+    registered: 'Ação registrada na auditoria ({id})',
+    done: 'Concluir',
   },
 
   // Categorias
