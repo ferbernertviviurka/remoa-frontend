@@ -8,7 +8,7 @@ Estes Termos de Uso regulam o uso do Remoa, plataforma de estudo com mapas conec
 
 ## 1. Quem somos
 
-O Remoa é oferecido por {{razaoSocial}}, inscrita no CNPJ sob o nº {{cnpj}}, com sede em {{endereco}} (“Remoa”, “nós”). Você pode falar conosco em contato@remoa.com.br.
+O Remoa é oferecido por {{razaoSocial}}, inscrita no CNPJ sob o nº {{cnpj}}, com sede em {{endereco}} (“Remoa”, “nós”). Você pode falar conosco em {{dpoEmail}}.
 
 ## 2. O que é o Remoa
 
@@ -33,7 +33,7 @@ Há um plano gratuito (Free) e um plano pago (Pro). Os recursos, os limites e os
 - Os pagamentos são processados pelo Stripe. Não armazenamos o número do seu cartão.
 - A assinatura renova automaticamente ao fim de cada período (mensal ou anual) até você cancelar.
 - Você pode cancelar a qualquer momento em Minha conta. O acesso ao Pro continua até o fim do período já pago.
-- Direito de arrependimento: compras feitas pela internet podem ser desfeitas em até 7 dias a partir da contratação, nos termos do art. 49 do Código de Defesa do Consumidor, com devolução dos valores pelo mesmo meio de pagamento. Para pedir, escreva para contato@remoa.com.br.
+- Direito de arrependimento: compras feitas pela internet podem ser desfeitas em até 7 dias a partir da contratação, nos termos do art. 49 do Código de Defesa do Consumidor, com devolução dos valores pelo mesmo meio de pagamento. Para pedir, escreva para {{dpoEmail}}.
 - Se um pagamento falhar, podemos suspender os recursos do Pro até a regularização.
 
 ## 6. Seu conteúdo
@@ -70,7 +70,7 @@ Quando a Loja de mapas for aberta, compradores e vendedores aceitarão termos pr
 
 ## 12. Disponibilidade e suporte
 
-Trabalhamos para manter o Remoa disponível, mas não garantimos funcionamento sem interrupções. Podemos fazer manutenções e atualizações. O suporte funciona pelo botão de ajuda no app e pelo e-mail contato@remoa.com.br.
+Trabalhamos para manter o Remoa disponível, mas não garantimos funcionamento sem interrupções. Podemos fazer manutenções e atualizações. O suporte funciona pelo botão de ajuda no app e pelo e-mail {{dpoEmail}}.
 
 ## 13. Comunicações
 
@@ -98,5 +98,5 @@ Estes termos seguem as leis do Brasil. Para consumidores, fica eleito o foro do 
 
 ## 19. Contato
 
-Dúvidas sobre estes termos: contato@remoa.com.br.
+Dúvidas sobre estes termos: {{dpoEmail}}.
 

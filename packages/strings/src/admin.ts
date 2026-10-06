@@ -705,7 +705,7 @@ export const admin = {
       period30: '30 dias',
     },
     who: { me: 'Você (admin)', system: 'Sistema', stripe: 'Webhook Stripe', user: 'Sem permissão (não admin)', unknown: 'Admin removido' },
-    targets: { user: 'Usuário', board: 'Mapa', payment: 'Transação', referral: 'Indicação', grant: 'Concessão', ticket: 'Chamado', export: 'Exportação', route: 'Rota', blog_post: 'Post do blog', blog_category: 'Categoria do blog', sitemap: 'Sitemap' },
+    targets: { user: 'Usuário', board: 'Mapa', payment: 'Transação', referral: 'Indicação', grant: 'Concessão', ticket: 'Chamado', export: 'Exportação', route: 'Rota', blog_post: 'Post do blog', blog_category: 'Categoria do blog', blog_asset: 'Imagem do blog', sitemap: 'Sitemap' },
     denials: { not_admin: 'Sem papel de admin', reauth_required: 'Reautenticação necessária', missing_reason: 'Sem motivo informado', invalid_state: 'Estado inválido', error: 'Erro ao executar' },
     noReason: '—',
     origin: 'IP …{hash}',

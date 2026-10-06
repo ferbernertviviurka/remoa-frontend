@@ -8,7 +8,7 @@ Esta Política explica quais dados pessoais o Remoa coleta, para que usamos, com
 
 ## 1. Quem é o controlador
 
-O controlador dos seus dados é {{razaoSocial}}, CNPJ {{cnpj}}, com sede em {{endereco}}. O contato do encarregado pelo tratamento de dados pessoais ({{dpoNome}}) é contato@remoa.com.br.
+O controlador dos seus dados é {{razaoSocial}}, CNPJ {{cnpj}}, com sede em {{endereco}}. O contato do encarregado pelo tratamento de dados pessoais ({{dpoNome}}) é {{dpoEmail}}.
 
 ## 2. Dados que coletamos
 
@@ -64,7 +64,7 @@ Alguns desses provedores podem tratar dados fora do Brasil. Nesses casos, adotam
 
 ## 8. Seus direitos
 
-Pela LGPD você pode, a qualquer momento: confirmar que tratamos seus dados; acessá-los; corrigi-los; pedir anonimização, bloqueio ou eliminação; pedir a portabilidade; saber com quem compartilhamos; retirar o consentimento; e se opor a um tratamento. Você pode exportar seus dados e excluir sua conta em Minha conta, ou escrever para contato@remoa.com.br. Respondemos nos prazos da lei.
+Pela LGPD você pode, a qualquer momento: confirmar que tratamos seus dados; acessá-los; corrigi-los; pedir anonimização, bloqueio ou eliminação; pedir a portabilidade; saber com quem compartilhamos; retirar o consentimento; e se opor a um tratamento. Você pode exportar seus dados e excluir sua conta em Minha conta, ou escrever para {{dpoEmail}}. Respondemos nos prazos da lei.
 
 ## 9. Cookies e tecnologias semelhantes
 
@@ -91,5 +91,5 @@ Podemos atualizar esta Política. Quando a mudança for relevante, avisaremos po
 
 ## 14. Contato e Autoridade
 
-Para dúvidas ou pedidos sobre seus dados, escreva para contato@remoa.com.br. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).
+Para dúvidas ou pedidos sobre seus dados, escreva para {{dpoEmail}}. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).
 

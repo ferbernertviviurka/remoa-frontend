@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderLegal } from './render-legal';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 const vars = { razaoSocial: 'Acme <b>', cnpj: '', versao: '1' };
 const md = `<!-- hidden -->
@@ -48,5 +50,19 @@ describe('renderLegal', () => {
     const prod = renderLegal(md, { vars, production: true });
     expect(prod.sections[0]!.html).not.toContain('<mark');
     expect(prod.sections[0]!.html).not.toContain('{{cnpj}}');
+  });
+});
+
+describe('content/legal (P-434)', () => {
+  const dir = join(__dirname, '..', '..', '..', 'content', 'legal');
+  it('no literal e-mail; only known {{vars}}; dpoEmail renders', async () => {
+    const { LEGAL_TEMPLATE_ENV } = await import('@/lib/env/legal');
+    for (const f of readdirSync(dir).filter((x) => x.endsWith('.md'))) {
+      const src = readFileSync(join(dir, f), 'utf8').replace(/<!--[\s\S]*?-->/g, '');
+      expect(src, f).not.toMatch(/[\w.-]+@[\w-]+\.\w+/);
+      for (const [, k] of src.matchAll(/\{\{(\w+)\}\}/g)) expect(k === 'versao' || k! in LEGAL_TEMPLATE_ENV, `${f}: ${k}`).toBe(true);
+    }
+    const out = renderLegal('# T\n\n## 1. A\n\nEscreva para {{dpoEmail}}.', { vars: { dpoEmail: 'dpo@x.com' }, production: true });
+    expect(out.sections[0]!.html).toContain('dpo@x.com');
   });
 });
