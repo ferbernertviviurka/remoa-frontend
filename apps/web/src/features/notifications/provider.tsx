@@ -33,11 +33,13 @@ const announce = (row: Record<string, unknown>, tz: string) => {
   }
 };
 
-export function NotificationsProvider({ timezone = 'America/Sao_Paulo', children }: { timezone?: string; children: ReactNode }) {
+/** `userId` comes from the server (profile in the shell): no `getUser()` round trip in the browser (D-994). Without it there is no Realtime, only the poll. */
+export function NotificationsProvider({ timezone = 'America/Sao_Paulo', userId, children }: { timezone?: string; userId?: string; children: ReactNode }) {
   const [unread, setUnread] = useState<UnreadCount>(ZERO);
   const [version, setVersion] = useState(0);
   const [announcement, setAnnouncement] = useState('');
   const alive = useRef(true);
+  const connected = useRef(false);
 
   const refresh = useCallback(async () => {
     const r = await getUnreadCount().catch(() => null);
@@ -51,8 +53,8 @@ export function NotificationsProvider({ timezone = 'America/Sao_Paulo', children
   useEffect(() => {
     alive.current = true;
     void refresh();
-    // Fallback without a Realtime connection: poll every 60 s while the tab is visible (FR-9).
-    const id = setInterval(() => document.visibilityState === 'visible' && void refresh(), POLL_MS);
+    // Fallback only while the Realtime channel is down: poll every 60 s while the tab is visible (FR-9, FR-54, P-442).
+    const id = setInterval(() => !connected.current && document.visibilityState === 'visible' && void refresh(), POLL_MS);
     const onVisible = () => document.visibilityState === 'visible' && void refresh();
     document.addEventListener('visibilitychange', onVisible);
 
@@ -61,15 +63,18 @@ export function NotificationsProvider({ timezone = 'America/Sao_Paulo', children
       try {
         const { createClient } = await import('@/lib/supabase/client');
         const supabase = createClient();
-        const { data } = await supabase.auth.getUser();
-        if (!data.user || !alive.current) return;
+        if (!userId || !alive.current) return;
         const channel = supabase
-          .channel(`notifications:${data.user.id}`)
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${data.user.id}` }, (p) => {
+          .channel(`notifications:${userId}`)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, (p) => {
             if (p.eventType === 'INSERT') setAnnouncement(announce(p.new, timezone));
             changed();
           })
-          .subscribe();
+          .subscribe((status) => {
+            const was = connected.current;
+            connected.current = status === 'SUBSCRIBED';
+            if (connected.current && !was) void refresh(); // catch up on whatever came while the channel was down
+          });
         cleanup = () => void supabase.removeChannel(channel);
       } catch {
         /* no Realtime: the poll above keeps the badge fresh */
@@ -77,11 +82,12 @@ export function NotificationsProvider({ timezone = 'America/Sao_Paulo', children
     })();
     return () => {
       alive.current = false;
+      connected.current = false;
       clearInterval(id);
       document.removeEventListener('visibilitychange', onVisible);
       cleanup();
     };
-  }, [refresh, changed, timezone]);
+  }, [refresh, changed, timezone, userId]);
 
   const value = useMemo(() => ({ unread, timezone, version, announcement, changed }), [unread, timezone, version, announcement, changed]);
   return (

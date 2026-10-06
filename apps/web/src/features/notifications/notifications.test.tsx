@@ -13,10 +13,12 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push }), usePathname: ()
 vi.mock('@/lib/api', () => ({ api: (...a: Parameters<typeof apiMock>) => apiMock(...a) }));
 type Handler = (p: { eventType: string; new: Record<string, unknown> }) => void;
 let realtime: Handler | null = null;
+let status: ((s: string) => void) | undefined;
+const getUser = vi.fn(async () => ({ data: { user: { id: 'u1' } } }));
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
-    auth: { getUser: async () => ({ data: { user: { id: 'u1' } } }) },
-    channel: () => ({ on: (_e: string, _f: unknown, h: Handler) => ((realtime = h), { subscribe: () => ({}) }) }),
+    auth: { getUser },
+    channel: () => ({ on: (_e: string, _f: unknown, h: Handler) => ((realtime = h), { subscribe: (cb?: (s: string) => void) => (status = cb, {}) }) }),
     removeChannel: () => undefined,
   }),
 }));
@@ -24,11 +26,12 @@ vi.mock('@/lib/supabase/client', () => ({
 /** a modal popover hides the bell from the accessibility tree (aria-hidden), so read its label from the DOM */
 const bellLabel = () => document.querySelector('[data-testid="bell-icon"]')?.closest('button')?.getAttribute('aria-label');
 const TZ = 'America/Sao_Paulo';
-const wrap = (ui: React.ReactNode) => render(<ToastProvider closeLabel="Fechar" viewportLabel="Avisos"><NotificationsProvider timezone={TZ}>{ui}</NotificationsProvider></ToastProvider>);
+const wrap = (ui: React.ReactNode) => render(<ToastProvider closeLabel="Fechar" viewportLabel="Avisos"><NotificationsProvider timezone={TZ} userId="u1">{ui}</NotificationsProvider></ToastProvider>);
 
 beforeEach(() => {
   resetNotificationMocks();
   realtime = null;
+  status = undefined;
   window.__remoaEvents = [];
   vi.useFakeTimers({ shouldAdvanceTime: true, toFake: ['setInterval', 'clearInterval', 'Date'] });
   vi.setSystemTime(FIXTURE_NOW);
@@ -101,6 +104,27 @@ describe('bell + popover', () => {
     wrap(<NotificationBell />);
     await screen.findByRole('button', { name: 'Notificações, 3 não lidas' });
     pushNotificationMock({ id: '00000000-0000-4000-8000-000000009998', type: 'review_reminder', category: 'review', href: '/app/revisar', groupKey: null, createdAt: FIXTURE_NOW, readAt: null, data: { cards: 3 } });
+    await act(async () => { vi.advanceTimersByTime(POLL_MS); });
+    await screen.findByRole('button', { name: 'Notificações, 4 não lidas' });
+  });
+});
+
+describe('Realtime x poll (P-442)', () => {
+  it('never asks the browser Auth for the user (the id comes from the server)', async () => {
+    wrap(<NotificationBell />);
+    await screen.findByRole('button', { name: 'Notificações, 3 não lidas' });
+    await waitFor(() => expect(realtime).not.toBeNull());
+    expect(getUser).not.toHaveBeenCalled();
+  });
+  it('does not poll while the channel is connected, polls again when it drops', async () => {
+    wrap(<NotificationBell />);
+    await screen.findByRole('button', { name: 'Notificações, 3 não lidas' });
+    await waitFor(() => expect(status).toBeDefined());
+    act(() => status!('SUBSCRIBED'));
+    pushNotificationMock({ id: '00000000-0000-4000-8000-000000009997', type: 'review_reminder', category: 'review', href: '/app/revisar', groupKey: null, createdAt: FIXTURE_NOW, readAt: null, data: { cards: 3 } });
+    await act(async () => { vi.advanceTimersByTime(POLL_MS * 2); });
+    expect(bellLabel()).toBe('Notificações, 3 não lidas');
+    act(() => status!('CHANNEL_ERROR'));
     await act(async () => { vi.advanceTimersByTime(POLL_MS); });
     await screen.findByRole('button', { name: 'Notificações, 4 não lidas' });
   });

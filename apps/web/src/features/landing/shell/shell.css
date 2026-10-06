@@ -4,5 +4,3 @@
 @keyframes lp-step { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 .lp-step-fill { animation: lp-step linear forwards; }
 @media (prefers-reduced-motion: reduce) { .lp-step-fill { animation: none; } }
-/* P-410: below-the-fold sections skip style/layout/paint until near the viewport, so the hero's first frame (LCP) is cheaper. */
-#conteudo section[id]:not(#topo) { content-visibility: auto; contain-intrinsic-size: auto 900px; }
