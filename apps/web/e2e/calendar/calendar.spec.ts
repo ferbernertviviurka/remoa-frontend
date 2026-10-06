@@ -71,7 +71,8 @@ test('criar com imagem, ver em Hoje, desligar um aviso e excluir', async ({ page
   const saved = page.waitForResponse((r) => r.url().includes('/v1/calendar/events') && r.request().method() === 'POST');
   await modal.getByRole('button', { name: 'Salvar compromisso' }).click();
   await saved;
-  await expect(page.getByText('Compromisso salvo. Avisamos por e-mail 1 dia antes e no dia.')).toBeVisible();
+  // the toast, not the bell's live region (it may repeat the text when it announces the new notification)
+  await expect(page.getByText('Compromisso salvo. Avisamos por e-mail 1 dia antes e no dia.', { exact: true }).first()).toBeVisible();
   const drawer = page.getByRole('dialog', { name: 'Detalhes do compromisso' });
   await expect(drawer.getByRole('heading', { name: 'Prova de Clínica Médica' })).toBeVisible();
   await expect(drawer.getByText('Sala 204 · Bloco B')).toBeVisible();
