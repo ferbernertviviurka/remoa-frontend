@@ -8,7 +8,7 @@ const api = vi.fn();
 const track = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
-vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
+vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a), trackAi: vi.fn() }));
 const handle = vi.fn<(e: { code: string; message?: string }) => boolean>(() => false);
 const show = vi.fn();
 let ent: { limits: { ai_generations: number | null } } | null = null; // useEntitlements without a provider = null (no client-side gate)

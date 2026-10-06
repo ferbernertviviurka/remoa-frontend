@@ -16,3 +16,4 @@ export { coverage } from './ns-parts/coverage';
 export { inspector } from './ns-parts/inspector';
 export { map } from './ns-parts/map';
 export { cards } from './ns-parts/cards';
+export { ai } from './ns-parts/ai';

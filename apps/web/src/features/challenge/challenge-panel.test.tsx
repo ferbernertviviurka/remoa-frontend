@@ -17,7 +17,7 @@ const userEvent = {
 const track = vi.fn();
 const replace = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace, push: vi.fn() }) }));
-vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
+vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a), trackAi: vi.fn() }));
 
 const onExit = vi.fn();
 const onRated = vi.fn();
@@ -192,6 +192,50 @@ describe('ChallengePanel', () => {
     await screen.findByText(/correções por IA de hoje acabaram/);
     expect(screen.getByRole('link', { name: 'Ver planos' })).toHaveAttribute('href', '/app/planos?de=ai_quota');
     expect(track).toHaveBeenCalledWith('paywall_viewed', { reason: 'ai_quota' });
+  });
+
+  it('AI result: warning, escaped source, flag button, fallback notice (G22)', async () => {
+    const user = userEvent.setup();
+    overrides.answer = async () =>
+      ans({
+        verdict: { ...graderVerdictFixture, feedback: '<img src=x onerror="window.hacked=1">ok' },
+        suggestedGrade: 'good',
+        ai: { status: 'fallback', code: 'provider', message: null },
+        gradeId: 'g-9',
+        sourceQuote: '<script>x</script>trecho',
+      } as Partial<AnswerOutput>);
+    mount(daily);
+    await ready();
+    await user.type(screen.getByLabelText('Sua resposta'), 'x');
+    await user.click(reveal());
+    await screen.findByText(/correção automática, sem IA/);
+    expect(screen.getByText('A IA pode errar. Confira a fonte.')).toBeVisible();
+    expect(screen.getByText(/trecho/)).toBeVisible();
+    expect(document.querySelector('script, img[onerror]')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Essa correção está errada' })).toBeVisible();
+  });
+
+  it('AI answer failure offers "Tentar de novo" and sends again', async () => {
+    const user = userEvent.setup();
+    shape = (x) => x.slice(0, 3).map((i) => ({ ...i, boardId: BOARD })).map(text);
+    let n = 0;
+    overrides.start = async (b) => {
+      const r = await mocks.startSession(fixtureUserId, b as never);
+      return r.ok ? { ok: true, data: { ...r.data, items: shape(r.data.items), options: { gradingMode: 'ai', order: 'flow', answerMode: 'write' } } } : r;
+    };
+    overrides.answer = async () => (n++ === 0 ? { ok: false, error: { code: 'internal', message: 'boom' } } : ans());
+    function WithAi() {
+      const ch = useChallenge();
+      useEffect(() => ch.ensure({ kind: 'daily' }, { gradingMode: 'ai', order: 'flow', answerMode: 'write' }), []); // eslint-disable-line react-hooks/exhaustive-deps
+      return <ChallengePanel scope={{ kind: 'daily' }} boardId={BOARD} heat={{}} onExit={onExit} onRated={onRated} />;
+    }
+    render(<ChallengeProvider><WithAi /></ChallengeProvider>);
+    await ready();
+    await user.type(screen.getByLabelText('Sua resposta'), 'minha resposta');
+    await user.click(screen.getByRole('button', { name: 'Corrigir resposta' }));
+    await user.click(await screen.findByRole('button', { name: 'Tentar de novo' }));
+    await waitFor(() => expect(screen.getByText('Resposta canônica')).toBeVisible());
+    expect(calls.answer).toHaveLength(2);
   });
 
   it('skip: Esc skips and moves the item to the end; the 409 limit disables Pular', async () => {
