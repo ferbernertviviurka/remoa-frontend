@@ -1,0 +1,20 @@
+// G22 (D-1427..D-1430): textos de todo ponto de IA na interface.
+export const ai = {
+  mayErr: 'A IA pode errar. Confira a fonte.',
+  source: 'Fonte',
+  sourceExcerpt: 'Trecho de origem',
+  loading: 'A IA está trabalhando…',
+  streamingLabel: 'Correção chegando',
+  fallback: 'Esta foi a correção automática, sem IA. Confira a resposta e avalie você mesmo.',
+  error: 'A IA não conseguiu responder agora. Seu texto foi mantido.',
+  retry: 'Tentar de novo',
+  limitTitle: 'Você chegou ao limite de usos da IA.',
+  limitResets: 'O limite reinicia à meia-noite, no horário do seu perfil.',
+  limitWait: 'Muitos pedidos seguidos. Aguarde um instante e tente de novo.',
+  limitCta: 'Ver planos',
+  warn80: 'Você já usou 80% do limite de IA. Restam {n}.',
+  flag: 'Essa correção está errada',
+  flagSent: 'Obrigado. Registramos para melhorar a correção.',
+  flagError: 'Não conseguimos enviar. Tente de novo.',
+  generatedCards: 'Cards gerados por IA',
+} as const;

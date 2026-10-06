@@ -1,6 +1,9 @@
 // F17 T7 (FR-13): 404 page for the shared board route.
 import Link from 'next/link';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
+
+const t = withStrings({ sharedMap: more.sharedMap });
 
 export default function SharedBoardNotFound() {
   return (

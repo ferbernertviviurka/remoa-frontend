@@ -2,11 +2,14 @@
 
 import { useEffect, type ReactNode } from 'react';
 import type { ApkgSummary } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Accordion, Alert, Card } from '@remoa/ui';
 import { AnkiPreview } from './anki-preview';
 import { applyMapping, estimate } from './plan';
 import type { Plan } from './use-anki-import';
+
+const t = withStrings({ import: more.import, importAdjust: more.importAdjust, importSummary: more.importSummary });
 
 type Props = { summary: ApkgSummary; plan: Plan; maxCards: number | null; onPlan: (plan: Plan) => void; onAdjustOpened: () => void };
 

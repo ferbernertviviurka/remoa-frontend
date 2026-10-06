@@ -1,11 +1,11 @@
 'use client';
 
-import { cloneElement, useCallback, useEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactElement, type ReactNode } from 'react';
-import * as Popover from '@radix-ui/react-popover';
-import { Button } from '../button';
-import { Icon, type IconName } from '../icons';
-import { SkeletonBlock, SkeletonRegion } from '../skeleton';
-import { LimitMeter, type LimitMeterProps } from './limit-meter';
+import { cloneElement, lazy, Suspense, useCallback, useEffect, useId, useRef, useState, type MouseEvent, type PointerEvent, type ReactElement, type ReactNode } from 'react';
+import type { IconName } from '../icons';
+import type { LimitMeterProps } from './limit-meter';
+
+// P-512: Radix Popover + Popper (~11 KB) só baixam na 1ª interação com o chip (hover, foco, clique); o chip é pintado sem eles.
+const Panel = lazy(() => import('./plan-popover-panel'));
 
 export const HOVER_OPEN_MS = 120;
 export const HOVER_CLOSE_MS = 200;
@@ -22,6 +22,7 @@ export type PlanPopoverTrigger = 'hover' | 'click' | 'keyboard';
  * `illustration` (nó; o app usa next/image), `benefits` ({ title, items: [{ icon, lead, text }] }), `cta` (slot, ex.: link "Fazer upgrade"; no Pro "Gerenciar assinatura").
  * `state`: 'ready' | 'loading' (4 esqueletos no lugar dos medidores, `loadingLabel` para leitor de tela) | 'error' (`error` = { message, retryLabel, onRetry }; no lugar dos medidores).
  * Entrada `pop` (400 ms, origem no chip); sem animação com Reduzir movimento (motion.css).
+ * O painel (Radix) é baixado na 1ª interação (P-512): o hover já começa a baixar e os 120 ms seguem valendo; o painel aparece quando chega.
  */
 export type PlanBenefits = { title: string; items: ReadonlyArray<{ icon: IconName; lead: string; text: string }> };
 export type PlanPopoverProps = {
@@ -43,7 +44,10 @@ export type PlanPopoverProps = {
 
 const canHover = () => typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches;
 
-export function PlanPopover({ trigger, label, title, text, meters = [], alert, illustration, benefits, cta, state = 'ready', loadingLabel = '', error, defaultOpen = false, onOpenChange }: PlanPopoverProps) {
+export function PlanPopover({ trigger, defaultOpen = false, onOpenChange, ...content }: PlanPopoverProps) {
+  const [armed, setArmed] = useState(defaultOpen);
+  const anchor = useRef<HTMLElement>(null);
+  const contentId = useId();
   const [open, setOpen] = useState(defaultOpen);
   const [pinned, setPinned] = useState(defaultOpen);
   const openRef = useRef(defaultOpen);
@@ -65,6 +69,7 @@ export function PlanPopover({ trigger, label, title, text, meters = [], alert, i
 
   const enter = (e: PointerEvent) => {
     clear();
+    setArmed(true);
     if (open || e.pointerType === 'touch' || !canHover()) return;
     timer.current = setTimeout(() => { setPinned(false); change(true, 'hover'); }, HOVER_OPEN_MS);
   };
@@ -74,77 +79,35 @@ export function PlanPopover({ trigger, label, title, text, meters = [], alert, i
     timer.current = setTimeout(() => change(false, 'hover'), HOVER_CLOSE_MS);
   };
   const click = (e: MouseEvent) => {
-    e.preventDefault(); // impede o toggle do Radix: aqui clique sobre painel aberto por hover só fixa.
     clear();
+    setArmed(true);
     if (open && pinned) return change(false, 'click');
     lastTrigger.current = e.detail === 0 ? 'keyboard' : 'click';
     setPinned(true);
     change(true, lastTrigger.current);
   };
 
+  // o que o Popover.Trigger do Radix punha no chip
   const child = cloneElement(trigger, {
+    ref: anchor,
+    'aria-haspopup': 'dialog',
+    'aria-expanded': open,
+    'aria-controls': contentId,
+    'data-state': open ? 'open' : 'closed',
     onPointerEnter: enter,
     onPointerLeave: leave,
+    onFocus: () => setArmed(true),
     onClick: click,
   });
 
   return (
-    <Popover.Root open={open} onOpenChange={(next) => change(next, lastTrigger.current)} modal={false}>
-      <Popover.Trigger asChild>{child}</Popover.Trigger>
-      <Popover.Content
-        role="dialog"
-        aria-label={label}
-        side="bottom"
-        align="start"
-        sideOffset={0}
-        collisionPadding={16}
-        onOpenAutoFocus={(e) => e.preventDefault()}
-        onCloseAutoFocus={(e) => e.preventDefault()}
-        onFocusOutside={(e) => { if (pinned) e.preventDefault(); }}
-        onPointerEnter={() => clear()}
-        onPointerLeave={leave}
-        className="z-30 pt-2.5 outline-none"
-      >
-        <div
-          className="pop box-border flex max-h-[780px] w-[440px] max-w-[calc(100vw-32px)] flex-col gap-4 overflow-auto rounded-list border border-border bg-surface p-6 text-ink shadow-[0_30px_70px_rgba(36,26,92,.25)]"
-          style={{ transformOrigin: '28px 0' }}
-        >
-          <div className="flex flex-col gap-1.5">
-            <h2 className="m-0 font-display text-[26px] font-extrabold leading-[1.1] tracking-[-0.03em]">{title}</h2>
-            {text ? <p className="m-0 text-sm leading-normal text-muted">{text}</p> : null}
-          </div>
-          {alert}
-          {state === 'loading' ? (
-            <SkeletonRegion label={loadingLabel}>
-              <div className="grid grid-cols-2 gap-2.5">
-                {[0, 1, 2, 3].map((i) => <SkeletonBlock key={i} height={86} radius={16} />)}
-              </div>
-            </SkeletonRegion>
-          ) : state === 'error' && error ? (
-            <div role="alert" className="flex flex-col items-start gap-3 rounded-[16px] bg-canvas p-4 text-sm">
-              <span>{error.message}</span>
-              <Button variant="secondary" size="sm" onClick={error.onRetry}>{error.retryLabel}</Button>
-            </div>
-          ) : meters.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2.5">
-              {meters.map((m) => <LimitMeter key={m.label} {...m} />)}
-            </div>
-          ) : null}
-          {illustration ? <div className="flex items-center justify-center rounded-[20px] bg-canvas px-2 py-2.5 [&>*]:h-auto [&>*]:w-full [&>*]:max-w-[380px]">{illustration}</div> : null}
-          {benefits ? (
-            <div className="flex flex-col gap-3 rounded-[20px] border-[1.5px] border-border-strong bg-primary-tint p-4">
-              <span className="text-xs font-bold uppercase tracking-[.12em] text-muted">{benefits.title}</span>
-              {benefits.items.map((b) => (
-                <span key={b.lead} className="flex items-start gap-3">
-                  <span className="flex size-[38px] shrink-0 items-center justify-center rounded-xl bg-surface text-primary-deep"><Icon name={b.icon} size={20} /></span>
-                  <span className="text-sm leading-[1.45]"><span className="font-bold">{b.lead}</span> {b.text}</span>
-                </span>
-              ))}
-            </div>
-          ) : null}
-          {cta}
-        </div>
-      </Popover.Content>
-    </Popover.Root>
+    <>
+      {child}
+      {armed ? (
+        <Suspense fallback={null}>
+          <Panel {...content} open={open} pinned={pinned} anchor={anchor} contentId={contentId} onOpenChange={(next) => change(next, lastTrigger.current)} onPointerEnter={clear} onPointerLeave={leave} />
+        </Suspense>
+      ) : null}
+    </>
   );
 }

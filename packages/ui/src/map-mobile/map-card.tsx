@@ -26,7 +26,7 @@ export type MapCardProps = {
   /** Fluxograma: primeiros passos e o "+ N passos" (ou a contagem quando o texto dos passos ainda não chegou). */
   steps?: readonly string[];
   stepsMore?: string;
-  /** Imagem: miniatura (`null` = placeholder com máscaras). */
+  /** Card de imagem: miniatura (`src: null` = placeholder com máscaras). Outros tipos: imagem da pergunta, sob o texto. Com `size` a imagem ocupa o espaço livre, inteira (D-1211). */
   image?: { src: string | null; alt: string };
   level?: MapCardLevel;
   selected?: boolean;
@@ -93,7 +93,7 @@ export function MapCard({ type, typeLabel, title, state, stateLabel, recallLabel
         {title}
       </span>
       {full && summary && type !== 'flow' && type !== 'image' ? (
-        <span className="line-clamp-3 block px-[11px] pt-[5px] leading-[1.38] text-ink-2" style={{ fontSize: 'var(--map-text-summary)' }}>{summary}</span>
+        <span className={clsx('block px-[11px] pt-[5px] leading-[1.38] text-ink-2', image ? 'line-clamp-2' : 'line-clamp-3')} style={{ fontSize: 'var(--map-text-summary)' }}>{summary}</span>
       ) : null}
       {full && type === 'flow' ? (
         <span className="flex flex-col gap-[5px] px-[11px] pt-[7px]">
@@ -106,10 +106,15 @@ export function MapCard({ type, typeLabel, title, state, stateLabel, recallLabel
           {stepsMore ? <span className="text-xs font-bold text-muted">{stepsMore}</span> : null}
         </span>
       ) : null}
-      {full && type === 'image' ? (
-        <span role={image && !image.src ? 'img' : undefined} aria-label={image && !image.src ? image.alt : undefined} className="relative mx-[11px] mt-[7px] block h-[54px] overflow-hidden rounded-[10px] bg-(--divider)">
+      {full && (type === 'image' || image) ? (
+        <span
+          role={image && !image.src ? 'img' : undefined}
+          aria-label={image && !image.src ? image.alt : undefined}
+          data-card-image=""
+          className={clsx('relative mx-[11px] mt-[7px] block overflow-hidden rounded-[10px] bg-(--divider)', size ? 'min-h-[54px] flex-1' : 'h-[54px] shrink-0')}
+        >
           {image?.src ? (
-            <img src={image.src} alt={image.alt} loading="lazy" draggable={false} className="size-full object-cover" />
+            <img src={image.src} alt={image.alt} loading="lazy" draggable={false} className="size-full object-contain" />
           ) : (
             <>
               <span aria-hidden="true" className="absolute left-3 top-2.5 h-4 w-[34px] rounded bg-apricot" />

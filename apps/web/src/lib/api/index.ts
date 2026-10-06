@@ -1,5 +1,5 @@
 import type { AppError, Result } from '@remoa/contracts';
-import { readErrorBody } from './error-body';
+import { readErrorBody } from '@remoa/contracts/constants';
 import { readResultStream } from './sse';
 import { logTiming, parseServerTiming, type ApiTiming } from '@/lib/perf';
 

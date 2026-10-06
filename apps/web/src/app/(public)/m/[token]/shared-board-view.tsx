@@ -13,7 +13,7 @@ import { track, trackWhenIdle } from '@/lib/analytics';
 import { usePaywall } from '@/features/billing/paywall';
 import { copyBoardAction } from './actions';
 
-const t = withStrings({ boards: more.boards });
+const t = withStrings({ boards: more.boards, sharedMap: more.sharedMap });
 
 const SharedCanvas = dynamic(
   () => import('./shared-canvas').then((m) => m.SharedCanvas),

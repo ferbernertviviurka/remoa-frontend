@@ -72,12 +72,16 @@ function send(event: string, props: Record<string, unknown>) {
  * validator (~13 KB gzip) is not in the landing bundle (P-175, D-372). Records into window.__remoaEvents (used by e2e).
  */
 export const track: Track = (event, props) => {
-  if (process.env.NODE_ENV === 'production') return send(event, props as Record<string, unknown>);
-  void import('@remoa/contracts').then(({ eventSchemas }) => {
-    const parsed = (eventSchemas[event] as { safeParse: (v: unknown) => { success: boolean; data?: unknown } }).safeParse(props);
-    if (!parsed.success) return reportError(new Error(`invalid props for event ${event}`));
-    send(event, parsed.data as Record<string, unknown>);
-  });
+  // P-514 (D-1081): if/else, not an early return: webpack drops the dead `else` before building the module graph, so the production build
+  // has no `import('@remoa/contracts')` (that async import of the whole barrel kept every contracts module, zod and the medical-schools
+  // list in pages that only read a constant).
+  if (process.env.NODE_ENV === 'production') send(event, props as Record<string, unknown>);
+  else
+    void import('@remoa/contracts').then(({ eventSchemas }) => {
+      const parsed = (eventSchemas[event] as { safeParse: (v: unknown) => { success: boolean; data?: unknown } }).safeParse(props);
+      if (!parsed.success) return reportError(new Error(`invalid props for event ${event}`));
+      send(event, parsed.data as Record<string, unknown>);
+    });
 };
 
 /** FR-19: defer tracking to browser idle so it never competes with LCP. The landing must use this for `landing_viewed` and `scroll_depth`. */

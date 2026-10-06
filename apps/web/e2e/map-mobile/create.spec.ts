@@ -16,7 +16,7 @@ test.describe('F23: criar card pela sheet (Pixel 5)', () => {
     await editor.getByLabel('Título').fill('Lactato na sepse');
     await editor.getByRole('button', { name: 'Salvar' }).click();
     await expect(editor).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /Lactato na sepse/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Lactato na sepse/ })).toBeVisible();
   });
 
   test('descartar alterações pede confirmação', async ({ page }) => {

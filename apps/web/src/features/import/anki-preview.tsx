@@ -1,10 +1,14 @@
 'use client';
 
 import type { ApkgSummary, FieldMapping } from '@remoa/contracts';
-import { t, type StringKey } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Card, Checkbox, Select, Tag } from '@remoa/ui';
 import { applyMapping } from './plan';
 import type { Plan } from './use-anki-import';
+
+const t = withStrings({ import: more.import });
+type StringKey = Parameters<typeof t>[0];
 
 const DERIVE = '__derive';
 const NONE = '__none';

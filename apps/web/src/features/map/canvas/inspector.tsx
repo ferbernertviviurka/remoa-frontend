@@ -20,7 +20,7 @@ import { usePaywall } from '@/features/billing/paywall';
 import { AiDraftTag } from '../ai-draft';
 import { caseStageItems } from './card-node';
 
-const t = withStrings({ canvas: more.canvas, cardStudy: more.cardStudy, cards: more.cards, inspector: more.inspector, map: more.map });
+const t = withStrings({ boardsOrigin: more.boardsOrigin, canvas: more.canvas, cardStudy: more.cardStudy, cards: more.cards, inspector: more.inspector, map: more.map });
 
 type Entry = RetrievabilityMap[string] | undefined;
 export type Connection = { id: string; dir: 'out' | 'in'; title: string; label: string | null };

@@ -438,7 +438,8 @@ function Pic({ image, grow }: { image?: NodeImage | null; grow?: boolean }) {
   return (
     <span role={ph ? 'img' : undefined} aria-label={ph ? image.alt : undefined} className={clsx('relative block overflow-hidden rounded-[10px] bg-(--cv-panel-dark)', grow ? 'min-h-8 flex-1' : 'h-[84px] shrink-0')}>
       {image?.src ? (
-        <img src={image.src} alt={image.alt} loading="lazy" draggable={false} className="size-full object-cover" />
+        // object-contain: the whole picture is the content (a cropped X-ray or ECG hides the answer); the map grows the card to its ratio (D-1211)
+        <img src={image.src} alt={image.alt} loading="lazy" draggable={false} className="size-full object-contain" />
       ) : (
         <>
           <span className="absolute left-3 top-3 h-4 w-14 rounded-[5px] bg-apricot" />

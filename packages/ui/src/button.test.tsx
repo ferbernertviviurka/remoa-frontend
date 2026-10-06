@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import { renderToString } from 'react-dom/server';
 import userEvent from '@testing-library/user-event';
 import { Button } from './button';
 import { violations } from './test-utils';
@@ -40,5 +41,20 @@ describe('Button', () => {
     expect(button).toHaveAttribute('aria-busy', 'true');
     expect(button.querySelector('.remoa-spin')).toBeTruthy();
     expect(await violations(container)).toEqual([]);
+  });
+  it('Torph depois da primeira pintura (P-512): HTML do servidor com texto simples, depois o mesmo texto no Torph', async () => {
+    expect(renderToString(<Button>Salvar</Button>)).toContain('<span class="text-inherit">Salvar</span>');
+    const { container } = render(<Button>Salvar</Button>);
+    await waitFor(() => expect(container.querySelector('[torph-root]')).not.toBeNull());
+    expect(screen.getByRole('button', { name: 'Salvar' })).toBeInTheDocument();
+  });
+  it('movimento reduzido do app: o Torph nem monta, o rótulo troca direto', async () => {
+    document.documentElement.dataset.motion = 'reduced';
+    const { container, rerender } = render(<Button>Salvar</Button>);
+    rerender(<Button loading loadingLabel="Salvando">Salvar</Button>);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(container.querySelector('[torph-root]')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Salvando' })).toBeInTheDocument();
+    delete document.documentElement.dataset.motion;
   });
 });

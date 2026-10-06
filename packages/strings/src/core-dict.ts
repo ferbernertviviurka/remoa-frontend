@@ -1,12 +1,10 @@
 import { offline } from './offline';
 import { nav } from './nav';
 import { plan } from './plan';
-import { reviewHub } from './review';
 import { support } from './support';
-import { f17 } from './f17';
 import { challengeSetup } from './challenge-setup';
 import { mapState, challengeMode, editor, quiz, boundary } from './landing-shared';
-import { calendar } from './calendar';
+import { calendarCore } from './calendar';
 import { notifications } from './notifications';
 import { referralShell, storeShell, adminShell, legalShell } from './shell';
 
@@ -20,10 +18,8 @@ export const ptBRCore = {
   plan,
   support,
   challengeSetup,
-  calendar,
+  calendar: calendarCore,
   notifications,
-  // F17 — Importador Anki v2 (T1)
-  ...f17,
   common: {
     appName: 'Remoa',
     appDescription: 'Mapa de estudo com revisão espaçada para medicina',
@@ -69,7 +65,6 @@ export const ptBRCore = {
     savedOffline: 'Esta é a última fila salva neste aparelho. A correção por IA volta quando a rede voltar.',
     empty: { title: 'Nada para revisar hoje', body: 'Volte amanhã ou adicione conceitos a um mapa.', cta: 'Ir para Meus mapas' },
     badge: '{n, plural, one {# card na fila de hoje} other {# cards na fila de hoje}}',
-    hub: reviewHub,
   },
   mapState,
   grade: {
@@ -112,48 +107,6 @@ export const ptBRCore = {
     },
     dueToday: '{n, plural, =0 {Em dia} one {# vence hoje} other {# vencem hoje}}',
     stateLabel: 'Estados',
-  },
-  import: {
-    heading: {
-      sending: { title: 'Lendo o seu baralho', desc: 'Enviamos o arquivo e conferimos o que tem dentro.' },
-      preview: { title: 'Confira o que vira o quê', desc: 'Veja como os baralhos e os campos do Anki viram mapa e cards. Você pode ajustar antes de importar.' },
-      importing: { title: 'Importando o seu baralho', desc: 'Pode deixar esta tela aberta. Os cards aparecem no mapa quando terminar.' },
-      done: { title: 'Baralho importado', desc: 'Veja o que entrou no mapa.' },
-      error: { title: 'Não deu para importar', desc: 'Alguns cards podem ter sido criados. Importar o arquivo de novo não duplica o que já entrou.' },
-    },
-    subdecksNote: 'Os sub-baralhos viram colunas do mapa e a “Fonte” de cada card.',
-    uploading: 'Enviando o arquivo… {pct}%',
-    uploadingLabel: 'Progresso do envio',
-    inspecting: 'Lendo o baralho…',
-    errors: { upload: 'Não conseguimos enviar o arquivo. Confira a conexão e tente de novo.', failed: 'A importação falhou. Tente de novo.' },
-    counts: { decks: '{n, plural, one {# baralho} other {# baralhos}}', cards: '{n, plural, one {# card do Anki} other {# cards do Anki}}', media: '{n, plural, one {# mídia} other {# mídias}}' },
-    countsLabel: 'Resumo do arquivo',
-    serverCounts: 'O número final conta notas e pode ser menor: duplicatas e notas vazias são ignoradas.',
-    cap: 'Este arquivo tem {n} cards e o seu plano importa até {max} por vez. No plano gratuito, uma importação acima do limite é recusada. Assine o Pro para importar arquivos maiores.',
-    capTitle: 'Acima do limite do plano',
-    decks: { title: 'Baralhos', root: 'vira coluna do mapa', sub: 'vira coluna e “Fonte” do card', check: 'Importar o baralho {name}' },
-    rules: 'Cada nota vira um card. Lacunas (cloze) viram conceitos com [...]. Oclusão de imagem vira card de imagem com máscaras. Todos os baralhos entram no mesmo mapa; se já existir um mapa com esse nome, você escolhe entre importar nele (duplicatas são ignoradas) ou criar outro.',
-    noteTypes: { title: 'Tipos de nota', count: '{n, plural, one {# nota} other {# notas}}' },
-    kind: { basic: 'Básico', cloze: 'Lacunas (cloze)', image_occlusion: 'Oclusão de imagem', other: 'Outro' },
-    field: { cardType: 'Vira card do tipo', title: 'Título', front: 'Frente', back: 'Verso', deriveTitle: 'Derivar da frente', none: 'Nenhum' },
-    cardType: { concept: 'Conceito', image: 'Imagem' },
-    sample: { title: 'Amostra de {name}', colTitle: 'Título', colFront: 'Frente', colBack: 'Verso', empty: '—' },
-    confirm: 'Importar {n, plural, one {# card} other {# cards}}',
-    noDeck: 'Escolha ao menos um baralho.',
-    back: 'Escolher outro arquivo',
-    progress: 'Progresso da importação',
-    progressText: '{processed} de {total} cards',
-    report: {
-      title: 'Relatório da importação',
-      imported: 'Cards importados',
-      skippedDuplicate: 'Ignorados por duplicata',
-      skippedEmpty: 'Ignorados por estarem vazios',
-      missingMedia: 'Cards com mídia faltando',
-      duration: 'Tempo',
-      seconds: '{s} s',
-      open: 'Abrir o mapa',
-      openN: 'Abrir o mapa {n}',
-    },
   },
   pages: {
     home: 'Remoa — Hoje',

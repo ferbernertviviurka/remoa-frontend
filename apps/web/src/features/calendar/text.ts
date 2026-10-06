@@ -1,8 +1,11 @@
-// F25: the ui components take their text by props; this builds them from `strings.calendar` (functions cannot cross the server boundary, so import from client modules only).
-import { strings, t } from '@remoa/strings';
+// F25: the ui components take their text by props; this builds them from `more.calendar` (functions cannot cross the server boundary, so import from client modules only).
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import type { CalendarTourDemo } from '@remoa/ui';
 
-const c = strings.calendar;
+const t = withStrings({ calendar: more.calendar }); // P-512: namespace fora do núcleo
+
+const c = more.calendar;
 const rel = c.relative;
 
 /** "Hoje" / "Amanhã" / "Em N dias" chip. */

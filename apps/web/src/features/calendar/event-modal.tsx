@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Dialog, EventForm, type CalendarLabelItem, type EventFormValue } from '@remoa/ui';
 import { uploadCover } from './api';
 import { text } from './text';
+
+const t = withStrings({ calendar: more.calendar }); // P-512: namespace fora do núcleo
 
 /** F25 FR-11: modal de 600 px de criar/editar. A capa sobe assim que escolhida (sign → PUT → complete); "Salvar" espera o envio. */
 export function EventModal({ mode, initial, initialCoverId = null, labels, onSubmit, onClose }: {

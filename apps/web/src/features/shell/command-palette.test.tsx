@@ -13,21 +13,21 @@ function MapLike({ run }: { run: (id: string) => void }) {
 }
 
 describe('global command palette (G14 ponto 22, D-607)', () => {
-  it('opens from the navbar button and ⌘K on any screen; global commands navigate', () => {
+  it('opens from the navbar button and ⌘K on any screen; global commands navigate', async () => {
     render(<CommandPaletteProvider><PaletteButton /></CommandPaletteProvider>);
     fireEvent.click(screen.getByRole('button', { name: /Buscar ou comandar/ }));
-    fireEvent.change(screen.getByRole('combobox', { name: 'Buscar comando' }), { target: { value: 'meus mapas' } });
+    fireEvent.change(await screen.findByRole('combobox', { name: 'Buscar comando' }) /* lazy dialog (P-507) */, { target: { value: 'meus mapas' } });
     fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Enter' });
     expect(push).toHaveBeenCalledWith('/app/mapas');
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
     expect(screen.getByRole('combobox')).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: /Mostrar estrutura/ })).toBeNull();
   });
-  it('a mounted screen adds its commands; they go away when it unmounts', () => {
+  it('a mounted screen adds its commands; they go away when it unmounts', async () => {
     const run = vi.fn();
     const { rerender } = render(<CommandPaletteProvider><MapLike run={run} /></CommandPaletteProvider>);
     fireEvent.keyDown(window, { key: 'k', metaKey: true });
-    fireEvent.click(screen.getByRole('option', { name: /Mostrar estrutura/ }));
+    fireEvent.click(await screen.findByRole('option', { name: /Mostrar estrutura/ }));
     expect(run).toHaveBeenCalledWith('layer:structure');
     rerender(<CommandPaletteProvider>{null}</CommandPaletteProvider>);
     fireEvent.keyDown(window, { key: 'k', metaKey: true });

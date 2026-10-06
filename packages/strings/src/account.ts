@@ -247,7 +247,7 @@ export const account = {
     usageBody: 'Os limites renovam sozinhos. Nada é apagado quando você chega neles.',
     usage: {
       aiGrades: 'Correções por IA',
-      aiGradesFree: 'Hoje · renova às 4h',
+      aiGradesFree: 'Hoje · renova à meia-noite',
       aiGradesPro: 'Sem limite no uso diário',
       pdf: 'Mapas gerados de PDF',
       pdfSub: 'Neste mês · renova em {date}',

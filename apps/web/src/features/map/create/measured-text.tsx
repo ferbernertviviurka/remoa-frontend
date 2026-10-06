@@ -1,7 +1,7 @@
 'use client';
 
 import { useLayoutEffect, useRef, useState } from 'react';
-import { TextMorph } from 'torph/react';
+import { useTextMorph } from '@remoa/ui';
 
 /** Greedy word wrap by measured width. `measure` is injected so it can be unit-tested without a canvas. */
 export function splitLines(text: string, maxWidth: number, measure: (s: string) => number): string[] {
@@ -34,11 +34,13 @@ function measureLines(el: HTMLElement, text: string): string[] | null {
 /**
  * Multi-line text that morphs with Torph. TextMorph's root is `nowrap`, so each visual line is its own TextMorph (stable key = line index);
  * lines come from measuring the container (font, letter-spacing, width) and are recomputed on resize and when fonts load.
- * Until measured (SSR, first paint, no canvas) it is a plain, normally wrapping paragraph.
+ * Until measured (SSR, first paint, no canvas), until Torph arrives after the first paint, and with reduced motion (P-512, Torph never
+ * downloads then), it is a plain, normally wrapping paragraph.
  */
 export function MeasuredText({ text, className, as: Tag = 'p' }: { text: string; className?: string; as?: 'p' | 'span' }) {
   const ref = useRef<HTMLElement>(null);
   const [lines, setLines] = useState<string[] | null>(null);
+  const TextMorph = useTextMorph();
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -61,7 +63,7 @@ export function MeasuredText({ text, className, as: Tag = 'p' }: { text: string;
   return (
     // w-full/min-w-0: the width we measure must come from the parent, not from the content (a flex item would shrink to its own lines and loop)
     <Tag ref={ref as never} className={`w-full min-w-0 ${className ?? ''}`}>
-      {lines
+      {lines && TextMorph
         ? lines.map((l, i) => (
             // block wrapper, inline-block TextMorph root: Torph sizes its own root, a `block` root broke the glyph offsets
             <span key={i} className="block"><TextMorph as="span" locale="pt-BR" duration={320} ease="cubic-bezier(0.19, 1, 0.22, 1)" respectReducedMotion>{l}</TextMorph></span>

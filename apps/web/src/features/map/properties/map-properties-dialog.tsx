@@ -5,12 +5,15 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Board, MatrixItem } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, Dialog, useToast } from '@remoa/ui';
 import { api } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import { AboutMapForm, aboutErrors, aboutPayload, type AboutMap } from '@/features/map/create/about-map-form';
 import { useMatrixSuggestions } from '@/features/coverage/matrix-suggestions';
+
+const t = withStrings({ mapProps: more.mapProps });
 
 type Props = { board: Pick<Board, 'id' | 'title' | 'area' | 'access' | 'matrixItemIds'>; open: boolean; onOpenChange: (o: boolean) => void };
 

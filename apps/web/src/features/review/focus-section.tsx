@@ -9,7 +9,7 @@ import { track } from '@/lib/analytics';
 import { sortAreas } from './hub-math';
 import { SectionCard } from './section-card';
 
-const t = withStrings({ boards: more.boards });
+const t = withStrings({ boards: more.boards, review: more.review });
 type StringKey = Parameters<typeof t>[0];
 
 export type StartFn = (filter: QueueFilter) => void;

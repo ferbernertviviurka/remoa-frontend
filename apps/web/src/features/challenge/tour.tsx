@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { t } from '@remoa/strings';
-import { ChallengeTour } from '@remoa/ui';
+import dynamic from 'next/dynamic';
+
+const TourDialog = dynamic(() => import('./tour-dialog').then((m) => m.TourDialog), { ssr: false });
 
 const EVENT = 'remoa:challenge-tour';
 /**
@@ -31,42 +32,26 @@ const markSeen = () => {
   }
 };
 
-const scenes = ['format', 'answer', 'reveal', 'glow'] as const;
-const steps = scenes.map((scene) => ({ scene, title: t(`challengeSetup.tour.steps.${scene}.title`), body: t(`challengeSetup.tour.steps.${scene}.body`) }));
-const stepLabels = scenes.map((_, i) => t('challengeSetup.tour.stepOf', { n: i + 1, total: scenes.length }));
-const labels = { next: t('challengeSetup.tour.next'), back: t('challengeSetup.tour.back'), done: t('challengeSetup.tour.done') };
-const demo = {
-  card: t('challengeSetup.tour.demo.card'),
-  answer: t('challengeSetup.tour.demo.answer'),
-  correct: t('challengeSetup.tour.demo.correct'),
-  wrong: t('challengeSetup.tour.demo.wrong'),
-  self: t('challengeSetup.tour.demo.self'),
-  ai: t('challengeSetup.tour.demo.ai'),
-  soon: t('challengeSetup.dialog.soon'),
-};
-
 /** Mounted once in the shell: opens on `openChallengeTour()` (first map, palette, map help). Closing in any way marks it seen. */
 export function ChallengeTourHost() {
   const [open, setOpen] = useState(false);
+  const [used, setUsed] = useState(false);
   useEffect(() => {
-    const show = () => setOpen(true);
+    const show = () => {
+      setUsed(true);
+      setOpen(true);
+    };
     window.addEventListener(EVENT, show);
     return () => window.removeEventListener(EVENT, show);
   }, []);
-  return (
-    <ChallengeTour
+  return used ? (
+    <TourDialog
       open={open}
       onOpenChange={(o) => {
         if (!o) markSeen();
         setOpen(o);
       }}
       onDone={markSeen}
-      title={t('challengeSetup.tour.title')}
-      closeLabel={t('common.close')}
-      steps={steps}
-      stepLabels={stepLabels}
-      labels={labels}
-      demo={demo}
     />
-  );
+  ) : null;
 }

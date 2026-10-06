@@ -5,10 +5,13 @@ import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { SHARE_ACCESS_COOKIE, SHARE_ACCESS_HEADER, shareTokenSchema, type SharedBoardResponse } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { serverApi } from '@/lib/api/server';
 import { UnlockForm } from './unlock-form';
 import { SharedBoardView } from './shared-board-view';
+
+const t = withStrings({ sharedMap: more.sharedMap });
 
 export const metadata: Metadata = {
   title: t('sharedMap.metaTitle'),

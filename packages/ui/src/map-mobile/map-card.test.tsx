@@ -29,6 +29,15 @@ describe('MapCard', () => {
     rerender(<MapCard {...base} type="image" image={{ src: null, alt: 'Imagem de Rx' }} />);
     expect(screen.getByRole('img', { name: 'Imagem de Rx' })).toBeInTheDocument();
   });
+  it('imagem da pergunta em card comum: aparece inteira e cresce com o card redimensionado', () => {
+    const { container, rerender } = render(<MapCard {...base} image={{ src: '/rx.webp', alt: 'Imagem da pergunta' }} />);
+    expect(screen.getByRole('img', { name: 'Imagem da pergunta' })).toHaveClass('object-contain');
+    expect(container.querySelector('[data-card-image]')).toHaveClass('h-[54px]');
+    rerender(<MapCard {...base} size={{ w: 152, h: 260 }} image={{ src: '/rx.webp', alt: 'Imagem da pergunta' }} />);
+    expect(container.querySelector('[data-card-image]')).toHaveClass('flex-1');
+    rerender(<MapCard {...base} level="overview" image={{ src: '/rx.webp', alt: 'Imagem da pergunta' }} />);
+    expect(container.querySelector('[data-card-image]')).toBeNull();
+  });
   it('selecionado, esmaecido (busca) e clique', async () => {
     const onSelect = vi.fn();
     render(<MapCard {...base} selected dimmed onSelect={onSelect} />);

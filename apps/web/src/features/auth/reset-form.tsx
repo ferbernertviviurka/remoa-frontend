@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { isValidPassword } from '@remoa/contracts';
+import { isValidPassword } from '@remoa/contracts/constants';
 import { t } from '@remoa/strings';
 import { Button } from '@remoa/ui';
 import { updatePassword } from '@/server/auth/actions';

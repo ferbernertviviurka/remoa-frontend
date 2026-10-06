@@ -57,10 +57,10 @@ describe('CheckoutSummary', () => {
     expect(screen.queryByText(/Economize/)).toBeNull();
   });
 
-  it('annual shows monthly equivalent and yearly saving', () => {
+  it('annual shows monthly equivalent and yearly saving', async () => {
     renderIt('annual');
     expect(screen.getByText(/Equivale a/)).toBeVisible();
-    expect(screen.getByText(/Economize/, { selector: '[torph-sr]' })).toBeInTheDocument();
+    expect(await screen.findByText(/Economize/, { selector: '[torph-sr]' })).toBeInTheDocument(); // Torph depois da 1ª pintura (P-512)
   });
 
   it('card is the default; Pix is disabled with "Em breve"', () => {
@@ -83,7 +83,7 @@ describe('CheckoutSummary', () => {
     expect(track).toHaveBeenCalledWith('coupon_applied', {});
     expect(screen.getByText('Preço de fundador aplicado')).toBeVisible();
     expect(screen.getByText(/Preço de tabela/)).toBeInTheDocument();
-    expect(screen.getByText('Total hoje', { selector: '[torph-sr]' }).closest('.justify-between')).toHaveTextContent(formatBRL(2900));
+    expect((await screen.findByText('Total hoje', { selector: '[torph-sr]' })).closest('.justify-between')).toHaveTextContent(formatBRL(2900));
     fireEvent.click(screen.getByRole('button', { name: 'Remover' }));
     expect(screen.queryByText('Preço de fundador aplicado')).toBeNull();
   });

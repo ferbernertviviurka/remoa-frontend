@@ -7,6 +7,7 @@ import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { CardHandles, MapCard, type MapCardProps } from '@remoa/ui';
 import { useCardFace } from '@/features/cards/card-face';
+import { useAsset } from '@/features/cards/upload';
 import { useCardDetail } from '../../canvas/card-detail';
 import { heatOf, type CardNode } from '../../canvas/graph';
 import { MobileNodesContext } from './mobile-nodes-context';
@@ -37,7 +38,9 @@ export const MobileCardNode = memo(function MobileCardNode({ id, data, selected 
   // only the selected card follows the zoom (its handles stay finger-sized); the others never re-render on zoom
   const zoom = useStore((s) => (selected ? s.transform[2] : 1));
   const [live, setLive] = useState<CardSize | null>(null);
-  const size = live ?? card.size;
+  const questionImage = card.type !== 'image' && !!card.frontAssetId;
+  const size = live ?? card.size ?? (questionImage ? mobileSizeOf(card) : null);
+  const frontAsset = useAsset(questionImage ? card.frontAssetId : null);
   const connecting = ctx.connectFrom != null;
   const handles = !!selected && !connecting && !!ctx.startConnect && !!ctx.resizeCard;
   const onResize = useCallback(
@@ -87,6 +90,7 @@ export const MobileCardNode = memo(function MobileCardNode({ id, data, selected 
         {...(face.summary ? { summary: face.summary } : {})}
         {...flow}
         {...(face.thumbnail ? { image: face.thumbnail } : {})}
+        {...(questionImage ? { image: { src: frontAsset?.urls.w800 ?? null, alt: t('mapMobile.card.imageAlt', { title: card.title }) } } : {})}
         level={overview ? 'overview' : 'full'}
         selected={selected}
         dimmed={!matchesQuery(ctx.query, card.title, face.summary)}

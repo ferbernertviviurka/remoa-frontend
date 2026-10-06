@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { NotificationCategory, UnreadCount } from '@remoa/contracts';
-import { isNotificationType, notificationCategories } from '@/lib/contracts-lite';
+import { isNotificationType, notificationCategories } from '@remoa/contracts/constants';
 import { t } from '@remoa/strings';
 import { getUnreadCount } from './api';
 import { textOf, type Textable } from './view';

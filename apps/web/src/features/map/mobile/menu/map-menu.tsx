@@ -17,7 +17,7 @@ import { api } from '@/lib/api';
 import { MapThumb } from './map-preview';
 import { summarize } from './priority';
 
-const t = withStrings({ boards: more.boards, mapMobile: more.mapMobile });
+const t = withStrings({ boards: more.boards, boardsAccess: more.boardsAccess, mapMobile: more.mapMobile });
 type StringKey = Parameters<typeof t>[0];
 
 type Props = {

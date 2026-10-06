@@ -18,3 +18,12 @@ describe('AiDraftTag', () => {
     expect(screen.queryByTestId('ai-draft-tag')).toBeNull();
   });
 });
+
+describe('AiDraftTag source', () => {
+  it('shows the warning and the escaped source excerpt', () => {
+    const { container } = render(<AiDraftTag card={{ status: 'draft', source: AI_DRAFT_SOURCE, sourceExcerpt: '<img src=x onerror=alert(1)>' }} />);
+    expect(screen.getByText('A IA pode errar. Confira a fonte.')).toBeVisible();
+    expect(container.querySelector('img')).toBeNull();
+    expect(container).toHaveTextContent('<img src=x');
+  });
+});

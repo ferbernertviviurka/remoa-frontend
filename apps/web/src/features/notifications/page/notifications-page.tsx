@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { notificationCategories, type Notification, type NotificationCategory } from '@remoa/contracts';
+import type { Notification, NotificationCategory } from '@remoa/contracts';
+import { notificationCategories } from '@remoa/contracts/constants';
 import { t } from '@remoa/strings';
 import { Button, CategoryChips, Icon, CompactSwitch, NotificationEmpty, NotificationGroups, SkeletonBlock, SkeletonRegion, useToast } from '@remoa/ui';
 import { dismissNotification, listNotifications, markRead } from '../api';

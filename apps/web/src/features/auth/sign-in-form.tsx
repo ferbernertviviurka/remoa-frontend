@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useNavigate } from '@/features/shell/use-navigate';
-import { signUpInputSchema, type ErrorCode } from '@remoa/contracts';
+import type { ErrorCode } from '@remoa/contracts';
+import { isValidEmail } from '@remoa/contracts/constants';
 import { t } from '@remoa/strings';
 import { Button, Input, Separator } from '@remoa/ui';
 import { sendMagicLink, signIn, signInWithGoogle, type AuthResult } from '@/server/auth/actions';
@@ -12,7 +13,7 @@ import { APP_HOME, safeNext } from '@/lib/safe-next';
 import { FieldError, PasswordField } from './password-field';
 
 const googleOn = process.env.NEXT_PUBLIC_AUTH_GOOGLE === '1';
-export const validEmail = (v: string) => signUpInputSchema.shape.email.safeParse(v).success;
+export const validEmail = isValidEmail; // = signUpInputSchema.shape.email, without zod (CCR-058)
 
 export function generalMessage(code: ErrorCode, ctx: 'signIn' | 'signUp') {
   if (code === 'unauthorized' && ctx === 'signIn') return t('auth.generalError.unauthorized');

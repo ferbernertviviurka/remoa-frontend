@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { annualSavings, formatBRL, monthlyEquivalent, type CouponValidation, type PaymentMethod, type RedirectUrl } from '@remoa/contracts';
+import type { CouponValidation, PaymentMethod, RedirectUrl } from '@remoa/contracts';
+import { annualSavings, formatBRL, monthlyEquivalent } from '@remoa/contracts/constants';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Alert, Button, CouponField, Icon, MethodChoice, OrderSummary, PriceTicker, RedirectOverlay } from '@remoa/ui';

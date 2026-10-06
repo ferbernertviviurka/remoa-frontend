@@ -2,12 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CalendarLabel, CalendarSettings, CalendarView, CalendarReminderKind, Result } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { addDays, dayKeyOf, makeKey, parseKey, shortDate, type DayKey, type EventFormValue } from '@remoa/ui';
 import { useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { calendarApi } from './api';
 import { covers, formFromEv, inputFromForm, labelKind, optimisticEv, rangeFor, toEv, type Ev } from './model';
+
+const t = withStrings({ calendar: more.calendar }); // P-512: namespace fora do núcleo
 
 type Range = { from: DayKey; to: DayKey };
 export type Failure = { message: string; retry: () => void };

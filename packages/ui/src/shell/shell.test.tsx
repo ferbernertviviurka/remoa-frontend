@@ -68,7 +68,7 @@ describe('PlanPopover', () => {
     await wait(60);
     expect(screen.queryByRole('dialog')).toBeNull();
     await wait(120);
-    expect(screen.getByRole('dialog', { name: 'Seu plano' })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: 'Seu plano' })).toBeInTheDocument(); // aberto aos 120 ms; o painel aparece quando o chunk chega (P-512)
     expect(chip()).toHaveAttribute('aria-expanded', 'true');
     expect(chip()).toHaveAttribute('aria-controls', screen.getByRole('dialog').id);
     expect(onOpenChange).toHaveBeenCalledWith(true, 'hover');
@@ -84,8 +84,9 @@ describe('PlanPopover', () => {
     const u = user();
     await u.hover(chip());
     await wait(130);
+    const dialog = await screen.findByRole('dialog');
     await u.unhover(chip());
-    await u.hover(screen.getByRole('dialog'));
+    await u.hover(dialog);
     await wait(500);
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
@@ -119,7 +120,7 @@ describe('PlanPopover', () => {
     await u.click(chip());
     await u.unhover(chip());
     await wait(600);
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
   });
 
   it('Enter abre como keyboard e Esc fecha', async () => {
@@ -130,6 +131,7 @@ describe('PlanPopover', () => {
     expect(chip()).toHaveFocus();
     await u.keyboard('{Enter}');
     expect(onOpenChange).toHaveBeenCalledWith(true, 'keyboard');
+    await screen.findByRole('dialog'); // o painel baixa na 1ª interação (P-512)
     expect(chip()).toHaveFocus();
     await u.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -140,6 +142,7 @@ describe('PlanPopover', () => {
     render(<Pop />);
     const u = user();
     await u.click(chip());
+    await screen.findByRole('dialog');
     await u.click(screen.getByRole('button', { name: 'fora' }));
     expect(screen.queryByRole('dialog')).toBeNull();
   });
@@ -149,6 +152,7 @@ describe('PlanPopover', () => {
     const u = user();
     await u.hover(chip());
     await wait(130);
+    await screen.findByRole('dialog');
     chip().focus();
     await u.tab();
     expect(screen.getByRole('link', { name: 'Fazer upgrade' })).toHaveFocus();
@@ -169,7 +173,7 @@ describe('PlanPopover', () => {
     const { rerender } = render(<Pop state="loading" />);
     const u = user();
     await u.click(chip());
-    expect(screen.getByRole('status')).toHaveTextContent('Carregando');
+    expect(await screen.findByRole('status')).toHaveTextContent('Carregando');
     expect(screen.queryByText('Mapas')).toBeNull();
     rerender(<Pop state="error" onRetry={onRetry} />);
     await u.click(screen.getByRole('button', { name: 'Tentar de novo' }));
@@ -179,7 +183,16 @@ describe('PlanPopover', () => {
   it('sem violações axe', async () => {
     const { baseElement } = render(<Pop />);
     fireEvent.click(chip());
+    await screen.findByRole('dialog');
     expect(await violations(baseElement)).toEqual([]);
+  });
+
+  it('antes da 1ª interação o chip já é o gatilho (ARIA) e o painel não existe (P-512)', () => {
+    render(<Pop />);
+    expect(chip()).toHaveAttribute('aria-haspopup', 'dialog');
+    expect(chip()).toHaveAttribute('aria-expanded', 'false');
+    expect(chip()).toHaveAttribute('data-state', 'closed');
+    expect(document.querySelector('[data-radix-popper-content-wrapper]')).toBeNull();
   });
 });
 

@@ -12,7 +12,10 @@ import { previewOf } from '@/features/cards/draft';
 import { usePaywall } from '@/features/billing/paywall';
 import { rememberBoard, track } from '@/lib/analytics';
 import { api } from '@/lib/api';
+import { loadAsset } from '@/features/cards/upload';
 import { primeCardDetail } from '../../canvas/card-detail';
+import { fitToImages, hasNewImage, imageIdsOf } from '../../canvas/image-fit';
+import { mobileFrame, mobileSizeOf } from '../nodes/resize';
 import { applyOps, freshen, invertAll, patchCard, snapPos, type CardCache, type CardNode, type Graph } from '../../canvas/graph';
 import { emptyHistory, push, redo, undo, type History } from '../../canvas/history';
 import { initialGraph, storage } from '../../canvas/initial-graph';
@@ -206,11 +209,20 @@ export function useMapDoc(data: BoardGraph) {
   const onCardSaved = useCallback(
     (d: CardDetail, input: SaveCardInput) => {
       primeCardDetail(d);
+      const before = g.current.nodes.find((n) => n.id === d.id)?.data.card;
       setGraph(patchCard(g.current, cache.current, d.id, {
-        title: d.title, shape: d.shape, front: d.front, frontAssetId: d.frontAssetId, back: d.back, source: d.source, preview: d.preview ?? previewOf(input),
+        title: d.title, shape: d.shape, front: d.front, frontAssetId: d.frontAssetId, backAssetId: d.backAssetId, back: d.back, source: d.source, preview: d.preview ?? previewOf(input),
       }));
+      // D-1211: a new image grows the card so it shows whole (the phone card has no back: answer images do not count)
+      const after = g.current.nodes.find((n) => n.id === d.id)?.data.card;
+      if (!after || !hasNewImage(before, after, false)) return;
+      void Promise.all(imageIdsOf(after, false).map(loadAsset)).then((assets) => {
+        const card = g.current.nodes.find((n) => n.id === d.id)?.data.card;
+        const size = card && fitToImages(mobileSizeOf(card), assets.filter((a) => a !== null), mobileFrame(card));
+        if (size) resizeCard(d.id, size);
+      });
     },
-    [setGraph],
+    [resizeCard, setGraph],
   );
 
   /** T7: an abandoned new card goes away (undoable like any delete). */
