@@ -200,10 +200,4 @@ export const quiz = {
   installDismiss: 'Agora não',
 } as const;
 
-export const boundary = {
-  title: 'Algo deu errado',
-  body: 'Tivemos um problema ao abrir esta tela.',
-  retry: 'Tentar de novo',
-  home: 'Ir para Meus mapas',
-  ref: 'Código do erro: {id}',
-} as const;
+export { boundary } from './boundary';

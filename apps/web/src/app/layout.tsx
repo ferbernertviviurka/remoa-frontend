@@ -9,7 +9,7 @@ import { googleSiteVerification } from '@/lib/env/legal';
 import { siteUrl } from '@/lib/seo/site';
 import './globals.css';
 
-const display = Bricolage_Grotesque({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-bricolage', display: 'swap', preload: false });
+const display = Bricolage_Grotesque({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-bricolage', display: 'swap' });
 const body = Instrument_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-instrument', display: 'swap' });
 
 // G11: metadataBase here so every route (not only the landing) resolves OG/canonical URLs against the real domain (Q-015).

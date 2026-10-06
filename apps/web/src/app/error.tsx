@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { t } from '@remoa/strings/landing';
+import { t } from '@remoa/strings/boundary';
 import { Empty, buttonVariants, focusRing } from '@remoa/ui';
 
 export default function ErrorBoundary({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {

@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { t } from '@remoa/strings/landing';
 import { trackCta } from '../analytics';
 import { Avatar, Logo, SiteHeader } from '@remoa/ui';
 import { initialsOf } from '@/features/account/shell/format';
 import { apiBase } from '@/lib/api/base';
 import type { AccountSnapshot } from '@remoa/contracts';
 import type { LaunchPhase } from '../flags';
+import type { HeaderLabelKey } from './header-labels';
 
 const ANCHORS = [
   ['como-funciona', 'landing.nav.anchors.howWorks'],
@@ -52,7 +52,8 @@ function useSignedIn() {
 
 /** `signedIn` (D-320): who already has a session gets one CTA back into the app instead of "Entrar", plus the avatar (links to the account). */
 /** `blogLabel` comes from the server layout: the client strings subset (D-535) does not carry the blog dictionary. */
-export function LandingHeader({ phase, blogLabel, signedIn: signedInProp = false, account: accountProp }: { phase: LaunchPhase; blogLabel: string; signedIn?: boolean; account?: HeaderAccount | null }) {
+export function LandingHeader({ phase, labels, blogLabel, signedIn: signedInProp = false, account: accountProp }: { phase: LaunchPhase; labels: Record<HeaderLabelKey, string>; blogLabel: string; signedIn?: boolean; account?: HeaderAccount | null }) {
+  const t = (key: HeaderLabelKey) => labels[key];
   const session = useSignedIn();
   const signedIn = signedInProp || session.signedIn;
   const account = accountProp ?? session.account;
@@ -86,7 +87,7 @@ export function LandingHeader({ phase, blogLabel, signedIn: signedInProp = false
           </Link>
         ) : null}
       </> : <>
-        <Link href="/entrar" onClick={trackCta('header', 'signin')} className={`${btn} border border-border-strong bg-surface text-ink hover:border-primary`}>{t('landing.nav.signIn')}</Link>
+        <Link href={phase === 'open' ? '/entrar' : '#cta'} onClick={trackCta('header', phase === 'open' ? 'signin' : 'waitlist')} className={`${btn} border border-border-strong bg-surface text-ink hover:border-primary`}>{t('landing.nav.signIn')}</Link>
         <a href={phase === 'open' ? '/cadastro' : '#cta'} onClick={trackCta('header', phase === 'open' ? 'create' : 'waitlist')} className={`${btn} bg-primary text-on-primary hover:brightness-110`}>{t('landing.nav.createMap')}</a>
       </>}
     />
