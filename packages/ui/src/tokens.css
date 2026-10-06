@@ -54,6 +54,7 @@
   --state-unknown-on-dark: #7a6fb0;
   /* F26 notificações: fundo do item não lido e rodapé; tons por tipo sem token de estado */
   --soft: #fbfafe;
+  --ok: #15803d; /* F27: check de SEO, "Salvo agora" e barra de pontuação alta (4,9:1 sobre branco) */
   --notif-map-bg: #e4dff8;
   --notif-support-bg: #ccfbf1;
   --notif-support-text: #0f766e;
@@ -157,6 +158,7 @@
   --color-unknown-soft: var(--state-unknown-soft);
   --color-unknown-on-dark: var(--state-unknown-on-dark);
   --color-soft: var(--soft);
+  --color-ok: var(--ok);
   --color-notif-map: var(--notif-map-bg);
   --color-notif-support: var(--notif-support-bg);
   --color-notif-support-text: var(--notif-support-text);
