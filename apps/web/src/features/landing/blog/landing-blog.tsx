@@ -1,13 +1,14 @@
 import { t } from '@remoa/strings';
 import { LandingBlogSection } from '@remoa/ui';
-import { getLatestPosts, toLandingPost } from './latest-posts';
+import { cardProps } from '@/features/blog/format';
+import { getLatestPosts } from './latest-posts';
 import { LandingBlogTrack } from './track';
 
 /** F27 FR-39/40: async server section; renders nothing when the API has no posts (or is down). */
 export async function LandingBlog() {
   const posts = await getLatestPosts(5);
   if (!posts.length) return null;
-  const items = posts.map(toLandingPost);
+  const items = posts.map((p) => cardProps(p, '(min-width: 1024px) 560px, 100vw'));
   return (
     <LandingBlogTrack hrefs={items.map((p) => p.href)}>
     <LandingBlogSection

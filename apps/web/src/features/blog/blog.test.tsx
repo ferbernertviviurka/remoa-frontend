@@ -7,7 +7,7 @@ import Index from '@/app/(marketing)/blog/page';
 import PageN from '@/app/(marketing)/blog/pagina/[n]/page';
 import PostPage, { generateMetadata as postMeta } from '@/app/(marketing)/blog/[slug]/page';
 import PreviewPage, { generateMetadata as previewMeta } from '@/app/(marketing)/blog/preview/[token]/page';
-import { blogPostingLd, crumbsLd, postBreadcrumbs, postMetadata } from './seo';
+import { blogPostingLd, categoryMetadata, crumbsLd, listMetadata, postBreadcrumbs, postMetadata } from './seo';
 import { PostView } from './view';
 
 const published = blogListItemFixtures[0]!;
@@ -18,7 +18,8 @@ const post = blogPublicPostSchema.parse(JSON.parse(JSON.stringify(base))); // as
 
 const routes = new Map<string, () => Response>();
 const json = (data: unknown, status = 200) => () => new Response(JSON.stringify({ ok: true, data }), { status });
-const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => {
+const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+  void init; // recorded in mock.calls for the cache-option assertions
   const path = new URL(url).pathname.replace('/v1/public/blog/', '') + new URL(url).search;
   const r = routes.get(path);
   return r ? r() : new Response('{}', { status: 404 });
@@ -145,5 +146,14 @@ describe('index and pagination', () => {
     render(await PageN({ params: Promise.resolve({ n: '2' }) }));
     expect(screen.getByRole('link', { name: /Anterior/ })).toHaveAttribute('href', '/blog');
     expect(screen.getByRole('link', { name: /Próxima/ })).toHaveAttribute('href', '/blog/pagina/3');
+  });
+});
+
+describe('og:image on every public page', () => {
+  it('post without cover, list and category fall back to the default image', () => {
+    const imgs = (m: ReturnType<typeof postMetadata>) => (m.openGraph as { images: { url: string; width: number; height: number }[] }).images;
+    expect(imgs(postMetadata({ ...post, cover: null }))[0]).toMatchObject({ url: expect.stringContaining('/og-default'), width: 1200, height: 630 });
+    expect(imgs(listMetadata({ title: 'T', description: 'D', path: '/blog' }))).toHaveLength(1);
+    expect(imgs(categoryMetadata(blogCategoryFixtures[0]!))).toHaveLength(1);
   });
 });

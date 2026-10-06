@@ -6,6 +6,7 @@ import { t } from '@remoa/strings';
 import { LegalDocument } from '@remoa/ui';
 import { legalEnv } from '@/lib/env/legal';
 import { siteUrl } from '@/lib/seo/site';
+import { defaultOgImageMeta } from '@/lib/seo/og-default';
 import { renderLegal } from './render-legal';
 
 const DOCS = {
@@ -21,7 +22,7 @@ export function legalMetadata(kind: LegalKind): Metadata {
   const title = t(`legal.${kind}.pageTitle`);
   const description = t(`legal.${kind}.description`);
   const url = `${siteUrl}${DOCS[kind].path}`;
-  return { title, description, alternates: { canonical: url }, openGraph: { title, description, url, type: 'website' } };
+  return { title, description, alternates: { canonical: url }, openGraph: { title, description, url, type: 'website', images: [defaultOgImageMeta()] }, twitter: { card: 'summary_large_image', title, description, images: [defaultOgImageMeta().url] } };
 }
 
 export function LegalDocPage({ kind }: { kind: LegalKind }) {

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { t } from '@remoa/strings';
 import { Empty, PostCard, buttonVariants } from '@remoa/ui';
 import { getLatestPosts } from '@/features/blog/api';
-import { cardProps } from '@/features/blog/view';
+import { cardProps } from '@/features/blog/format';
 
 export const metadata: Metadata = { title: { absolute: t('blog.pages.post.notFound.title') }, robots: { index: false, follow: true } };
 

@@ -2,21 +2,16 @@ import type { BlogCategory, BlogListItem, BlogPublicPost } from '@remoa/contract
 import { t } from '@remoa/strings';
 import {
   ArticleBody, AuthorBox, BlogCategoryChips, BlogGrid, BlogIndexHeader, BlogSearch, Breadcrumbs, EducationalNotice, Pagination,
-  PostCard, PostCta, PostHero, PostLayout, QuickSummary, RelatedPosts, Toc, blogStagger,
+  FeaturedPost, PostCard, PostCta, PostHero, PostLayout, QuickSummary, RelatedPosts, Toc, blogStagger,
 } from '@remoa/ui';
 import { JsonLd, faqPageLd } from '@/lib/seo/json-ld';
-import { toLandingPost } from '@/features/landing/blog/latest-posts';
 import { BLOG_PAGE_SIZE } from './api';
+import { cardProps } from './format';
 import { blogPostingLd, crumbsLd, postBreadcrumbs } from './seo';
 import { BlogCtaTrack, BlogPostViewed, BlogSearchUsed } from './track';
 
 const longDate = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Sao_Paulo' });
 const SIGNUP = '/cadastro';
-
-export const cardProps = (p: BlogListItem) => {
-  const c = toLandingPost(p);
-  return { ...c, dateTime: new Date(p.publishedAt ?? p.updatedAt).toISOString(), cover: { ...c.cover, sizes: '(min-width: 768px) 380px, 100vw' } };
-};
 
 export const totalPages = (total: number, size = BLOG_PAGE_SIZE) => Math.max(1, Math.ceil(total / size));
 
@@ -57,7 +52,7 @@ export function IndexView({ items, total, page, categories, q }: { items: BlogLi
           <>
             {feature ? (
               <div className="mb-8">
-                <PostCard {...cardProps(feature)} variant="feature" headingLevel={2} priority />
+                <FeaturedPost {...cardProps(feature, '(min-width: 1024px) 600px, 100vw')} ctaLabel={t('blog.pages.index.readPost')} />
               </div>
             ) : null}
             <PostGrid items={rest.filter((p): p is BlogListItem => !!p)} firstPriority={!feature} />
@@ -148,7 +143,7 @@ export function PostView({ post }: { post: BlogPublicPost }) {
       <PostLayout layout={template === 'guia' ? 'guide' : template === 'destaque' ? 'narrow' : 'single'} aside={toc ?? undefined}>{body}</PostLayout>
       {template === 'guia' ? cta('band') : null}
       <div className="px-5 pb-20 md:px-10">
-        <RelatedPosts title={t('blog.pages.post.relatedPosts')} posts={post.related.slice(0, 3).map(cardProps)} />
+        <RelatedPosts title={t('blog.pages.post.relatedPosts')} posts={post.related.slice(0, 3).map((p) => cardProps(p))} />
       </div>
     </>
   );

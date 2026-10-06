@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { BlogCategory, BlogPublicPost } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { siteUrl } from '@/lib/seo/site';
+import { defaultOgImageMeta } from '@/lib/seo/og-default';
 
 const abs = (path: string) => `${siteUrl}${path}`;
 const iso = (d: Date | string) => new Date(d).toISOString();
@@ -15,7 +16,7 @@ export const postPath = (slug: string) => `/blog/${slug}`;
 export function postMetadata(post: BlogPublicPost): Metadata {
   const title = post.seoTitle ?? `${post.title} | ${brand()}`;
   const canonical = post.canonicalUrl ?? abs(postPath(post.slug));
-  const image = post.cover ? { url: post.cover.ogUrl ?? post.cover.url, width: 1200, height: 630, alt: post.coverAlt } : null;
+  const image = post.cover ? { url: post.cover.ogUrl ?? post.cover.url, width: 1200, height: 630, alt: post.coverAlt } : defaultOgImageMeta();
   return {
     title: { absolute: title },
     description: post.description,
@@ -26,9 +27,9 @@ export function postMetadata(post: BlogPublicPost): Metadata {
       ...(post.publishedAt ? { publishedTime: iso(post.publishedAt) } : {}),
       modifiedTime: iso(post.contentUpdatedAt),
       ...(post.category ? { section: post.category.name } : {}),
-      ...(image ? { images: [image] } : {}),
+      images: [image],
     },
-    twitter: { card: 'summary_large_image', title, description: post.description, ...(image ? { images: [image.url] } : {}) },
+    twitter: { card: 'summary_large_image', title, description: post.description, images: [image.url] },
   };
 }
 
@@ -38,8 +39,8 @@ export const listMetadata = ({ title, description, path, noindex }: ListMeta): M
   description,
   alternates: { canonical: abs(path) },
   robots: noindex ? { index: false, follow: true } : { index: true, follow: true },
-  openGraph: { type: 'website', url: abs(path), title, description, siteName: brand(), locale: 'pt_BR' },
-  twitter: { card: 'summary_large_image', title, description },
+  openGraph: { type: 'website', url: abs(path), title, description, siteName: brand(), locale: 'pt_BR', images: [defaultOgImageMeta()] },
+  twitter: { card: 'summary_large_image', title, description, images: [defaultOgImageMeta().url] },
 });
 
 export const categoryMetadata = (c: BlogCategory): Metadata =>
