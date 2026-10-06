@@ -1,12 +1,12 @@
-// F27 FR-42/43: shared body of /termos-de-uso and /politica-de-privacidade (static: content file + .env read at build time).
+// F27 FR-42/43: shared body of /termos-de-uso and /politica-de-privacidade (static: content file + legal config, D-977).
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Metadata } from 'next';
 import { t } from '@remoa/strings';
 import { LegalDocument } from '@remoa/ui';
-import { legalEnv } from '@/lib/env/legal';
 import { siteUrl } from '@/lib/seo/site';
 import { defaultOgImageMeta } from '@/lib/seo/og-default';
+import { LEGAL_CONFIG } from './config';
 import { renderLegal } from './render-legal';
 
 const DOCS = {
@@ -26,7 +26,7 @@ export function legalMetadata(kind: LegalKind): Metadata {
 }
 
 export function LegalDocPage({ kind }: { kind: LegalKind }) {
-  const env = legalEnv();
+  const env = LEGAL_CONFIG;
   const version = kind === 'terms' ? env.termsVersion : env.privacyVersion;
   const production = isProd();
   const doc = renderLegal(readFileSync(join(process.cwd(), 'content', 'legal', DOCS[kind].file), 'utf8'), {

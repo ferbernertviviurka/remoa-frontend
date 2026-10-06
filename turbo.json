@@ -9,6 +9,17 @@
       "outputs": [
         ".next/**",
         "!.next/cache/**"
+      ],
+      "env": [
+        "LEGAL_STRICT",
+        "GOOGLE_SITE_VERIFICATION",
+        "VERCEL_ENV",
+        "NEXT_SKIP_TYPECHECK",
+        "NEXT_DIST_DIR"
+      ],
+      "passThroughEnv": [
+        "PROXY_SHARED_SECRET",
+        "REVALIDATE_SECRET"
       ]
     },
     "dev": {

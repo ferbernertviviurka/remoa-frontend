@@ -46,9 +46,9 @@ describe('menu and footer', () => {
     render(<LandingHeader blogLabel="Blog" phase="open" />);
     expect(screen.getAllByRole('link', { name: 'Blog' })[0]?.getAttribute('href')).toBe('/blog');
   });
-  test('layout footer: legal routes, blog, contact from legalEnv, no hardcoded e-mail', () => {
+  test('layout footer: legal routes, blog, contact from the legal config, no hardcoded e-mail', () => {
     const src = readFileSync('src/app/(marketing)/layout.tsx', 'utf8');
-    for (const h of ['/termos-de-uso', '/politica-de-privacidade', '/blog', 'legalEnv().vars.dpoEmail']) expect(src).toContain(h);
+    for (const h of ['/termos-de-uso', '/politica-de-privacidade', '/blog', 'LEGAL_CONFIG.vars.dpoEmail']) expect(src).toContain(h);
     expect(src).not.toMatch(/[\w.]+@[\w.]+\.\w+/);
   });
 });

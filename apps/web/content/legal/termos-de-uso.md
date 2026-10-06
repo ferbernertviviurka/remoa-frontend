@@ -1,4 +1,4 @@
-<!-- RASCUNHO. Revisar com advogado antes de publicar. Itens [CONFIRMAR] dependem de decisão ou de checagem. Variáveis {{...}} vêm do .env (LEGAL_*). -->
+<!-- RASCUNHO. Revisar com advogado antes de publicar. Itens [CONFIRMAR] dependem de decisão ou de checagem. Variáveis {{...}} vêm de remoa-frontend/apps/web/src/features/legal/config.ts (D-977). -->
 
 # Termos de Uso
 
@@ -19,7 +19,7 @@ O Remoa é um serviço educacional. Ele não oferece atendimento médico, não s
 ## 3. Cadastro e conta
 
 - Para usar o Remoa você cria uma conta com e-mail e senha ou com o Google.
-- Você deve ter 18 anos ou mais [CONFIRMAR].
+- Se você tiver menos de 18 anos, precisa da autorização de um responsável legal para criar a conta e fazer compras.
 - Informe dados verdadeiros e mantenha-os atualizados.
 - Mantenha sua senha em segredo. Você é responsável pelas atividades feitas na sua conta.
 - Cada pessoa pode ter uma conta. Avise-nos se suspeitar de uso indevido.

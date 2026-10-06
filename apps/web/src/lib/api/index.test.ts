@@ -31,3 +31,13 @@ describe('apiFetch dev trace (D-583)', () => {
     expect(warn).not.toHaveBeenCalled();
   });
 });
+
+describe('apiFetch timing (G21/F29 FR-3)', () => {
+  it('dev trace shows the API db time and query count from Server-Timing', async () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, data: 1 }), { headers: { 'server-timing': 'db;dur=7.5;desc="3 q", ext;dur=0, app;dur=1', 'x-remoa-queries': '3' } })));
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    await apiFetch('/v1/home', 'tok');
+    expect(info).toHaveBeenCalledWith(expect.stringMatching(/^\[api\] GET \/v1\/home -> 200 \d+ms \(db 7\.5ms 3q, ext 0ms\)$/));
+  });
+});

@@ -33,7 +33,7 @@ const axe = async (page: Page) => {
 };
 
 test('editor: blocos, imagem com alt, links, autosave, sanitização, aba SEO, publicar e pré-visualizar', async ({ page, request }) => {
-  test.setTimeout(240_000);
+  test.setTimeout(Number(process.env.PW_T ?? 240_000));
   const a = await accountUser(page, request, 'Equipe Teste');
   psql(`update profiles set role = 'admin' where user_id = '${a.userId}'`);
   const title = `${PREFIX} ${Date.now()}`;
@@ -110,7 +110,7 @@ test('editor: blocos, imagem com alt, links, autosave, sanitização, aba SEO, p
   await expect(page.getByText('Salvo agora')).toBeVisible({ timeout: 30_000 });
   await page.reload();
   await expect(editorBox(page)).toContainText('Primeira seção');
-  await expect(editorBox(page)).toContainText('Começar agora'.slice(0, 0) + 'Texto do destaque');
+  await expect(editorBox(page)).toContainText('Texto do destaque');
   await expect(editorBox(page).locator('img[alt="Pixel de teste"]')).toBeVisible();
   await expect(page.getByText('Salvo agora')).toBeVisible();
   expect(await axe(page), 'axe editor').toEqual([]);

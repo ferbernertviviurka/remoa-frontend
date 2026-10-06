@@ -14,7 +14,7 @@ import {
   type SignUpInput,
 } from '@remoa/contracts';
 import { apiBase } from '@/lib/api/base';
-import { legalEnv } from '@/lib/env/legal';
+import { LEGAL_CONFIG } from '@/features/legal/config';
 import { createClient } from '@/lib/supabase/server';
 import { ONBOARDING_HOME, safeNext } from '@/lib/safe-next';
 import { siteUrl } from '@/lib/site-url';
@@ -37,15 +37,15 @@ function fromSupabase(e: { status?: number; code?: string; message: string }): A
 }
 
 /** D-913/D-952, P-416: versions accepted at sign-up, copied to the profile by handle_new_user. The API is the single source (it is who the trigger compares with);
- * the web .env is only the fallback when the API does not answer. Omitted when unset. */
+ * the web legal config (D-977) is only the fallback when the API does not answer. Omitted when unset. */
 async function legalMeta(): Promise<Record<string, string>> {
-  let { termsVersion, privacyVersion } = legalEnv();
+  let { termsVersion, privacyVersion } = LEGAL_CONFIG;
   try {
     const res = await fetch(`${apiBase()}/v1/public/legal/versions`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(2_000) });
     const d = res.ok ? ((await res.json()) as { data?: { termsVersion?: string; privacyVersion?: string } }).data : undefined;
     if (d?.termsVersion && d.privacyVersion) ({ termsVersion, privacyVersion } = d as { termsVersion: string; privacyVersion: string });
   } catch {
-    // fallback: the web env
+    // fallback: the web legal config
   }
   return { ...(termsVersion ? { [LEGAL_SIGNUP_META.terms]: termsVersion } : {}), ...(privacyVersion ? { [LEGAL_SIGNUP_META.privacy]: privacyVersion } : {}) };
 }
