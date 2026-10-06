@@ -7,7 +7,7 @@ import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Alert, Button } from '@remoa/ui';
 import { api } from '@/lib/api';
-import { trackAi } from '@/lib/analytics';
+import { track } from '@/lib/analytics';
 import { isLimit, isRateLimited } from './types';
 
 const t = withStrings({ ai: more.ai });
@@ -18,9 +18,9 @@ export function AiWarning() {
 }
 
 /** The passage the AI relied on, as plain text. */
-export function AiSource({ quote, label = t('ai.source') }: { quote?: string | null; label?: string }) {
-  if (!quote) return null;
-  return <p className="m-0 text-xs text-muted"><strong>{label}:</strong> “{quote}”</p>;
+export function AiSource({ quote, source, label = t('ai.source') }: { quote?: string | null; source?: string | null; label?: string }) {
+  if (!quote && !source) return null;
+  return <p className="m-0 text-xs text-muted"><strong>{label}:</strong> {quote ? `“${quote}”` : source}</p>;
 }
 
 /** Streaming feedback: text only, announced politely. */
@@ -37,7 +37,7 @@ export function AiStreaming({ text }: { text: string }) {
 export function AiNotice({ ai, onRetry }: { ai?: AiInfo | null; onRetry?: () => void }) {
   const failed = ai?.status === 'error';
   useEffect(() => {
-    if (failed) trackAi('ai_error_shown', { type: ai?.code ?? 'unknown' });
+    if (failed) track('ai_error_shown', { code: ai?.code ?? 'unknown' });
   }, [failed, ai?.code]);
   if (isLimit(ai))
     return (
@@ -68,7 +68,7 @@ export function FlagGradeButton({ gradeId }: { gradeId: string }) {
     setState('busy');
     try {
       const r = await api<AiGradeFlag>(`/v1/ai/grades/${encodeURIComponent(gradeId)}/flag`, { method: 'POST', body: JSON.stringify({}) });
-      if (r.ok) trackAi('ai_grade_flagged', {});
+      if (r.ok) track('ai_grade_flagged', {});
       setState(r.ok ? 'sent' : 'error');
     } catch {
       setState('error');

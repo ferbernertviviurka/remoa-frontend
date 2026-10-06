@@ -17,7 +17,7 @@ const userEvent = {
 const track = vi.fn();
 const replace = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace, push: vi.fn() }) }));
-vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a), trackAi: vi.fn() }));
+vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
 
 const onExit = vi.fn();
 const onRated = vi.fn();

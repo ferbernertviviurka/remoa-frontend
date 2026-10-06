@@ -8,7 +8,7 @@ import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Alert, Button, QuestionPanel, RatingButton, RatingGroup, Skeleton, Tag, VerdictBox } from '@remoa/ui';
 import { track } from '@/lib/analytics';
-import { AiNotice, AiStreaming, AiWarning, FlagGradeButton } from '@/features/ai/ai-notice';
+import { AiNotice, AiSource, AiStreaming, AiWarning, FlagGradeButton } from '@/features/ai/ai-notice';
 import type { AnswerPayload } from './client';
 import { Occlusion } from './occlusion';
 import { MAX_SKIPS, useChallenge, type Scope } from './provider';
@@ -256,6 +256,7 @@ function ItemQuestion({ item, n, total, done, state, canSkip, selfMark, onRated 
           note={item.grading === 'rubric_own' ? t('challenge.ownRubric') : undefined}
         >
           {v.feedback ? <p className="m-0 text-sm">{v.feedback}</p> : null}
+          <AiSource quote={v.sourceQuote} source={v.source} />
           <AiWarning />
           {aiInfo?.callId ? (
             <FlagGradeButton gradeId={aiInfo.callId} />

@@ -90,8 +90,3 @@ export const trackWhenIdle: Track = (event, props) => {
   if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 4000 });
   else setTimeout(run, 2000);
 };
-
-/**
- * G22: eventos de IA sem conteúdo (só o tipo do erro). `ai_error` (servidor: fn+type) é outro evento; os de cliente seguem fora de contracts/events.ts até um CCR.
- */
-export const trackAi = (event: 'ai_error_shown' | 'ai_grade_flagged', props: { type?: string }) => send(event, props);

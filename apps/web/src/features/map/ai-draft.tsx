@@ -1,4 +1,4 @@
-import { AI_DRAFT_SOURCE } from '@remoa/contracts';
+import { AI_DRAFT_SOURCE, type Card } from '@remoa/contracts';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { AiSource, AiWarning } from '@/features/ai/ai-notice';
@@ -11,7 +11,7 @@ export function showsAiDraftTag(card: { status: string; source: string | null })
 }
 
 /** `sourceExcerpt`: passage of the source text the card came from (G22; the API sends it for generated cards). */
-export function AiDraftTag({ card }: { card: { status: string; source: string | null; sourceExcerpt?: string | null } }) {
+export function AiDraftTag({ card }: { card: Pick<Card, 'status' | 'source' | 'sourceExcerpt'> }) {
   if (!showsAiDraftTag(card)) return null;
   return (
     <div className="flex flex-col items-start gap-1">

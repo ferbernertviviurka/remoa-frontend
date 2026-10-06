@@ -4,9 +4,9 @@ import { AiNotice, AiSource, AiStreaming, AiWarning, FlagGradeButton } from './a
 import { violations } from '../cards/test-utils';
 
 const api = vi.fn();
-const trackAi = vi.fn();
+const track = vi.fn();
 vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
-vi.mock('@/lib/analytics', () => ({ trackAi: (...a: unknown[]) => trackAi(...a) }));
+vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -45,7 +45,7 @@ describe('AI states', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Demorou demais. Tente de novo.');
     fireEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }));
     expect(onRetry).toHaveBeenCalledOnce();
-    expect(trackAi).toHaveBeenCalledWith('ai_error_shown', { type: 'timeout' });
+    expect(track).toHaveBeenCalledWith('ai_error_shown', { code: 'timeout' });
     expect(await violations(container)).toEqual([]);
   });
 
@@ -80,7 +80,7 @@ describe('FlagGradeButton', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Essa correção está errada' }));
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Obrigado'));
     expect(api).toHaveBeenCalledWith('/v1/ai/grades/g1/flag', expect.objectContaining({ method: 'POST', body: '{}' }));
-    expect(trackAi).toHaveBeenCalledWith('ai_grade_flagged', {});
+    expect(track).toHaveBeenCalledWith('ai_grade_flagged', {});
   });
 
   it('shows an error and lets the student try again', async () => {
