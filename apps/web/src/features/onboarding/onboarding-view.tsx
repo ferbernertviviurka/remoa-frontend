@@ -7,6 +7,7 @@ import { t, type StringKey } from '@remoa/strings';
 import { Alert, Button, ChoiceCard, ChoiceRow, Logo, Stepper } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
+import { useAcceptLegal } from '@/features/legal/use-accept-legal';
 import { GOAL_GROUPS, SEGMENTS } from './options';
 
 type Path = 'pdf' | 'anki' | 'seed' | 'blank';
@@ -21,6 +22,7 @@ type StepKey = 'userType' | (typeof STEPS)[number];
 
 /** `needsUserType`: Google sign-up (or a pre-G14 account) has no userType yet; the first step asks it (D-597). */
 export function OnboardingView({ initial, needsUserType = false }: { initial: Pick<OnboardingState, 'answers'>; needsUserType?: boolean }) {
+  useAcceptLegal(needsUserType); // D-954: the Google sign-up path (needsUserType) never saw the consent line
   const [step, setStep] = useState(0);
   const [segment, setSegment] = useState<Segment | undefined>(initial.answers.segment);
   const [userType, setUserType] = useState<UserType | undefined>();

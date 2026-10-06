@@ -18,7 +18,20 @@ export function DataSection() {
       <ExportCard />
       <KeepCard />
       <DeleteCard />
+      <LegalLinksCard />
     </div>
+  );
+}
+
+/** F27 FR-48: the two legal pages, opened in a new tab so the account stays put. */
+function LegalLinksCard() {
+  return (
+    <SectionCard title={t('legal.account.legalDocuments')}>
+      <ul className="m-0 flex list-none flex-col gap-1 p-0 text-sm">
+        <li><a href="/termos-de-uso" target="_blank" rel="noopener noreferrer">{t('legal.signup.termsLink')}</a></li>
+        <li><a href="/politica-de-privacidade" target="_blank" rel="noopener noreferrer">{t('legal.signup.privacyLink')}</a></li>
+      </ul>
+    </SectionCard>
   );
 }
 

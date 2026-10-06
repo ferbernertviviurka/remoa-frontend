@@ -20,6 +20,9 @@ const config: NextConfig = {
   async redirects() {
     return [
       { source: '/app', destination: '/app/hoje', permanent: false },
+      // D-904: the legal pages moved to their long names (301/308 permanent).
+      { source: '/termos', destination: '/termos-de-uso', permanent: true },
+      { source: '/privacidade', destination: '/politica-de-privacidade', permanent: true },
       ...moved.map((p) => ({ source: `/${p}/:rest*`, destination: `/app/${p}/:rest*`, permanent: true })),
     ];
   },

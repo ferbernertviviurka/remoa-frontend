@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import {
+  LEGAL_SIGNUP_META,
   normalizeReferralCode,
   magicLinkInputSchema as magicSchema,
   signInInputSchema as signInSchema,
@@ -12,6 +13,7 @@ import {
   type SignInInput,
   type SignUpInput,
 } from '@remoa/contracts';
+import { legalEnv } from '@/lib/env/legal';
 import { createClient } from '@/lib/supabase/server';
 import { ONBOARDING_HOME, safeNext } from '@/lib/safe-next';
 import { siteUrl } from '@/lib/site-url';
@@ -33,6 +35,12 @@ function fromSupabase(e: { status?: number; code?: string; message: string }): A
   return fail('unauthorized', e.message);
 }
 
+/** D-913/D-952: versions accepted at sign-up, read from the server .env (never from the client); copied to the profile by handle_new_user. Omitted when unset. */
+function legalMeta(): Record<string, string> {
+  const { termsVersion, privacyVersion } = legalEnv();
+  return { ...(termsVersion ? { [LEGAL_SIGNUP_META.terms]: termsVersion } : {}), ...(privacyVersion ? { [LEGAL_SIGNUP_META.privacy]: privacyVersion } : {}) };
+}
+
 export async function signUp(input: SignUpInput): Promise<AuthResult> {
   const p = signUpSchema.safeParse(input);
   if (!p.success) return invalid();
@@ -41,7 +49,7 @@ export async function signUp(input: SignUpInput): Promise<AuthResult> {
     email: p.data.email,
     password: p.data.password,
     // F24 FR-7: the confirmation link comes back through /auth/callback (Supabase appends ?code=).
-    options: { data: p.data.name ? { name: p.data.name } : undefined, emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(ONBOARDING_HOME)}` },
+    options: { data: { ...(p.data.name ? { name: p.data.name } : {}), ...legalMeta() }, emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(ONBOARDING_HOME)}` },
   });
   return error ? fromSupabase(error) : { ok: true }; // confirmations off: session is set immediately
 }
@@ -69,7 +77,7 @@ export async function sendMagicLink(input: MagicLinkInput): Promise<AuthResult> 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email: p.data.email,
-    options: { emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(safeNext(p.data.next))}` },
+    options: { data: legalMeta(), emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(safeNext(p.data.next))}` },
   });
   return error ? fromSupabase(error) : { ok: true };
 }

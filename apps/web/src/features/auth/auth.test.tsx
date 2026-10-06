@@ -166,7 +166,7 @@ describe('SignUpWizard', () => {
     expect(screen.getByRole('alert').textContent).toMatch(/marque que você concorda/);
     expect(screen.getByRole('checkbox')).toHaveAttribute('aria-invalid', 'true');
     expect(signUp).not.toHaveBeenCalled();
-    for (const [name, href] of [['Termos de uso', '/termos'], ['Política de Privacidade', '/privacidade']] as const) {
+    for (const [name, href] of [['Termos de uso', '/termos-de-uso'], ['Política de Privacidade', '/politica-de-privacidade']] as const) {
       const a = screen.getByRole('link', { name });
       expect(a).toHaveAttribute('href', href);
       expect(a).toHaveAttribute('target', '_blank');
