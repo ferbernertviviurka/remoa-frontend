@@ -10,7 +10,8 @@
     "./events": "./src/events.ts",
     "./referral": "./src/referral.ts",
     "./cache": "./src/cache.ts",
-    "./medical-schools": "./src/medical-schools.ts"
+    "./medical-schools": "./src/medical-schools.ts",
+    "./constants": "./src/constants.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

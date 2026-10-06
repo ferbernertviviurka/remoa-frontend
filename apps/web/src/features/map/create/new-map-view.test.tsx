@@ -8,7 +8,7 @@ const api = vi.fn();
 const track = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
-vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a), trackAi: vi.fn() }));
+vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
 const handle = vi.fn<(e: { code: string; message?: string }) => boolean>(() => false);
 const show = vi.fn();
 let ent: { limits: { ai_generations: number | null } } | null = null; // useEntitlements without a provider = null (no client-side gate)
@@ -270,6 +270,32 @@ describe('NewMapView: "Sobre o mapa" (F17)', () => {
     vi.unstubAllGlobals();
   });
 
+  it('failed job shows the server message and "Tentar de novo" calls /retry; dropped cards are told before opening (G22)', async () => {
+    const jobId = '11111111-1111-4111-8111-111111111111';
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, data: { jobId } }) }));
+    let failed = true;
+    api.mockImplementation(async (path: string) => {
+      if (String(path).endsWith('/retry')) return { ok: true, data: {} };
+      if (!String(path).includes('/v1/ai/jobs/')) return { ok: true, data: [] };
+      if (failed) return { ok: true, data: { jobId, status: 'failed', progress: 0, stage: null, boardId: null, error: 'no_sourced_cards', ai: { status: 'error', code: 'no_sourced_cards', message: 'Nenhum card tinha trecho de origem.' } } };
+      return { ok: true, data: { jobId, status: 'done', progress: 100, stage: null, boardId: 'pdf1', error: null, cards: 4, edges: 1, pages: 2, dropped: 3 } };
+    });
+    render(<NewMapView items={items} initialPath="pdf" />);
+    next();
+    fireEvent.change(document.querySelector('input[type=file]') as HTMLInputElement, { target: { files: [new File(['texto longo o bastante para o pdf'], 'a.pdf', { type: 'application/pdf' })] } });
+    next();
+    fireEvent.click(screen.getByRole('button', { name: 'Gerar rascunho do mapa' }));
+    expect(await screen.findByText('Nenhum card tinha trecho de origem.')).toBeTruthy();
+    failed = false;
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }));
+    expect(await screen.findByText(/3 cards foram descartados/)).toBeTruthy();
+    expect(api).toHaveBeenCalledWith(`/v1/ai/jobs/${jobId}/retry`, { method: 'POST' });
+    expect(push).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir o mapa' }));
+    expect(push).toHaveBeenCalledWith('/app/mapas/pdf1');
+    vi.unstubAllGlobals();
+  });
+
   it('mapa pronto path: published seeds are listed; until then the edition is still in review', async () => {
     api.mockResolvedValue({ ok: true, data: [] });
     render(<NewMapView items={items} initialPath="seed" />);
@@ -288,10 +314,10 @@ describe('NewMapView: "Sobre o mapa" (F17)', () => {
 });
 
 describe('NewMapView: painel explicativo', () => {
-  it('trocar a alternativa troca título, passos e limites (via TextMorph) e o painel nunca inventa número', () => {
+  it('trocar a alternativa troca título, passos e limites (via TextMorph) e o painel nunca inventa número', async () => {
     render(<NewMapView items={items} initialPath="pdf" />);
     const panel = () => [...document.querySelectorAll('h2[torph-root] [torph-sr]')].map((e) => e.textContent); // TextMorph keeps the real text in torph-sr
-    expect(panel()).toContain('Do PDF ao rascunho');
+    await waitFor(() => expect(panel()).toContain('Do PDF ao rascunho')); // Torph arrives after the first paint (P-512)
     expect(screen.getAllByText(new RegExp(`Mapas gerados de PDF: não incluso no Free, ${PLAN_LIMITS.pro.limits.ai_generations} por mês no Pro`)).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: /Do meu Anki/ }));
     expect(panel()).toContain('Do Anki para o mapa');
@@ -303,11 +329,12 @@ describe('NewMapView: painel explicativo', () => {
     expect(panel()).toContain('Comece do zero');
   });
 
-  it('measured paragraphs: one TextMorph per line once the container can be measured', () => {
+  it('measured paragraphs: one TextMorph per line once the container can be measured', async () => {
     const ctx = { font: '', measureText: (x: string) => ({ width: x.length * 8 }) };
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx as unknown as CanvasRenderingContext2D);
     vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({ width: 200 } as DOMRect);
     render(<NewMapView items={items} initialPath="blank" />);
+    await waitFor(() => expect(document.querySelectorAll('li p [torph-root]').length).toBeGreaterThan(3)); // Torph after the first paint (P-512)
     const lines = [...document.querySelectorAll('li p [torph-root]')];
     expect(lines.length).toBeGreaterThan(3); // 3 steps, each wrapped in >= 1 line (200 px / 8 px = 25 chars)
     fireEvent.click(screen.getByRole('button', { name: /Do meu PDF/ }));

@@ -1,5 +1,6 @@
 'use client';
 
+import { AiNotice, AiWarning } from '@/features/ai/ai-notice';
 import { useNavigate } from '@/features/shell/use-navigate';
 import { useEffect, useRef, useState } from 'react';
 import type { Board, BoardGenerationProgress, ImportBoardInput, ImportTarget, MatrixItem } from '@remoa/contracts';
@@ -19,7 +20,7 @@ import { useAnkiImport } from '@/features/import/use-anki-import';
 import { AboutMapForm, aboutErrors, aboutPayload, emptyAboutMap, type AboutMap } from './about-map-form';
 import { MapPreview, type Path } from './map-preview';
 
-const t = withStrings({ boards: more.boards, editorial: more.editorial, newMap: more.newMap });
+const t = withStrings({ ankiSteps: more.ankiSteps, boards: more.boards, editorial: more.editorial, import: more.import, newMap: more.newMap, newMapAbout: more.newMapAbout });
 type StringKey = Parameters<typeof t>[0];
 
 const PATHS: ReadonlyArray<{ id: Path; icon: 'file' | 'archive' | 'book' | 'plus' }> = [
@@ -56,6 +57,9 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   const [stage, setStage] = useState<'ocr' | 'extract' | 'layout' | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [failedJob, setFailedJob] = useState<string | null>(null);
+  const [ready, setReady] = useState<{ dropped: number; go: () => void } | null>(null);
 
   // FR-3: the name follows the file (root deck, or file name) until the student types one.
   const ankiKey = anki.state.kind === 'preview' ? anki.state.key : null;
@@ -84,6 +88,63 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
     if (payload.access !== 'owner') track('board_access_changed', { from: 'owner', to: payload.access, source: 'create' });
   };
 
+  /** Polls a generation job until it ends; failures keep the job id so "Tentar de novo" can call /retry (G22). */
+  async function runJob(id: string) {
+    const started = Date.now();
+    setJobId(id);
+    for (;;) {
+      const job = await api<BoardGenerationProgress>(`/v1/ai/jobs/${id}`);
+      if (!job.ok) return setError(t(`errors.${job.error.code}` as StringKey));
+      const j = job.data;
+      setProgress(j.progress);
+      setStage(j.stage === 'ocr' || j.stage === 'layout' ? j.stage : 'extract');
+      if (j.status === 'done' && j.boardId) {
+        const boardId = j.boardId;
+        const go = () => {
+          track('board_generated_from_pdf', { pages: j.pages ?? 1, cards: j.cards ?? 0, edges: j.edges ?? 0, durationMs: Date.now() - started });
+          trackAbout();
+          router.push(`/app/mapas/${boardId}`);
+        };
+        if (j.dropped) setReady({ dropped: j.dropped, go }); // cards without a source excerpt were dropped: say so before opening
+        else go();
+        return;
+      }
+      if (j.status === 'failed') {
+        if (j.error === 'ai_generations') return void paywall.handle({ code: 'quota_exceeded', message: 'ai_generations' });
+        setFailedJob(id);
+        if (j.error === 'canceled') setError(t('newMap.canceled'));
+        else if (j.error === 'pdf_unreadable') setError(t('newMap.pdfUnreadable'));
+        else if (j.error === 'generate_timeout') setError(t('newMap.generateTimeout'));
+        else setError(j.ai?.message || t('errors.internal')); // no_content, no_sourced_cards, invalid_output, provider_error, timeout...
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+  }
+
+  async function retryJob() {
+    if (!failedJob) return;
+    setBusy(true);
+    setError(null);
+    setProgress(0);
+    try {
+      const r = await api(`/v1/ai/jobs/${failedJob}/retry`, { method: 'POST' });
+      if (!r.ok) setError(t(`errors.${r.error.code}` as StringKey));
+      else {
+        setFailedJob(null);
+        await runJob(failedJob);
+      }
+    } catch {
+      setError(t('errors.internal'));
+    } finally {
+      setBusy(false);
+      setProgress(null);
+    }
+  }
+
+  /** 409 = the job already ended: the polling shows how. */
+  const cancelJob = () => void (jobId && api(`/v1/ai/jobs/${jobId}/cancel`, { method: 'POST' }));
+
   async function generatePdf() {
     if (!file) return;
     if (entitlements?.limits.ai_generations === 0) return paywall.show('pdf'); // D-647: PDF maps are not in the Free plan; nothing is uploaded
@@ -91,6 +152,8 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
     setError(null);
     setProgress(0);
     setStage('ocr');
+    setFailedJob(null);
+    setReady(null);
     const started = Date.now();
     const open = async (boardId: string, cards: number, edges: number, pages = 1) => {
       track('board_generated_from_pdf', { pages, cards, edges, durationMs: Date.now() - started });
@@ -124,27 +187,7 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
         setError(t('errors.internal'));
         return;
       }
-      for (;;) {
-        const job = await api<BoardGenerationProgress & { cards?: number; edges?: number; pages?: number }>(`/v1/ai/jobs/${body.data.jobId}`);
-        if (!job.ok) {
-          setError(t(`errors.${job.error.code}` as StringKey));
-          return;
-        }
-        setProgress(job.data.progress);
-        setStage(job.data.stage === 'ocr' || job.data.stage === 'layout' ? job.data.stage : 'extract');
-        if (job.data.status === 'done' && job.data.boardId) {
-          await open(job.data.boardId, job.data.cards ?? 0, job.data.edges ?? 0, job.data.pages ?? 1);
-          return;
-        }
-        if (job.data.status === 'failed') {
-          if (job.data.error === 'ai_generations') paywall.handle({ code: 'quota_exceeded', message: 'ai_generations' });
-          else if (job.data.error === 'pdf_unreadable') setError(t('newMap.pdfUnreadable'));
-          else if (job.data.error === 'generate_timeout') setError(t('newMap.generateTimeout'));
-          else setError(t('errors.internal'));
-          return;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 300));
-      }
+      await runJob(body.data.jobId);
     } catch {
       setError(t('errors.internal'));
     } finally {
@@ -240,15 +283,20 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
   return (
     <div className="flex min-h-dvh bg-canvas text-ink">
       <main className="flex min-w-0 flex-1 flex-col lg:w-1/2 lg:flex-none gap-6 px-4 pb-8 pt-5 sm:px-6 sm:pt-[30px] md:gap-7 md:px-14">
-        <div className="flex items-center justify-between gap-4">
-          <Link href="/app/hoje" aria-label={t('pages.logoLink')} className="inline-flex min-h-11 min-w-11 items-center no-underline">
+        {/* D-1212: the labelled steps (~510 px) do not fit beside the logo and the close button in half the screen: own row from sm up */}
+        <div data-new-map-header="" className="grid grid-cols-[auto_1fr_auto] items-center gap-4 sm:grid-cols-[1fr_auto] sm:gap-y-5">
+          <Link href="/app/hoje" aria-label={t('pages.logoLink')} className="inline-flex min-h-11 min-w-11 items-center no-underline sm:col-start-1 sm:row-start-1">
             <span className="max-sm:hidden"><Logo size={32} withWordmark /></span>
             <span className="sm:hidden"><Logo size={32} /></span>
           </Link>
-          <Stepper aria-label={t('newMap.stepsLabel')} doneLabel={t('newMap.stepDone')} current={step} steps={steps} />
-          <IconButton aria-label={t('newMap.closeLabel')} variant="secondary" onClick={() => router.push('/app/mapas')}>
-            <Icon name="close" size={20} />
-          </IconButton>
+          <div className="min-w-0 justify-self-center sm:col-span-2 sm:row-start-2 sm:justify-self-start">
+            <Stepper aria-label={t('newMap.stepsLabel')} doneLabel={t('newMap.stepDone')} current={step} steps={steps} />
+          </div>
+          <span className="sm:col-start-2 sm:row-start-1">
+            <IconButton aria-label={t('newMap.closeLabel')} variant="secondary" onClick={() => router.push('/app/mapas')}>
+              <Icon name="close" size={20} />
+            </IconButton>
+          </span>
         </div>
 
         <div className="flex max-w-[660px] grow flex-col gap-[22px]">
@@ -349,7 +397,14 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
                   <Progress aria-label={t('newMap.generatingLabel')} value={progress} />
                 </div>
               ) : null}
-              {error ? <p role="alert" className="text-sm font-semibold text-review">{error}</p> : null}
+              {progress != null && jobId && busy ? <Button variant="secondary" onClick={cancelJob}>{t('newMap.cancel')}</Button> : null}
+              {ready ? (
+                <Alert tone="watch" title={t('newMap.dropped', { n: ready.dropped })}>
+                  <Button onClick={ready.go}>{t('newMap.openMap')}</Button>
+                </Alert>
+              ) : null}
+              {path === 'pdf' ? <AiWarning /> : null}
+              {error && path === 'pdf' ? <AiNotice ai={{ status: 'error', code: 'generate_failed', message: error }} onRetry={() => void (failedJob ? retryJob() : generatePdf())} /> : error ? <p role="alert" className="text-sm font-semibold text-review">{error}</p> : null}
             </>
           ) : null}
         </div>
