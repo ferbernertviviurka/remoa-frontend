@@ -80,7 +80,7 @@ describe('BoardsView', () => {
     api.mockImplementation(async (path: string) => (path.startsWith('/v1/boards?status=') ? { ok: true, data: [old] } : { ok: true, data: old }));
     view([board]);
     fireEvent.click(screen.getByRole('radio', { name: 'Arquivados' }));
-    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/boards?status=archived'));
+    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/boards?status=archived&include=preview'));
     expect(await screen.findByRole('link', { name: 'Abrir Velho' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Abrir Sepse' })).not.toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole('button', { name: 'Mais ações de Velho' }), { key: 'Enter' });

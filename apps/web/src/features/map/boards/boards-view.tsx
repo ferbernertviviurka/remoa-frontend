@@ -35,7 +35,7 @@ export function BoardsView({ boards: activeBoards }: { boards: BoardSummary[] })
   // G14 D-573: "Ativos" is the server-rendered list; the other filters read `?status=` and reload after every change.
   const loadStatus = useCallback(async (st: Status) => {
     if (st === 'active') return;
-    const r = await api<BoardSummary[]>(`/v1/boards?status=${st}`);
+    const r = await api<BoardSummary[]>(`/v1/boards?status=${st}&include=preview`);
     if (r.ok) setFetched(r.data);
   }, []);
   const boards = status === 'active' ? activeBoards : fetched;

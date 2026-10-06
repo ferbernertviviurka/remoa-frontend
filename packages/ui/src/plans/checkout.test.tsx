@@ -50,6 +50,20 @@ describe('MethodChoice', () => {
     expect(screen.getByRole('radio', { name: /Pix/ })).toBeChecked();
     expect(screen.getByRole('radio', { name: /Pix/ })).toHaveFocus();
   });
+  it('opção desabilitada: pílula, sem clique e as setas pulam por cima; axe', async () => {
+    const three = [opts[1]!, { ...opts[0]!, disabled: true, badge: 'Em breve' }, { value: 'boleto', label: 'Boleto', description: 'x', icon: <i /> }];
+    function Soon() { const [v, setV] = useState('card'); return <MethodChoice label="Forma de pagamento" options={three} value={v} onChange={setV} />; }
+    const { container } = render(<Soon />);
+    expect(await violations(container)).toEqual([]);
+    const pix = screen.getByRole('radio', { name: /Pix/ });
+    expect(pix).toBeDisabled();
+    expect(pix).toHaveTextContent('Em breve');
+    await userEvent.click(pix);
+    expect(screen.getByRole('radio', { name: /Cartão/ })).toBeChecked();
+    screen.getByRole('radio', { name: /Cartão/ }).focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(screen.getByRole('radio', { name: /Boleto/ })).toBeChecked();
+  });
 });
 
 describe('CouponField', () => {

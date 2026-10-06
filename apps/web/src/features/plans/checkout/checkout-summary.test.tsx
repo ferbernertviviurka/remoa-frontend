@@ -43,8 +43,8 @@ describe('CheckoutSummary Founder', () => {
     expect(screen.queryByRole('button', { name: /código de fundador/i })).toBeNull();
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Comprar o Founder' })); });
     await act(async () => { await vi.advanceTimersByTimeAsync(700); });
-    expect(api).toHaveBeenCalledWith('/v1/billing/checkout', { method: 'POST', body: JSON.stringify({ period: 'lifetime', method: 'pix' }) });
-    expect(track).toHaveBeenCalledWith('checkout_started', { period: 'lifetime', method: 'pix', coupon: false });
+    expect(api).toHaveBeenCalledWith('/v1/billing/checkout', { method: 'POST', body: JSON.stringify({ period: 'lifetime', method: 'card' }) });
+    expect(track).toHaveBeenCalledWith('checkout_started', { period: 'lifetime', method: 'card', coupon: false });
     expect(assign).toHaveBeenCalledWith('https://stripe.test/x');
   });
 });
@@ -63,11 +63,15 @@ describe('CheckoutSummary', () => {
     expect(screen.getByText(/Economize/, { selector: '[torph-sr]' })).toBeInTheDocument();
   });
 
-  it('method choice tracks and explains Pix', () => {
+  it('card is the default; Pix is disabled with "Em breve"', () => {
     renderIt();
-    expect(screen.getByText(/Ele não renova sozinho/)).toBeVisible();
-    fireEvent.click(screen.getByRole('radio', { name: /Cartão/ }));
-    expect(track).toHaveBeenCalledWith('plans_method_selected', { method: 'card' });
+    expect(screen.getByRole('radio', { name: /Cartão/ })).toBeChecked();
+    const pix = screen.getByRole('radio', { name: /Pix/ });
+    expect(pix).toBeDisabled();
+    expect(pix).toHaveTextContent('Em breve');
+    fireEvent.click(pix);
+    expect(screen.getByRole('radio', { name: /Cartão/ })).toBeChecked();
+    expect(track).not.toHaveBeenCalledWith('plans_method_selected', { method: 'pix' });
     expect(screen.queryByText(/Ele não renova sozinho/)).toBeNull();
   });
 
@@ -104,13 +108,13 @@ describe('CheckoutSummary', () => {
     await act(async () => { await Promise.resolve(); });
     expect(screen.getByText('Abrindo o pagamento seguro')).toBeVisible();
     expect(api).toHaveBeenCalledTimes(1);
-    expect(api).toHaveBeenCalledWith('/v1/billing/checkout', { method: 'POST', body: JSON.stringify({ period: 'annual', method: 'pix' }) });
-    expect(track).toHaveBeenCalledWith('checkout_started', { period: 'annual', method: 'pix', coupon: false });
+    expect(api).toHaveBeenCalledWith('/v1/billing/checkout', { method: 'POST', body: JSON.stringify({ period: 'annual', method: 'card' }) });
+    expect(track).toHaveBeenCalledWith('checkout_started', { period: 'annual', method: 'card', coupon: false });
     await act(async () => { vi.advanceTimersByTime(500); });
     expect(assign).not.toHaveBeenCalled();
     await act(async () => { vi.advanceTimersByTime(150); });
     expect(assign).toHaveBeenCalledWith('https://stripe/x');
-    expect(track).toHaveBeenCalledWith('checkout_redirected', { period: 'annual', method: 'pix' });
+    expect(track).toHaveBeenCalledWith('checkout_redirected', { period: 'annual', method: 'card' });
   });
 
   it('sends the coupon code to checkout, flagging coupon: true', async () => {
@@ -119,8 +123,8 @@ describe('CheckoutSummary', () => {
     await applyCode('FUNDADOR');
     fireEvent.click(subscribeBtn());
     await act(async () => { vi.advanceTimersByTime(700); });
-    expect(api).toHaveBeenLastCalledWith('/v1/billing/checkout', { method: 'POST', body: JSON.stringify({ period: 'monthly', method: 'pix', couponCode: 'FUNDADOR' }) });
-    expect(track).toHaveBeenCalledWith('checkout_started', { period: 'monthly', method: 'pix', coupon: true });
+    expect(api).toHaveBeenLastCalledWith('/v1/billing/checkout', { method: 'POST', body: JSON.stringify({ period: 'monthly', method: 'card', couponCode: 'FUNDADOR' }) });
+    expect(track).toHaveBeenCalledWith('checkout_started', { period: 'monthly', method: 'card', coupon: true });
   });
 
   it('failure re-enables the button, shows retry, and leaves the overlay', async () => {

@@ -33,7 +33,7 @@ function useOnline() {
 /** F15 FR-5/6/7: order summary + hand-off to Stripe Checkout. */
 export function CheckoutSummary() {
   const { priceBook, period, coupon, setCoupon } = usePlans();
-  const [method, setMethod] = useState<PaymentMethod>('pix');
+  const [method, setMethod] = useState<PaymentMethod>('card');
   const [redirecting, setRedirecting] = useState(false);
   const [failed, setFailed] = useState(false);
   const locked = useRef(false);
@@ -131,8 +131,8 @@ export function CheckoutSummary() {
             value={method}
             onChange={pickMethod}
             options={[
-              { value: 'pix', label: t('plans.summary.method.pix.label'), description: t('plans.summary.method.pix.desc'), icon: <Icon name="pix" size={24} /> },
               { value: 'card', label: t('plans.summary.method.card.label'), description: t('plans.summary.method.card.desc'), icon: <Icon name="creditCard" size={24} /> },
+              { value: 'pix', label: t('plans.summary.method.pix.label'), description: t('plans.summary.method.pix.desc'), icon: <Icon name="pix" size={24} />, disabled: true, badge: t('plans.summary.method.soon') },
             ]}
           />
         }
