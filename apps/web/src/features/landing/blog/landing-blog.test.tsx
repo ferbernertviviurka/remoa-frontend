@@ -5,6 +5,7 @@ import { blogListItemFixtures } from '@remoa/contracts/mocks';
 import { strings } from '@remoa/strings';
 import { LandingBlog } from './landing-blog';
 import { LandingHeader } from '../shell/landing-header';
+import { headerLabels } from '../shell/header-labels';
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const published = blogListItemFixtures[0]!;
@@ -43,7 +44,7 @@ describe('LandingBlog (FR-39/40)', () => {
 
 describe('menu and footer', () => {
   test('header has a Blog link to /blog (not an anchor)', () => {
-    render(<LandingHeader blogLabel="Blog" phase="open" />);
+    render(<LandingHeader labels={headerLabels()} blogLabel="Blog" phase="open" />);
     expect(screen.getAllByRole('link', { name: 'Blog' })[0]?.getAttribute('href')).toBe('/blog');
   });
   test('layout footer: legal routes, blog, contact from the legal config, no hardcoded e-mail', () => {
