@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/admin';
 import { Button, Empty, Input } from '@remoa/ui';
 import { reauthenticate } from '@/server/auth/actions';
 import { signOutToLogin } from '@/features/auth/sign-out';

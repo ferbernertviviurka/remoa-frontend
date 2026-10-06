@@ -1,6 +1,6 @@
 // F18 T7 (FR-25): rules of the referral program. Draft until Q-045 (legal review) closes; marked as such on the page.
 import type { Metadata } from 'next';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { Tag } from '@remoa/ui';
 import { InviteShell } from '@/features/referral/invite/invite-shell';
 

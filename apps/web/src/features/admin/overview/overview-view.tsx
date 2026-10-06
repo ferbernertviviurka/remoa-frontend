@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { AdminOverview, AdminUserRef, OverviewPeriod } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/admin';
 import {
   AdminHeader, AdminSection, AttentionItem, BarChart, Button, DataTable, Icon, PeriodSegmented, PersonCell, ReasonDialog, StatCard, StatusPill,
   type StatusPillProps,

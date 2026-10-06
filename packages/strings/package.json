@@ -3,8 +3,26 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "exports": { ".": "./src/index.ts", "./landing": "./src/landing-client.ts", "./boundary": "./src/boundary-client.ts", "./eslint": "./src/eslint/index.ts" },
-  "scripts": { "lint": "eslint .", "typecheck": "tsc --noEmit", "test": "vitest run --passWithNoTests" },
-  "dependencies": {  },
-  "devDependencies": { "@typescript-eslint/rule-tester": "^8.71.0", "@typescript-eslint/utils": "^8.71.0", "eslint": "^9.39.5", "vitest": "^3.2.7" }
+  "exports": {
+    ".": "./src/index.ts",
+    "./landing": "./src/landing-client.ts",
+    "./boundary": "./src/boundary-client.ts",
+    "./eslint": "./src/eslint/index.ts",
+    "./admin": "./src/t-admin.ts",
+    "./referral": "./src/t-referral.ts",
+    "./store": "./src/t-store.ts",
+    "./full": "./src/t-full.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@typescript-eslint/rule-tester": "^8.71.0",
+    "@typescript-eslint/utils": "^8.71.0",
+    "eslint": "^9.39.5",
+    "vitest": "^3.2.7"
+  }
 }

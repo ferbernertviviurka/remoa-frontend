@@ -1,5 +1,7 @@
+import { legalShell } from './shell';
 // F16 / F25 / F27: páginas legais (conteúdo em apps/web/content/legal/*.md), aceite no cadastro e link em Minha conta.
 export const legal = {
+  ...legalShell,
   pages: {
     eyebrow: 'Legal',
     print: 'Imprimir',
@@ -9,16 +11,6 @@ export const legal = {
     draftWarning: 'Rascunho para revisão jurídica. Os trechos em destaque são variáveis do .env ou itens a confirmar. Não publique sem a revisão de um advogado.',
     pendingVersion: '[versão]',
     pendingDate: '[data]',
-  },
-
-  signup: {
-    acceptance: 'Ao criar a conta você aceita os Termos de Uso e a Política de Privacidade',
-    termsLink: 'Termos de Uso',
-    privacyLink: 'Política de Privacidade',
-  },
-
-  account: {
-    legalDocuments: 'Documentos legais',
   },
 
   terms: {

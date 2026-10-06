@@ -1,9 +1,10 @@
+import { storeShell } from './shell';
 // F20 Loja de mapas, Fase A ("Em breve"). Sem datas e sem percentual fixo (D-035, D-036): o percentual chega por variável.
 export const store = {
+  ...storeShell,
   title: 'Loja de mapas',
   pageTitle: 'Remoa — Loja de mapas (em breve)',
   soonSeal: 'EM BREVE',
-  soonTag: 'Breve',
   notice: 'A Loja de mapas ainda não está disponível. Esta página mostra o que vem por aí.',
   homeCard: 'Loja de mapas · Em breve',
   homeCardDesc: 'Mapas feitos por quem já passou por isso',

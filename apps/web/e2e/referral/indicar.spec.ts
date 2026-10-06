@@ -4,7 +4,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { referralSummaryFixtures } from '@remoa/contracts/mocks';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { accountUser } from '../account/fixture';
 
 test.use({ viewport: { width: 1440, height: 900 }, colorScheme: 'light' });

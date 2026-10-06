@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { blogStatuses, SITEMAP_STATIC_PATHS, type AdminSitemap, type BlogAdminList, type BlogCategory, type BlogListItem } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/admin';
 import { AdminHeader, AdminSearch, BlogPostList, BlogPostRow, BlogStatusTabs, Button, ReasonDialog, SitemapCard, useToast } from '@remoa/ui';
 import { useListParams } from '../../list-kit/use-list-params';
 import { blogAction, blogDelete } from '../api';

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { getCategories, getPosts } from '@/features/blog/api';
 import { listMetadata } from '@/features/blog/seo';
 import { IndexView, totalPages } from '@/features/blog/view';

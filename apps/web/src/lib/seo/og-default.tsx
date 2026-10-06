@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { Logo } from '@remoa/ui';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { siteUrl } from './site';
 
 export const OG_SIZE = { width: 1200, height: 630 };

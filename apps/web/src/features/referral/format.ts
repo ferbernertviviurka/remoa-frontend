@@ -11,10 +11,6 @@ export const shortDate = (iso: string | Date) => new Date(iso).toLocaleDateStrin
 /** "3 de dezembro de 2026" */
 export const longDate = (iso: string | Date) => new Date(iso).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-const chipKey = { invited: 'referral.friends.chip.invited', signed_up: 'referral.friends.chip.signedUp', qualified: 'referral.friends.chip.qualified' } as const;
-const whenKey = { invited: 'referral.friends.whenSent', signed_up: 'referral.friends.whenSignedUp', qualified: 'referral.friends.whenQualified' } as const;
-export const statusLabel = (s: ReferralFriend['status']) => t(chipKey[s]);
-export const friendWhen = (f: ReferralFriend) => t(whenKey[f.status], { when: shortDate(f.when) });
 
 export const toMapFriends = (friends: ReadonlyArray<ReferralFriend>): MapFriend[] => friends.map((f) => ({ id: f.id, name: friendName(f), status: f.status }));
 

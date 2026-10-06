@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { getCategories, getPosts } from '@/features/blog/api';
 import { listMetadata } from '@/features/blog/seo';
 import { IndexView } from '@/features/blog/view';

@@ -1,5 +1,5 @@
 import type { BlogListItem } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 
 // Brackets and line breaks would break the `- [title](url): note` lines of the format.
 const inline = (s: string) => s.replace(/[\r\n]+/g, ' ').replace(/\[/g, '(').replace(/\]/g, ')').trim();

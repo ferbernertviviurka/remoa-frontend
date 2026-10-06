@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import type { ReferralFriend } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/referral';
 import { SkeletonBlock, SkeletonRegion } from '@remoa/ui';
 import { FriendDetail, FriendList, FriendRow, ReferralLegend, ReferralMap } from '@remoa/ui';
 import { track } from '@/lib/analytics';
-import { countBy, friendName, friendWhen, shortDate, statusLabel, toMapFriends } from '../format';
+import { countBy, friendName, shortDate, toMapFriends } from '../format';
+import { friendWhen, statusLabel } from '../friend-labels';
 
 const detailText = (f: ReferralFriend) =>
   f.status === 'qualified'

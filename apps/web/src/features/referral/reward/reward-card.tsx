@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReferralSummary } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/referral';
 import { RewardStat } from '@remoa/ui';
 import { useEntitlements } from '@/features/shell/entitlements';
 import { isPaid, longDate, shortDate } from '../format';

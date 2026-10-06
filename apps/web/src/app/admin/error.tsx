@@ -1,6 +1,6 @@
 'use client';
 
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/admin';
 import { Button, Empty } from '@remoa/ui';
 
 export default function AdminError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {

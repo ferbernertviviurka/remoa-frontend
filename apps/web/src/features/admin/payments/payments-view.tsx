@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { formatAuditId, paymentRecordMethods, paymentStatuses, type AdminPaymentDetail, type AdminPaymentPage, type AdminPaymentRow, type PaymentStatus } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/admin';
 import {
   AdminHeader, AdminSearch, Button, Checkbox, DataTable, Drawer, DrawerActions, DrawerAuditTrail, DrawerFacts, DrawerTimeline, ExternalLinkButton, FilterGroup, Icon,
   PersonCell, ReasonDialog, StatusPill, SummaryChip, type StatusPillProps,

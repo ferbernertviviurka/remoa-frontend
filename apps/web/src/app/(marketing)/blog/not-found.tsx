@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { Empty, PostCard, buttonVariants } from '@remoa/ui';
 import { getLatestPosts } from '@/features/blog/api';
 import { cardProps } from '@/features/blog/format';

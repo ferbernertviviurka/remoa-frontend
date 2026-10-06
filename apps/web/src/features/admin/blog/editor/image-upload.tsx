@@ -3,7 +3,7 @@
 // F27 T7: picking + uploading one image (cover and image block). Client pre-check mirrors the API (PNG/JPEG/WebP ≤ 5 MB); the API re-checks by signature.
 import { useRef, useState } from 'react';
 import { BLOG_LIMITS, type BlogAsset } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/admin';
 import { Button, Icon } from '@remoa/ui';
 import { uploadBlogImage } from './upload';
 

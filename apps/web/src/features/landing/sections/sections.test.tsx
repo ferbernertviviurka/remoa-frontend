@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { strings } from '@remoa/strings';
+import { strings } from '@remoa/strings/full';
 import { FeaturesSection, HowSection, MoreSection, ProblemSection, ReadyMarquee } from './index';
 
 afterEach(() => {

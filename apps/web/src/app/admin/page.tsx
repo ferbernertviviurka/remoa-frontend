@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { AdminHeader } from '@remoa/ui';
 import { getAdminOverview, requireAdmin } from '@/features/admin/shared/api';
 import { OverviewView } from '@/features/admin/overview/overview-view';

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatTicketNumber, type AdminTicketDetail, type AdminTicketMessage, type AdminTicketPage, type SupportTicketStatus } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/admin';
 import { AdminHeader, AdminSearch, Button, Icon, StatusPill, Switch, Textarea, Thread, type StatusTone, type ThreadMessage } from '@remoa/ui';
 import { runAdminAction } from '../shared/actions';
 import { When } from '../shared/when';

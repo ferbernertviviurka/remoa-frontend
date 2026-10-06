@@ -1,6 +1,6 @@
 'use client';
 
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/referral';
 import { ReferralHero } from '@remoa/ui';
 
 /** FR-3. O título vem de uma string só ("… {span}1 mês de Pro{/span}."): o trecho marcado ganha a barra desenhada. */

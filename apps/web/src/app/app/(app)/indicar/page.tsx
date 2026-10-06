@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { ReferralView } from '@/features/referral/referral-view';
 import { getUser } from '@/server/auth/session';
 

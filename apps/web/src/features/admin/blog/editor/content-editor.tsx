@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { EditorContent, useEditorState, type Editor } from '@tiptap/react';
 import { NodeSelection } from '@tiptap/pm/state';
 import { isSafeHref, type BlogAsset, type BlogListItem } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/admin';
 import { Button, Checkbox, Dialog, Icon, IconButton, Input, Menu, focusRing } from '@remoa/ui';
 import { listBlogPosts } from '../api';
 import { assetUrls } from './extensions';

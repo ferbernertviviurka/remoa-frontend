@@ -33,7 +33,7 @@ describe('HomeView', () => {
   });
 
 
-  it('with due cards: greeting, hero, ring, only-board shortcut and week', () => {
+  it('with due cards: greeting, hero, ring, only-board shortcut and week', async () => {
     render(<HomeView now={now} summary={summary(12)} boards={[board('1', 'Sepse', 7), board('2', 'Asma', 5)]} coverage={[]} first={{ title: 'Choque séptico', pct: 58 }} />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Boa tarde. 12 conceitos esperam por você.');
     expect(screen.getByRole('heading', { name: '2 mapas, 12 conceitos para fixar hoje.' })).toBeInTheDocument();
@@ -45,7 +45,7 @@ describe('HomeView', () => {
     expect(push).toHaveBeenCalledWith('/app/mapas/1?modo=desafio');
     fireEvent.click(screen.getByRole('button', { name: /Começar revisão/ }));
     expect(push).toHaveBeenCalledWith('/app/revisar');
-    expect(screen.getByRole('link', { name: 'Abrir o mapa Sepse' })).toHaveAttribute('href', '/app/mapas/1');
+    expect(await screen.findByRole('link', { name: 'Abrir o mapa Sepse' })).toHaveAttribute('href', '/app/mapas/1');
   });
 
   it('nothing due: honest empty hero, no invented numbers', () => {
@@ -57,10 +57,10 @@ describe('HomeView', () => {
     expect(screen.getByText(/Ligue um mapa a um item da matriz/)).toBeInTheDocument();
   });
 
-  it('no maps: invites the first map', () => {
+  it('no maps: invites the first map', async () => {
     render(<HomeView now={now} summary={summary(0, 0)} boards={[]} coverage={[]} />);
     expect(screen.getByRole('heading', { name: 'Crie o seu primeiro mapa.' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Criar um novo mapa' })).toHaveAttribute('href', '/app/mapas/novo');
+    expect(await screen.findByRole('link', { name: 'Criar um novo mapa' })).toHaveAttribute('href', '/app/mapas/novo');
     fireEvent.click(screen.getAllByRole('button', { name: 'Novo mapa' })[1]!);
     expect(push).toHaveBeenCalledWith('/app/mapas/novo');
   });

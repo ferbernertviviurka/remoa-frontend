@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { gotoLanding } from './ready';
 import AxeBuilder from '@axe-core/playwright';
-import { strings } from '@remoa/strings';
+import { strings } from '@remoa/strings/full';
 
 // Landing page path; T5 assembles it at "/". LANDING_PATH lets a preview route stand in.
 const PATH = process.env.LANDING_PATH ?? '/';

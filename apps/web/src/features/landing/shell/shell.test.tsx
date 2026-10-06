@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { strings } from '@remoa/strings';
+import { strings } from '@remoa/strings/full';
 import { landingViewedProps, scrollPercent } from '../analytics';
 import { buildFaqItems } from './faq';
 import { pricebookPath } from './pricebook';

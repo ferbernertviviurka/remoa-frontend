@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { emailSchema, MEDICAL_SCHOOLS, type OnboardingState, goalsSchema, isValidName, normalizeName, stageSchema, ACCOUNT_LIMITS, MAX_GOALS, type Goal, type Stage } from '@remoa/contracts';
+import { emailSchema, type OnboardingState, goalsSchema, isValidName, normalizeName, stageSchema, ACCOUNT_LIMITS, MAX_GOALS, type Goal, type Stage } from '@remoa/contracts';
+import { MEDICAL_SCHOOLS } from '@remoa/contracts/medical-schools';
 import { t } from '@remoa/strings';
 import { Alert, Autocomplete, type AutocompleteValue, Avatar, Button, ChoiceChip, ChoiceChipMulti, Icon, InlineField, Input, Pill, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';

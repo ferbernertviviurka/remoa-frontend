@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/client';
+// G21 FR-48: o cliente do Supabase (cerca de 65 KB gzip) é importado sob demanda, fora do JS inicial.
 
 /**
  * G14 (D-585): sign out straight from the browser and land on /entrar.
@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase/client';
  */
 export async function signOutToLogin(to = '/entrar'): Promise<boolean> {
   // D-320: 'local' ends only this device ("Encerrar os outros" lives in /app/conta/seguranca).
-  const { error } = await createClient().auth.signOut({ scope: 'local' });
+  const { error } = await (await import('@/lib/supabase/client')).createClient().auth.signOut({ scope: 'local' });
   if (error) return false;
   window.location.replace(to);
   return true;

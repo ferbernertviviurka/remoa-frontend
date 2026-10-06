@@ -1,4 +1,4 @@
-// FR-6 / T8: 200 cards + ~200 edges, pan for ~2 s, sample requestAnimationFrame deltas.
+// FR-6 / T8 (G21 FR-50: `PERF_CARDS=500` mede o alvo de 60 fps com 500 cards): 200 cards + ~200 edges, pan for ~2 s, sample requestAnimationFrame deltas.
 // Run with `PERF=1 pnpm test:e2e e2e/map-perf.spec.ts`. Headless numbers are indicative only (no GPU, shared CPU):
 // confirm in Chrome's Performance panel on a real laptop.
 import { execFileSync } from 'node:child_process';
@@ -14,7 +14,8 @@ const SUPABASE = env('NEXT_PUBLIC_SUPABASE_URL');
 const ANON = env('NEXT_PUBLIC_SUPABASE_ANON_KEY');
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
-test('200 cards: pan fps', async ({ page, request }) => {
+const N = Number(process.env.PERF_CARDS ?? 200);
+test(`${N} cards: pan fps`, async ({ page, request }) => {
   test.setTimeout(120_000);
   const email = `e2e-perf-${Date.now()}@remoa.test`;
   const password = 'senha-forte-123';
@@ -27,9 +28,9 @@ test('200 cards: pan fps', async ({ page, request }) => {
   const db = process.env.DATABASE_URL ?? /DATABASE_URL="?([^"\n]*)/.exec(readFileSync('../../../remoa-backend/.env', 'utf8'))?.[1] ?? '';
   execFileSync('psql', [db, '-q', '-c', `insert into subscriptions (user_id, plan, status) values ('${body.user.id}','pro','active') on conflict (user_id) do update set plan='pro'`]);
   const headers = { authorization: `Bearer ${token}` };
-  const board = (await (await request.post(`${API}/v1/boards`, { headers, data: { title: 'Perf 200' } })).json()).data.id as string;
+  const board = (await (await request.post(`${API}/v1/boards`, { headers, data: { title: `Perf ${N}` } })).json()).data.id as string;
 
-  const ids = Array.from({ length: 200 }, () => crypto.randomUUID());
+  const ids = Array.from({ length: N }, () => crypto.randomUUID());
   const cardOps = ids.map((id, i) => ({
     op: 'createCard', opId: crypto.randomUUID(), boardId: board,
     card: { id, type: (['concept', 'flow', 'case', 'image'] as const)[i % 4], title: `Conceito ${i}`, position: { x: (i % 20) * 296, y: Math.floor(i / 20) * 144 } },
@@ -38,8 +39,10 @@ test('200 cards: pan fps', async ({ page, request }) => {
     op: 'createEdge', opId: crypto.randomUUID(), boardId: board,
     edge: { id: crypto.randomUUID(), fromCardId: ids[i], toCardId: to, label: i % 2 ? 'causa' : null },
   }));
-  for (const ops of [cardOps, edgeOps]) {
-    expect((await request.post(`${API}/v1/boards/ops`, { headers, data: { ops } })).status()).toBe(200);
+  for (const all of [cardOps, edgeOps]) {
+    for (let i = 0; i < all.length; i += 100) { // lotes de 100: o endpoint limita ops por chamada
+      expect((await request.post(`${API}/v1/boards/ops`, { headers, data: { ops: all.slice(i, i + 100) } })).status()).toBe(200);
+    }
   }
 
   await expect(async () => { // retried: a submit before hydration is a native GET and loses the fields

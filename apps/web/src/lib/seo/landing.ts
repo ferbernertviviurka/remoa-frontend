@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { siteUrl } from './site';
 
 type Params = { v?: string | string[]; h?: string | string[] };

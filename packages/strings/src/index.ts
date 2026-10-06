@@ -1,19 +1,11 @@
-import { ptBR } from './pt-BR';
-import { format, type Vars } from './format';
+import { ptBRCore } from './core-dict';
+import { makeT, type Paths } from './make-t';
 
-export const strings = ptBR;
+/** Núcleo do dicionário: o que as telas do app (`/app/*`) usam. Namespaces pesados (admin, landing, legal, blog, referral, store) ficam nas entradas `@remoa/strings/{admin,landing,referral,store,full}` (G21, D-1019). */
+export const strings = ptBRCore;
 
-type Paths<T> = {
-  [K in keyof T & string]: T[K] extends string ? K : `${K}.${Paths<T[K]>}`;
-}[keyof T & string];
-
-export type StringKey = Paths<typeof ptBR>;
+export type StringKey = Paths<typeof ptBRCore>;
 
 // ponytail: no useStrings() hook (ARCHITECTURE mentions it); t() works in server and client components. Add if locale switching appears.
 
-export function t(key: StringKey, vars?: Vars): string {
-  let node: unknown = strings;
-  for (const part of key.split('.')) node = (node as Record<string, unknown>)[part];
-  const text = String(node);
-  return vars ? format(text, vars) : text;
-}
+export const t = makeT(ptBRCore);

@@ -1,4 +1,4 @@
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 
 const dateTime = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 export const formatDateTime = (iso: Date | string) => dateTime.format(new Date(iso));

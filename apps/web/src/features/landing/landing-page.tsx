@@ -1,4 +1,4 @@
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { Section } from '@remoa/ui';
 import { JsonLd, faqPageLd, organizationLd, softwareApplicationLd, webSiteLd } from '@/lib/seo/json-ld';
 import { landingFlags } from './flags';

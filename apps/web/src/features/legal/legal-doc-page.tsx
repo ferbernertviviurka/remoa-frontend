@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Metadata } from 'next';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { LegalDocument } from '@remoa/ui';
 import { siteUrl } from '@/lib/seo/site';
 import { defaultOgImageMeta } from '@/lib/seo/og-default';

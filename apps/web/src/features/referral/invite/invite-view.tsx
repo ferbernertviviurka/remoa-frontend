@@ -3,13 +3,12 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { isValidName, isValidPassword, normalizeName } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/referral';
 import { Avatar, Button, Icon, Input, buttonVariants } from '@remoa/ui';
 // D-417: the barrel `@remoa/ui` loses the referral exports under Next's optimizePackageImports (file names clash: hero, copy-field); direct entry.
 import { ProgressTracker, SuccessRing } from '@remoa/ui';
 import { signInWithGoogle, signUp } from '@/server/auth/actions';
 import { track } from '@/lib/analytics';
-import { createClient } from '@/lib/supabase/client';
 import { FieldError, PasswordField } from '@/features/auth/password-field';
 import { validEmail } from '@/features/auth/sign-in-form';
 import { attributeReferral, claimInvite } from './actions';
@@ -110,7 +109,7 @@ function InviteForm({ valid, code, hydrated, onDone }: { valid: boolean; code: s
       return;
     }
     track('signup', { method: 'password' });
-    const { data } = await createClient().auth.getUser();
+    const { data } = await (await import('@/lib/supabase/client')).createClient().auth.getUser();
     // D-383: with a session already (no e-mail confirmation) attribute now; otherwise `/auth/callback` does it. Never blocks.
     if (data.user && valid) await attributeReferral().catch(() => null);
     track('referral_signup', { valid, method: 'password' });

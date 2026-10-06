@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { CalendarLabel, CalendarSettings } from '@remoa/contracts';
 import { strings, t } from '@remoa/strings';
 import {
-  Button, CalendarAgendaList, CalendarEmptyState, CalendarMonthGrid, CalendarSkeleton, CalendarTour, CalendarViewSwitch, CalendarWeekGrid, EventGalleryCard, Icon, IconButton,
+  Button, CalendarAgendaList, CalendarEmptyState, CalendarMonthGrid, CalendarSkeleton, CalendarViewSwitch, CalendarWeekGrid, EventGalleryCard, Icon, IconButton,
   LabelToggleRow, MiniCalendar, makeKey, monthTitle, parseKey, weekTitle, type CalendarTourCloseHow, type DayKey,
 } from '@remoa/ui';
 import { track } from '@/lib/analytics';
@@ -12,6 +12,7 @@ import { calendarApi, downloadIcs } from './api';
 import { EventDrawer } from './event-drawer';
 import { EventModal } from './event-modal';
 import { LabelDialog } from './label-dialog';
+import { LazyCalendarTour } from './lazy-calendar-tour';
 import { emptyForm, formFromEv, toItem, toLabelItem } from './model';
 import { text, tourDemo, tourSteps, tourText } from './text';
 import { useCalendar } from './use-calendar';
@@ -177,7 +178,7 @@ export function CalendarView({ settings, labels: initialLabels, nowIso }: { sett
           onDelete={labelDlg.label && labelDlg.label.systemKey !== 'personal' ? () => cal.deleteLabel(labelDlg.label!.id) : null}
         />
       ) : null}
-      <CalendarTour open={!!tour} onClose={closeTour} onStep={(n) => track('calendar_tour_step', { step: n })} createCta={tour?.cta ?? false} steps={tourSteps} demo={tourDemo} text={tourText} />
+      {tour && <LazyCalendarTour open onClose={closeTour} onStep={(n) => track('calendar_tour_step', { step: n })} createCta={tour?.cta ?? false} steps={tourSteps} demo={tourDemo} text={tourText} />}
     </div>
   );
 }

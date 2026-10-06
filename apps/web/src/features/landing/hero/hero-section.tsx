@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { Icon } from '@remoa/ui';
 import type { LandingFlags } from '../flags';
 import type { H1Variant } from '../shell/variants';

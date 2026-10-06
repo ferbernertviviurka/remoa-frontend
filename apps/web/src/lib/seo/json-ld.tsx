@@ -1,4 +1,4 @@
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { siteUrl } from './site';
 
 type Ld = Record<string, unknown>;

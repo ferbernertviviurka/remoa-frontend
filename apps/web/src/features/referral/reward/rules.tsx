@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/referral';
 import { Icon } from '@remoa/ui';
 
 const items = [1, 2, 3, 4, 5] as const;

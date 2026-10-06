@@ -1,7 +1,7 @@
 // F27: RSS 2.0 of the 20 newest indexable posts. Cached by the `feed` tag (revalidated by the API on publish/unpublish).
 import { z } from 'zod';
 import { blogListItemSchema, type BlogListItem } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { apiBase } from '@/lib/api/base';
 import { buildRss } from '@/lib/seo/rss';
 import { siteUrl } from '@/lib/seo/site';

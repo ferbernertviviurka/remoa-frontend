@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import type { AdminUserDetail, AdminUserPage, AdminUserRow } from '@remoa/contracts';
-import { strings, t } from '@remoa/strings';
+import { strings, t } from '@remoa/strings/admin';
 import { PersonCell, StatusPill, type StatusPillProps } from '@remoa/ui';
 import { When } from '../shared/when';
 import { act, AdminList, auditLine, type ActionSpec } from '../list-kit/admin-list';

@@ -1,5 +1,5 @@
 import type { BlogListItem } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 
 const dateFmt = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/Sao_Paulo' });
 /** "2 out 2026" (the mock's format; Intl alone gives "2 de out. de 2026"). */

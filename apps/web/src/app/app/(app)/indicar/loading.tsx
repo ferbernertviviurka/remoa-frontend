@@ -1,4 +1,4 @@
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { SkeletonBlock as B, SkeletonRegion } from '@remoa/ui';
 
 export default function Loading() {

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { Empty, buttonVariants } from '@remoa/ui';
 
 // G11 (D-360): pt-BR 404 instead of Next's English default; Next already answers 404 + noindex for it.

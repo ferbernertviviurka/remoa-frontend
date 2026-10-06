@@ -1,19 +1,14 @@
+import { referralShell } from './shell';
+
 export const referral = {
+  ...referralShell,
   // FR-1: Página e pontos de entrada
   pageTitle: 'Indique e ganhe',
   pageDesc: 'Quando seu amigo criar o primeiro mapa pelo seu link, vocês dois ganham 1 mês de Pro.',
 
   // Pontos de entrada (navbar, Hoje, Planos, painel, Minha conta)
-  navCta: 'Indique e ganhe',
   homeCard: 'Indique um amigo',
-  plansPromo: 'Prefere ganhar o Pro?',
-  accountEntry: 'Indique e ganhe',
   homeCardDesc: 'Vocês dois ganham 1 mês de Pro.',
-  plansPromoDesc: 'Convide um amigo: quando ele criar o primeiro mapa, vocês dois ganham 1 mês de Pro.',
-  plansPromoCta: 'Indique e ganhe',
-  panelLink: 'Ganhe Pro indicando um amigo',
-  accountEntryDesc: 'Convide amigos para o Remoa e ganhe 1 mês de Pro a cada amigo que criar o primeiro mapa.',
-  accountEntryCta: 'Convidar amigos',
 
   // FR-3: Herói
   hero: {
@@ -141,11 +136,6 @@ export const referral = {
   },
 
   // FR-12: Momento da recompensa
-  reward_moment: {
-    notification: '{name} criou o primeiro mapa. Vocês dois ganharam 1 mês de Pro.',
-    close: 'Fechar aviso',
-  },
-
   // FR-13: Regras (FAQ)
   rules: {
     label: 'Regras',
@@ -222,10 +212,6 @@ export const referral = {
   },
 
   // FR-15: Consentimento
-  consent: {
-    nameVisibility: 'Seu nome aparece para quem convidou você.',
-  },
-
   // FR-24: Estados e erros
   errors: {
     loading: 'Carregando…',
@@ -265,11 +251,10 @@ export const referral = {
 
   // Página /app/indicar (F18 T5/T6): textos de composição
   page: {
+    ...referralShell.page,
     friendLabel: 'Amigo',
     heroReward: '1 mês de Pro',
     badge: '+1 mês',
-    fallbackName: 'Seu amigo',
-    removedName: 'Conta removida',
     legendItem: '{n} {label}',
     emailLabel: 'E-mail do amigo',
     removeEmail: 'Remover {email}',

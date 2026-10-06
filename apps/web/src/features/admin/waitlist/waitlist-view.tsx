@@ -1,7 +1,7 @@
 'use client';
 
 import type { AdminStoreWaitlistSummary, AdminWaitlistPage, AdminWaitlistRow } from '@remoa/contracts';
-import { strings, t } from '@remoa/strings';
+import { strings, t } from '@remoa/strings/admin';
 import { StatusPill } from '@remoa/ui';
 import { AdminList } from '../list-kit/admin-list';
 import { formatDay } from '../list-kit/download';

@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { REFERRAL_LIMITS } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/referral';
 import { track } from '@/lib/analytics';
 
 const KEY = 'remoa:referral-message';

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import type { BlogCategory, BlogPublicPost } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { siteUrl } from '@/lib/seo/site';
 import { defaultOgImageMeta } from '@/lib/seo/og-default';
 

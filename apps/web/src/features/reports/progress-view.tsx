@@ -6,7 +6,6 @@ import type { ProgressSummary } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { DailyBarChart, Button } from '@remoa/ui';
 import { track } from '@/lib/analytics';
-import { createClient } from '@/lib/supabase/client';
 
 const pct = (n: number | null) => (n == null ? t('progress.none') : `${Math.round(n * 100)}%`);
 
@@ -16,7 +15,7 @@ export function ProgressView({ summary }: { summary: ProgressSummary }) {
   async function downloadCsv() {
     setExportError(false);
     try {
-      const { data } = await createClient().auth.getSession();
+      const { data } = await (await import('@/lib/supabase/client')).createClient().auth.getSession();
       const token = data.session?.access_token;
       const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
       const res = await fetch(`${base}/v1/reports/attempts.csv`, { headers: token ? { authorization: `Bearer ${token}` } : {} });

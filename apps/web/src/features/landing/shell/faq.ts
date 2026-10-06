@@ -1,4 +1,4 @@
-import { strings } from '@remoa/strings';
+import { strings } from '@remoa/strings/full';
 
 /** D-236: approved-only items and the `aApproved` text appear only with the approved-content flag. */
 export const buildFaqItems = (approved: boolean) =>

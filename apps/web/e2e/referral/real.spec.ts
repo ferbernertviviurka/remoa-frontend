@@ -5,7 +5,7 @@ import { randomUUID as uuid } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { referralSummaryFixtures } from '@remoa/contracts/mocks';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { accountUser, API, psql, secondSession, signUpApi } from '../account/fixture';
 import { signUpViaForm } from '../sign-up';
 import { fillSignUp, openInvite } from './fixture';

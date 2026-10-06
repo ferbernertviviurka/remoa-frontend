@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { strings } from '@remoa/strings';
+import { strings } from '@remoa/strings/full';
 
 const track = vi.fn();
 vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));

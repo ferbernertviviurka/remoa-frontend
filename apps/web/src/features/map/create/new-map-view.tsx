@@ -7,7 +7,6 @@ import { t, type StringKey } from '@remoa/strings';
 import { Alert, Button, ChoiceCard, ChoiceRow, Dialog, Dropzone, Icon, IconButton, Logo, Progress, Stepper } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
-import { createClient } from '@/lib/supabase/client';
 import { usePaywall } from '@/features/billing/paywall';
 import { useEntitlements } from '@/features/shell/entitlements';
 import { useMatrixSuggestions } from '@/features/coverage/matrix-suggestions';
@@ -95,7 +94,7 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
       router.push(`/app/mapas/${boardId}`);
     };
     try {
-      const { data } = await createClient().auth.getSession();
+      const { data } = await (await import('@/lib/supabase/client')).createClient().auth.getSession();
       const token = data.session?.access_token;
       const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
       // D-541: multipart `file` + `board` (D-532); the browser sets the content-type boundary.
