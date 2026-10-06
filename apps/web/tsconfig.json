@@ -40,6 +40,7 @@
     ".next-qa2/types/**/*.ts",
     ".next-qa3257/types/**/*.ts",
     ".next-qa3267/types/**/*.ts",
+    ".next-qa3287/types/**/*.ts",
     ".next-split/types/**/*.ts",
     ".next-t10/types/**/*.ts",
     ".next-t9/types/**/*.ts",
@@ -47,7 +48,7 @@
     "e2e",
     "next-env.d.ts",
     "src",
-    ".next-qa3287/types/**/*.ts"
+    ".next-qa3357/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

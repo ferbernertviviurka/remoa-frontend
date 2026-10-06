@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test';
+import { dropTrial } from './db';
 
 /** The auth forms set `data-ready` once hydrated; text typed before that is wiped by the controlled inputs (G08). */
 export const formReady = (page: Page) => page.locator('form[data-ready]').waitFor();
@@ -20,6 +21,7 @@ export async function signUpViaForm(page: Page, email: string, password = 'senha
   await fillAbout(page);
   await page.getByRole('checkbox').click();
   await page.getByRole('button', { name: 'Criar conta' }).click();
+  await expect(() => expect(dropTrial(email)).toBe(1)).toPass({ timeout: 30_000 });
   await skipOnboarding(page);
 }
 

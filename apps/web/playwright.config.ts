@@ -1,4 +1,16 @@
+import { readFileSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
+
+// D-1101 (P-529): e2e contra build de produção (`next build && next start -p $PORT`, PW_NO_SERVER=1) exige os MESMOS valores de build no processo do Playwright:
+//  - NEXT_PUBLIC_LAUNCH_PHASE e NEXT_PUBLIC_API_URL iguais aos do build (os specs ramificam por eles; no build ficam embutidos);
+//  - REVALIDATE_URL e REVALIDATE_SECRET na API e no web (blog journey: a API revalida o web).
+// Por padrão lemos esses quatro de apps/web/.env.local; o que já estiver no ambiente vence. Ver docs/runbooks/performance.md §6.
+try {
+  for (const l of readFileSync('.env.local', 'utf8').split('\n')) {
+    const m = /^(NEXT_PUBLIC_LAUNCH_PHASE|NEXT_PUBLIC_API_URL|REVALIDATE_URL|REVALIDATE_SECRET)=(.*)$/.exec(l.trim());
+    if (m && process.env[m[1]!] === undefined) process.env[m[1]!] = m[2]!.replace(/^["']|["']$/g, '');
+  }
+} catch { /* sem .env.local (CI): usa só o ambiente */ }
 
 const phone = ['**/mobile-review.spec.ts', '**/pwa.spec.ts', '**/map-mobile/*.spec.ts'];
 

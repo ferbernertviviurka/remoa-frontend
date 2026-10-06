@@ -9,6 +9,7 @@ import { Alert, Button, Icon, Morph, Segmented, UsageMeter, UsageWarning, useToa
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { formatDate } from '@/features/billing/format';
+import { freeProOf } from '@/features/plans/free-pro';
 import { SectionCard } from '../shared/section-card';
 import { useAccount } from '../shell/account-context';
 
@@ -31,6 +32,8 @@ export function PlanSection() {
   const ent = account.entitlements;
   const founder = ent.plan === 'founder';
   const pro = ent.plan !== 'free';
+  const gift = freeProOf(ent);
+  const paid = pro && !gift;
   const router = useRouter();
   const params = useSearchParams();
   const { toast } = useToast();
@@ -40,7 +43,7 @@ export function PlanSection() {
   // P-094: same source as /app/planos (GET /v1/billing/prices, centavos); no hard-coded fallback.
   const [prices, setPrices] = useState<PriceBook | null>(null);
   useEffect(() => {
-    if (pro) return;
+    if (paid) return;
     let alive = true;
     Promise.resolve(api<PriceBook>('/v1/billing/prices'))
       .then((r) => alive && r.ok && setPrices(r.data))
@@ -48,7 +51,7 @@ export function PlanSection() {
     return () => {
       alive = false;
     };
-  }, [pro]);
+  }, [paid]);
   const announced = useRef(false);
   const notice = params.get('checkout') === 'ok' ? 'checkout' : params.get('portal') === 'ok' ? 'portal' : null;
 
@@ -124,6 +127,8 @@ export function PlanSection() {
           <h2 id="plan-h" className="m-0 font-display text-[44px] font-extrabold leading-none tracking-[-0.035em]">{t(`billing.plan.${ent.plan}`)}</h2>
           {founder ? (
             <p className="m-0 max-w-[360px]">{t('account.plan.founderText')}</p>
+          ) : gift ? (
+            <p className="m-0 max-w-[360px]">{t(`plan.popover.freePro.${gift.kind}Text`, { date: formatDate(gift.until), days: gift.days })}</p>
           ) : pro ? (
             <>
               <p className="m-0 max-w-[360px]">{t('account.plan.proText', { ai: PLAN_LIMITS.pro.limits.ai_grades ?? 0, pdf: PLAN_LIMITS.pro.limits.ai_generations ?? 0, date: renewal ?? '' })}</p>
@@ -137,7 +142,7 @@ export function PlanSection() {
             <p className="m-0 max-w-[360px]">{t('account.plan.freeText', { boards: PLAN_LIMITS.free.limits.boards, cards: PLAN_LIMITS.free.limits.cards, ai: PLAN_LIMITS.free.limits.ai_grades })}</p>
           )}
         </div>
-        {pro ? null : (
+        {paid ? null : (
           <div className="flex shrink-0 flex-col gap-3.5 rounded-[22px] bg-surface p-[22px] text-ink md:w-[360px]">
             <div className="flex items-center justify-between gap-3">
               <h3 className="m-0 font-display text-[22px] font-extrabold">{t('account.plan.offerTitle')}</h3>

@@ -1,6 +1,7 @@
 // F18 T7: a fresh inviter (Supabase signup + profile name) and the web helpers shared by the invite specs.
 import { readFileSync } from 'node:fs';
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
+import { dropTrial } from '../db';
 import { formReady } from '../sign-up';
 
 const env = (k: string) => process.env[k] ?? new RegExp(`^${k}="?([^"\\n]*)"?$`, 'm').exec(readFileSync('.env.local', 'utf8'))?.[1] ?? '';
@@ -10,6 +11,7 @@ export const password = 'senha-forte-123';
 export async function createInviter(request: APIRequestContext, name = 'Ana') {
   const email = `e2e-ind-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@remoa.test`;
   const su = await (await request.post(`${env('NEXT_PUBLIC_SUPABASE_URL')}/auth/v1/signup`, { headers: { apikey: env('NEXT_PUBLIC_SUPABASE_ANON_KEY') }, data: { email, password } })).json();
+  dropTrial(email);
   const headers = { authorization: `Bearer ${su.access_token as string}` };
   await request.patch(`${API}/v1/account/profile`, { headers, data: { name, phone: '11912345678', userType: 'aluno' } });
   const summary = await (await request.get(`${API}/v1/referral/summary`, { headers })).json();

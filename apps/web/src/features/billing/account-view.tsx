@@ -9,6 +9,7 @@ import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { SignOutButton } from '@/features/auth/sign-out-button';
 import { signOut } from '@/server/auth/actions';
+import { freeProOf } from '@/features/plans/free-pro';
 import { formatDate } from './format';
 
 const quotas: ReadonlyArray<{ key: QuotaKey; label: 'ai_grades' | 'ai_generations' | 'boards' | 'cards'; window: 'daily' | 'monthly' | 'total' }> = [
@@ -26,7 +27,8 @@ export function AccountView({ email, ent, notice }: { email: string; ent: Entitl
   const [confirm, setConfirm] = useState(false);
   const announced = useRef(false);
   const founder = ent.plan === 'founder';
-  const pro = ent.plan === 'pro';
+  const gift = freeProOf(ent);
+  const pro = ent.plan === 'pro' && !gift;
 
   useEffect(() => {
     if (!notice || announced.current) return;
@@ -108,6 +110,7 @@ export function AccountView({ email, ent, notice }: { email: string; ent: Entitl
           </div>
           {pro && ent.cancelAtPeriodEnd && ent.renewsAt ? <p className="text-sm">{t('billing.account.cancelsAt', { date: formatDate(ent.renewsAt) })}</p> : null}
           {pro && !ent.cancelAtPeriodEnd && ent.renewsAt ? <p className="text-sm">{t('billing.account.renewsAt', { date: formatDate(ent.renewsAt) })}</p> : null}
+          {gift ? <p className="text-sm">{t(`plan.popover.freePro.${gift.kind}Text`, { date: formatDate(gift.until), days: gift.days })}</p> : null}
           {ent.graceUntil ? <Alert tone="watch" title={t('billing.account.grace', { date: formatDate(ent.graceUntil) })} /> : null}
           <div className="flex flex-wrap gap-2">
             {founder ? null : pro ? (
@@ -118,7 +121,7 @@ export function AccountView({ email, ent, notice }: { email: string; ent: Entitl
                 )}
               </>
             ) : (
-              <Button onClick={() => router.push('/app/planos?de=account_plan')}>{t('billing.account.subscribe')}</Button>
+              <Button onClick={() => router.push('/app/planos?de=account_plan')}>{t(gift ? 'plan.popover.freePro.subscribe' : 'billing.account.subscribe')}</Button>
             )}
           </div>
         </section>

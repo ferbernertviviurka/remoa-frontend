@@ -37,11 +37,11 @@ describe('Usuários', () => {
     expect(screen.getByText('Nada encontrado com esses filtros.')).toBeInTheDocument();
   });
 
-  it('labels a running grant "Pro por indicação" and filters by it', () => {
+  it('labels a running grant "Pro grátis" and filters by it', () => {
     const grant = { ...ana, plan: 'pro' as const, grantUntil: new Date('2027-01-01') };
     render(<UsersView data={{ ...data, items: [grant] }} error={null} page={1} />);
-    expect(within(screen.getByRole('table')).getByText('Pro por indicação')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Pro por indicação' }));
+    expect(within(screen.getByRole('table')).getByText('Pro grátis')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Pro grátis' }));
     expect(replace).toHaveBeenCalledWith('/admin/usuarios?plan=pro_grant', { scroll: false });
   });
 

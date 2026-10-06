@@ -7,6 +7,7 @@ export const nav = {
     free: 'Plano Free',
     pro: 'Plano Pro',
     founder: 'Plano Founder',
+    trial: 'Pro · teste',
     aria: 'Ver detalhes do plano',
   },
   upgradeButton: 'Fazer upgrade',

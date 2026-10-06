@@ -6,7 +6,7 @@ import { apiMock } from './test-utils';
 import { NotificationsProvider, POLL_MS } from './provider';
 import { NotificationBell } from './bell/notification-bell';
 import { NotificationsPage } from './page/notifications-page';
-import { groupViews, whenOf } from './view';
+import { groupViews, textOf, whenOf } from './view';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }), usePathname: () => '/app/hoje' }));
@@ -49,6 +49,14 @@ describe('view', () => {
   });
   it('words relative time', () => {
     expect(whenOf(new Date(FIXTURE_NOW.getTime() - 2 * 3_600_000), FIXTURE_NOW, TZ)).toBe('há 2 h');
+  });
+  it('words the trial ending notice (D-1213): 3 days before and on the last day', () => {
+    const endsAt = FIXTURE_NOW.toISOString();
+    expect(textOf({ type: 'trial_ending', data: { endsAt, last: false } }, TZ).title).toBe('Seu teste do Pro termina em 3 dias');
+    expect(textOf({ type: 'trial_ending', data: { endsAt, last: true } }, TZ)).toEqual({
+      title: 'Seu teste do Pro termina hoje',
+      body: 'Depois, sua conta volta para o Grátis sem perder nada. Assine para seguir sem limites.',
+    });
   });
 });
 
