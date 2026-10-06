@@ -97,3 +97,4 @@ export * from './notifications';
 // F27 Blog (público, admin e páginas legais).
 export * from './blog';
 export * from './legal';
+export * from './autocomplete';

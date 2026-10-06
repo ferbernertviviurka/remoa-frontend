@@ -14,7 +14,8 @@ test('/blog has one h1, the search form and a canonical', async ({ page }) => {
 
 test('search results page is noindex', async ({ page }) => {
   await page.goto('/blog?q=zzzz-sem-resultado');
-  await expect(page.locator('meta[name="robots"][content*="noindex"]').first()).toBeAttached(); // build de produção emite 2 tags (página + not-found)
+  await expect(page.locator('meta[name="robots"]')).toHaveCount(1); // P-415: uma só tag
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
   await expect(page.getByRole('status')).toContainText(B.index.noResults.title);
 });
 
@@ -33,7 +34,8 @@ test('page 1 redirects to /blog; invalid page and unknown slug are 404 with a wa
 test('expired preview token is 404 and noindex', async ({ page }) => {
   const res = await page.goto('/blog/preview/token-invalido');
   expect(res?.status()).toBe(404);
-  await expect(page.locator('meta[name="robots"][content*="noindex"]').first()).toBeAttached(); // build de produção emite 2 tags (página + not-found)
+  await expect(page.locator('meta[name="robots"]')).toHaveCount(1); // P-415: uma só tag
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
 });
 
 test('first post, when there is one: single h1, JSON-LD and Open Graph', async ({ page }) => {

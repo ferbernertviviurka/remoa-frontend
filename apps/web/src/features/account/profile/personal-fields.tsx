@@ -40,17 +40,19 @@ export function toPersonalValues(p: { userType: UserType | null; sex: Sex | null
 }
 
 /** Validates with the contract schemas. `payload` has no nulls (optional blocks left empty are omitted); `clear` lists what the profile form is clearing. */
-export function validatePersonal(v: PersonalValues, opts: { userType?: boolean } = {}): { errors: PersonalErrors; payload: Partial<ReturnType<typeof signUpProfileInputSchema.parse>> | null } {
+export function validatePersonal(v: PersonalValues, opts: { userType?: boolean } = {}): { errors: PersonalErrors; payload: (Partial<ReturnType<typeof signUpProfileInputSchema.parse>> & { phone: string }) | null } {
   const errors: PersonalErrors = {};
   if (opts.userType !== false && !v.userType) errors.userType = t('personal.userType.required');
-  if (v.phone.trim() && !normalizeBrPhone(v.phone)) errors.phone = t('personal.phone.invalid');
+  // G20 (D-842): phone is required everywhere (sign-up, onboarding, Minha conta).
+  if (!v.phone.trim()) errors.phone = t('personal.phone.required');
+  else if (!normalizeBrPhone(v.phone)) errors.phone = t('personal.phone.invalid');
   const address = addressTouched(v.address) ? addressSchema.safeParse({ ...v.address, complement: v.address.complement }) : null;
   if (address && !address.success) errors.address = t('personal.address.incomplete');
   if (Object.keys(errors).length) return { errors, payload: null };
-  const parsed = (opts.userType === false ? signUpProfileInputSchema.partial() : signUpProfileInputSchema).safeParse({
+  const parsed = (opts.userType === false ? signUpProfileInputSchema.partial({ userType: true }) : signUpProfileInputSchema).safeParse({
     ...(v.userType ? { userType: v.userType } : {}),
     ...(v.sex ? { sex: v.sex } : {}),
-    ...(v.phone.trim() ? { phone: v.phone } : {}),
+    phone: v.phone,
     ...(address?.success ? { address: address.data } : {}),
   });
   return parsed.success ? { errors, payload: parsed.data } : { errors: { address: t('personal.address.incomplete') }, payload: null };

@@ -574,9 +574,10 @@ export const ptBR = {
     },
     about: {
       title: 'Sobre você',
-      subtitle: 'Tudo aqui é opcional. Você completa depois no perfil.',
+      subtitle: 'Nome e telefone são obrigatórios. O resto é opcional e você completa depois no perfil.',
       name: 'Como podemos te chamar?',
       nameInvalid: 'Use de 2 a 60 caracteres, só letras, espaço, hífen ou apóstrofo.',
+      nameRequired: 'Informe o seu nome.',
     },
     review: {
       title: 'Confirme e crie sua conta',

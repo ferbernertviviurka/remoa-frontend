@@ -31,6 +31,14 @@ describe('LandingBlog (FR-39/40)', () => {
     expect(screen.getByRole('link', { name: /Post 0/ }).getAttribute('href')).toBe('/blog/post-0');
     expect(screen.getAllByRole('link', { name: new RegExp(strings.blog.landing.viewMore) }).map((a) => a.getAttribute('href'))).toEqual(['/blog', '/blog']);
   });
+  test.each([6, 9])('P-412: with %i published posts it asks for 5 and shows at most 5', async (n) => {
+    const f = vi.fn(async (_url: string) => ({ ok: true, json: async () => ({ ok: true, data: posts(n) }) }));
+    vi.stubGlobal('fetch', f);
+    await show();
+    expect(f.mock.calls[0]![0]).toContain('/posts/latest?n=5');
+    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(5);
+    expect(screen.queryByRole('link', { name: /Post 5/ })).toBeNull();
+  });
 });
 
 describe('menu and footer', () => {

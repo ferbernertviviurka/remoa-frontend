@@ -8,7 +8,7 @@ const config: NextConfig = {
   env: { NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version ?? '0.0.0' }, // F11 FR-4: appVersion on every event
   transpilePackages: ['@remoa/contracts', '@remoa/strings', '@remoa/ui'],
   // G11 (D-357): rewrites the @remoa/ui barrel into per-file imports, so a page only ships the client components it uses (landing: 338 → 226 KB).
-  experimental: { optimizePackageImports: ['@remoa/ui'] },
+  experimental: { optimizePackageImports: ['@remoa/ui'], inlineCss: true },
   // F27: metadados no <head> para todo User-Agent (o streaming do Next 15 os põe no <body>; o Lighthouse não vê a meta description e SEO cai para 92)
   htmlLimitedBots: /.*/,
   // lint roda via `pnpm lint` (ESLint flat config na raiz), não no build

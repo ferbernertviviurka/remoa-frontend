@@ -15,7 +15,7 @@ export const personal = {
     outro: 'Outro',
     prefiro_nao_dizer: 'Prefiro não dizer',
   },
-  phone: { label: 'Telefone (opcional)', placeholder: '(11) 91234-5678', invalid: 'Informe um telefone com DDD, como (11) 91234-5678.' },
+  phone: { label: 'Telefone', placeholder: '(11) 91234-5678', required: 'Informe o seu telefone com DDD.', invalid: 'Informe um telefone com DDD, como (11) 91234-5678.' },
   address: {
     title: 'Endereço (opcional)',
     cep: 'CEP',

@@ -23,6 +23,7 @@ test('cadastro, logout e login', async ({ page }) => {
   await page.getByRole('button', { name: 'Voltar' }).click();
   await expect(page.getByLabel('E-mail')).toHaveValue(email); // voltar não perde o digitado
   await page.getByRole('button', { name: 'Continuar' }).click();
+  await expect(page.getByRole('button', { name: 'Continuar' })).toBeDisabled(); // G20: nome e telefone obrigatórios
   await fillAbout(page);
   await page.getByRole('button', { name: 'Criar conta' }).click();
   await expect(page.getByText(/marque que você concorda/)).toBeVisible();

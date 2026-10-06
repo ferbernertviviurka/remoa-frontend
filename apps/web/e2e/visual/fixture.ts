@@ -17,6 +17,7 @@ export async function signUpAndLogin(page: Page, request: APIRequestContext) {
   const su = await signup.json();
   const token = su.access_token as string;
   await request.post(`${API}/v1/onboarding/complete`, { headers: { authorization: `Bearer ${token}` } }).catch(() => undefined); // F12: skip the onboarding redirect
+  await request.patch(`${API}/v1/account/profile`, { headers: { authorization: `Bearer ${token}` }, data: { name: 'Aluna Teste', phone: '11912345678', userType: 'aluno' } }); // G20: name, phone and userType are required before /app
   await expect(async () => { // retried: a submit before hydration is a native GET
     await page.goto('/entrar');
     await formReady(page);

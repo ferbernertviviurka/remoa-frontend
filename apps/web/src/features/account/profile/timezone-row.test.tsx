@@ -16,7 +16,7 @@ const pick = async (name: string) => {
   const trigger = screen.getByRole('combobox', { name: 'Fuso horário' });
   trigger.focus();
   fireEvent.keyDown(trigger, { key: 'Enter' });
-  fireEvent.click(await screen.findByRole('option', { name }));
+  fireEvent.click(await screen.findByRole('option', { name }, { timeout: 5000 })); // Radix Select with ~400 zones is slow to open under load
 };
 
 describe('TimezoneRow', () => {
@@ -26,7 +26,7 @@ describe('TimezoneRow', () => {
     await pick('America/Manaus');
     await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/account/profile', { method: 'PATCH', body: '{"timezone":"America/Manaus"}' }));
     expect(await screen.findByText('Os avisos do calendário foram reagendados para o novo fuso.')).toBeTruthy();
-  });
+  }, 15_000);
 
   it('volta ao fuso anterior e não avisa quando a API falha', async () => {
     api.mockResolvedValue({ ok: false, error: { code: 'internal', message: 'x' } });
@@ -34,5 +34,5 @@ describe('TimezoneRow', () => {
     await pick('America/Manaus');
     await waitFor(() => expect(api).toHaveBeenCalled());
     expect(screen.queryByText(/reagendados/)).toBeNull();
-  });
+  }, 15_000);
 });

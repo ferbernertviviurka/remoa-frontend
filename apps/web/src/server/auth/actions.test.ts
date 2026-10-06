@@ -10,10 +10,14 @@ import { sendMagicLink, signUp } from './actions';
 
 const input = { email: 'a@b.com', password: 'Senha-forte-123', name: 'Ana' } as Parameters<typeof signUp>[0];
 
+const apiFetch = vi.fn<(url: string) => Promise<Response>>();
+vi.stubGlobal('fetch', apiFetch);
+
 describe('legal acceptance at sign-up (D-913)', () => {
   beforeEach(() => {
     signUpApi.mockClear();
     otpApi.mockClear();
+    apiFetch.mockReset().mockRejectedValue(new Error('api down'));
     vi.stubEnv('LEGAL_TERMS_VERSION', '2026-10-01');
     vi.stubEnv('LEGAL_PRIVACY_VERSION', '2026-10-02');
   });
@@ -28,5 +32,12 @@ describe('legal acceptance at sign-up (D-913)', () => {
     vi.stubEnv('LEGAL_TERMS_VERSION', '');
     await sendMagicLink({ email: 'a@b.com' } as Parameters<typeof sendMagicLink>[0]);
     expect((otpApi.mock.calls[1]![0] as { options: { data: unknown } }).options.data).toEqual({ privacy_version: '2026-10-02' });
+  });
+  it('P-416: the API versions win over the web env; the env is the fallback', async () => {
+    apiFetch.mockResolvedValue(Response.json({ ok: true, data: { termsVersion: '0.1', privacyVersion: '0.2' } }));
+    await signUp(input);
+    expect(apiFetch.mock.calls[0]![0]).toContain('/v1/public/legal/versions');
+    const data = (signUpApi.mock.calls[0]![0] as { options: { data: Record<string, string> } }).options.data;
+    expect(data).toMatchObject({ terms_version: '0.1', privacy_version: '0.2' });
   });
 });

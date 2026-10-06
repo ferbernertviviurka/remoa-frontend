@@ -9,7 +9,7 @@ import { useOnline } from '../shell/use-online';
 import { SectionCard } from '../shared/section-card';
 import { PersonalFields, toPersonalValues, validatePersonal, type PersonalErrors, type PersonalValues } from './personal-fields';
 
-/** G14 S1 (D-596): edit the sign-up personal data in the account. PII: never tracked or logged; clearing phone/address sends null (D-571). */
+/** G14 S1 (D-596): edit the sign-up personal data in the account. PII: never tracked or logged; clearing the address sends null; phone is required (G20) (D-571). */
 export function PersonalCard() {
   const { account, setAccount } = useAccount();
   const { toast } = useToast();
@@ -24,7 +24,7 @@ export function PersonalCard() {
     const { errors: found, payload } = validatePersonal(value);
     setErrors(found);
     if (!payload) return;
-    const body = { userType: payload.userType, ...(payload.sex ? { sex: payload.sex } : {}), phone: payload.phone ?? null, address: payload.address ?? null };
+    const body = { userType: payload.userType, ...(payload.sex ? { sex: payload.sex } : {}), phone: payload.phone, address: payload.address ?? null };
     setBusy(true);
     const r = await api('/v1/account/profile', { method: 'PATCH', body: JSON.stringify(body) }).catch(() => null);
     setBusy(false);

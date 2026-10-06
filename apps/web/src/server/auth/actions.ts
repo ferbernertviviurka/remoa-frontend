@@ -13,6 +13,7 @@ import {
   type SignInInput,
   type SignUpInput,
 } from '@remoa/contracts';
+import { apiBase } from '@/lib/api/base';
 import { legalEnv } from '@/lib/env/legal';
 import { createClient } from '@/lib/supabase/server';
 import { ONBOARDING_HOME, safeNext } from '@/lib/safe-next';
@@ -35,9 +36,17 @@ function fromSupabase(e: { status?: number; code?: string; message: string }): A
   return fail('unauthorized', e.message);
 }
 
-/** D-913/D-952: versions accepted at sign-up, read from the server .env (never from the client); copied to the profile by handle_new_user. Omitted when unset. */
-function legalMeta(): Record<string, string> {
-  const { termsVersion, privacyVersion } = legalEnv();
+/** D-913/D-952, P-416: versions accepted at sign-up, copied to the profile by handle_new_user. The API is the single source (it is who the trigger compares with);
+ * the web .env is only the fallback when the API does not answer. Omitted when unset. */
+async function legalMeta(): Promise<Record<string, string>> {
+  let { termsVersion, privacyVersion } = legalEnv();
+  try {
+    const res = await fetch(`${apiBase()}/v1/public/legal/versions`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(2_000) });
+    const d = res.ok ? ((await res.json()) as { data?: { termsVersion?: string; privacyVersion?: string } }).data : undefined;
+    if (d?.termsVersion && d.privacyVersion) ({ termsVersion, privacyVersion } = d as { termsVersion: string; privacyVersion: string });
+  } catch {
+    // fallback: the web env
+  }
   return { ...(termsVersion ? { [LEGAL_SIGNUP_META.terms]: termsVersion } : {}), ...(privacyVersion ? { [LEGAL_SIGNUP_META.privacy]: privacyVersion } : {}) };
 }
 
@@ -49,7 +58,7 @@ export async function signUp(input: SignUpInput): Promise<AuthResult> {
     email: p.data.email,
     password: p.data.password,
     // F24 FR-7: the confirmation link comes back through /auth/callback (Supabase appends ?code=).
-    options: { data: { ...(p.data.name ? { name: p.data.name } : {}), ...legalMeta() }, emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(ONBOARDING_HOME)}` },
+    options: { data: { ...(p.data.name ? { name: p.data.name } : {}), ...(await legalMeta()) }, emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(ONBOARDING_HOME)}` },
   });
   return error ? fromSupabase(error) : { ok: true }; // confirmations off: session is set immediately
 }
@@ -77,7 +86,7 @@ export async function sendMagicLink(input: MagicLinkInput): Promise<AuthResult> 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email: p.data.email,
-    options: { data: legalMeta(), emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(safeNext(p.data.next))}` },
+    options: { data: await legalMeta(), emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(safeNext(p.data.next))}` },
   });
   return error ? fromSupabase(error) : { ok: true };
 }

@@ -85,6 +85,7 @@ describe('SignUpWizard', () => {
   });
 
   const toAbout = () => { fillAccount(); click('Continuar'); };
+  const fillAbout = () => { type('Como podemos te chamar?', 'Ana Souza'); type('Telefone', '11912345678'); };
 
   it('avança, volta sem perder o digitado e marca o passo atual', () => {
     render(<SignUpWizard />);
@@ -105,14 +106,28 @@ describe('SignUpWizard', () => {
     expect(screen.queryByRole('radio', { name: '5º–6º ano' })).toBeNull();
   });
 
-  it('não pergunta "Você é"; telefone inválido e endereço incompleto bloqueiam o passo', () => {
+  it('G20: "Continuar" só ativa com nome e telefone válidos; valor inválido mostra o erro inline', () => {
     render(<SignUpWizard />);
     toAbout();
-    expect(screen.queryByRole('radio', { name: 'Aluno' })).toBeNull();
-    type('Telefone (opcional)', '123');
-    click('Continuar');
+    expect(screen.getByRole('button', { name: 'Continuar' })).toBeDisabled();
+    type('Como podemos te chamar?', 'Ana Souza');
+    expect(screen.getByRole('button', { name: 'Continuar' })).toBeDisabled(); // falta o telefone
+    type('Telefone', '123');
     expect(screen.getByRole('alert').textContent).toMatch(/telefone com DDD/);
-    type('Telefone (opcional)', '');
+    expect(screen.getByLabelText('Telefone')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByRole('button', { name: 'Continuar' })).toBeDisabled();
+    type('Telefone', '11912345678');
+    expect(screen.getByRole('button', { name: 'Continuar' })).toBeEnabled();
+    type('Como podemos te chamar?', 'A');
+    expect(screen.getByRole('alert').textContent).toMatch(/2 a 60 caracteres/);
+    expect(screen.getByRole('button', { name: 'Continuar' })).toBeDisabled();
+  });
+
+  it('não pergunta "Você é"; endereço incompleto bloqueia o passo', () => {
+    render(<SignUpWizard />);
+    toAbout();
+    fillAbout();
+    expect(screen.queryByRole('radio', { name: 'Aluno' })).toBeNull();
     type('Logradouro', 'Rua A');
     click('Continuar');
     expect(screen.getByRole('alert').textContent).toMatch(/Preencha CEP/);
@@ -122,8 +137,8 @@ describe('SignUpWizard', () => {
   it('telefone ganha máscara BR enquanto digita', () => {
     render(<SignUpWizard />);
     toAbout();
-    type('Telefone (opcional)', '11912345678');
-    expect((screen.getByLabelText('Telefone (opcional)') as HTMLInputElement).value).toBe('(11) 91234-5678');
+    type('Telefone', '11912345678');
+    expect((screen.getByLabelText('Telefone') as HTMLInputElement).value).toBe('(11) 91234-5678');
   });
 
   it('CEP: busca no ViaCEP com aviso de carga, preenche campos editáveis; não encontrado e falha de rede mostram o aviso', async () => {
@@ -155,9 +170,8 @@ describe('SignUpWizard', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ logradouro: 'Avenida Paulista', bairro: 'Bela Vista', localidade: 'São Paulo', uf: 'SP' }) }));
     render(<SignUpWizard next="/app/mapas" />);
     toAbout();
-    type('Como podemos te chamar?', 'Ana Souza');
+    fillAbout();
     fireEvent.click(screen.getByRole('radio', { name: 'Feminino' }));
-    type('Telefone (opcional)', '11912345678');
     type('CEP', '01310100');
     await waitFor(() => expect((screen.getByLabelText('Logradouro') as HTMLInputElement).value).toBe('Avenida Paulista'));
     type('Número', 'S/N');
@@ -185,20 +199,22 @@ describe('SignUpWizard', () => {
     vi.unstubAllGlobals();
   });
 
-  it('sem dados pessoais: vai ao onboarding e não faz PATCH', async () => {
+  it('só nome e telefone: vai ao onboarding e grava só o telefone no PATCH', async () => {
     render(<SignUpWizard />);
     toAbout();
+    fillAbout();
     click('Continuar');
     fireEvent.click(screen.getByRole('checkbox'));
     click('Criar conta');
     await waitFor(() => expect(push).toHaveBeenCalledWith('/app/onboarding'));
-    expect(api).not.toHaveBeenCalled();
+    expect(JSON.parse(api.mock.calls[0]![1].body)).toEqual({ phone: '+5511912345678' });
   });
 
   it('e-mail já cadastrado volta ao passo 1 com o erro no campo', async () => {
     signUp.mockResolvedValue({ ok: false, error: { code: 'conflict', message: 'x' } });
     render(<SignUpWizard />);
     toAbout();
+    fillAbout();
     click('Continuar');
     fireEvent.click(screen.getByRole('checkbox'));
     click('Criar conta');
@@ -211,6 +227,7 @@ describe('SignUpWizard', () => {
     session = false;
     render(<SignUpWizard />);
     toAbout();
+    fillAbout();
     click('Continuar');
     fireEvent.click(screen.getByRole('checkbox'));
     click('Criar conta');

@@ -11,7 +11,7 @@ type Props = { params: Promise<{ token: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = await getPreview((await params).token);
-  return post ? postMetadata({ ...post, preview: true }) : { robots: { index: false, follow: false } };
+  return post ? postMetadata({ ...post, preview: true }) : {}; // P-415: the 404 (blog/not-found) already carries the only noindex
 }
 
 export default async function Page({ params }: Props) {

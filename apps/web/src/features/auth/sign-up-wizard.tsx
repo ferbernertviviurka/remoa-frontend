@@ -70,13 +70,18 @@ export function SignUpWizard({ next, referred = false }: { next?: string; referr
         ...(isValidPassword(v.password) ? {} : { password: t('auth.passwordWeak') }),
       };
     }
-    if (s === 1) return { ...(name && !isValidName(name) ? { name: t('auth.about.nameInvalid') } : {}), ...validatePersonal(v.personal, NO_TYPE).errors };
+    if (s === 1) return { ...(!name ? { name: t('auth.about.nameRequired') } : !isValidName(name) ? { name: t('auth.about.nameInvalid') } : {}), ...validatePersonal(v.personal, NO_TYPE).errors };
     return v.consent ? {} : { consent: t('auth.review.consentRequired') };
   }
 
+  // G20: "Continuar" in "Sobre você" only enables with a valid name and phone; invalid (not empty) values are flagged while typing.
+  const aboutErrs = step === 1 ? validate(1) : {};
+  const aboutBlocked = Object.keys(aboutErrs).some((k) => k === 'name' || k === 'phone');
+  const shown: Errs = { ...errs, ...(!v.name.trim() ? {} : aboutErrs.name ? { name: aboutErrs.name } : {}), ...(!v.personal.phone.trim() ? {} : aboutErrs.phone ? { phone: aboutErrs.phone } : {}) };
+
   async function submit() {
     setBusy(true);
-    const res = await signUp({ email: v.email, password: v.password, ...(name ? { name } : {}) });
+    const res = await signUp({ email: v.email, password: v.password, name });
     if (!res.ok) {
       const code = res.error.code;
       // O erro volta ao passo do campo: e-mail/senha moram no passo 1.
@@ -156,9 +161,9 @@ export function SignUpWizard({ next, referred = false }: { next?: string; referr
 
       {step === 1 ? (
         <div className="flex flex-col gap-5">
-          <Input label={t('auth.about.name')} autoComplete="name" value={v.name} onChange={(e) => set('name', e.target.value)} aria-invalid={!!errs.name} aria-describedby={errs.name ? 'su-name-err' : undefined} />
-          <FieldError id="su-name-err">{errs.name}</FieldError>
-          <PersonalFields value={v.personal} onChange={(p) => set('personal', p)} errors={errs} idPrefix="su" hideUserType />
+          <Input label={t('auth.about.name')} autoComplete="name" value={v.name} onChange={(e) => set('name', e.target.value)} aria-invalid={!!shown.name} aria-describedby={shown.name ? 'su-name-err' : undefined} required />
+          <FieldError id="su-name-err">{shown.name}</FieldError>
+          <PersonalFields value={v.personal} onChange={(p) => set('personal', p)} errors={shown} idPrefix="su" hideUserType />
         </div>
       ) : null}
 
@@ -187,7 +192,7 @@ export function SignUpWizard({ next, referred = false }: { next?: string; referr
             {t('auth.steps.back')}
           </Button>
         ) : <span />}
-        <Button key={step === 2 ? 'create' : 'next'} type="submit" size="touch" loading={busy || navigating} loadingLabel={t('common.loading')}>
+        <Button key={step === 2 ? 'create' : 'next'} type="submit" size="touch" disabled={step === 1 && aboutBlocked} loading={busy || navigating} loadingLabel={t('common.loading')}>
           {t(step === 2 ? 'auth.signUp.submit' : 'auth.steps.next')}
         </Button>
       </div>

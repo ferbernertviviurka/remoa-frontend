@@ -46,7 +46,8 @@ describe('name', () => {
     await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Ana Maria' })).toBeVisible());
     expect(api).toHaveBeenCalledWith('/v1/account/profile', { method: 'PATCH', body: JSON.stringify({ name: 'Ana Maria' }) });
     expect(track).toHaveBeenCalledWith('profile_name_changed', {});
-    expect(screen.getByRole('button', { name: /Editar nome/ })).toHaveFocus();
+    // Focus returns after the edit closes (a tick after the heading updates); under load that lands later.
+    await waitFor(() => expect(screen.getByRole('button', { name: /Editar nome/ })).toHaveFocus());
   });
 
   it('a server error keeps the field open', async () => {
@@ -117,17 +118,52 @@ describe('study choices', () => {
 });
 
 describe('personal data (G14 15)', () => {
-  it('shows the saved data and PATCHes edits with null for cleared phone/address', async () => {
+  const withPhone = () => view({ ...accountFreeFixture, profile: { ...accountFreeFixture.profile, userType: 'aluno', sex: null, phone: '+5511912345678', address: null } });
+  it('shows the saved data and PATCHes edits; cleared address goes as null, the phone is replaced', async () => {
     api.mockResolvedValue({ ok: true, data: {} });
-    view({ ...accountFreeFixture, profile: { ...accountFreeFixture.profile, userType: 'aluno', sex: null, phone: '+5511912345678', address: null } });
-    expect((screen.getByLabelText('Telefone (opcional)') as HTMLInputElement).value).toBe('(11) 91234-5678');
+    withPhone();
+    expect((screen.getByLabelText('Telefone') as HTMLInputElement).value).toBe('(11) 91234-5678');
     expect(screen.getByRole('radio', { name: 'Aluno' })).toBeChecked();
-    fireEvent.change(screen.getByLabelText('Telefone (opcional)'), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText('Telefone'), { target: { value: '21987654321' } });
     fireEvent.click(screen.getByRole('radio', { name: 'Professor' }));
     const card = screen.getByRole('region', { name: 'Dados pessoais' });
     fireEvent.click(within(card).getByRole('button', { name: 'Salvar' }));
-    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/account/profile', { method: 'PATCH', body: JSON.stringify({ userType: 'professor', phone: null, address: null }) }));
+    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/account/profile', { method: 'PATCH', body: JSON.stringify({ userType: 'professor', phone: '+5521987654321', address: null }) }));
     expect(await screen.findByText('Dados salvos.')).toBeVisible();
+  });
+
+  it('G20: the phone cannot be cleared (inline error, no PATCH)', () => {
+    withPhone();
+    fireEvent.change(screen.getByLabelText('Telefone'), { target: { value: '' } });
+    fireEvent.click(within(screen.getByRole('region', { name: 'Dados pessoais' })).getByRole('button', { name: 'Salvar' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Informe o seu telefone');
+    expect(screen.getByLabelText('Telefone')).toHaveAttribute('aria-invalid', 'true');
+    expect(api).not.toHaveBeenCalled();
+  });
+});
+
+describe('instituição de ensino (G20)', () => {
+  it('picks one from the list and PATCHes { institution }; clearing sends null', async () => {
+    api.mockResolvedValue({ ok: true, data: {} });
+    view();
+    fireEvent.change(screen.getByLabelText('Instituição de ensino'), { target: { value: 'usp' } });
+    const opt = (await screen.findAllByRole('option'))[0]!;
+    const name = opt.textContent ?? '';
+    fireEvent.click(opt);
+    await waitFor(() => expect(api).toHaveBeenCalledTimes(1));
+    const sent = JSON.parse((api.mock.calls[0]![1] as RequestInit).body as string).institution as { schoolId: string | null; name: string };
+    expect(sent.schoolId).toBeTruthy();
+    expect(name).toContain(sent.name);
+    fireEvent.click(await screen.findByRole('button', { name: 'Limpar instituição' }));
+    await waitFor(() => expect(api).toHaveBeenLastCalledWith('/v1/account/profile', { method: 'PATCH', body: JSON.stringify({ institution: null }) }));
+  });
+
+  it('free text goes with schoolId null', async () => {
+    api.mockResolvedValue({ ok: true, data: {} });
+    view();
+    fireEvent.change(screen.getByLabelText('Instituição de ensino'), { target: { value: 'Escola Exemplo' } });
+    fireEvent.click(await screen.findByRole('option', { name: /Usar “Escola Exemplo”/ }));
+    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/account/profile', { method: 'PATCH', body: JSON.stringify({ institution: { schoolId: null, name: 'Escola Exemplo' } }) }));
   });
 });
 

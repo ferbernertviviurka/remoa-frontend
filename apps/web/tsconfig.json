@@ -17,10 +17,13 @@
   },
   "include": [
     "*.ts",
+    ".next-3227/types/**/*.ts",
     ".next-g15/types/**/*.ts",
     ".next-nav/types/**/*.ts",
     ".next-navprod/types/**/*.ts",
     ".next-navprod2/types/**/*.ts",
+    ".next-p361/types/**/*.ts",
+    ".next-perf/types/**/*.ts",
     ".next-pill/types/**/*.ts",
     ".next-prod/types/**/*.ts",
     ".next-qa/types/**/*.ts",
@@ -28,11 +31,12 @@
     ".next-qa2/types/**/*.ts",
     ".next-split/types/**/*.ts",
     ".next-t10/types/**/*.ts",
+    ".next-t9/types/**/*.ts",
     ".next/types/**/*.ts",
     "e2e",
     "next-env.d.ts",
     "src",
-    ".next-p361/types/**/*.ts"
+    ".next-g20fe/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
