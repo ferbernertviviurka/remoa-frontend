@@ -5,7 +5,7 @@ import { formatAuditId } from '@remoa/contracts';
 import { createClient } from '@/lib/supabase/server';
 import { apiBase } from '@/lib/api';
 import { getRequestId } from '@/lib/request-id';
-import { adminGateCode, adminPost } from './api';
+import { adminGateCode, adminPost, adminRequest } from './api';
 import { errorCode } from './reauth';
 
 const norm = (e: { code: string; message: string }) => ({ code: errorCode(e), message: e.message });
@@ -48,4 +48,15 @@ export async function exportAdminCsv(input: { reason: string; resource: (typeof 
     return { ok: false, error: body?.error ? norm(body.error) : { code: 'internal', message: `HTTP ${res.status}` } };
   }
   return { ok: true, auditId: auditIdOf(res.headers.get('x-audit-id')), data: { csv: await res.text() } };
+}
+
+/** Like runAdminAction for PATCH and DELETE (D-943). DELETE answers `{ audit }` only, so `data` may be empty. */
+export async function runAdminRequest<T = unknown>(method: 'PATCH' | 'DELETE', path: string, body: Record<string, unknown>): Promise<AdminActionOutcome<T>> {
+  if (!safe(path)) return notFoundOutcome;
+  const gate = await adminGateCode();
+  if (gate) return { ok: false, error: { code: gate, message: gate } };
+  const r = await adminRequest<{ audit: AuditEntry } & T>(method, path, body);
+  if (!r.ok) return { ok: false, error: norm(r.error) };
+  const { audit, ...data } = r.data;
+  return { ok: true, auditId: formatAuditId(audit.id), data: data as T };
 }

@@ -93,16 +93,18 @@ export type BlogPostRowProps = {
   editHref: string;
   viewHref?: string;
   canUnpublish?: boolean;
-  labels: { edit: string; view: string; duplicate: string; unpublish: string };
+  labels: { edit: string; view: string; duplicate: string; unpublish: string; delete?: string };
   onDuplicate?: () => void;
   onUnpublish?: () => void;
+  /** Excluir (FR-13), qualquer status; só aparece com `onDelete` e `labels.delete`. Pede motivo no `ReasonDialog`. */
+  onDelete?: () => void;
   delay?: number;
 };
 
 const act = `flex h-11 items-center gap-1.5 rounded-[11px] border-[1.5px] border-border-strong bg-surface px-3 text-[13px] font-bold text-ink no-underline hover:border-primary lg:h-10 ${focusRing}`;
 const icoBtn = `flex size-11 items-center justify-center rounded-[11px] border-[1.5px] lg:size-10 ${focusRing}`;
 
-export function BlogPostRow({ coverSrc, title, slug, category, templateLabel, status, statusLabel, date, editHref, viewHref, canUnpublish, labels, onDuplicate, onUnpublish, delay }: BlogPostRowProps) {
+export function BlogPostRow({ coverSrc, title, slug, category, templateLabel, status, statusLabel, date, editHref, viewHref, canUnpublish, labels, onDuplicate, onUnpublish, onDelete, delay }: BlogPostRowProps) {
   return (
     <div role="row" className={`rb-row flex flex-col gap-3 border-t border-divider px-5 py-3 lg:min-h-[76px] lg:items-center ${GRID}`} style={delay ? { animationDelay: `${delay}ms` } : undefined}>
       <span role="cell" className="flex min-w-0 items-center gap-3.5">
@@ -121,6 +123,7 @@ export function BlogPostRow({ coverSrc, title, slug, category, templateLabel, st
         {viewHref ? <a href={viewHref} className={act}><Icon name="eye" size={16} aria-hidden="true" />{labels.view}</a> : <span aria-disabled="true" className={`${act} opacity-45`}><Icon name="eye" size={16} aria-hidden="true" />{labels.view}</span>}
         <button type="button" aria-label={`${labels.duplicate}: ${title}`} onClick={onDuplicate} className={`${icoBtn} border-border-strong bg-surface text-ink hover:border-primary`}><Icon name="copy" size={18} aria-hidden="true" /></button>
         {canUnpublish ? <button type="button" aria-label={`${labels.unpublish}: ${title}`} onClick={onUnpublish} className={`${icoBtn} border-review/40 bg-review-bg text-review-text`}><Icon name="archive" size={18} aria-hidden="true" /></button> : null}
+        {onDelete && labels.delete ? <button type="button" aria-label={`${labels.delete}: ${title}`} onClick={onDelete} className={`${icoBtn} border-border-strong bg-surface text-review-text hover:border-review`}><Icon name="trash" size={18} aria-hidden="true" /></button> : null}
       </span>
     </div>
   );

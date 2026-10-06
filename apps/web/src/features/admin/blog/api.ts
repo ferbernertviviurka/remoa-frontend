@@ -4,7 +4,7 @@
 import { blogCategoryFixtures, blogListItemFixtures, blogPostFixture, sitemapStatusFixture } from '@remoa/contracts/mocks';
 import type { AdminSitemap, BlogAdminList, BlogAdminListQuery, BlogCategory, BlogPost, Result } from '@remoa/contracts';
 import { adminGet } from '../shared/api';
-import { runAdminAction, type AdminActionOutcome } from '../shared/actions';
+import { runAdminAction, runAdminRequest, type AdminActionOutcome } from '../shared/actions';
 
 // Dev/e2e only (same switch as shared/api.ts).
 const mocked = () => process.env.ADMIN_MOCKS === '1' && process.env.NODE_ENV !== 'production';
@@ -36,4 +36,14 @@ export async function getSitemapStatus(): Promise<Result<AdminSitemap>> {
 /** POST /v1/admin/blog<path>. `reason` is only typed for unpublish/delete (D-910); the other actions get a server-chosen audit reason, this default just satisfies runAdminAction. */
 export async function blogAction<T = unknown>(path: string, body: { reason?: string } & Record<string, unknown> = {}): Promise<AdminActionOutcome<T>> {
   return runAdminAction<T>(`/blog${path}`, { ...body, reason: body.reason ?? 'ação do admin no blog' });
+}
+
+/** DELETE /v1/admin/blog<path> (excluir post: `{ reason }` digitado, D-910). */
+export async function blogDelete<T = unknown>(path: string, body: { reason: string }): Promise<AdminActionOutcome<T>> {
+  return runAdminRequest<T>('DELETE', `/blog${path}`, body);
+}
+
+/** PATCH /v1/admin/blog<path> (autosave do editor, T7). `reason` default as in blogAction; the server audits with its own text. */
+export async function blogPatch<T = unknown>(path: string, body: { reason?: string } & Record<string, unknown>): Promise<AdminActionOutcome<T>> {
+  return runAdminRequest<T>('PATCH', `/blog${path}`, { ...body, reason: body.reason ?? 'ação do admin no blog' });
 }

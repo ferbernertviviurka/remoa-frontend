@@ -10,7 +10,8 @@ const push = vi.fn();
 const refresh = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace, push, refresh }), usePathname: () => '/admin/blog', useSearchParams: () => new URLSearchParams('') }));
 const blogAction = vi.fn();
-vi.mock('../api', () => ({ blogAction: (...a: unknown[]) => blogAction(...a) }));
+const blogDelete = vi.fn();
+vi.mock('../api', () => ({ blogAction: (...a: unknown[]) => blogAction(...a), blogDelete: (...a: unknown[]) => blogDelete(...a) }));
 const { BlogListView } = await import('./blog-list-view');
 
 const [published, draft] = blogListItemFixtures;
@@ -64,6 +65,24 @@ describe('Admin do blog: lista', () => {
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('autenticação recente');
   });
 
+  it('delete exists for any status, needs a reason, calls DELETE and handles reauth', async () => {
+    blogDelete.mockResolvedValueOnce({ ok: false, error: { code: 'reauth_required', message: 'x' } }).mockResolvedValueOnce({ ok: true, auditId: 'a_77', data: {} });
+    view();
+    fireEvent.click(screen.getByRole('button', { name: `Excluir: ${draft!.title}` }));
+    const dialog = await screen.findByRole('alertdialog');
+    const field = within(dialog).getByLabelText('Motivo (obrigatório)');
+    const confirm = () => fireEvent.click(within(dialog).getByRole('button', { name: 'Excluir e registrar' }));
+    fireEvent.change(field, { target: { value: 'curto' } });
+    confirm();
+    expect(blogDelete).not.toHaveBeenCalled();
+    fireEvent.change(field, { target: { value: 'Post duplicado por engano' } });
+    confirm();
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('autenticação recente');
+    confirm();
+    expect(await within(dialog).findByRole('status')).toHaveTextContent('a_77');
+    expect(blogDelete).toHaveBeenLastCalledWith(`/posts/${draft!.id}`, { reason: 'Post duplicado por engano' });
+  });
+
   it('new post: button stays off with a short title, then creates and opens the editor', async () => {
     blogAction.mockResolvedValue({ ok: true, auditId: 'a_2', data: { post: { id: 'p9' } } });
     view();
@@ -90,7 +109,7 @@ describe('Admin do blog: lista', () => {
   });
 
   it('shows an error state with retry when the list fails', () => {
-    render(wrap(<BlogListView data={null} error="internal" sitemap={null} status="all" page={1} />));
+    render(wrap(<BlogListView data={null} error="internal" sitemap={null} categories={[]} status="all" page={1} />));
     expect(screen.getByRole('alert')).toHaveTextContent('Não foi possível carregar os posts');
   });
 });

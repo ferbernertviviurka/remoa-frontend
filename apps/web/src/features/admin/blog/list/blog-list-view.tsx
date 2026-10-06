@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { blogStatuses, SITEMAP_STATIC_PATHS, type AdminSitemap, type BlogAdminList, type BlogListItem } from '@remoa/contracts';
+import { blogStatuses, SITEMAP_STATIC_PATHS, type AdminSitemap, type BlogAdminList, type BlogCategory, type BlogListItem } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { AdminHeader, AdminSearch, BlogPostList, BlogPostRow, BlogStatusTabs, Button, ReasonDialog, SitemapCard, useToast } from '@remoa/ui';
 import { useListParams } from '../../list-kit/use-list-params';
-import { blogAction } from '../api';
+import { blogAction, blogDelete } from '../api';
+import { CategoriesSection } from './categories-section';
 import { formatDateTime, formatDay } from './format';
 import { NewPostDialog } from './new-post-dialog';
 
@@ -49,12 +50,13 @@ function SitemapSection({ sitemap, error }: { sitemap: AdminSitemap | null; erro
   );
 }
 
-export function BlogListView({ data, error, sitemap, sitemapError = false, status, page }: { data: BlogAdminList | null; error: string | null; sitemap: AdminSitemap | null; sitemapError?: boolean; status: Filter; page: number }) {
+export function BlogListView({ data, error, sitemap, sitemapError = false, categories = null, status, page }: { data: BlogAdminList | null; error: string | null; sitemap: AdminSitemap | null; sitemapError?: boolean; categories?: BlogCategory[] | null; status: Filter; page: number }) {
   const router = useRouter();
   const { toast } = useToast();
   const url = useListParams();
   const [creating, setCreating] = useState(false);
   const [unpublishing, setUnpublishing] = useState<BlogListItem | null>(null);
+  const [deleting, setDeleting] = useState<BlogListItem | null>(null);
   const [reauth, setReauth] = useState(false);
 
   const counts = data?.counts;
@@ -71,6 +73,13 @@ export function BlogListView({ data, error, sitemap, sitemapError = false, statu
 
   async function unpublish(reason: string) {
     const r = await blogAction(`/posts/${unpublishing!.id}/unpublish`, { reason });
+    setReauth(!r.ok && r.error.code === 'reauth_required');
+    if (!r.ok) throw new Error(r.error.code);
+    return { auditId: r.auditId };
+  }
+
+  async function remove(reason: string) {
+    const r = await blogDelete(`/posts/${deleting!.id}`, { reason });
     setReauth(!r.ok && r.error.code === 'reauth_required');
     if (!r.ok) throw new Error(r.error.code);
     return { auditId: r.auditId };
@@ -111,9 +120,10 @@ export function BlogListView({ data, error, sitemap, sitemapError = false, statu
                   date={dateOf(p)}
                   editHref={`/admin/blog/${p.id}`}
                   {...(p.status === 'published' ? { viewHref: `/blog/${p.slug}`, canUnpublish: true } : {})}
-                  labels={{ edit: t('adminBlog.list.actions.edit'), view: t('adminBlog.list.actions.view'), duplicate: t('adminBlog.list.actions.duplicate'), unpublish: t('adminBlog.list.actions.unpublish') }}
+                  labels={{ edit: t('adminBlog.list.actions.edit'), view: t('adminBlog.list.actions.view'), duplicate: t('adminBlog.list.actions.duplicate'), unpublish: t('adminBlog.list.actions.unpublish'), delete: t('adminBlog.list.actions.delete') }}
                   onDuplicate={() => void duplicate(p)}
                   onUnpublish={() => { setReauth(false); setUnpublishing(p); }}
+                  onDelete={() => { setReauth(false); setDeleting(p); }}
                   delay={Math.min(i, 8) * 40}
                 />
               ))}
@@ -127,6 +137,7 @@ export function BlogListView({ data, error, sitemap, sitemapError = false, statu
             ) : null}
           </>
         )}
+        <CategoriesSection categories={categories} />
       </div>
 
       <NewPostDialog open={creating} onOpenChange={setCreating} />
@@ -146,7 +157,22 @@ export function BlogListView({ data, error, sitemap, sitemapError = false, statu
         onConfirm={unpublish}
         onConfirmed={() => { toast({ title: t('adminBlog.unpublish.success') }); router.refresh(); }}
       />
+      <ReasonDialog
+        open={!!deleting}
+        onOpenChange={(o) => !o && setDeleting(null)}
+        danger
+        title={t('adminBlog.messages.deleteTitle')}
+        summary={t('adminBlog.messages.deleteConfirm', { title: deleting?.title ?? '' })}
+        reasonLabel={t('adminBlog.unpublish.reasonLabel')}
+        tooShortText={t('adminBlog.unpublish.tooShort')}
+        errorText={reauth ? t('adminBlog.unpublish.reauth') : t('adminBlog.messages.deleteError')}
+        confirmLabel={t('adminBlog.messages.deleteButton')}
+        cancelLabel={t('adminBlog.unpublish.cancel')}
+        doneLabel={t('adminBlog.unpublish.done')}
+        receiptText={(id) => t('adminBlog.unpublish.registered', { id })}
+        onConfirm={remove}
+        onConfirmed={() => { toast({ title: t('adminBlog.messages.deleted') }); router.refresh(); }}
+      />
     </>
   );
 }
-
