@@ -108,3 +108,23 @@ jobs:
             remoa-frontend/apps/web/playwright-report
             remoa-frontend/apps/web/test-results
           retention-days: 7
+
+  # F27 FR-37: build the web alone (no API: the sitemap falls back to the static pages and the post sample is skipped),
+  # start it and check sitemap.xml, robots.txt and the SEO tags of /, /blog and /termos-de-uso. Posts are covered by the e2e.
+  seo:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: remoa-frontend } }
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: remoa-frontend }
+      - uses: pnpm/action-setup@v4
+        with: { package_json_file: remoa-frontend/package.json }
+      - uses: actions/setup-node@v4
+        with: { node-version-file: remoa-frontend/.nvmrc, cache: pnpm, cache-dependency-path: remoa-frontend/pnpm-lock.yaml }
+      - run: pnpm i --frozen-lockfile
+      - run: pnpm --filter @remoa/web build
+      - run: |
+          pnpm --filter @remoa/web start > /tmp/web.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:3000/robots.txt > /dev/null && break; sleep 1; done
+          pnpm seo:check || (cat /tmp/web.log; exit 1)
+        env: { SEO_CHECK_URL: 'http://localhost:3000' }
