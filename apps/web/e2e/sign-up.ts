@@ -35,6 +35,6 @@ export async function skipOnboarding(page: Page) {
   }).toPass({ timeout: 30_000 });
   await expect(async () => {
     await page.getByRole('button', { name: 'Pular por enquanto' }).click();
-    await page.waitForURL(/\/app\/hoje$/, { timeout: 15_000 }); // cold dev compile of Hoje can take several seconds
+    await page.waitForURL(/\/app\/hoje$/, { timeout: 15_000, waitUntil: 'commit' }); // cold dev compile of Hoje can take several seconds
   }).toPass({ timeout: 30_000 });
 }

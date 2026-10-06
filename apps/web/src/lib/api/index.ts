@@ -23,7 +23,7 @@ export async function apiFetch<T>(path: string, token: string | null, init: Requ
     throw e;
   }
   // G21/F29 FR-3: time of this call + the API's own Server-Timing (server side: one JSON line per call, see lib/perf.ts).
-  const timing = parseServerTiming(res.headers.get('server-timing'), res.headers.get('x-remoa-queries'));
+  const timing = parseServerTiming(res.headers?.get('server-timing') ?? null, res.headers?.get('x-remoa-queries')); // test doubles may omit headers
   logTiming({ name: 'api', method: init.method ?? 'GET', path: safePath(path), status: res.status, ms: Date.now() - started, requestId: headers.get('x-request-id') ?? undefined, api: timing });
   if (res.ok && res.body && (res.headers.get('content-type') ?? '').includes('text/event-stream')) {
     trace(init.method, path, res.status, started, undefined, timing);
