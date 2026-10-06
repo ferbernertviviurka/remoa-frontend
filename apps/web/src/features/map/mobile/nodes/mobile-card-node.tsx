@@ -36,7 +36,8 @@ export const MobileCardNode = memo(function MobileCardNode({ id, data, selected 
   const ctx = useContext(MobileNodesContext);
   const overview = useIsOverview();
   // only the selected card follows the zoom (its handles stay finger-sized); the others never re-render on zoom
-  const zoom = useStore((s) => (selected ? s.transform[2] : 1));
+  // an unmeasured canvas (fitView at 0×0) leaves the zoom NaN: resizing would then compute NaN sizes and do nothing
+  const zoom = useStore((s) => (selected && Number.isFinite(s.transform[2]) && s.transform[2] > 0 ? s.transform[2] : 1));
   const [live, setLive] = useState<CardSize | null>(null);
   const questionImage = card.type !== 'image' && !!card.frontAssetId;
   const size = live ?? card.size ?? (questionImage ? mobileSizeOf(card) : null);

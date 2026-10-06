@@ -1,5 +1,5 @@
 // G15 Revisar: baseline 1440x900 do painel da fila (estado ativo e vazio). Só darwin. Update só de propósito:
-// `npx playwright test e2e/visual/revisar --update-snapshots`. Título e data mudam com o relógio: mascarados.
+// `npx playwright test e2e/visual/revisar --update-snapshots`. Saudação (Bom dia/Boa tarde, vem de hub.generatedAt no servidor: page.clock não ajuda) e data mudam com a hora e alteram a largura do h1 (P-528, D-1100): mascarada a linha inteira do cabeçalho.
 import { expect, test } from '@playwright/test';
 import { seedMock, signUpAndLogin } from './fixture';
 
@@ -14,7 +14,7 @@ const settle = async (page: import('@playwright/test').Page) => {
 test('revisar: painel da fila e estado vazio', async ({ page, request }) => {
   test.setTimeout(180_000);
   const { userId, headers } = await signUpAndLogin(page, request);
-  const masks = () => [page.getByRole('heading', { level: 1 }), page.locator('time'), page.locator('nextjs-portal'), page.getByText(/(segunda|terça|quarta|quinta|sexta|sábado|domingo)-?(feira)?, \d+ de/)];
+  const masks = () => [page.locator('h1').locator('xpath=../..'), page.locator('time'), page.locator('nextjs-portal'), page.getByText(/(segunda|terça|quarta|quinta|sexta|sábado|domingo)-?(feira)?, \d+ de/)];
   await page.goto('/app/revisar');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Vamos começar?');
   await settle(page);

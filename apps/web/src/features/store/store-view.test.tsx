@@ -152,6 +152,7 @@ describe('Minha conta: sair da lista', () => {
     view();
     fireEvent.click(await screen.findByRole('button', { name: 'Sair da lista' }));
     await waitFor(() => expect(mockGet()).toBeNull());
-    expect(screen.queryByRole('button', { name: 'Sair da lista' })).not.toBeInTheDocument();
+    // the mock clears before leave() resolves and re-renders: wait for the UI too (flaked under load, qa G21)
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Sair da lista' })).not.toBeInTheDocument());
   });
 });

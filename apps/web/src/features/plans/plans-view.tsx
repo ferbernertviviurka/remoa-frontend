@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import { plansFromSources } from '@remoa/contracts/constants';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
-import { Button, Icon, useToast } from '@remoa/ui';
+import { Alert, Button, Icon, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
+import { formatDate } from '@/features/billing/format';
 import { CheckoutSummary } from './checkout/checkout-summary';
 import { ComparisonMatrix } from './comparison-matrix';
 import { FounderOffer } from './founder-offer';
+import { freeProOf } from './free-pro';
 import { LimitNotice, limitHit } from './limit-notice';
 import { PlansFaq } from './plans-faq';
 import { PlansHeader } from './plans-header';
@@ -29,7 +31,9 @@ export function PlansView({ from, canceled }: { from?: string; canceled: boolean
   const { toast } = useToast();
   const sent = useRef(false);
   const founder = entitlements?.plan === 'founder';
-  const pro = founder || entitlements?.plan === 'pro' || (entitlements === null && subscription !== null);
+  const gift = freeProOf(entitlements);
+  // D-1213: a Pro with no subscription (trial, referral months) still buys, so it gets the Free page plus the end date
+  const pro = founder || (entitlements?.plan === 'pro' && !gift) || (entitlements === null && subscription !== null);
   const hit = limitHit(entitlements);
 
   useEffect(() => {
@@ -46,6 +50,11 @@ export function PlansView({ from, canceled }: { from?: string; canceled: boolean
   return (
     <div className="mx-auto flex w-full max-w-[1304px] flex-col gap-[26px] md:px-6 md:py-2">
       <PlansHeader tier={founder ? 'founder' : pro ? 'pro' : 'free'} />
+      {gift ? (
+        <Alert tone="brand" title={t(`plan.popover.freePro.${gift.kind}Title`)}>
+          {t(`plan.popover.freePro.${gift.kind}Text`, { date: formatDate(gift.until), days: gift.days })}
+        </Alert>
+      ) : null}
       {hit ? <LimitNotice hit={hit} /> : null}
       {pro ? null : (
         <section aria-labelledby="plans-referral" className="flex flex-wrap items-center justify-between gap-4 rounded-list border border-border bg-primary-tint px-5 py-4 md:px-7">

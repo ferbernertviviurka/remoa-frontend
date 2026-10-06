@@ -48,7 +48,7 @@
     "e2e",
     "next-env.d.ts",
     "src",
-    ".next-qa3337/types/**/*.ts"
+    ".next-qa3357/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

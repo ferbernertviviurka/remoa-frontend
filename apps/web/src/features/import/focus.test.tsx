@@ -32,7 +32,7 @@ describe('import focus', () => {
     await waitFor(() => expect(document.activeElement).toBe(step2));
     await waitFor(() => expect((screen.getByRole('button', { name: 'Continuar' }) as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
-    const name = screen.getByLabelText('Nome do mapa') as HTMLInputElement;
+    const name = (await screen.findByLabelText('Nome do mapa')) as HTMLInputElement; // P-516: the form loads on demand
     await waitFor(() => expect(document.activeElement).toBe(name)); // FR-2: the name gets the focus
     expect(name.value).toBe('CM'); // FR-3: root deck
     fireEvent.click(screen.getByRole('button', { name: /^Importar \d+ card/ }));

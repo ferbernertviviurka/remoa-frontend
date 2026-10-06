@@ -351,6 +351,7 @@ export const landing = {
     free: {
       name: 'Free',
       description: 'Para começar a montar seus mapas.',
+      trial: 'Toda conta nova começa com {days} dias de Pro grátis. Sem cartão.',
       features: [
         '{maps} mapas',
         '{cards} cards',

@@ -45,6 +45,9 @@ export const notifications = {
     purchaseBody: '{plan}. O comprovante foi enviado por e-mail.',
     waitlistTitle: 'Você está na lista da Loja de mapas',
     waitlistBody: 'Avisamos por e-mail quando ela abrir.',
+    trialD3Title: 'Seu teste do Pro termina em 3 dias',
+    trialD0Title: 'Seu teste do Pro termina hoje',
+    trialBody: 'Depois, sua conta volta para o Grátis sem perder nada. Assine para seguir sem limites.',
   },
   when: {
     now: 'agora',

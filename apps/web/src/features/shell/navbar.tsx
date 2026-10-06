@@ -10,6 +10,7 @@ import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { PLAN_LIMITS } from '@remoa/contracts/constants';
 import { initialsOf } from '@/features/account/shell/format';
+import { freeProOf } from '@/features/plans/free-pro';
 import { NotificationBell } from '@/features/notifications/bell/notification-bell';
 import { PaletteButton } from './command-palette';
 import { useEntitlements } from './entitlements';
@@ -62,6 +63,7 @@ function NavbarView({ account }: { account: RailIdentity }) {
   const founder = e?.plan === 'founder';
   const pro = e?.plan === 'pro' || founder;
   const free = !pro;
+  const gift = freeProOf(e);
 
   const upgrade = (source: 'navbar_upgrade' | 'plan_popover') => {
     track('upgrade_clicked', { source });
@@ -93,17 +95,21 @@ function NavbarView({ account }: { account: RailIdentity }) {
       home={{ href: '/app/hoje', label: t('nav.wordmark.aria'), as: PendingLink }}
       chip={
         <PlanPopover
-          trigger={<PlanChip plan={pro ? 'pro' : 'free'} aria-label={t('nav.planChip.aria')}>{t(founder ? 'nav.planChip.founder' : pro ? 'nav.planChip.pro' : 'nav.planChip.free')}</PlanChip>}
+          trigger={<PlanChip plan={pro ? 'pro' : 'free'} aria-label={t('nav.planChip.aria')}>{t(founder ? 'nav.planChip.founder' : gift?.kind === 'trial' ? 'nav.planChip.trial' : pro ? 'nav.planChip.pro' : 'nav.planChip.free')}</PlanChip>}
           label={t('nav.planChip.aria')}
-          title={t(founder ? 'plan.popover.founder.title' : pro ? 'plan.popover.pro.title' : 'plan.popover.free.title')}
-          text={founder ? t('plan.popover.founder.text') : pro ? (e?.renewsAt ? t('plan.popover.pro.renewsAt', { date: dateOf(e.renewsAt) }) : t('plan.popover.pro.text')) : t('plan.popover.free.text')}
+          title={t(founder ? 'plan.popover.founder.title' : gift ? `plan.popover.freePro.${gift.kind}Title` : pro ? 'plan.popover.pro.title' : 'plan.popover.free.title')}
+          text={founder ? t('plan.popover.founder.text')
+            : gift ? t(`plan.popover.freePro.${gift.kind}Text`, { date: dateOf(gift.until), days: gift.days })
+            : pro ? (e?.renewsAt ? t('plan.popover.pro.renewsAt', { date: dateOf(e.renewsAt) }) : t('plan.popover.pro.text')) : t('plan.popover.free.text')}
           meters={e ? buildMeters(e) : []}
           alert={alert}
           illustration={free ? <Image src="/illustrations/plan-upgrade.svg" width={380} height={150} alt={t('plan.popover.illustration')} /> : undefined}
           benefits={free ? { title: t('plan.popover.benefits.title'), items: benefits } : undefined}
           cta={
             <>
-              {free ? ctaFree : founder ? null : <Button variant="secondary" size="lg" loading={busy} onClick={() => void portal()}>{t('plan.popover.pro.manage')}</Button>}
+              {free ? ctaFree : founder ? null : gift ? (
+                <Button size="lg" icon={<Icon name="sparkle" size={18} />} onClick={() => upgrade('plan_popover')}>{t('plan.popover.freePro.subscribe')}</Button>
+              ) : <Button variant="secondary" size="lg" loading={busy} onClick={() => void portal()}>{t('plan.popover.pro.manage')}</Button>}
               <Button variant="quiet" size="lg" icon={<Icon name="gift" size={18} />} onClick={() => go('/app/indicar?de=plan_panel')}>{t('referral.panelLink')}</Button>
             </>
           }

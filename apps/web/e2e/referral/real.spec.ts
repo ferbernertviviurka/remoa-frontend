@@ -30,7 +30,7 @@ const summary = async (request: APIRequestContext, headers: { authorization: str
 const attribute = (request: APIRequestContext, u: U, code: string) => request.post(`${API}/v1/referral/attribution`, { headers: u.headers, data: { code } });
 const plan = async (request: APIRequestContext, u: U) => (await (await request.get(`${API}/v1/billing/entitlements`, { headers: u.headers })).json()).data as { plan: string; grantUntil?: string | null };
 const refStatus = (id: string) => psql(`select coalesce(status||':'||coalesce(reject_reason::text,''),'none') from referrals where referee_id='${id}'`);
-const grants = (id: string) => Number(psql(`select count(*) from entitlement_grants where user_id='${id}' and revoked_at is null`));
+const grants = (id: string) => Number(psql(`select count(*) from entitlement_grants where user_id='${id}' and source='referral' and revoked_at is null`));
 
 /** Board with `n` cards through the real ops endpoint (qualification runs after the write). */
 async function board(request: APIRequestContext, u: U, n = 3) {
@@ -95,7 +95,7 @@ test('1. fluxo completo pela UI: A copia o link, B cadastra por /i/<code>, cria 
     expect(e.plan, id).toBe('pro');
     const days = (new Date(e.grantUntil!).getTime() - Date.now()) / 86_400_000;
     expect(days).toBeGreaterThan(27);
-    expect(days).toBeLessThan(32);
+    expect(days).toBeLessThan(47); // D-1213: o teste Pro de 15 dias encadeia com o mês de indicação (grantUntil = fim da cadeia: ~15 + 31)
     expect(grants(id)).toBe(1);
   }
   expect(Number(psql(`select count(*) from entitlement_grants where referral_id=(select id from referrals where referee_id='${b.id}')`))).toBe(2);

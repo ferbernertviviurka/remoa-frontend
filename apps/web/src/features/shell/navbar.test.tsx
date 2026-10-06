@@ -98,6 +98,31 @@ describe('Navbar plan panel', () => {
     expect(screen.queryByText('Com o Pro você ganha')).toBeNull();
   });
 
+  it('free trial (D-1213): "Pro · teste" chip, end date and days left, subscribe instead of the Stripe portal', async () => {
+    const end = new Date(Date.now() + 3 * 86_400_000 - 60_000);
+    const trial: Entitlements = { ...pro, status: null, renewsAt: null, grantUntil: end, trialUntil: end };
+    render(<EntitlementsProvider initial={trial}><Navbar /></EntitlementsProvider>);
+    expect(screen.getByText('Pro · teste')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Fazer upgrade' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalhes do plano' }));
+    const panel = within(await screen.findByRole('dialog'));
+    expect(panel.getByText('Você está no teste grátis do Pro')).toBeInTheDocument();
+    expect(panel.getByText(/Faltam 3 dias\. Depois, a conta volta para o Free/)).toBeInTheDocument();
+    expect(panel.queryByRole('button', { name: 'Gerenciar assinatura' })).toBeNull();
+    fireEvent.click(panel.getByRole('button', { name: 'Assinar o Pro' }));
+    expect(track).toHaveBeenCalledWith('upgrade_clicked', { source: 'plan_popover' });
+    expect(push).toHaveBeenLastCalledWith('/app/planos?de=plan_popover');
+  });
+
+  it('referral months after the trial: plain Pro chip, "Pro grátis até" text', async () => {
+    const trialEnd = new Date(Date.now() + 2 * 86_400_000);
+    const gift: Entitlements = { ...pro, status: null, renewsAt: null, grantUntil: new Date(trialEnd.getTime() + 30 * 86_400_000), trialUntil: trialEnd };
+    await open(gift);
+    expect(screen.getByText('Plano Pro')).toBeInTheDocument();
+    expect(screen.getByText('Você está no Pro grátis')).toBeInTheDocument();
+    expect(screen.getByText(/Seu Pro grátis vai até/)).toBeInTheDocument();
+  });
+
   it('Pro past due shows the grace warning', async () => {
     await open({ ...pro, graceUntil: new Date('2026-11-22T12:00:00Z') });
     expect(screen.getByText(/O Pro continua ativo até 22 de novembro de 2026/)).toBeInTheDocument();

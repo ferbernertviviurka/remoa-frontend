@@ -16,7 +16,7 @@ import { useMatrixSuggestions } from '@/features/coverage/matrix-suggestions';
 import Link from 'next/link';
 import { defaultBoardTitle, estimate } from '@/features/import/plan';
 import { useAnkiImport } from '@/features/import/use-anki-import';
-import { AboutMapForm, aboutErrors, aboutPayload, emptyAboutMap, type AboutMap } from './about-map-form';
+import { aboutErrors, aboutPayload, emptyAboutMap, type AboutMap } from './about-map';
 import { MapPreview, type Path } from './map-preview';
 
 const t = withStrings({ ankiSteps: more.ankiSteps, boards: more.boards, editorial: more.editorial, import: more.import, newMap: more.newMap, newMapAbout: more.newMapAbout });
@@ -37,6 +37,15 @@ const AnkiImportFlow = dynamic(() => loadFlow().then((m) => m.AnkiImportFlow), {
   loading: () => (
     <SkeletonRegion label={t('common.loading')}>
       <Skeleton />
+    </SkeletonRegion>
+  ),
+});
+// P-516: "Sobre o mapa" (Combobox, Segmented, PasswordInput) is a later step: prefetched after the first paint, SSR'd when the URL opens on it.
+const loadForm = () => import('./about-map-form');
+const AboutMapForm = dynamic(() => loadForm().then((m) => m.AboutMapForm), {
+  loading: () => (
+    <SkeletonRegion label={t('common.loading')}>
+      <Skeleton lines={6} />
     </SkeletonRegion>
   ),
 });
@@ -82,6 +91,7 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only when a new file is read
   }, [ankiKey, file, path]);
 
+  useEffect(() => void loadForm(), []);
   useEffect(() => {
     if (path === 'anki') void loadFlow();
   }, [path]);

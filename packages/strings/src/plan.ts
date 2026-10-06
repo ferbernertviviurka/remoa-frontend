@@ -16,6 +16,14 @@ export const plan = {
       title: 'Você é Founder',
       text: 'Acesso vitalício, IA ilimitada e as novidades primeiro.',
     },
+    // D-1213: Pro sem assinatura (teste grátis ou meses de indicação/suporte). Sem portal do Stripe: só assinar.
+    freePro: {
+      trialTitle: 'Você está no teste grátis do Pro',
+      giftTitle: 'Você está no Pro grátis',
+      trialText: 'Seu teste termina em {date}. {days, plural, one {Falta # dia} other {Faltam # dias}}. Depois, a conta volta para o Free sem perder nada.',
+      giftText: 'Seu Pro grátis vai até {date}. {days, plural, one {Falta # dia} other {Faltam # dias}}. Depois, a conta volta para o Free sem perder nada.',
+      subscribe: 'Assinar o Pro',
+    },
     meters: {
       aiCorrections: 'Correções hoje',
       pdf: 'PDFs neste mês',

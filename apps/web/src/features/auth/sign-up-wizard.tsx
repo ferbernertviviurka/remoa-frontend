@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useNavigate } from '@/features/shell/use-navigate';
-import { isValidName, isValidPassword, normalizeName, passwordStrength } from '@remoa/contracts/constants';
+import { isValidName, isValidPassword, normalizeName, passwordStrength, TRIAL_DAYS } from '@remoa/contracts/constants';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Button, Checkbox, Input, PasswordMeter, SkeletonBlock, Stepper } from '@remoa/ui';
@@ -148,7 +148,7 @@ export function SignUpWizard({ next, referred = false }: { next?: string; referr
       <Stepper aria-label={t('auth.steps.label')} doneLabel={t('auth.steps.done')} current={step} steps={[t('auth.steps.account'), t('auth.steps.about'), t('auth.steps.confirm')]} />
       <div className="flex flex-col gap-1.5">
         <h1 ref={headingRef} tabIndex={-1} className="m-0 font-display text-[32px] font-extrabold leading-tight tracking-[-0.03em] text-text outline-none">{t(titles[step]!)}</h1>
-        <p className="m-0 text-[15px] text-muted">{t(subs[step]!)}</p>
+        <p className="m-0 text-[15px] text-muted">{t(subs[step]!, { days: TRIAL_DAYS })}</p>
       </div>
 
       {step === 0 ? (

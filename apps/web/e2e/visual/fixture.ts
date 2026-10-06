@@ -2,6 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
+import { dropTrial } from '../db';
 import { formReady } from '../sign-up';
 
 const env = (k: string) =>
@@ -15,6 +16,7 @@ export async function signUpAndLogin(page: Page, request: APIRequestContext) {
   const password = 'senha-forte-123';
   const signup = await request.post(`${SUPABASE}/auth/v1/signup`, { headers: { apikey: ANON }, data: { email, password } });
   const su = await signup.json();
+  dropTrial(email);
   const token = su.access_token as string;
   await request.post(`${API}/v1/onboarding/complete`, { headers: { authorization: `Bearer ${token}` } }).catch(() => undefined); // F12: skip the onboarding redirect
   await request.patch(`${API}/v1/account/profile`, { headers: { authorization: `Bearer ${token}` }, data: { name: 'Aluna Teste', phone: '11912345678', userType: 'aluno' } }); // G20: name, phone and userType are required before /app

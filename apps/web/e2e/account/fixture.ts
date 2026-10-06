@@ -2,6 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
+import { dropTrial } from '../db';
 
 export const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 export const PASSWORD = 'senha-forte-123';
@@ -13,9 +14,9 @@ const env = (k: string) => process.env[k] ?? new RegExp(`^${k}="?([^"\\n]*)"?$`,
  * cookie (`sb-<ref>-auth-token`, "base64-" + base64url(JSON), chunks of 3180). The local GoTrue allows 30 sign-ins per
  * 5 minutes per IP and other sessions share it, so one call per test keeps the suite from hitting the limit.
  */
-export async function accountUser(page: Page, request: APIRequestContext, name: string | null = 'Marina Alves', required = true) {
+export async function accountUser(page: Page, request: APIRequestContext, name: string | null = 'Marina Alves', required = true, keepTrial = false) {
   const email = `e2e-acc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@remoa.test`;
-  const su = await signUpApi(request, email, PASSWORD, required);
+  const su = await signUpApi(request, email, PASSWORD, required, keepTrial);
   const url = new URL(env('NEXT_PUBLIC_SUPABASE_URL'));
   const key = `sb-${url.hostname.split('.')[0]}-auth-token`;
   const value = 'base64-' + Buffer.from(JSON.stringify(su)).toString('base64url');
@@ -51,10 +52,11 @@ export const sections = ['perfil', 'seguranca', 'plano', 'preferencias', 'dados'
 
 /** Sign-up straight through GoTrue (no browser): returns the session JSON. */
 /** `required: false` leaves name/phone/userType empty (an account that must pass through "Conte quem você é"). */
-export async function signUpApi(request: APIRequestContext, email: string, password = PASSWORD, required = true) {
+export async function signUpApi(request: APIRequestContext, email: string, password = PASSWORD, required = true, keepTrial = false) {
   const r = await request.post(`${env('NEXT_PUBLIC_SUPABASE_URL')}/auth/v1/signup`, { headers: { apikey: env('NEXT_PUBLIC_SUPABASE_ANON_KEY') }, data: { email, password } });
   expect(r.ok()).toBeTruthy();
   const su = await r.json();
+  if (!keepTrial) dropTrial(email);
   // F12: a new account is redirected to the onboarding; API-made users are about something else, so they have it done already.
   await request.post(`${API}/v1/onboarding/complete`, { headers: { authorization: `Bearer ${su.access_token as string}` } }).catch(() => undefined);
   if (required) await request.patch(`${API}/v1/account/profile`, { headers: { authorization: `Bearer ${su.access_token as string}` }, data: { name: 'Aluna Teste', phone: '11912345678', userType: 'aluno' } }).catch(() => undefined); // G20: required before /app

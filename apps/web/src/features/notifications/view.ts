@@ -4,7 +4,7 @@ import type { NotificationGroup, NotificationKind, NotificationView } from '@rem
 
 const KIND: Record<InAppNotificationType, NotificationKind> = {
   calendar_d1: 'calendar', calendar_d0: 'calendar', calendar_digest: 'calendar', review_reminder: 'review', map_ready: 'map',
-  referral_reward: 'referral', support_reply: 'support', purchase: 'purchase', waitlist_joined: 'store',
+  referral_reward: 'referral', support_reply: 'support', purchase: 'purchase', waitlist_joined: 'store', trial_ending: 'account',
 };
 const CATEGORY_KEY = { calendar: 'calendar', review: 'review', maps: 'maps', referrals: 'referrals', support: 'support', account_billing: 'account', store: 'store' } as const satisfies Record<NotificationCategory, string>;
 export const categoryLabel = (c: NotificationCategory) => t(`notifications.category.${CATEGORY_KEY[c]}`);
@@ -31,6 +31,7 @@ export function textOf(n: Textable, tz: string): { title: string; body: string }
     case 'support_reply': return { title: t('notifications.type.supportTitle', { n: n.data.ticketNumber }), body: t('notifications.type.supportBody') };
     case 'purchase': return { title: t('notifications.type.purchaseTitle'), body: t('notifications.type.purchaseBody', { plan: n.data.planName }) };
     case 'waitlist_joined': return { title: t('notifications.type.waitlistTitle'), body: t('notifications.type.waitlistBody') };
+    case 'trial_ending': return { title: t(n.data.last ? 'notifications.type.trialD0Title' : 'notifications.type.trialD3Title'), body: t('notifications.type.trialBody') };
   }
 }
 

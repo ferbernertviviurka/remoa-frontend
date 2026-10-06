@@ -171,7 +171,7 @@ export const ptBRCore = {
     },
     signUp: {
       title: 'Criar conta',
-      subtitle: 'Seu mapa de estudo começa aqui.',
+      subtitle: 'Sua conta começa com {days} dias de Pro grátis. Sem cartão.',
       submit: 'Criar conta',
       hasAccount: 'Já tem conta?',
       toSignIn: 'Entrar',
