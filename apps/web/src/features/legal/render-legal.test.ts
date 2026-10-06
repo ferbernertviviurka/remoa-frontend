@@ -56,11 +56,11 @@ describe('renderLegal', () => {
 describe('content/legal (P-434)', () => {
   const dir = join(__dirname, '..', '..', '..', 'content', 'legal');
   it('no literal e-mail; only known {{vars}}; dpoEmail renders', async () => {
-    const { LEGAL_TEMPLATE_ENV } = await import('@/lib/env/legal');
+    const { LEGAL_CONFIG } = await import('./config');
     for (const f of readdirSync(dir).filter((x) => x.endsWith('.md'))) {
       const src = readFileSync(join(dir, f), 'utf8').replace(/<!--[\s\S]*?-->/g, '');
       expect(src, f).not.toMatch(/[\w.-]+@[\w-]+\.\w+/);
-      for (const [, k] of src.matchAll(/\{\{(\w+)\}\}/g)) expect(k === 'versao' || k! in LEGAL_TEMPLATE_ENV, `${f}: ${k}`).toBe(true);
+      for (const [, k] of src.matchAll(/\{\{(\w+)\}\}/g)) expect(k === 'versao' || k! in LEGAL_CONFIG.vars, `${f}: ${k}`).toBe(true);
     }
     const out = renderLegal('# T\n\n## 1. A\n\nEscreva para {{dpoEmail}}.', { vars: { dpoEmail: 'dpo@x.com' }, production: true });
     expect(out.sections[0]!.html).toContain('dpo@x.com');

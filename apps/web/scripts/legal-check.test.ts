@@ -4,7 +4,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const FULL = Object.fromEntries(['COMPANY_NAME', 'CNPJ', 'ADDRESS', 'DPO_NAME', 'DPO_EMAIL', 'FORO_CITY', 'UPDATED_AT', 'TERMS_VERSION', 'PRIVACY_VERSION'].map((k) => [`LEGAL_${k}`, 'x']));
 const dirWith = (md: string) => {
   const d = mkdtempSync(join(tmpdir(), 'legal-'));
   writeFileSync(join(d, 'a.md'), md);
@@ -18,13 +17,13 @@ describe('legal-check', () => {
     expect(run({}, 'x [CONFIRMAR]').status).toBe(0);
     expect(run({ VERCEL_ENV: 'preview' }, 'x [CONFIRMAR]').status).toBe(0);
   });
-  it('fails in production on [CONFIRMAR] (comments ignored) and on empty variables', () => {
-    const r = run({ VERCEL_ENV: 'production', ...FULL }, 'x [CONFIRMAR]');
+  it('fails in production on [CONFIRMAR] (comments ignored)', () => {
+    const r = run({ VERCEL_ENV: 'production' }, 'x [CONFIRMAR]');
     expect(r.status).toBe(1);
     expect(r.stderr).toContain('a.md');
-    expect(run({ LEGAL_STRICT: '1', ...FULL, LEGAL_CNPJ: ' ' }).stderr).toContain('LEGAL_CNPJ');
+    expect(run({ LEGAL_STRICT: '1' }, 'x [CONFIRMAR]').status).toBe(1);
   });
-  it('passes in production when everything is filled', () => {
-    expect(run({ VERCEL_ENV: 'production', ...FULL }, '<!-- [CONFIRMAR] -->\n# ok').status).toBe(0);
+  it('passes in production when nothing is pending; needs no LEGAL_* variable (D-977)', () => {
+    expect(run({ VERCEL_ENV: 'production' }, '<!-- [CONFIRMAR] -->\n# ok').status).toBe(0);
   });
 });

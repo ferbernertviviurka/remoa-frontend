@@ -67,13 +67,22 @@ test('G20: conta sem nome, telefone e tipo é levada ao passo "Conte quem você 
   await page.getByLabel('Telefone').fill('11912345678');
   await page.getByRole('button', { name: 'Professor' }).click();
   await page.getByRole('button', { name: 'Continuar' }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Em que momento você está?'); // onboarding ainda não feito: segue
+  await expect(page).toHaveURL(/\/app\/mapas$/); // onboarding já concluído (conta antiga): só esse passo e volta ao destino
 });
 
-test('G20: "Não estudo medicina" e instituição em texto livre', async ({ page, request }) => {
+test('G20: "Não estudo medicina" e instituição em texto livre', async ({ page }) => {
   test.setTimeout(90_000);
-  await accountUser(page, request); // name, phone and userType already set
-  await page.goto('/app/onboarding');
+  await page.goto('/cadastro');
+  await formReady(page);
+  await page.getByLabel('E-mail').fill(`e2e-onb2-${Date.now()}@remoa.test`);
+  await page.getByLabel('Senha').fill('senha-forte-123');
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await fillAbout(page);
+  await page.getByRole('checkbox').click();
+  await page.getByRole('button', { name: 'Criar conta' }).click();
+  await expect(page).toHaveURL(/\/app\/onboarding$/, { timeout: 30_000 });
+  await page.getByRole('button', { name: 'Aluno' }).click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
   await page.getByRole('button', { name: 'Não estudo medicina' }).click();
   await page.getByRole('button', { name: 'Continuar' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Qual instituição de ensino?');

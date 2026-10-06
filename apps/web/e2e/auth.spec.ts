@@ -66,8 +66,9 @@ test('cadastro G14: dados pessoais com máscara, CEP no ViaCEP (mock), consentim
   await page.getByLabel('E-mail').fill(`e2e-g14-${Date.now()}@remoa.test`);
   await page.getByLabel('Senha').fill(password);
   await page.getByRole('button', { name: 'Continuar' }).click();
-  await page.getByLabel('Telefone (opcional)').fill('11912345678');
-  await expect(page.getByLabel('Telefone (opcional)')).toHaveValue('(11) 91234-5678');
+  await page.getByLabel('Como podemos te chamar?').fill('Ana Souza');
+  await page.getByLabel('Telefone').fill('11912345678');
+  await expect(page.getByLabel('Telefone')).toHaveValue('(11) 91234-5678');
   await page.getByLabel('CEP').fill('99999999');
   await expect(page.getByText('CEP não encontrado')).toBeVisible();
   await page.getByLabel('CEP').fill('01310100');
@@ -91,6 +92,6 @@ test('cadastro G14: dados pessoais com máscara, CEP no ViaCEP (mock), consentim
   await skipOnboarding(page);
   // os dados chegaram ao perfil
   await page.goto('/app/conta/perfil');
-  await expect(page.getByLabel('Telefone (opcional)')).toHaveValue('(11) 91234-5678');
+  await expect(page.getByLabel('Telefone')).toHaveValue('(11) 91234-5678');
   await expect(page.getByLabel('Logradouro')).toHaveValue('Avenida Paulista');
 });

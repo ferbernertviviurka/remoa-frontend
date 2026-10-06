@@ -47,7 +47,7 @@ describe('sitemap (F27 FR-31/32)', () => {
     }
   });
 
-  it('lastmod in ISO 8601: newest post for / and /blog, LEGAL_UPDATED_AT for legal pages', () => {
+  it('lastmod in ISO 8601: newest post for / and /blog, the legal config date for legal pages', () => {
     const at = Object.fromEntries(map.map((u) => [u.url, u.lastModified]));
     expect(at[ORIGIN]).toBe('2026-10-03T10:00:00.000Z');
     expect(at[`${ORIGIN}/blog`]).toBe('2026-10-03T10:00:00.000Z');

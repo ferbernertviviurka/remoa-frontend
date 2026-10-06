@@ -1,4 +1,4 @@
-<!-- RASCUNHO. Revisar com advogado antes de publicar. Itens [CONFIRMAR] dependem de decisão ou de checagem. Variáveis {{...}} vêm do .env (LEGAL_*). -->
+<!-- RASCUNHO. Revisar com advogado antes de publicar. Itens [CONFIRMAR] dependem de decisão ou de checagem. Variáveis {{...}} vêm de remoa-frontend/apps/web/src/features/legal/config.ts (D-977). -->
 
 # Política de Privacidade
 
@@ -26,41 +26,42 @@ O Remoa não foi feito para receber dados de pacientes. Pedimos que você não o
 
 - Prestar o serviço e cumprir o contrato: criar sua conta, guardar seus mapas, agendar revisões e processar pagamentos.
 - Legítimo interesse: segurança, prevenção a fraude, suporte e melhoria do produto com medições agregadas.
-- Consentimento: cookies de medição e comunicações promocionais, quando aplicável. Você pode retirar o consentimento quando quiser.
+- Consentimento: comunicações promocionais, quando aplicável. Você pode retirar o consentimento quando quiser.
 - Obrigação legal e exercício regular de direitos: guardar registros fiscais e responder a ordens legais.
 
 ## 4. Inteligência artificial
 
-Quando você usa recursos de IA, enviamos ao provedor o trecho necessário para gerar ou corrigir cards. Pedimos ao provedor que não use esse conteúdo para treinar modelos, conforme as condições contratadas [CONFIRMAR]. Recomendamos revisar o que a IA gera.
+Quando você usa recursos de IA, enviamos ao provedor o trecho necessário para gerar ou corrigir cards. O provedor trata esse conteúdo conforme as próprias políticas de privacidade. Não coloque nos seus cards dados que identifiquem pacientes ou outras pessoas, e revise o que a IA gera.
 
 ## 5. Com quem compartilhamos
 
 Compartilhamos dados com operadores que nos ajudam a prestar o serviço, apenas para as finalidades abaixo:
 
 - Supabase: banco de dados e autenticação.
-- Vercel: hospedagem do aplicativo e do site.
+- Vercel: hospedagem do site e do aplicativo.
+- Railway: hospedagem dos nossos servidores.
 - Cloudflare R2: armazenamento de arquivos.
 - Stripe: pagamentos.
 - Resend: envio de e-mails.
 - Inngest: tarefas em segundo plano.
-- Mixpanel: métricas de uso.
-- Anthropic: recursos de IA.
+- OpenRouter: recursos de IA (encaminha o pedido ao modelo de IA usado).
+- Mistral: leitura de PDFs digitalizados.
 - Google: login, se você o escolher.
 
 Também podemos compartilhar dados para cumprir obrigação legal ou ordem de autoridade.
 
 ## 6. Transferência internacional
 
-Alguns desses provedores podem tratar dados fora do Brasil. Nesses casos, adotamos as garantias previstas na LGPD, como cláusulas contratuais adequadas [CONFIRMAR].
+Alguns desses provedores tratam dados fora do Brasil, como Vercel, Railway, Stripe, Resend, Inngest e OpenRouter. Nesses casos, a transferência segue as regras da LGPD para transferência internacional de dados.
 
 ## 7. Por quanto tempo guardamos
 
 - Enquanto sua conta existir.
-- Depois do pedido de exclusão, apagamos seus dados em até 7 dias, exceto o que a lei nos obriga a guardar. Cópias de segurança podem levar mais tempo para expirar [CONFIRMAR].
-- Registros de pagamento e fiscais: pelo prazo legal [CONFIRMAR].
-- Chamados de suporte: até 12 meses depois de resolvidos [CONFIRMAR].
+- Depois do pedido de exclusão, apagamos seus dados em até 7 dias, exceto o que a lei nos obriga a guardar. Cópias de segurança podem levar mais tempo para expirar.
+- Registros de pagamento e fiscais: pelo prazo exigido pela legislação fiscal.
+- Chamados de suporte: até 12 meses depois de resolvidos; anexos, até 90 dias.
 - Notificações no app: 90 dias as lidas e 180 dias as não lidas.
-- Registros de auditoria de segurança: 24 meses [CONFIRMAR].
+- Registros de auditoria de segurança: pelo tempo necessário para proteger as contas e o serviço e para cumprir obrigações legais.
 
 ## 8. Seus direitos
 
@@ -69,7 +70,7 @@ Pela LGPD você pode, a qualquer momento: confirmar que tratamos seus dados; ace
 ## 9. Cookies e tecnologias semelhantes
 
 - **Essenciais:** mantêm você conectado e guardam preferências. Não podem ser desligados.
-- **Medição:** ajudam a entender o uso do produto. Só usamos com a sua permissão [CONFIRMAR]. Você pode mudar a escolha em “Preferências de cookies”, no rodapé.
+- **Medição, publicidade e terceiros:** não usamos.
 
 Não usamos pixel de rastreio de abertura nos nossos e-mails.
 
@@ -79,7 +80,7 @@ Usamos criptografia em trânsito, controle de acesso por usuário, registros de 
 
 ## 11. Crianças e adolescentes
 
-O Remoa é voltado a maiores de 18 anos [CONFIRMAR]. Se soubermos que coletamos dados de menor sem autorização, vamos excluí-los.
+O Remoa é voltado a estudantes e não é direcionado a crianças (menores de 12 anos). Adolescentes podem usar o Remoa com a autorização de um responsável legal, e tratamos os dados deles no seu melhor interesse, como pede a LGPD. Se soubermos que coletamos dados de criança sem o consentimento de um responsável, vamos excluí-los.
 
 ## 12. E-mails e comunicações
 

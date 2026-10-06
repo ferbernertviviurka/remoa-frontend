@@ -540,6 +540,19 @@ export const landing = {
     ogDescription: 'Mapas de medicina que te testam pela conexão.',
     orgName: 'Remoa',
     appCategory: 'EducationalApplication',
+    // /llms.txt (llmstxt.org): resumo do produto para assistentes de IA.
+    llms: {
+      summary: 'O Remoa é um app de estudo para a residência médica: o aluno monta mapas de cards conectados, revisa na hora certa com revisão espaçada (FSRS) e usa o próprio mapa como teste.',
+      details: 'Público: estudantes do 5º e 6º ano de medicina e médicos recém-formados que estudam para a residência. A primeira grande área é a Clínica Médica. Principais recursos: mapas de cards ligados por conexões com rótulo; fila diária "Revisar hoje"; modo "Desafiar este mapa" (card oculto, conexão, próximo passo, imagem e caso clínico); correção das respostas com fonte; cobertura da matriz do Enamed; importação de baralhos do Anki e de PDFs; mapas prontos com revisão editorial; revisão pelo celular. O conteúdo médico gerado por IA só é publicado depois de revisado por um médico.',
+      pages: 'Páginas',
+      blog: 'Blog',
+      optional: 'Optional',
+      blogIndex: 'Todos os artigos do blog',
+      feed: 'Feed RSS',
+      feedDescription: 'Os artigos mais recentes do blog.',
+      sitemap: 'Sitemap',
+      sitemapDescription: 'Todas as páginas públicas.',
+    },
   },
 
   // Keep existing keys from F12 stub (do not remove)

@@ -26,6 +26,12 @@ async function block(page: Page, name: string) {
   await page.getByRole('button', { name: 'Adicionar bloco' }).click();
   await page.getByRole('menuitem', { name, exact: true }).click();
 }
+/** Radix returns focus to the menu trigger and the editor takes it back a tick later: typing before that drops the first characters. */
+async function typeInBlock(page: Page, name: string, text: string) {
+  await block(page, name);
+  await expect(page.locator('.ProseMirror:focus-within')).toBeVisible();
+  await page.keyboard.type(text);
+}
 const axe = async (page: Page) => {
   await page.waitForTimeout(800);
   const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).exclude('nextjs-portal').analyze();
@@ -33,7 +39,7 @@ const axe = async (page: Page) => {
 };
 
 test('editor: blocos, imagem com alt, links, autosave, sanitização, aba SEO, publicar e pré-visualizar', async ({ page, request }) => {
-  test.setTimeout(240_000);
+  test.setTimeout(Number(process.env.PW_T ?? 240_000));
   const a = await accountUser(page, request, 'Equipe Teste');
   psql(`update profiles set role = 'admin' where user_id = '${a.userId}'`);
   const title = `${PREFIX} ${Date.now()}`;
@@ -48,16 +54,11 @@ test('editor: blocos, imagem com alt, links, autosave, sanitização, aba SEO, p
   // --- blocos
   await editorBox(page).click();
   await page.keyboard.type('Introdução do artigo de teste do editor.');
-  await block(page, 'H2 (subtítulo)');
-  await page.keyboard.type('Primeira seção');
-  await block(page, 'H3 (subseção)');
-  await page.keyboard.type('Detalhe da seção');
-  await block(page, 'Lista');
-  await page.keyboard.type('Item um');
-  await block(page, 'Citação');
-  await page.keyboard.type('Uma citação importante');
-  await block(page, 'Destaque');
-  await page.keyboard.type('Texto do destaque');
+  await typeInBlock(page, 'H2 (subtítulo)', 'Primeira seção');
+  await typeInBlock(page, 'H3 (subseção)', 'Detalhe da seção');
+  await typeInBlock(page, 'Lista', 'Item um');
+  await typeInBlock(page, 'Citação', 'Uma citação importante');
+  await typeInBlock(page, 'Destaque', 'Texto do destaque');
   await block(page, 'Botão');
   await page.getByLabel('Texto do botão').fill('Começar agora');
   await page.getByLabel('Endereço').first().fill('/cadastro');
@@ -73,7 +74,7 @@ test('editor: blocos, imagem com alt, links, autosave, sanitização, aba SEO, p
   await expect(dlg.getByRole('button', { name: 'Inserir' })).toBeDisabled();
   await dlg.getByLabel('Texto alternativo (obrigatório)').fill('Pixel de teste');
   await dlg.getByRole('button', { name: 'Inserir' }).click();
-  await expect(editorBox(page).locator('img[alt="Pixel de teste"]')).toBeVisible();
+  await expect(editorBox(page).locator('[data-blog-image] input[value="Pixel de teste"]')).toBeVisible();
 
   // --- links: interno e externo com nofollow
   await block(page, 'Parágrafo');
@@ -107,11 +108,12 @@ test('editor: blocos, imagem com alt, links, autosave, sanitização, aba SEO, p
   expect(edHtml).not.toContain('javascript:');
 
   // --- autosave e recarga
-  await expect(page.getByText('Salvo agora')).toBeVisible({ timeout: 30_000 });
+  await expect.poll(() => psql(`select content_json::text from blog_posts where id = '${post.id}'`), { timeout: 30_000 }).toContain('Colado seguro');
+  await expect(page.getByText('Salvo agora')).toBeVisible();
   await page.reload();
   await expect(editorBox(page)).toContainText('Primeira seção');
-  await expect(editorBox(page)).toContainText('Começar agora'.slice(0, 0) + 'Texto do destaque');
-  await expect(editorBox(page).locator('img[alt="Pixel de teste"]')).toBeVisible();
+  await expect(editorBox(page)).toContainText('Texto do destaque');
+  await expect(editorBox(page).locator('[data-blog-image] input[value="Pixel de teste"]')).toBeVisible();
   await expect(page.getByText('Salvo agora')).toBeVisible();
   expect(await axe(page), 'axe editor').toEqual([]);
 
@@ -119,9 +121,10 @@ test('editor: blocos, imagem com alt, links, autosave, sanitização, aba SEO, p
   await page.getByRole('tab', { name: 'SEO' }).click();
   const seoTitle = page.getByLabel('Título para o Google');
   await expect(page.getByText('0/60')).toBeVisible();
-  await seoTitle.fill('Como estudar para a residência médica com mapas');
-  await expect(page.getByText('46/60')).toBeVisible();
-  await expect(page.getByRole('group', { name: 'Como aparece no Google' })).toContainText('Como estudar para a residência médica com mapas');
+  const SEO = 'Como estudar para a residência médica com mapas';
+  await seoTitle.fill(SEO);
+  await expect(page.getByText(`${SEO.length}/60`)).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Como aparece no Google' })).toContainText(SEO);
   const slug = page.getByLabel('Endereço (slug)');
   await slug.fill('Título Com Acento & Espaço');
   await expect(slug).toHaveValue('titulo-com-acento-espaco');
@@ -197,5 +200,5 @@ test('editor: imagem do conteúdo exige alt (o botão Inserir fica desligado sem
   await dlg.locator('input[type=file]').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: PNG });
   await expect(dlg.locator('img')).toBeVisible({ timeout: 30_000 });
   await expect(dlg.getByRole('button', { name: 'Inserir' })).toBeDisabled();
-  await expect(editorBox(page).locator('img')).toHaveCount(0);
+  await expect(editorBox(page).locator('[data-blog-image]')).toHaveCount(0);
 });
