@@ -20,6 +20,24 @@ export const blog = {
       postsPerPage: '12 artigos por página',
       readingTime: '{n, plural, one {# min de leitura} other {# min de leitura}}',
       continueReading: 'Continue lendo',
+      eyebrow: 'Blog',
+      lead: 'Guias, técnicas e rotinas para organizar o estudo, montar mapas e revisar na hora certa.',
+      searchLabel: 'Buscar no blog',
+      searchSubmit: 'Buscar',
+      categoriesLabel: 'Categorias',
+      paginationLabel: 'Paginação do blog',
+      prev: 'Anterior',
+      next: 'Próxima',
+      latest: 'Todos os artigos',
+      readPost: 'Ler o artigo',
+      seoTitle: 'Blog | Remoa',
+      seoDescription: 'Guias, técnicas e rotinas para organizar o estudo para a residência médica, montar mapas e revisar na hora certa.',
+      pageSeoTitle: 'Blog, página {n} | Remoa',
+    },
+    cta: {
+      title: 'Transforme o que você leu em um mapa.',
+      text: 'Crie seu primeiro mapa de graça e revise na hora certa.',
+      label: 'Criar meu primeiro mapa',
     },
 
     // /blog/[slug] — post individual
@@ -34,6 +52,13 @@ export const blog = {
         blog: 'Blog',
       },
       inThisArticle: 'Neste artigo',
+      inThisGuide: 'Neste guia',
+      tocLabel: 'Índice do artigo',
+      breadcrumbLabel: 'Você está em',
+      teamName: 'Equipe Remoa',
+      authorBio: 'Conteúdo editorial do Remoa para quem estuda medicina e prepara a residência.',
+      readingTime: '{n} min de leitura',
+      suggestionsTitle: 'Que tal ler um destes?',
       quickSummary: 'Resumo rápido',
       author: 'Escrito por',
       publishedAt: 'Publicado em',
@@ -48,6 +73,9 @@ export const blog = {
 
     // /blog/categoria/[slug]
     category: {
+      seoTitle: '{name} | Blog Remoa',
+      seoDescription: 'Artigos sobre {name} no blog do Remoa.',
+      empty: 'Ainda não há artigos nesta categoria.',
       postsInCategory: '{n, plural, one {# artigo} other {# artigos}} nesta categoria',
     },
   },
