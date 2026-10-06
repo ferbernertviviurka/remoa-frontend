@@ -18,7 +18,7 @@ test('revisar: painel da fila e estado vazio', async ({ page, request }) => {
   await page.goto('/app/revisar');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Vamos começar?');
   await settle(page);
-  if (process.platform === 'darwin') await expect(page).toHaveScreenshot('revisar-vazio.png', { mask: masks() });
+  if (process.platform === 'darwin') await expect(page).toHaveScreenshot('revisar-vazio.png', { mask: masks(), stylePath: 'e2e/visual/hide-dev-badge.css' });
   if (process.env.R1_SHOTS) await page.screenshot({ path: `${process.env.R1_SHOTS}/revisar-vazio-1440.png`, fullPage: true });
 
   await seedMock(request, headers, userId);
@@ -27,7 +27,7 @@ test('revisar: painel da fila e estado vazio', async ({ page, request }) => {
     await expect(page.getByRole('button', { name: /^Começar revisão · \d+$/ })).toBeVisible({ timeout: 3000 });
   }).toPass({ timeout: 90_000, intervals: [5_000] });
   await settle(page);
-  if (process.platform === 'darwin') await expect(page).toHaveScreenshot('revisar-pendente.png', { mask: masks() });
+  if (process.platform === 'darwin') await expect(page).toHaveScreenshot('revisar-pendente.png', { mask: masks(), stylePath: 'e2e/visual/hide-dev-badge.css' });
   if (process.env.R1_SHOTS) {
     await page.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 400) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 80)); } window.scrollTo(0, 0); });
     await page.waitForTimeout(2000);

@@ -94,3 +94,7 @@ export * from './map-mobile';
 export * from './calendar';
 // F26 Central de notificações (sino, popover, item, preferências).
 export * from './notifications';
+// F27 Blog (público, admin e páginas legais).
+export * from './blog';
+export * from './legal';
+export * from './autocomplete';

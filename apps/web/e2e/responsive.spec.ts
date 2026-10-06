@@ -14,7 +14,8 @@ const measure = (page: Page) =>
     const small = [...document.querySelectorAll(sel)]
       // Controles sr-only (radio dentro de <label>, link de pular) têm o alvo no rótulo / só aparecem com foco.
       // Exceção WCAG 2.5.8 (inline): link no meio de um texto corrido ("Já tem conta? Entrar") não precisa de 44 px.
-      .filter((e) => visible(e) && !e.matches('.sr-only, .peer.sr-only, [class*="focus:not-sr-only"]') && !(e.tagName === 'A' && getComputedStyle(e).display === 'inline'))
+      // P-360: marcas dos gráficos (heatmap 15x7, 14 barras num cartão de 390 px) são pequenas por desenho; a tabela "Ver como tabela" é o equivalente (WCAG 2.5.8).
+      .filter((e) => visible(e) && !e.matches('.sr-only, .peer.sr-only, [class*="focus:not-sr-only"], figure button[aria-label]') && !(e.tagName === 'A' && getComputedStyle(e).display === 'inline'))
       .map((e) => {
         const r = e.getBoundingClientRect();
         return { el: `${e.tagName.toLowerCase()} "${(e.getAttribute('aria-label') ?? e.textContent ?? '').trim().slice(0, 30)}"`, w: Math.round(r.width), h: Math.round(r.height) };
@@ -59,19 +60,24 @@ test.describe('responsivo 390x844', () => {
     await check(page, 'hoje');
     await shot('m-hoje.png', [page.getByRole('heading', { level: 1 }), page.locator('h1').locator('xpath=preceding-sibling::span'), page.getByRole('region', { name: 'Sua semana' }), page.getByRole('region', { name: 'Próximas revisões' })]); // P-082
 
-    // bottom-nav: mesmos destinos do trilho, badge do Revisar, sem cobrir o fim da página
-    const nav = page.getByRole('navigation', { name: 'Navegação inferior' });
-    for (const n of ['Mapas', 'Revisar', 'Enamed', 'Loja', 'Conta']) await expect(nav.getByRole('link', { name: new RegExp(n) })).toBeVisible();
-    await expect(nav.getByRole('link', { name: /Hoje/ })).toHaveCount(0);
+    // menu hambúrguer: mesmos destinos do trilho, sem bottom bar
+    await expect(page.locator('nav[aria-label="Navegação inferior"]')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Abrir menu' }).click();
+    const nav = page.getByRole('dialog').getByRole('navigation');
+    for (const n of ['Hoje', 'Mapas', 'Revisar', 'Enamed', 'Progresso', 'Loja', 'Conta']) await expect(nav.getByRole('link', { name: new RegExp(n) })).toBeVisible();
+    await page.keyboard.press('Escape');
     await expect(page.locator('header').getByRole('link', { name: 'Remoa, ir para Hoje' })).toBeVisible();
-    await expect(page.locator('header').getByRole('link', { name: 'Progresso' })).toBeVisible();
-    await expect(nav.getByRole('link', { name: /Revisar/ })).toHaveAccessibleName(/\d/);
+    await expect(async () => { // hub cached 60 s on the API (a fetch before seedMock cached 0): reload until the badge shows
+      await page.reload();
+      await page.getByRole('button', { name: 'Abrir menu' }).click();
+      await expect(nav.getByRole('link', { name: /Revisar/ })).toHaveAccessibleName(/\d/, { timeout: 3000 });
+      await page.keyboard.press('Escape');
+    }).toPass({ timeout: 90_000, intervals: [5_000] });
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1500); // the page grows while sections stream in after a reload
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    const last = await page.evaluate(() => {
-      const aside = document.querySelector('aside')!.getBoundingClientRect();
-      return { bottom: aside.bottom + scrollY, nav: document.querySelector('nav[aria-label="Navegação inferior"]')!.getBoundingClientRect().height };
-    });
-    expect(last.bottom).toBeLessThanOrEqual(await page.evaluate(() => scrollY + innerHeight - 0) - last.nav);
+    const bottom = await page.evaluate(() => document.querySelector('aside')!.getBoundingClientRect().bottom + scrollY);
+    expect(bottom).toBeLessThanOrEqual(await page.evaluate(() => scrollY + innerHeight));
     await dump(page, 'hoje');
 
     await page.goto('/app/mapas');

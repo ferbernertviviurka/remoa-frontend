@@ -15,6 +15,7 @@ const paths = {
   minus: <><path d="M5 12h14" /></>,
   left: <><path d="M19 12H5M11 6l-6 6 6 6" /></>,
   right: <><path d="M5 12h14M13 6l6 6-6 6" /></>,
+  menu: <><path d="M4 6h16M4 12h16M4 18h16" /></>,
   close: <><path d="M6 6l12 12M18 6L6 18" /></>,
   cursor: <><path d="M5 3l14 7-6 2-2 6z" /></>,
   move: <><path d="M12 2v20M2 12h20M8 6l4-4 4 4M8 18l4 4 4-4M6 8l-4 4 4 4M18 8l4 4-4 4" /></>,

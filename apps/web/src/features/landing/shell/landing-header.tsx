@@ -51,7 +51,8 @@ function useSignedIn() {
 }
 
 /** `signedIn` (D-320): who already has a session gets one CTA back into the app instead of "Entrar", plus the avatar (links to the account). */
-export function LandingHeader({ phase, signedIn: signedInProp = false, account: accountProp }: { phase: LaunchPhase; signedIn?: boolean; account?: HeaderAccount | null }) {
+/** `blogLabel` comes from the server layout: the client strings subset (D-535) does not carry the blog dictionary. */
+export function LandingHeader({ phase, blogLabel, signedIn: signedInProp = false, account: accountProp }: { phase: LaunchPhase; blogLabel: string; signedIn?: boolean; account?: HeaderAccount | null }) {
   const session = useSignedIn();
   const signedIn = signedInProp || session.signedIn;
   const account = accountProp ?? session.account;
@@ -74,7 +75,7 @@ export function LandingHeader({ phase, signedIn: signedInProp = false, account: 
   return (
     <SiteHeader
       brand={<Link href={signedIn ? '/app/hoje' : '/'} aria-label={t(signedIn ? 'landing.nav.wordmark.ariaApp' : 'landing.nav.wordmark.aria')} className="inline-flex min-h-11 items-center no-underline"><Logo size={30} withWordmark /></Link>}
-      links={ANCHORS.map(([id, key]) => ({ href: `#${id}`, label: t(key), active: active === id }))}
+      links={[...ANCHORS.map(([id, key]) => ({ href: `/#${id}`, label: t(key), active: active === id })), { href: '/blog', label: blogLabel }]}
       menuLabel={t('landing.nav.menu.aria')}
       navLabel={t('landing.nav.navLabel')}
       actions={signedIn ? <>

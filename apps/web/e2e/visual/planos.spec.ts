@@ -25,6 +25,7 @@ async function freeLikeMock(page: Page, request: Parameters<typeof planUser>[1])
 
 async function shot(page: Page, name: string, idle = true) {
   if (idle) await page.waitForLoadState('networkidle'); // não com o checkout pendurado (redirecionando)
+  await page.evaluate(() => document.fonts.ready);
   await page.evaluate(() => scrollTo(0, 0));
   await page.mouse.move(2, 2);
   await page.waitForTimeout(1600); // slide 450 ms + cascata 70 ms + barras 900 ms
@@ -32,12 +33,13 @@ async function shot(page: Page, name: string, idle = true) {
     page.getByText(/Próxima cobrança em/), // data relativa ao dia
     page.locator('dl dd').filter({ hasText: /de 20\d\d$/ }), // "Renova em"
     page.locator('nextjs-portal'),
+    page.getByRole('navigation', { name: 'Principal' }).getByRole('link', { name: /Revisar/ }), // badge = default queue (hub cached 60 s on the API: present or not)
   ];
   if (process.env.SAVE_PAIRS) {
     mkdirSync(PAIRS, { recursive: true });
     await page.screenshot({ path: join(PAIRS, `app-${name}.png`), animations: 'disabled' });
   }
-  await expect(page).toHaveScreenshot(`planos-${name}.png`, { mask: volatile, animations: 'disabled', maxDiffPixelRatio: 0.02 });
+  await expect(page).toHaveScreenshot(`planos-${name}.png`, { mask: volatile, animations: 'disabled', stylePath: 'e2e/visual/hide-dev-badge.css', maxDiffPixelRatio: 0.02 });
 }
 
 test('visual planos: Free, anual + fundador, Pro, redirecionando e sucesso', async ({ page, request }) => {
@@ -65,9 +67,12 @@ test('visual planos: Free, anual + fundador, Pro, redirecionando e sucesso', asy
   await page.unroute('**/v1/billing/checkout');
 
   // sucesso: o checkout mock completa o cartão e o retorno mostra o diálogo sobre a página já Pro
-  const { url } = await createSession(request, (await planUserHeaders(page)), { period: 'monthly', method: 'card' });
-  await page.goto(url);
-  await expect(page.getByRole('dialog', { name: 'Você agora é Pro.' })).toBeVisible();
+  // P-362: the API's mock checkout intermittently answers 500 (pg_advisory_xact_lock "grant:<user>" fails after ~1 s, backend); a new session retries it
+  await expect(async () => {
+    const { url } = await createSession(request, (await planUserHeaders(page)), { period: 'monthly', method: 'card' });
+    await page.goto(url);
+    await expect(page.getByRole('dialog', { name: 'Você agora é Pro.' })).toBeVisible({ timeout: 10_000 });
+  }).toPass({ timeout: 60_000 });
   await shot(page, 'sucesso');
 
   await page.goto('/app/planos');

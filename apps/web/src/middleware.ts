@@ -9,6 +9,7 @@ const isProtected = (path: string) => ['/app', '/admin'].some((p) => path === p 
 const isAuthForm = (path: string) => path === '/entrar' || path === '/cadastro';
 
 export async function middleware(request: NextRequest) {
+  request.headers.set('x-remoa-path', request.nextUrl.pathname + request.nextUrl.search); // read by requireCompleteProfile (G20)
   let response = NextResponse.next({ request });
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     cookies: {

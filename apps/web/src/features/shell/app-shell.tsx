@@ -3,7 +3,7 @@ import type { AccountSnapshot, BoardSummary, Entitlements, ReviewHub, UpcomingEv
 import { t } from "@remoa/strings";
 import { Logo } from "@remoa/ui";
 import { serverApi } from "@/lib/api/server";
-import { BottomNav } from "./bottom-nav";
+import { MobileMenu } from "./mobile-menu";
 import { EntitlementsProvider } from "./entitlements";
 import { Navbar, RailSlot } from "./navbar";
 import { NotificationBell, NotificationsProvider } from "@/features/notifications";
@@ -51,10 +51,8 @@ export async function AppShell({ children }: { children: ReactNode }) {
           <span className="ml-auto flex items-center gap-2">
             <PaletteButton compact />
             <NotificationBell />
+            <MobileMenu dueTotal={dueTotal} isAdmin={me?.isAdmin ?? false} />
           </span>
-          <PendingLink href="/app/progresso" className="inline-flex min-h-11 items-center text-sm font-semibold text-ink no-underline">
-            {t("shell.nav.progress")}
-          </PendingLink>
         </header>
         <div className="sticky top-0 z-20 hidden md:block">
           <Navbar account={account} />
@@ -63,10 +61,9 @@ export async function AppShell({ children }: { children: ReactNode }) {
           <RailSlot>
             <Rail dueTotal={dueTotal} calendarSoon={upcoming} isAdmin={me?.isAdmin ?? false /* F19 FR-11, D-471: cosmetic; /v1/admin/* re-checks */} />
           </RailSlot>
-          <main className="min-w-0 flex-1 p-4 pb-[calc(72px+env(safe-area-inset-bottom))] md:p-6 md:pb-6">
+          <main className="min-w-0 flex-1 p-4 md:p-6">
             <MainSlot>{children}</MainSlot>
           </main>
-          <BottomNav dueTotal={dueTotal} />
         </div>
       </div>
       <ChallengeTourHost />

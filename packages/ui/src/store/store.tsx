@@ -6,6 +6,7 @@ import type { ComponentType } from 'react';
 import { focusRing, pressable } from '../button-styles';
 import { Icon } from '../icons';
 import { Logo } from '../logo';
+import { Morph } from '../morph';
 
 /** Selo EM BREVE com brilho contínuo (3 s). `tone="dark"` (aviso) é chapado em panel-dark; o padrão é damasco sobre fundo escuro. */
 export function SoonSeal({ children, tone = 'apricot' }: { children: ReactNode; tone?: 'apricot' | 'dark' }) {
@@ -139,14 +140,14 @@ export function SplitSimulator({ priceLabel, price, onPriceChange, sellerPct, fo
           <path d="M2 68C24 68 24 108 50 108" className="st-flow stroke-navy" markerEnd={`url(#${id}-b)`} />
         </svg>
         <span className="flex flex-col gap-6">
-          <span className="flex items-center gap-1.5 sm:gap-2"><span aria-hidden="true" className={`${node} !bg-primary`}>{labels.you}</span><span className="flex flex-col leading-tight"><span className="font-display text-lg font-extrabold tabular-nums sm:text-xl">{formatMoney(seller / 100)}</span><span className="text-xs text-muted">{labels.seller}</span></span></span>
-          <span className="flex items-center gap-1.5 sm:gap-2"><span aria-hidden="true" className={node}><Logo onDark size={28} /></span><span className="flex flex-col leading-tight"><span className="font-display text-lg font-extrabold tabular-nums sm:text-xl">{formatMoney(platform / 100)}</span><span className="text-xs text-muted">{labels.platform}</span></span></span>
+          <span className="flex items-center gap-1.5 sm:gap-2"><span aria-hidden="true" className={`${node} !bg-primary`}>{labels.you}</span><span className="flex flex-col leading-tight"><span className="font-display text-lg font-extrabold tabular-nums sm:text-xl"><Morph>{formatMoney(seller / 100)}</Morph></span><span className="text-xs text-muted">{labels.seller}</span></span></span>
+          <span className="flex items-center gap-1.5 sm:gap-2"><span aria-hidden="true" className={node}><Logo onDark size={28} /></span><span className="flex flex-col leading-tight"><span className="font-display text-lg font-extrabold tabular-nums sm:text-xl"><Morph>{formatMoney(platform / 100)}</Morph></span><span className="text-xs text-muted">{labels.platform}</span></span></span>
         </span>
       </div>
       <div className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between">
           <label htmlFor={id} className="font-bold">{priceLabel}</label>
-          <output htmlFor={id} className="font-display text-2xl font-extrabold tabular-nums">{formatMoney(price)}</output>
+          <output htmlFor={id} className="font-display text-2xl font-extrabold tabular-nums"><Morph>{formatMoney(price)}</Morph></output>
         </div>
         <input
           id={id}

@@ -22,6 +22,9 @@ export const adminGet = <T>(path: string, params?: Record<string, string | numbe
 /** POST /v1/admin/<path> with a JSON body (actions carry `{ reason }`). Prefer `runAdminAction` from the client. */
 export const adminPost = <T>(path: string, body: unknown): Promise<Result<T>> => serverApi<T>(`/v1/admin${path}`, { method: 'POST', body: JSON.stringify(body) });
 
+/** Same as adminPost for DELETE / PATCH (F27 blog delete and autosave). Prefer `runAdminRequest` from the client. */
+export const adminRequest = <T>(method: 'POST' | 'PATCH' | 'DELETE', path: string, body: unknown): Promise<Result<T>> => serverApi<T>(`/v1/admin${path}`, { method, body: JSON.stringify(body) });
+
 /** Only these API codes mean "not an admin"; anything else (rate_limited, 5xx, network) is transient and must not look like a 404. */
 const NOT_ADMIN = new Set(['forbidden', 'not_found', 'unauthorized']);
 

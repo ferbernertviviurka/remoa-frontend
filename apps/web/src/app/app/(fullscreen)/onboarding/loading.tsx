@@ -1,5 +1,5 @@
-import { PageSkeleton } from '@/features/shell/skeletons';
+import { OnboardingSkeleton } from '@/features/onboarding/onboarding-skeleton';
 
 export default function Loading() {
-  return <PageSkeleton />;
+  return <OnboardingSkeleton />;
 }

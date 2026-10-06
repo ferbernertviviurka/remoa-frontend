@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { accountUser } from './account/fixture';
 import { fillAbout, formReady } from './sign-up';
 import AxeBuilder from '@axe-core/playwright';
 
@@ -8,7 +9,7 @@ const axe = async (page: Page) => {
   return r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`);
 };
 
-test('onboarding: cadastro novo cai nos 4 passos, "em branco" leva ao Novo mapa e a segunda visita não redireciona', async ({ page }) => {
+test('onboarding: cadastro novo cai nos 6 passos, "em branco" leva ao Novo mapa e a segunda visita não redireciona', async ({ page }) => {
   await page.goto('/cadastro');
   await formReady(page);
   await page.getByLabel('E-mail').fill(`e2e-onb-${Date.now()}@remoa.test`);
@@ -19,9 +20,17 @@ test('onboarding: cadastro novo cai nos 4 passos, "em branco" leva ao Novo mapa 
   await page.getByRole('button', { name: 'Criar conta' }).click();
 
   await expect(page).toHaveURL(/\/app\/onboarding$/);
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Em que momento você está?');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Conte quem você é'); // "Você é?" saiu do cadastro: 1º passo
   expect(await axe(page)).toEqual([]);
+  await page.getByRole('button', { name: 'Aluno' }).click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Em que momento você está?');
   await page.getByRole('button', { name: '5º–6º ano' }).click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  // G20: instituição de ensino, da lista (busca sem acento pela sigla/cidade)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Onde você estuda (ou estudou)?');
+  await page.getByLabel('Instituição de ensino').fill('sao paulo');
+  await page.getByRole('option').first().click();
   await page.getByRole('button', { name: 'Continuar' }).click();
   await page.getByRole('button', { name: 'Enamed 2027.1' }).click();
   await page.getByRole('button', { name: 'USP' }).click(); // G14 13: mais de um objetivo
@@ -43,4 +52,33 @@ test('onboarding: cadastro novo cai nos 4 passos, "em branco" leva ao Novo mapa 
   await expect(page.getByText('Instalar no celular')).toBeVisible();
   await page.goto('/app/onboarding');
   await expect(page).toHaveURL(/\/app\/hoje$/);
+});
+
+test('G20: conta sem nome, telefone e tipo é levada ao passo "Conte quem você é" e volta ao destino', async ({ page, request }) => {
+  test.setTimeout(90_000);
+  await accountUser(page, request, null, false);
+  await page.goto('/app/mapas');
+  await expect(page).toHaveURL(/\/app\/onboarding\?next=%2Fapp%2Fmapas$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Conte quem você é');
+  expect(await axe(page)).toEqual([]);
+  await expect(page.getByRole('button', { name: 'Continuar' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Pular por enquanto' })).toHaveCount(0); // não dá para pular
+  await page.getByLabel('Nome').fill('Marina Alves');
+  await page.getByLabel('Telefone').fill('11912345678');
+  await page.getByRole('button', { name: 'Professor' }).click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Em que momento você está?'); // onboarding ainda não feito: segue
+});
+
+test('G20: "Não estudo medicina" e instituição em texto livre', async ({ page, request }) => {
+  test.setTimeout(90_000);
+  await accountUser(page, request); // name, phone and userType already set
+  await page.goto('/app/onboarding');
+  await page.getByRole('button', { name: 'Não estudo medicina' }).click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Qual instituição de ensino?');
+  await page.getByLabel('Instituição de ensino').fill('Escola Técnica Exemplo');
+  await page.getByRole('option', { name: /Usar “Escola Técnica Exemplo”/ }).click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Quais são os seus objetivos?');
 });

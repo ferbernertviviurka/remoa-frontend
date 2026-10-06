@@ -17,7 +17,7 @@ test('válido: mostra quem convidou, grava rf (httpOnly, 30 dias) e é noindex',
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Ganhe 1 mês de Pro ao criar seu primeiro mapa.');
   await expect(page.getByText('Ana também ganha 1 mês de Pro quando você criar o primeiro mapa.')).toBeVisible();
   await expect(page.getByText('Seu nome aparece para quem convidou você')).toBeVisible();
-  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
+  await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute('content', /noindex/);
   await expect.poll(() => rfCookie(page)).toMatchObject({ value: code, httpOnly: true, sameSite: 'Lax' });
   expect(((await rfCookie(page))!.expires - Date.now() / 1000) / 86_400).toBeGreaterThan(29);
   expect(await axe(page)).toEqual([]);

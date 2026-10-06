@@ -109,6 +109,7 @@ describe('InviteView', () => {
   afterEach(cleanup);
 
   async function fill() {
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Ana Maria' } });
     fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'a@b.co' } });
     fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'senha-forte-123' } });
     fireEvent.click(screen.getByRole('button', { name: /Criar conta/ }));

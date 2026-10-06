@@ -46,7 +46,13 @@ describe('ColumnChart', () => {
     expect(t.getAttribute('aria-expanded')).toBe('false');
     await userEvent.click(t);
     expect(t.getAttribute('aria-expanded')).toBe('true');
-    expect(screen.getByRole('table').className).not.toContain('sr-only');
+    expect(screen.getByRole('table').closest('.sr-only')).toBeNull();
+  });
+  it('hides the table in an sr-only wrapper (not on the table itself, which would overflow)', () => {
+    render(<ColumnChart {...props} tableToggleLabel="Ver como tabela" />);
+    const t = screen.getByRole('table');
+    expect(t.className).not.toContain('sr-only');
+    expect(t.parentElement?.className).toContain('sr-only');
   });
   it('rounds axis to a multiple of 5 and shows empty text', () => {
     render(<ColumnChart {...props} items={forecast.map((i) => ({ ...i, value: 0 }))} emptyText="Nada previsto" />);

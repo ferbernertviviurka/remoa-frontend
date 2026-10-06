@@ -293,7 +293,7 @@ test.describe('celular 390x844 (toque)', () => {
     await expect(panel(page)).toBeVisible();
     await expect.poll(() => panel(page).evaluate((el) => el.getAnimations().every((a) => a.playState === 'finished'))).toBe(true); // G06: the sheet slides up first
     const pb = (await panel(page).boundingBox())!;
-    expect(Math.abs(pb.y + pb.height - 844), 'sheet encostada embaixo').toBeLessThanOrEqual(80); // bottom-nav safe area
+    expect(Math.abs(pb.y + pb.height - 844), 'sheet encostada embaixo').toBeLessThanOrEqual(80);
     expect(pb.height / 844, 'sheet ~55%').toBeGreaterThan(0.4);
     expect(pb.height / 844).toBeLessThan(0.7);
     expect(await axe(page), 'bottom sheet').toEqual([]);

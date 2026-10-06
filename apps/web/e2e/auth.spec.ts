@@ -23,8 +23,7 @@ test('cadastro, logout e login', async ({ page }) => {
   await page.getByRole('button', { name: 'Voltar' }).click();
   await expect(page.getByLabel('E-mail')).toHaveValue(email); // voltar não perde o digitado
   await page.getByRole('button', { name: 'Continuar' }).click();
-  await page.getByRole('button', { name: 'Continuar' }).click(); // sem tipo de usuário: fica no passo
-  await expect(page.getByText('Escolha uma opção para continuar.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continuar' })).toBeDisabled(); // G20: nome e telefone obrigatórios
   await fillAbout(page);
   await page.getByRole('button', { name: 'Criar conta' }).click();
   await expect(page.getByText(/marque que você concorda/)).toBeVisible();
@@ -67,7 +66,6 @@ test('cadastro G14: dados pessoais com máscara, CEP no ViaCEP (mock), consentim
   await page.getByLabel('E-mail').fill(`e2e-g14-${Date.now()}@remoa.test`);
   await page.getByLabel('Senha').fill(password);
   await page.getByRole('button', { name: 'Continuar' }).click();
-  await page.getByRole('radio', { name: 'Professor' }).click();
   await page.getByLabel('Telefone (opcional)').fill('11912345678');
   await expect(page.getByLabel('Telefone (opcional)')).toHaveValue('(11) 91234-5678');
   await page.getByLabel('CEP').fill('99999999');
@@ -95,5 +93,4 @@ test('cadastro G14: dados pessoais com máscara, CEP no ViaCEP (mock), consentim
   await page.goto('/app/conta/perfil');
   await expect(page.getByLabel('Telefone (opcional)')).toHaveValue('(11) 91234-5678');
   await expect(page.getByLabel('Logradouro')).toHaveValue('Avenida Paulista');
-  await expect(page.getByRole('radio', { name: 'Professor' })).toBeChecked();
 });

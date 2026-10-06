@@ -14,7 +14,7 @@ import {
 } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import {
-  Button, CanvasToolbar, Dialog, Input, LayerSwitch, Legend, stepZoom, ZOOM_MAX, ZOOM_MIN, ZoomControl,
+  Button, CanvasToolbar, CompactMapHeader, Dialog, Input, LayerSwitch, Legend, stepZoom, ZOOM_MAX, ZOOM_MIN, ZoomControl,
   useToast, type CommandItem, type NodeLayer, type ToolbarItem,
 } from '@remoa/ui';
 import { previewOf } from '@/features/cards/draft';
@@ -61,7 +61,7 @@ type Insets = { top: number; left: number; right: number; bottom: number };
  * A map that fits at 100% lands where the mock draws it (top 120, left 64).
  */
 function freeArea(panel: boolean, paneHeight = 0, challenge = false): Insets {
-  if (isPhone()) return { top: challenge ? 16 : 72, left: 16, right: 16, bottom: panel ? Math.round(paneHeight * 0.55) + 16 : 96 };
+  if (isPhone()) return { top: challenge ? 76 : 72, left: 16, right: 16, bottom: panel ? Math.round(paneHeight * 0.55) + 16 : 96 };
   return { top: 120, left: 64, right: panel ? 432 : 64, bottom: 200 };
 }
 const fitOptions = (panel: boolean): FitViewOptions => {
@@ -845,6 +845,12 @@ function Canvas({ data }: { data: BoardGraph }) {
           </ReactFlow>
           {focusNode ? <FocusLayer node={focusNode} /> : null}
         </CanvasContext.Provider>
+        {mode === 'challenge' ? (
+          // F23: the phone challenge shares the phone map's header pill (exit instead of the menu) and sheet margins
+          <div className="absolute inset-x-3 top-[calc(12px+env(safe-area-inset-top))] z-30 md:hidden">
+            <CompactMapHeader title={board.title} statusText={t('editor.challenge')} menuLabel={t('quiz.exit')} onMenu={() => setMode('explore')} searchLabel={t('mapMobile.header.searchLabel')} />
+          </div>
+        ) : null}
         {/* D-0xx T5: the legend follows the layer bar (the mock's fixed left: 400px covered "Cobertura"). Phone: one scrollable row. */}
         <div
           className={`pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center gap-3 overflow-x-auto p-4 md:right-auto md:p-5 [&>*]:pointer-events-auto [&>*]:shrink-0 ${
@@ -886,7 +892,7 @@ function Canvas({ data }: { data: BoardGraph }) {
         <div
           ref={panelWrap}
           onAnimationEnd={(e) => /^cv-(panel|sheet)-in$/.test(e.animationName) && focusPanel()}
-          className={`pointer-events-none absolute inset-x-0 bottom-[calc(72px+env(safe-area-inset-bottom))] z-20 md:inset-x-auto md:bottom-5 md:right-5 md:top-5 md:h-auto [&>aside]:pointer-events-auto [&>aside]:max-md:w-full [&>aside]:max-md:rounded-b-none ${mode === 'challenge' ? 'h-[78%]' : 'h-[55%]'}`}
+          className={`pointer-events-none absolute inset-x-3 bottom-[calc(72px+env(safe-area-inset-bottom))] z-20 md:inset-x-auto md:bottom-5 md:right-5 md:top-5 md:h-auto [&>aside]:pointer-events-auto [&>aside]:max-md:w-full [&>aside]:max-md:rounded-b-none ${mode === 'challenge' ? 'h-[78%]' : 'h-[55%]'}`}
         >
             <Inspector
               board={board}

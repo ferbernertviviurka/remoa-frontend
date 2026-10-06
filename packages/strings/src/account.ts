@@ -118,6 +118,7 @@ export const account = {
       cursinho: 'Estudando só para a prova',
       resident: 'Residente',
       working: 'Médico em atividade',
+      notMed: 'Não estudo medicina',
     },
     timezone: 'Fuso horário',
     timezoneValue: 'Brasília (GMT−3)',

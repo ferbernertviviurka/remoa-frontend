@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supportErrors, type SupportTicketDetail, type SupportTicketStatus, type SupportTicketSummary } from '@remoa/contracts';
 import { t } from '@remoa/strings';
-import { Button, StatusPill, Textarea, Thread, TicketList, type StatusTone, type ThreadMessage } from '@remoa/ui';
+import { Button, SkeletonBlock, SkeletonRegion, StatusPill, Textarea, Thread, TicketList, type StatusTone, type ThreadMessage } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { getMyTicket, listMyTickets, markTicketRead, replyToTicket } from './api';
 import { typeText } from './support-form';
@@ -33,7 +33,7 @@ export function MyTickets({ openId, onOpenIdChange, onUnreadChange, reloadKey }:
 
   if (openId) return <TicketDetail id={openId} onBack={() => onOpenIdChange(null)} onRead={onUnreadChange} />;
   if (failed) return <p role="alert" className="m-0 px-7 py-8 text-center text-muted">{t('support.errors.fetchTickets')}</p>;
-  if (!list) return <p role="status" className="m-0 px-7 py-8 text-center text-muted">{t('support.errors.loading')}</p>;
+  if (!list) return <TicketsSkeleton />;
   return (
     <div className="px-[22px] py-[18px]">
       <TicketList
@@ -46,6 +46,25 @@ export function MyTickets({ openId, onOpenIdChange, onUnreadChange, reloadKey }:
         }))}
       />
     </div>
+  );
+}
+
+/** Mirrors TicketList rows (subject + meta line + status pill) while the list loads. */
+function TicketsSkeleton() {
+  return (
+    <SkeletonRegion label={t('support.errors.loading')}>
+      <div className="flex flex-col gap-3 px-[22px] py-[18px]">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center justify-between gap-4 rounded-list border border-border px-4 py-3.5">
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <SkeletonBlock width="70%" height={16} />
+              <SkeletonBlock width="45%" height={12} />
+            </div>
+            <SkeletonBlock width={72} height={24} radius={999} />
+          </div>
+        ))}
+      </div>
+    </SkeletonRegion>
   );
 }
 

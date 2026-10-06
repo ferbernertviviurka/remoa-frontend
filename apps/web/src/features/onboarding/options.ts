@@ -10,6 +10,7 @@ export const SEGMENTS: ReadonlyArray<{ id: Segment; label: StringKey }> = [
   { id: 'cursinho', label: 'account.profile.stageOptions.cursinho' },
   { id: 'resident', label: 'account.profile.stageOptions.resident' },
   { id: 'working', label: 'account.profile.stageOptions.working' },
+  { id: 'not_med', label: 'account.profile.stageOptions.notMed' },
 ];
 
 export const GOAL_GROUPS: ReadonlyArray<{ title: StringKey; goals: ReadonlyArray<{ id: Goal; label: StringKey }> }> = [

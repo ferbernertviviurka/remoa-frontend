@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { emailSchema, goalsSchema, isValidName, normalizeName, stageSchema, ACCOUNT_LIMITS, MAX_GOALS, type Goal, type Stage } from '@remoa/contracts';
+import { emailSchema, MEDICAL_SCHOOLS, type OnboardingState, goalsSchema, isValidName, normalizeName, stageSchema, ACCOUNT_LIMITS, MAX_GOALS, type Goal, type Stage } from '@remoa/contracts';
 import { t } from '@remoa/strings';
-import { Alert, Avatar, Button, ChoiceChip, ChoiceChipMulti, Icon, InlineField, Input, Pill, useToast } from '@remoa/ui';
+import { Alert, Autocomplete, type AutocompleteValue, Avatar, Button, ChoiceChip, ChoiceChipMulti, Icon, InlineField, Input, Pill, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { useAccount } from '../shell/account-context';
@@ -15,6 +15,7 @@ import { usePhotoDialog } from './photo-dialog';
 import { PersonalCard } from './personal-card';
 import { TimezoneRow } from './timezone-row';
 
+const SCHOOL_OPTIONS = MEDICAL_SCHOOLS.map((s) => ({ value: s.id, label: s.name, hint: `${s.city} · ${s.uf}`, keywords: s.acronym ? [s.acronym] : [] }));
 const patchProfile = (body: object) => api('/v1/account/profile', { method: 'PATCH', body: JSON.stringify(body) });
 
 function NameForm({ close }: { close: () => void }) {
@@ -127,7 +128,7 @@ export const goalGroups = () =>
   ];
 const st = (value: Stage, key: string) => ({ value, label: t(`account.profile.stageOptions.${key}` as 'account.profile.stageOptions.y34') });
 // earliest to latest
-export const stageOptions = () => [st('y1_2', 'y12'), st('y3_4', 'y34'), st('y5_6', 'y56'), st('graduated', 'graduate'), st('cursinho', 'cursinho'), st('resident', 'resident'), st('working', 'working')];
+export const stageOptions = () => [st('y1_2', 'y12'), st('y3_4', 'y34'), st('y5_6', 'y56'), st('graduated', 'graduate'), st('cursinho', 'cursinho'), st('resident', 'resident'), st('working', 'working'), st('not_med', 'notMed')];
 
 export function ProfileSection() {
   const { account, setAccount } = useAccount();
@@ -151,6 +152,21 @@ export function ProfileSection() {
     window.history.replaceState(null, '', '/app/conta/perfil');
   }, [campo]);
 
+  // Onboarding answers fill what the profile row lacks (stage/goals are mirrored server-side; this covers a row that missed the mirror).
+  useEffect(() => {
+    if (profile.stage && profile.goals.length) return;
+    let live = true;
+    void api<OnboardingState>('/v1/onboarding').then((r) => {
+      if (!live || !r.ok) return;
+      const { segment, goals } = r.data.answers ?? {};
+      const g = goals ?? [];
+      if (!segment && !g.length) return;
+      setAccount((p) => ({ ...p, profile: { ...p.profile, stage: p.profile.stage ?? segment ?? null, ...(p.profile.goals.length || !g.length ? {} : { goals: g, goal: g[0] ?? null }) } }));
+    }).catch(() => null);
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (wait <= 0) return;
     const id = setTimeout(() => setWait((w) => w - 1), 1000);
@@ -165,6 +181,19 @@ export function ProfileSection() {
     setAccount((p) => ({ ...p, profile: { ...p.profile, ...next } }));
     try {
       const r = await patchProfile(patch);
+      if (!r.ok) throw new Error(r.error.code);
+      toast({ title: t('account.profile.studySaved') });
+    } catch {
+      setAccount((p) => ({ ...p, profile: { ...p.profile, ...prev } }));
+      fail();
+    }
+  }
+  /** G20 (D-843): institution is saved in one PATCH `institution` (null clears school and school_id). */
+  async function setInstitution(next: AutocompleteValue | null) {
+    const prev = { school: profile.school, schoolId: profile.schoolId };
+    setAccount((p) => ({ ...p, profile: { ...p.profile, school: next?.label ?? null, schoolId: next?.value ?? null } }));
+    try {
+      const r = await patchProfile({ institution: next ? { schoolId: next.value, name: next.label.trim() } : null });
       if (!r.ok) throw new Error(r.error.code);
       toast({ title: t('account.profile.studySaved') });
     } catch {
@@ -287,6 +316,21 @@ export function ProfileSection() {
             <ChoiceChip label={t('account.profile.stageLabel')} options={stageOptions()} value={profile.stage} onValueChange={(v) => { const st = stageSchema.safeParse(v); if (st.success && st.data !== profile.stage) void setStudy({ stage: st.data }); }} />
           </Row>
         </div>
+        <Row label={t('onboarding.institution.label')}>
+          <Autocomplete
+            label={t('onboarding.institution.label')}
+            placeholder={t('onboarding.institution.placeholder')}
+            options={SCHOOL_OPTIONS}
+            value={profile.school ? { value: profile.schoolId, label: profile.school } : null}
+            onValueChange={(v) => void setInstitution(v)}
+            allowCustom
+            customLabel={(text) => t('onboarding.institution.custom', { texto: text })}
+            emptyLabel={t('onboarding.institution.empty')}
+            moreLabel={(n) => t('onboarding.institution.more', { n })}
+            clearAriaLabel={t('onboarding.institution.clear')}
+            disabled={!online}
+          />
+        </Row>
         <TimezoneRow />
       </Card>
       <PersonalCard />

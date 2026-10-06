@@ -2,6 +2,9 @@
 import { expect, test } from '@playwright/test';
 import { API, signUpApi } from '../account/fixture';
 
+// /dev/emails is a dev-only page (404 in a production build): E2E_PROD=1 skips it
+test.skip(!!process.env.E2E_PROD, 'dev-only page');
+
 const rnd = () => `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
 test('prévia /dev/emails lista todas as versões e mostra o assunto de cada uma', async ({ page, request }) => {

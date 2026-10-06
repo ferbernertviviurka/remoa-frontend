@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import {
+  LEGAL_SIGNUP_META,
   normalizeReferralCode,
   magicLinkInputSchema as magicSchema,
   signInInputSchema as signInSchema,
@@ -12,8 +13,11 @@ import {
   type SignInInput,
   type SignUpInput,
 } from '@remoa/contracts';
+import { apiBase } from '@/lib/api/base';
+import { legalEnv } from '@/lib/env/legal';
 import { createClient } from '@/lib/supabase/server';
-import { APP_HOME, safeNext } from '@/lib/safe-next';
+import { ONBOARDING_HOME, safeNext } from '@/lib/safe-next';
+import { siteUrl } from '@/lib/site-url';
 
 export type AuthResult = { ok: true } | { ok: false; error: { code: ErrorCode; message: string } };
 const fail = (code: ErrorCode, message: string): AuthResult => ({ ok: false, error: { code, message } });
@@ -22,7 +26,7 @@ const invalid = () => fail('validation', 'invalid input');
 
 async function origin() {
   const h = await headers();
-  return h.get('origin') ?? `${h.get('x-forwarded-proto') ?? 'http'}://${h.get('host')}`;
+  return siteUrl(h.get('origin') ?? `${h.get('x-forwarded-proto') ?? 'http'}://${h.get('host')}`);
 }
 
 function fromSupabase(e: { status?: number; code?: string; message: string }): AuthResult {
@@ -30,6 +34,20 @@ function fromSupabase(e: { status?: number; code?: string; message: string }): A
   if (e.status === 429) return fail('rate_limited', e.message);
   if (e.status && e.status >= 500) return fail('internal', e.message);
   return fail('unauthorized', e.message);
+}
+
+/** D-913/D-952, P-416: versions accepted at sign-up, copied to the profile by handle_new_user. The API is the single source (it is who the trigger compares with);
+ * the web .env is only the fallback when the API does not answer. Omitted when unset. */
+async function legalMeta(): Promise<Record<string, string>> {
+  let { termsVersion, privacyVersion } = legalEnv();
+  try {
+    const res = await fetch(`${apiBase()}/v1/public/legal/versions`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(2_000) });
+    const d = res.ok ? ((await res.json()) as { data?: { termsVersion?: string; privacyVersion?: string } }).data : undefined;
+    if (d?.termsVersion && d.privacyVersion) ({ termsVersion, privacyVersion } = d as { termsVersion: string; privacyVersion: string });
+  } catch {
+    // fallback: the web env
+  }
+  return { ...(termsVersion ? { [LEGAL_SIGNUP_META.terms]: termsVersion } : {}), ...(privacyVersion ? { [LEGAL_SIGNUP_META.privacy]: privacyVersion } : {}) };
 }
 
 export async function signUp(input: SignUpInput): Promise<AuthResult> {
@@ -40,9 +58,18 @@ export async function signUp(input: SignUpInput): Promise<AuthResult> {
     email: p.data.email,
     password: p.data.password,
     // F24 FR-7: the confirmation link comes back through /auth/callback (Supabase appends ?code=).
-    options: { data: p.data.name ? { name: p.data.name } : undefined, emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(APP_HOME)}` },
+    options: { data: { ...(p.data.name ? { name: p.data.name } : {}), ...(await legalMeta()) }, emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(ONBOARDING_HOME)}` },
   });
-  return error ? fromSupabase(error) : { ok: true }; // local config has confirmations off: session is set immediately
+  return error ? fromSupabase(error) : { ok: true }; // confirmations off: session is set immediately
+}
+
+/** Re-sends the sign-up confirmation (same redirect as signUp). Provider errors other than rate limit are swallowed: no account enumeration. */
+export async function resendConfirmation(input: { email: string }): Promise<AuthResult> {
+  const p = magicSchema.pick({ email: true }).safeParse(input);
+  if (!p.success) return invalid();
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resend({ type: 'signup', email: p.data.email, options: { emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(ONBOARDING_HOME)}` } });
+  return error?.status === 429 ? fromSupabase(error) : { ok: true };
 }
 
 export async function signIn(input: SignInInput): Promise<AuthResult> {
@@ -59,7 +86,7 @@ export async function sendMagicLink(input: MagicLinkInput): Promise<AuthResult> 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email: p.data.email,
-    options: { emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(safeNext(p.data.next))}` },
+    options: { data: await legalMeta(), emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(safeNext(p.data.next))}` },
   });
   return error ? fromSupabase(error) : { ok: true };
 }

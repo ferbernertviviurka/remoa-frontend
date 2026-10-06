@@ -7,6 +7,7 @@ import { HeroSection } from './hero/hero-section';
 import { CompareSection } from './plans/compare-section';
 import { planFacts } from './plans/plan-facts';
 import { HowSection, MoreSection, ProblemSection, ReadyMarquee } from './sections/sections';
+import { LandingBlog } from './blog/landing-blog';
 import { LandingAnalytics } from './shell/landing-analytics';
 import { buildFaqItems } from './shell/faq';
 import { loadPublicPriceBook } from './shell/pricebook';
@@ -37,6 +38,7 @@ export async function LandingPage({ h1, variant }: { h1: H1Variant; variant: '29
       <CompareSection />
       {priceBook ? <PlansIsland priceBook={priceBook} flags={flags} facts={planFacts(priceBook)} /> : <Section id="planos" title={t('landing.plans.title')} lead={t('landing.plans.unavailable')} />}
       <FaqIsland items={faqItems} />
+      <LandingBlog />
       <WaitlistIsland phase={flags.launchPhase} variant={variant} />
     </>
   );

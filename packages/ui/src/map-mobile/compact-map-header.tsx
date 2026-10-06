@@ -28,7 +28,8 @@ export type CompactMapHeaderProps = {
   menuLabel: string;
   onMenu: () => void;
   searchLabel: string;
-  onSearchOpen: () => void;
+  /** Sem `onSearchOpen` o botão de busca some (ex.: header do desafio no celular). */
+  onSearchOpen?: () => void;
   searchOpen?: boolean;
   searchPlaceholder?: string;
   query?: string;
@@ -72,7 +73,7 @@ export function CompactMapHeader(p: CompactMapHeaderProps) {
               ) : null}
             </span>
           </div>
-          <button type="button" aria-label={p.searchLabel} onClick={p.onSearchOpen} className={btn}><MapGlyph name="search" /></button>
+          {p.onSearchOpen ? <button type="button" aria-label={p.searchLabel} onClick={p.onSearchOpen} className={btn}><MapGlyph name="search" /></button> : null}
         </>
       )}
     </header>

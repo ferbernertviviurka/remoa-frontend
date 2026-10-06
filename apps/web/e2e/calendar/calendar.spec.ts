@@ -67,7 +67,10 @@ test('criar com imagem, ver em Hoje, desligar um aviso e excluir', async ({ page
   await modal.locator('input[type=file]').first().setInputFiles({ name: 'edital.png', mimeType: 'image/png', buffer: PNG });
   await expect(modal.getByRole('img', { name: 'Prévia da capa em 16:9' })).toBeVisible();
   await expect(modal.getByRole('button', { name: 'Salvar compromisso' })).toBeEnabled({ timeout: 30_000 });
+  // P-361/D-833: the toast and the drawer are optimistic (FR-22); Hoje only sees the event once the POST has committed, so wait for it
+  const saved = page.waitForResponse((r) => r.url().includes('/v1/calendar/events') && r.request().method() === 'POST');
   await modal.getByRole('button', { name: 'Salvar compromisso' }).click();
+  await saved;
   await expect(page.getByText('Compromisso salvo. Avisamos por e-mail 1 dia antes e no dia.')).toBeVisible();
   const drawer = page.getByRole('dialog', { name: 'Detalhes do compromisso' });
   await expect(drawer.getByRole('heading', { name: 'Prova de Clínica Médica' })).toBeVisible();

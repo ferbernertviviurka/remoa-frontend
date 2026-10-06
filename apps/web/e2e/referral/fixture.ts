@@ -11,7 +11,7 @@ export async function createInviter(request: APIRequestContext, name = 'Ana') {
   const email = `e2e-ind-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@remoa.test`;
   const su = await (await request.post(`${env('NEXT_PUBLIC_SUPABASE_URL')}/auth/v1/signup`, { headers: { apikey: env('NEXT_PUBLIC_SUPABASE_ANON_KEY') }, data: { email, password } })).json();
   const headers = { authorization: `Bearer ${su.access_token as string}` };
-  await request.patch(`${API}/v1/account/profile`, { headers, data: { name } });
+  await request.patch(`${API}/v1/account/profile`, { headers, data: { name, phone: '11912345678', userType: 'aluno' } });
   const summary = await (await request.get(`${API}/v1/referral/summary`, { headers })).json();
   expect(summary.ok, 'GET /v1/referral/summary').toBe(true);
   return { email, headers, code: summary.data.code as string };
@@ -29,6 +29,7 @@ export async function openInvite(page: Page, code: string) {
 }
 
 export async function fillSignUp(page: Page, email: string) {
+  await page.getByLabel('Nome').fill('Amiga Teste'); // G20: name is required
   await page.getByLabel('E-mail').fill(email);
   await page.getByLabel('Senha').fill(password);
   await page.getByRole('button', { name: /Criar conta/ }).click();

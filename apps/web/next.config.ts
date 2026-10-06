@@ -8,7 +8,9 @@ const config: NextConfig = {
   env: { NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version ?? '0.0.0' }, // F11 FR-4: appVersion on every event
   transpilePackages: ['@remoa/contracts', '@remoa/strings', '@remoa/ui'],
   // G11 (D-357): rewrites the @remoa/ui barrel into per-file imports, so a page only ships the client components it uses (landing: 338 → 226 KB).
-  experimental: { optimizePackageImports: ['@remoa/ui'] },
+  experimental: { optimizePackageImports: ['@remoa/ui'], inlineCss: true },
+  // F27: metadados no <head> para todo User-Agent (o streaming do Next 15 os põe no <body>; o Lighthouse não vê a meta description e SEO cai para 92)
+  htmlLimitedBots: /.*/,
   // lint roda via `pnpm lint` (ESLint flat config na raiz), não no build
   eslint: { ignoreDuringBuilds: true },
   // G14: build de medição com a árvore compartilhada no meio de outra lane; o typecheck de verdade é o `pnpm check`
@@ -20,6 +22,9 @@ const config: NextConfig = {
   async redirects() {
     return [
       { source: '/app', destination: '/app/hoje', permanent: false },
+      // D-904: the legal pages moved to their long names (301/308 permanent).
+      { source: '/termos', destination: '/termos-de-uso', permanent: true },
+      { source: '/privacidade', destination: '/politica-de-privacidade', permanent: true },
       ...moved.map((p) => ({ source: `/${p}/:rest*`, destination: `/app/${p}/:rest*`, permanent: true })),
     ];
   },

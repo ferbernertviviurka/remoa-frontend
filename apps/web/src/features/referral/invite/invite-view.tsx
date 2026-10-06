@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { isValidPassword } from '@remoa/contracts';
+import { isValidName, isValidPassword, normalizeName } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { Avatar, Button, Icon, Input, buttonVariants } from '@remoa/ui';
 // D-417: the barrel `@remoa/ui` loses the referral exports under Next's optimizePackageImports (file names clash: hero, copy-field); direct entry.
@@ -86,22 +86,24 @@ export function InviteView({ valid, code, inviterName, loggedIn }: InviteViewPro
 }
 
 function InviteForm({ valid, code, hydrated, onDone }: { valid: boolean; code: string; hydrated: boolean; onDone: () => void }) {
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errs, setErrs] = useState<{ email?: string; password?: string; general?: string }>({});
+  const [errs, setErrs] = useState<{ name?: string; email?: string; password?: string; general?: string }>({});
   const [busy, setBusy] = useState(false);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (busy) return;
     const found = {
+      ...(isValidName(normalizeName(fullName)) ? {} : { name: t('auth.about.nameInvalid') }),
       ...(validEmail(email) ? {} : { email: t('referral.invite.errors.invalidEmail') }),
       ...(isValidPassword(password) ? {} : { password: t('auth.passwordWeak') }),
     };
     setErrs(found);
     if (Object.keys(found).length) return;
     setBusy(true);
-    const res = await signUp({ email, password });
+    const res = await signUp({ email, password, name: normalizeName(fullName) });
     if (!res.ok) {
       setErrs(res.error.code === 'conflict' ? { email: t('referral.invite.emailTaken') } : { general: t('referral.invite.signUpFailed') });
       setBusy(false);
@@ -129,6 +131,8 @@ function InviteForm({ valid, code, hydrated, onDone }: { valid: boolean; code: s
           </span>
         </>
       ) : null}
+      <Input label={t('account.profile.name')} autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} aria-invalid={!!errs.name} aria-describedby={errs.name ? 'iv-name-err' : undefined} />
+      <FieldError id="iv-name-err">{errs.name}</FieldError>
       <Input label={t('referral.invite.emailLabel')} type="email" autoComplete="email" inputMode="email" placeholder={t('referral.invite.emailPlaceholder')} value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={!!errs.email} aria-describedby={errs.email ? 'iv-email-err' : undefined} />
       <FieldError id="iv-email-err">{errs.email}</FieldError>
       <PasswordField label={t('referral.invite.passwordLabel')} autoComplete="new-password" placeholder={t('referral.invite.passwordPlaceholder')} value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={!!errs.password} aria-describedby={errs.password ? 'iv-pw-err' : undefined} />

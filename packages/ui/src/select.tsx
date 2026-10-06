@@ -22,15 +22,15 @@ export function Select({
 }) {
   const id = useId();
   return (
-    <div className="flex flex-col gap-1.5">
-      <label id={id} className="text-xs font-semibold text-text">{label}</label>
+    <div className="flex flex-col gap-2">
+      <label id={id} className="font-bold text-ink">{label}</label>
       <RS.Root value={value} defaultValue={defaultValue} onValueChange={onValueChange}>
-        <RS.Trigger aria-labelledby={id} className={`flex min-h-11 items-center justify-between gap-3 text-left ${fieldControl} ${focusRing}`}>
+        <RS.Trigger aria-labelledby={id} className={`flex h-[52px] items-center justify-between gap-3 text-left ${fieldControl} ${focusRing}`}>
           <RS.Value placeholder={placeholder} />
           <RS.Icon className="text-muted" aria-hidden="true">▾</RS.Icon>
         </RS.Trigger>
         <RS.Portal>
-          <RS.Content className="remoa-pop z-50 overflow-hidden rounded-map border border-border bg-surface p-1 shadow-lift" position="popper" sideOffset={6}>
+          <RS.Content className="remoa-pop z-50 max-h-[min(320px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-map border border-border bg-surface p-1 shadow-lift" position="popper" sideOffset={6}>
             <RS.Viewport>
               {options.map((option) => (
                 <RS.Item

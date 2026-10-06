@@ -22,6 +22,7 @@ test('200 cards: pan fps', async ({ page, request }) => {
   const body = await signup.json();
   const token = body.access_token as string;
   await request.post(`${API}/v1/onboarding/complete`, { headers: { authorization: `Bearer ${token}` } }); // F12: skip the onboarding redirect
+  await request.patch(`${API}/v1/account/profile`, { headers: { authorization: `Bearer ${token}` }, data: { name: 'Aluna Teste', phone: '11912345678', userType: 'aluno' } }); // G20
   // Free allows 50 cards: make the perf user Pro (as visual/fixture.ts seedMock does)
   const db = process.env.DATABASE_URL ?? /DATABASE_URL="?([^"\n]*)/.exec(readFileSync('../../../remoa-backend/.env', 'utf8'))?.[1] ?? '';
   execFileSync('psql', [db, '-q', '-c', `insert into subscriptions (user_id, plan, status) values ('${body.user.id}','pro','active') on conflict (user_id) do update set plan='pro'`]);

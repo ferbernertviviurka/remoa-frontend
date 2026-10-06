@@ -8,7 +8,7 @@ import { padForChallenge } from './challenge-pad';
 test.use({ viewport: { width: 1440, height: 900 } });
 
 const axe = async (page: Page) => {
-  await page.waitForTimeout(500); // axe lê opacidade no meio de transições
+  await page.waitForTimeout(1200); // axe lê opacidade no meio de transições
   const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).exclude('nextjs-portal').analyze();
   return r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`);
 };
