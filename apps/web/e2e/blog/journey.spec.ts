@@ -66,6 +66,8 @@ for (const template of TEMPLATES) {
     const sitemap = async () => (await request.get('/sitemap.xml')).text();
     await expect.poll(sitemap, { timeout: 30_000 }).toContain(`/blog/${post.slug}`);
 
+    if (process.env.E2E_KEEP) return; // deixa publicado para o seo:check
+
     // despublicar exige motivo (≥ 8) e tira de tudo
     expect((await request.post(`${adm}/posts/${post.id}/unpublish`, { headers, data: { reason: 'curto' } })).ok()).toBe(false);
     expect((await request.post(`${adm}/posts/${post.id}/unpublish`, { headers, data: { reason: 'Teste e2e de despublicação' } })).status()).toBe(200);
