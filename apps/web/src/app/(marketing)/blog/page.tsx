@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { t } from '@remoa/strings';
-import { BLOG_REVALIDATE, getCategories, getPosts } from '@/features/blog/api';
+import { getCategories, getPosts } from '@/features/blog/api';
 import { listMetadata } from '@/features/blog/seo';
 import { IndexView } from '@/features/blog/view';
 
-export const revalidate = BLOG_REVALIDATE;
+export const revalidate = 86400; // literal: Next lê o segmento config estaticamente; = BLOG_REVALIDATE
 
 type Props = { searchParams: Promise<{ q?: string; page?: string }> };
 const term = (q?: string) => q?.trim().slice(0, 120) || undefined;

@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
-import { BLOG_REVALIDATE, getPost } from '@/features/blog/api';
+import { getPost } from '@/features/blog/api';
 import { postMetadata } from '@/features/blog/seo';
 import { PostView } from '@/features/blog/view';
 
-export const revalidate = BLOG_REVALIDATE;
+export const revalidate = 86400; // literal: Next lê o segmento config estaticamente; = BLOG_REVALIDATE
 
 type Props = { params: Promise<{ slug: string }> };
 
