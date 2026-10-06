@@ -1,0 +1,2 @@
+/* F27 G19: Hide blog section during snapshot to make capture deterministic (depends on published posts in DB). */
+#blog { display: none !important; }
