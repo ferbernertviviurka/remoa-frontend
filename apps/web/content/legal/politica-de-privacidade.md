@@ -33,6 +33,12 @@ O Remoa não foi feito para receber dados de pacientes. Pedimos que você não o
 
 Quando você usa recursos de IA, enviamos ao provedor o trecho necessário para gerar ou corrigir cards. O provedor trata esse conteúdo conforme as próprias políticas de privacidade. Não coloque nos seus cards dados que identifiquem pacientes ou outras pessoas, e revise o que a IA gera.
 
+**Provedores de IA.** Os pedidos de IA passam pelo OpenRouter, um roteador que os encaminha ao modelo escolhido, e depois pelo provedor desse modelo. O provedor do modelo pode mudar com o tempo; hoje, na fase de testes, é a NVIDIA, por meio de um modelo gratuito. [CONFIRMAR: lista final de provedores e modelo de produção, Q-162/Q-163.] Se a leitura de PDFs digitalizados estiver ativa, a Mistral também recebe o arquivo para extrair o texto. [CONFIRMAR: se o OCR da Mistral será usado em produção.]
+
+**O que enviamos.** O conteúdo de estudo necessário para a tarefa (texto dos cards, trechos do material enviado e as respostas que você digita) e instruções do sistema. Não enviamos seu nome nem seu e-mail. Áudio de respostas por voz não é armazenado: é transcrito e descartado.
+
+**Retenção.** Em produção, pedimos aos provedores que não registrem nem usem o conteúdo para treinar modelos (política de dados `deny` do OpenRouter). [CONFIRMAR: retenção efetiva de cada provedor e modelo escolhido, Q-162.] Os pedidos de IA envolvem transferência internacional, descrita na seção 6.
+
 ## 5. Com quem compartilhamos
 
 Compartilhamos dados com operadores que nos ajudam a prestar o serviço, apenas para as finalidades abaixo:
