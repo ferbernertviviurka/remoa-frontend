@@ -1,4 +1,5 @@
-import { httpErrorBodySchema, type Result } from '@remoa/contracts';
+import type { Result } from '@remoa/contracts';
+import { readErrorBody } from './error-body';
 
 type StreamEvent = { feedback?: unknown; result?: unknown; error?: unknown };
 
@@ -19,8 +20,8 @@ export async function readResultStream<T>(stream: ReadableStream<Uint8Array>, on
     }
     if (typeof event.feedback === 'string') onFeedback?.(event.feedback);
     if ('result' in event) result = { ok: true, data: event.result as T };
-    const parsed = httpErrorBodySchema.safeParse({ error: event.error });
-    if (event.error && parsed.success) result = { ok: false, error: parsed.data.error };
+    const error = event.error ? readErrorBody({ error: event.error }) : null;
+    if (error) result = { ok: false, error };
   };
   while (true) {
     const { done, value } = await reader.read();

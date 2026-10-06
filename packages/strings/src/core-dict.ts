@@ -5,11 +5,7 @@ import { reviewHub } from './review';
 import { support } from './support';
 import { f17 } from './f17';
 import { challengeSetup } from './challenge-setup';
-import { mapState, challengeMode, editor, canvas, quiz, boundary } from './landing-shared';
-// P-512: cards/map/canvas/mapMobile voltam para `@remoa/strings/ns` quando o editor de card e o criador mobile (upload direto, remoa-f2) puderem trocar o import.
-import { cards } from './ns-parts/cards';
-import { map } from './ns-parts/map';
-import { mapMobile } from './map-mobile';
+import { mapState, challengeMode, editor, quiz, boundary } from './landing-shared';
 import { calendar } from './calendar';
 import { notifications } from './notifications';
 import { referralShell, storeShell, adminShell, legalShell } from './shell';
@@ -26,10 +22,6 @@ export const ptBRCore = {
   challengeSetup,
   calendar,
   notifications,
-  cards,
-  map,
-  canvas,
-  mapMobile,
   // F17 — Importador Anki v2 (T1)
   ...f17,
   common: {

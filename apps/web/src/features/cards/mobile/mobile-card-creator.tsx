@@ -3,7 +3,8 @@
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Card, CardDetail, CardShape, CardType, MapState, SaveCardInput } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { CreateCardSheet, useToast, type CreateCardKind } from '@remoa/ui';
 import { api } from '@/lib/api';
 import { usePaywall } from '@/features/billing/paywall';
@@ -12,6 +13,8 @@ import { buildSaveInput } from '../draft';
 import { checkFile, uploadImage } from '../upload';
 import { blockedReason, createAvailability } from './availability';
 import { MobileCardEditor } from './mobile-card-editor';
+
+const t = withStrings({ map: more.map, mapMobile: more.mapMobile });
 
 /** What the mobile map (T5) gives the creator. The map owns the graph, the op queue and the viewport. */
 export type CardCreatorHost = {

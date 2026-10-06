@@ -2,12 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState, type FocusEvent } from 'react';
 import type { Card, CardDetail, CardShape, MapState, SaveCardInput } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, Dialog, FullSheet, Icon, useToast } from '@remoa/ui';
 import { api } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import { usePaywall } from '@/features/billing/paywall';
 import { CardEditor } from '../card-editor';
+
+const t = withStrings({ cards: more.cards, mapMobile: more.mapMobile });
 
 export type MobileCardEditorProps = {
   card: Card;

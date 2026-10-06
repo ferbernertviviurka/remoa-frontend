@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { CALENDAR_LIMITS, type CalendarLabel } from '@remoa/contracts';
+import type { CalendarLabel } from '@remoa/contracts';
+import { CALENDAR_LIMITS } from '@/lib/contracts-lite';
 import { strings, t } from '@remoa/strings';
 import { Button, Dialog, Input, LabelColorPicker } from '@remoa/ui';
 import type { LabelOutcome } from './use-calendar';

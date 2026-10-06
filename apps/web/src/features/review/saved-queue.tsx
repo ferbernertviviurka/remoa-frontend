@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { REVIEW_SESSION_MAX } from '@remoa/contracts';
+import { REVIEW_SESSION_MAX } from '@/lib/contracts-lite';
 import { t } from '@remoa/strings';
 import { Alert, Button, Icon } from '@remoa/ui';
 import { useChallenge } from '@/features/challenge/provider';

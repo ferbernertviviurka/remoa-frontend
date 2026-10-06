@@ -1,7 +1,8 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { notificationCategories, notificationTypeSchema, type NotificationCategory, type UnreadCount } from '@remoa/contracts';
+import type { NotificationCategory, UnreadCount } from '@remoa/contracts';
+import { isNotificationType, notificationCategories } from '@/lib/contracts-lite';
 import { t } from '@remoa/strings';
 import { getUnreadCount } from './api';
 import { textOf, type Textable } from './view';
@@ -24,10 +25,10 @@ export const useNotifications = () => useContext(Context);
 
 /** Realtime payload row (snake_case Postgres row): only what the web needs to word the announcement. */
 const announce = (row: Record<string, unknown>, tz: string) => {
-  const type = notificationTypeSchema.safeParse(row.type);
-  if (!type.success || !row.data) return '';
+  const type = row.type;
+  if (!isNotificationType(type) || !row.data) return '';
   try {
-    return t('notifications.live', { title: textOf({ type: type.data, data: row.data } as Textable, tz).title });
+    return t('notifications.live', { title: textOf({ type, data: row.data } as Textable, tz).title });
   } catch {
     return '';
   }

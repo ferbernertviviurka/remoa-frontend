@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { REVIEW_SESSION_MAX, type Entitlements, type QueueFilter, type ReviewHub } from '@remoa/contracts';
+import type { Entitlements, QueueFilter, ReviewHub } from '@remoa/contracts';
+import { REVIEW_SESSION_MAX } from '@/lib/contracts-lite';
 import { t } from '@remoa/strings';
 import { track } from '@/lib/analytics';
 import { useChallenge } from '@/features/challenge/provider';
