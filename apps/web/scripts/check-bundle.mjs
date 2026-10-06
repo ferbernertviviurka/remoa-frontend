@@ -2,7 +2,7 @@
 // is above its ceiling in perf-budgets.json. Usage:
 //   pnpm --filter @remoa/web build 2>&1 | tee build.log; node apps/web/scripts/check-bundle.mjs build.log
 //   node scripts/check-bundle.mjs build.log --update   rewrites the ceilings = ceil(current * (1 + headroom)); do it only when a PR improves or accepts a size on purpose.
-// `target` is the F26 goal (not met yet, informational: printed, never fails); `routes` is the ceiling that fails the CI.
+// `target` is the F26 goal (170 kB for app and public pages since D-1083; informational: printed, never fails); `routes` is the ceiling that fails the CI.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
