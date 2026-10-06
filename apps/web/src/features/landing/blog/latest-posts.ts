@@ -1,4 +1,4 @@
-import { unstable_noStore as noStore } from 'next/cache';
+import { noStore } from '@/lib/cache';
 import { z } from 'zod';
 import { blogListItemSchema, type BlogListItem } from '@remoa/contracts';
 import { apiBase } from '@/lib/api/base';
