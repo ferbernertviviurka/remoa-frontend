@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { t } from '@remoa/strings';
 import { Logo, SiteFooter } from '@remoa/ui';
+import { legalEnv } from '@/lib/env/legal';
 import { landingFlags } from '@/features/landing/flags';
 import { LandingHeader } from '@/features/landing/shell/landing-header'; // direct: the shell barrel would ship WaitlistCta too (D-535)
 
@@ -9,10 +10,11 @@ const skip = 'sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 foc
 // D-534: no session read here (it made `/` dynamic); the header swaps to "Abrir o app" + avatar on the client (D-320).
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   const { launchPhase } = landingFlags();
+  const dpoEmail = legalEnv().vars.dpoEmail;
   return (
     <>
       <a href="#conteudo" className={skip}>{t('landing.nav.skipLink')}</a>
-      <LandingHeader phase={launchPhase} />
+      <LandingHeader phase={launchPhase} blogLabel={t('blog.navigation.blog')} />
       <main id="conteudo" className="relative overflow-x-clip pt-[76px]">{children}</main>
       <SiteFooter
         brand={<Logo size={30} withWordmark />}
@@ -26,9 +28,10 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
             { href: '/#faq', label: t('landing.footer.links.faq') },
           ] },
           { items: [
-            { href: '/termos', label: t('landing.footer.links.terms') },
-            { href: '/privacidade', label: t('landing.footer.links.privacy') },
-            { href: 'mailto:contato@remoa.app', label: t('landing.footer.links.contact') },
+            { href: '/termos-de-uso', label: t('blog.footer.termsLink') },
+            { href: '/politica-de-privacidade', label: t('blog.footer.privacyLink') },
+            { href: '/blog', label: t('blog.navigation.blog') },
+            ...(dpoEmail ? [{ href: `mailto:${dpoEmail}`, label: t('blog.footer.contact') }] : []),
           ] },
         ]}
         disclaimer={t('landing.footer.disclaimer')}
