@@ -6,6 +6,8 @@ import { listMetadata } from '@/features/blog/seo';
 import { IndexView, totalPages } from '@/features/blog/view';
 
 export const revalidate = 86400; // literal: Next lê o segmento config estaticamente; = BLOG_REVALIDATE
+// P-410: empty list = each path rendered on its first visit and cached (ISR, dropped by the `blog` tags), not on every request.
+export const generateStaticParams = () => [];
 
 type Props = { params: Promise<{ n: string }> };
 

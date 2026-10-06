@@ -4,6 +4,7 @@ import { blogPublicPostSchema, extractFaq } from '@remoa/contracts';
 import { blogCategoryFixtures, blogListItemFixtures, blogPostFixture } from '@remoa/contracts/mocks';
 import { serializeLd } from '@/lib/seo/json-ld';
 import Index from '@/app/(marketing)/blog/page';
+import Search from '@/app/(marketing)/blog-busca/page';
 import PageN from '@/app/(marketing)/blog/pagina/[n]/page';
 import PostPage, { generateMetadata as postMeta } from '@/app/(marketing)/blog/[slug]/page';
 import PreviewPage, { generateMetadata as previewMeta } from '@/app/(marketing)/blog/preview/[token]/page';
@@ -122,19 +123,19 @@ describe('index and pagination', () => {
 
   it('/blog: one h1, feature + grid and links to categories; API down gives the empty state', async () => {
     routes.set('posts', list(1, 2));
-    const { container, unmount } = render(await Index({ searchParams: Promise.resolve({}) }));
+    const { container, unmount } = render(await Index());
     expect(container.querySelectorAll('h1')).toHaveLength(1);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Estude melhor para a residência.');
     unmount();
     routes.clear();
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    render(await Index({ searchParams: Promise.resolve({}) }));
+    render(await Index());
     expect(screen.getByRole('status')).toHaveTextContent(/Volte em breve/);
   });
 
   it('search goes to the API and the page is noindex', async () => {
     routes.set('posts?q=sono', list(1, 2));
-    render(await Index({ searchParams: Promise.resolve({ q: 'sono' }) }));
+    render(await Search({ searchParams: Promise.resolve({ q: 'sono' }) })); // /blog?q= is rewritten here (P-410)
     expect(fetchMock.mock.calls.some(([u]) => String(u).includes('q=sono'))).toBe(true);
   });
 

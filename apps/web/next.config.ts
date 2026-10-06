@@ -17,7 +17,15 @@ const config: NextConfig = {
   typescript: { ignoreBuildErrors: process.env.NEXT_SKIP_TYPECHECK === '1' },
   // D-534: `/` is static; only the A/B variants (`?v=`, `?h=`) go to the per-request `/lp` (the query goes along).
   async rewrites() {
-    return { beforeFiles: ['v', 'h'].map((key) => ({ source: '/', has: [{ type: 'query' as const, key }], destination: '/lp' })), afterFiles: [], fallback: [] };
+    // P-410: same for the blog search: `/blog` stays static ISR, only `/blog?q=` renders per request (`/blog-busca`).
+    return {
+      beforeFiles: [
+        ...['v', 'h'].map((key) => ({ source: '/', has: [{ type: 'query' as const, key }], destination: '/lp' })),
+        { source: '/blog', has: [{ type: 'query' as const, key: 'q' }], destination: '/blog-busca' },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
   },
   async redirects() {
     return [
