@@ -2,7 +2,7 @@
 // Admin pela API (padrão de e2e/blog/admin-list.spec.ts); E2E_KEEP=1 mantém os posts (seo:check precisa de 1 por template).
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import { accountUser, API, psql } from '../account/fixture';
-import { formReady, skipOnboarding } from '../sign-up';
+import { fillAbout, formReady, skipOnboarding } from '../sign-up';
 
 const TEMPLATES = ['leitura', 'guia', 'destaque'] as const;
 const PREFIX = 'E2E Jornada F27';
@@ -111,7 +111,7 @@ test('cadastro registra o aceite dos termos e da política (versão e data)', as
   await page.getByLabel('E-mail').fill(email);
   await page.getByLabel('Senha').fill('senha-forte-123');
   await page.getByRole('button', { name: 'Continuar' }).click();
-  await page.getByRole('button', { name: 'Continuar' }).click();
+  await fillAbout(page);
   await expect(page.getByRole('link', { name: /Termos de uso/i }).first()).toHaveAttribute('href', '/termos-de-uso');
   await expect(page.getByRole('link', { name: /Política de Privacidade/i }).first()).toHaveAttribute('href', '/politica-de-privacidade');
   await page.getByRole('checkbox').click();
