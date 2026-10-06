@@ -37,7 +37,7 @@ Quando você usa recursos de IA, enviamos ao provedor o trecho necessário para 
 
 **O que enviamos.** O conteúdo de estudo necessário para a tarefa (texto dos cards, trechos do material enviado e as respostas que você digita) e instruções do sistema. Não enviamos seu nome nem seu e-mail. Áudio de respostas por voz não é armazenado: é transcrito e descartado.
 
-**Retenção.** Em produção, pedimos aos provedores que não registrem nem usem o conteúdo para treinar modelos (política de dados `deny` do OpenRouter). [CONFIRMAR: retenção efetiva de cada provedor e modelo escolhido, Q-162.] Os pedidos de IA envolvem transferência internacional, descrita na seção 6.
+**Retenção.** Em produção, pedimos aos provedores que não registrem nem usem o conteúdo para treinar modelos (política de dados `deny` do OpenRouter). [CONFIRMAR: retenção efetiva de cada provedor e modelo escolhido, Q-162.] A leitura de PDFs pela Mistral não passa pelo OpenRouter e segue a política de dados da própria Mistral. Os pedidos de IA envolvem transferência internacional, descrita na seção 6.
 
 ## 5. Com quem compartilhamos
 
@@ -58,7 +58,7 @@ Também podemos compartilhar dados para cumprir obrigação legal ou ordem de au
 
 ## 6. Transferência internacional
 
-Alguns desses provedores tratam dados fora do Brasil, como Vercel, Railway, Stripe, Resend, Inngest e OpenRouter. Nesses casos, a transferência segue as regras da LGPD para transferência internacional de dados.
+Alguns desses provedores tratam dados fora do Brasil, como Vercel, Railway, Stripe, Resend, Inngest, OpenRouter (e o provedor do modelo de IA) e Mistral. Nesses casos, a transferência segue as regras da LGPD para transferência internacional de dados.
 
 ## 7. Por quanto tempo guardamos
 
