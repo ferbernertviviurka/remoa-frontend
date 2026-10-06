@@ -38,7 +38,6 @@ export async function LandingPage({ h1, variant }: { h1: H1Variant; variant: '29
       <CompareSection />
       {priceBook ? <PlansIsland priceBook={priceBook} flags={flags} facts={planFacts(priceBook)} /> : <Section id="planos" title={t('landing.plans.title')} lead={t('landing.plans.unavailable')} />}
       <FaqIsland items={faqItems} />
-      {/* TODO(CCR-047): landing_blog_clicked (position) once the event exists in contracts/events. */}
       <LandingBlog />
       <WaitlistIsland phase={flags.launchPhase} variant={variant} />
     </>

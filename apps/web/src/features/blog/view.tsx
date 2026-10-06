@@ -50,7 +50,7 @@ export function IndexView({ items, total, page, categories, q }: { items: BlogLi
         />
       </BlogIndexHeader>
       <div className="mx-auto w-full max-w-[1200px] px-4 py-10 md:px-10 md:py-14">
-        {q ? <BlogSearchUsed resultsCount={total} queryLength={q.length} /> : null}
+        {q ? <BlogSearchUsed resultCount={total} queryLength={q.length} /> : null}
         {items.length === 0 ? (
           <p role="status" className="m-0 text-center text-lg text-muted">{q ? t('blog.pages.index.noResults.title') + '. ' + t('blog.pages.index.noResults.body') : t('blog.pages.index.noPosts.body')}</p>
         ) : (
