@@ -118,6 +118,22 @@ describe('preview', () => {
   });
 });
 
+describe('API failure is not cached as empty/404 (D-968)', () => {
+  const slug = 'repeticao-espacada-na-residencia';
+  it('5xx, network error and invalid body throw; 404 stays notFound/empty', async () => {
+    routes.set(`posts/${slug}`, () => new Response('{}', { status: 503 }));
+    await expect(PostPage({ params: Promise.resolve({ slug }) })).rejects.toThrow(/503/);
+    routes.set('posts', () => new Response('{}', { status: 500 }));
+    await expect(Index()).rejects.toThrow(/500/);
+    routes.set(`posts/${slug}`, json({ nonsense: true }));
+    await expect(PostPage({ params: Promise.resolve({ slug }) })).rejects.toThrow();
+    fetchMock.mockRejectedValueOnce(new Error('timeout'));
+    await expect(PostPage({ params: Promise.resolve({ slug }) })).rejects.toThrow('timeout');
+    routes.clear();
+    expect(await digestOf(PostPage({ params: Promise.resolve({ slug }) }))).toContain('404');
+  });
+});
+
 describe('index and pagination', () => {
   const list = (page: number, total: number) => json({ items: [published, { ...published, id: '00000000-0000-4000-8000-000000000002' }], total, page, pageSize: 12 });
 

@@ -12,18 +12,15 @@ export const BLOG_PAGE_SIZE = 12;
 
 export type PostResult = { kind: 'post'; post: BlogPublicPost } | { kind: 'redirect'; to: string };
 
-/** null on 404 or any failure (logged); callers render the empty/404 state, never throw (FR-15). */
+/**
+ * null only when the API answered 404 (cacheable, FR-15). Network, timeout, 5xx or an invalid body THROW: Next keeps the last good
+ * ISR page and never stores the failure (D-968); with no previous version the error boundary shows, not a cached 404.
+ */
 async function get<T>(path: string, schema: z.ZodType<T, z.ZodTypeDef, unknown>, init: RequestInit & { next?: { tags?: string[]; revalidate?: number } }): Promise<T | null> {
-  try {
-    const res = await fetch(`${apiBase()}/v1/public/blog/${path}`, init);
-    if (!res.ok) return null;
-    const body = (await res.json()) as { data?: unknown };
-    return schema.parse(body.data);
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('blog: API unavailable', path, e instanceof Error ? e.message : e); // ponytail: no @remoa/log in the web app yet
-    return null;
-  }
+  const res = await fetch(`${apiBase()}/v1/public/blog/${path}`, init);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`blog: API ${res.status} on ${path}`);
+  return schema.parse(((await res.json()) as { data?: unknown }).data);
 }
 
 const cached = (...tags: string[]) => ({ next: { tags: ['blog', ...tags], revalidate: BLOG_REVALIDATE } });
