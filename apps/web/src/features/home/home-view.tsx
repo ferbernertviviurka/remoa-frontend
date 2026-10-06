@@ -11,7 +11,9 @@ import { GoButton, HeroActions, HomeHeaderActions } from './home-actions';
 import { CalendarStrip, UpcomingCard } from './home-calendar';
 
 export type FirstInQueue = { title: string; pct: number };
-export type HomeViewProps = { now: Date; summary: HomeSummary; boards: BoardSummary[]; coverage: CoverageRow[]; first?: FirstInQueue; queueStart?: ReactNode; checklist?: ActivationItem[]; /** F25: compromissos próximos (null = API fora do ar: some a faixa e o card) e o fuso do perfil */ calendar?: { upcoming: UpcomingEvents; timeZone: string } | null };
+export type HomeViewProps = { now: Date; summary: HomeSummary; boards: BoardSummary[]; coverage: CoverageRow[]; first?: FirstInQueue; queueStart?: ReactNode; checklist?: ActivationItem[]; /** F25: compromissos próximos (null = API fora do ar: some a faixa e o card) e o fuso do perfil */ calendar?: { upcoming: UpcomingEvents; timeZone: string } | null;
+  /** D-996 (FR-47): independent sections streamed by the page, each inside its own Suspense. When given, they replace the matching prop above. */
+  slots?: { checklist?: ReactNode; calendarStrip?: ReactNode; calendarCard?: ReactNode; coverage?: ReactNode } };
 
 const h2 = 'm-0 font-display font-extrabold';
 const panel = 'flex flex-col rounded-[28px] border border-border bg-surface';
@@ -67,7 +69,7 @@ const shortcuts: { key: 'pdf' | 'anki' | 'seed'; icon: IconName; title: StringKe
   { key: 'seed', icon: 'book', title: 'home.seedMap', desc: 'home.seedMapDesc' },
 ];
 
-function coverageByArea(rows: CoverageRow[]) {
+export function coverageByArea(rows: CoverageRow[]) {
   const acc = new Map<string, { cards: number; target: number }>();
   for (const r of rows) {
     const a = acc.get(r.area) ?? { cards: 0, target: 0 };
@@ -76,7 +78,26 @@ function coverageByArea(rows: CoverageRow[]) {
   return [...acc].map(([area, v]) => ({ area, pct: Math.min(100, Math.round((v.cards / Math.max(1, v.target)) * 100)) }));
 }
 
-export function HomeView({ now, summary, boards, coverage, first, queueStart, checklist, calendar }: HomeViewProps) {
+export function CoverageRows({ coverage }: { coverage: CoverageRow[] }) {
+  const rows = coverageByArea(coverage);
+  return rows.length === 0 ? (
+    <p className="m-0 text-muted">{t('home.coverageEmpty')}</p>
+  ) : (
+    <>
+      {rows.map((r) => (
+        <div key={r.area} className="grid grid-cols-[minmax(0,1fr)_52px] items-center gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,210px)_minmax(0,1fr)_52px]">
+          <span className="font-semibold">{t(`boards.area.${r.area as 'CM'}`)}</span>
+          <span className="order-last col-span-2 block h-3 overflow-hidden rounded-md bg-track sm:order-none sm:col-span-1" role="img" aria-label={`${r.pct}%`}>
+            <span style={{ width: `${r.pct}%` }} className="block h-3 rounded-md bg-primary" />
+          </span>
+          <span className="text-right font-display text-lg font-extrabold">{r.pct}%</span>
+        </div>
+      ))}
+    </>
+  );
+}
+
+export function HomeView({ now, summary, boards, coverage, first, queueStart, checklist, calendar, slots }: HomeViewProps) {
   const saudacao = t(`home.salutation.${salutationKey(hourIn(now))}`);
   const due = summary.dueToday;
   const dueBoards = boards.filter((b) => b.dueCount > 0).sort((a, b) => b.dueCount - a.dueCount);
@@ -84,7 +105,6 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart, ch
   const recent = [...boards].sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
   const live = top ?? recent[0];
   const greeting = boards.length === 0 ? t('home.greetingNoMaps', { saudacao }) : due > 0 ? t('home.greetingDue', { saudacao, n: due }) : t('home.greetingNone', { saudacao });
-  const rows = coverageByArea(coverage);
   const today = todayIso(now);
   const progressMax = summary.reviewedToday + due;
   const heroText =
@@ -106,8 +126,8 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart, ch
       </div>
       <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-7">
-          {calendar ? <CalendarStrip upcoming={calendar.upcoming} /> : null}
-          <ActivationChecklist items={checklist ?? []} />
+          {slots?.calendarStrip ?? (calendar ? <CalendarStrip upcoming={calendar.upcoming} /> : null)}
+          {slots?.checklist ?? <ActivationChecklist items={checklist ?? []} />}
           <Hero
             eyebrow={t('home.reviewSection')}
             title={heroText.title}
@@ -127,19 +147,7 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart, ch
           </Hero>
           <MapSlider maps={boards} />
           <Panel id="home-cov" size="lg" title={t('home.coverage')} aside={<span className="text-[13px] text-muted">{t('home.coverageHint')}</span>}>
-            {rows.length === 0 ? (
-              <p className="m-0 text-muted">{t('home.coverageEmpty')}</p>
-            ) : (
-              rows.map((r) => (
-                <div key={r.area} className="grid grid-cols-[minmax(0,1fr)_52px] items-center gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,210px)_minmax(0,1fr)_52px]">
-                  <span className="font-semibold">{t(`boards.area.${r.area as 'CM'}`)}</span>
-                  <span className="order-last col-span-2 block h-3 overflow-hidden rounded-md bg-track sm:order-none sm:col-span-1" role="img" aria-label={`${r.pct}%`}>
-                    <span style={{ width: `${r.pct}%` }} className="block h-3 rounded-md bg-primary" />
-                  </span>
-                  <span className="text-right font-display text-lg font-extrabold">{r.pct}%</span>
-                </div>
-              ))
-            )}
+            {slots?.coverage ?? <CoverageRows coverage={coverage} />}
           </Panel>
         </div>
         <aside aria-label={t('home.weekTitle')} className="flex min-w-0 flex-col gap-5">
@@ -155,7 +163,7 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart, ch
               </div>
             ))}
           </section>
-          {calendar ? <UpcomingCard upcoming={calendar.upcoming} timeZone={calendar.timeZone} now={now} /> : null}
+          {slots?.calendarCard ?? (calendar ? <UpcomingCard upcoming={calendar.upcoming} timeZone={calendar.timeZone} now={now} /> : null)}
           <section aria-labelledby="home-new" className={`${panel} gap-3 p-[22px]`}>
             <h2 id="home-new" className={`${h2} mb-0.5 text-[22px] tracking-[-0.02em]`}>{t('home.startSomething')}</h2>
             {shortcuts.map((s) => (

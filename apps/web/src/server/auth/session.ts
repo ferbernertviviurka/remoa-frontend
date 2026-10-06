@@ -1,12 +1,14 @@
+import { cache } from 'react';
 import { redirect } from 'next/navigation';
 import type { ProfileRole } from '@remoa/contracts';
 import { createClient } from '@/lib/supabase/server';
 
-export async function getUser() {
+/** D-994 (FR-10): one Supabase Auth round trip per request, whoever asks (layouts, pages, requireUser, requireRole). */
+export const getUser = cache(async () => {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   return data.user;
-}
+});
 
 /** Redirects to /entrar when signed out. */
 export async function requireUser() {

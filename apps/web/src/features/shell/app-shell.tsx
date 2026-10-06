@@ -13,6 +13,10 @@ import { Rail } from "./rail";
 import { CommandPaletteProvider, PaletteButton } from "./command-palette";
 import { ChallengeTourHost } from "@/features/challenge/tour";
 
+const shellPaths = ["/v1/boards", "/v1/account/me", "/v1/billing/entitlements", "/v1/review/hub", "/v1/calendar/upcoming?limit=4"] as const;
+/** D-995: starts the shell's GETs early (the layout calls it before its guards); same paths as below, so serverApi's per-render dedupe makes them one request each. */
+export const prefetchShell = () => Promise.allSettled(shellPaths.map((p) => serverApi(p)));
+
 export async function AppShell({ children }: { children: ReactNode }) {
   // A failing API must never break the shell: no badge instead.
   // ponytail: /me is the full account snapshot; a slim "rail identity" endpoint if it shows in the shell's latency.
@@ -41,7 +45,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
     <NavPendingProvider>
       <EntitlementsProvider initial={entitlements}>
       <ReferralProvider>
-      <NotificationsProvider timezone={me?.profile.timezone}>
+      <NotificationsProvider timezone={me?.profile.timezone} userId={me?.profile.userId}>
       <CommandPaletteProvider>
       <div className="flex min-h-dvh flex-col bg-canvas text-text">
         <header data-shell-chrome="" className="sticky top-0 z-20 flex h-[65px] items-center gap-3 border-b border-border bg-surface px-4 md:hidden">
