@@ -6,7 +6,6 @@ import { t } from '@remoa/strings';
 import { Alert, Button, Icon, Input, PasswordMeter, SkeletonBlock, SkeletonRegion, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
-import { createClient } from '@/lib/supabase/client';
 import { SectionCard } from '../shared/section-card';
 import { useAccount } from '../shell/account-context';
 import { useOnline } from '../shared/use-online';
@@ -180,7 +179,7 @@ function LoginCard() {
     setBusy(true);
     setError(null);
     try {
-      const { error: e } = await createClient().auth.linkIdentity({ provider: 'google', options: { redirectTo: `${window.location.origin}/app/conta/seguranca` } });
+      const { error: e } = await (await import('@/lib/supabase/client')).createClient().auth.linkIdentity({ provider: 'google', options: { redirectTo: `${window.location.origin}/app/conta/seguranca` } });
       if (e) throw e;
       // the browser redirects to Google; identity_linked fires from the shell when the snapshot shows it
     } catch {

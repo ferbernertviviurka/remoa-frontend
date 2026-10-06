@@ -1,4 +1,4 @@
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 
 const KEYS = [
   'landing.nav.wordmark.aria', 'landing.nav.wordmark.ariaApp', 'landing.nav.anchors.howWorks', 'landing.nav.anchors.features',

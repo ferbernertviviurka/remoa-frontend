@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { Card, Constellation, Logo } from '@remoa/ui';
 
 const nodes = [

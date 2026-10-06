@@ -1,4 +1,4 @@
-import { strings, t } from '@remoa/strings';
+import { strings, t } from '@remoa/strings/full';
 import { CompareMark, FeatureComparison, Logo, Section } from '@remoa/ui';
 
 const { columns, rows, notNative } = strings.landing.compare;

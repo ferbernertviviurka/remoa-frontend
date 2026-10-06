@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { Logo, SiteFooter } from '@remoa/ui';
 import { LEGAL_CONFIG } from '@/features/legal/config';
 import { landingFlags } from '@/features/landing/flags';

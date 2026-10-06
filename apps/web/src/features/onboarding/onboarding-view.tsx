@@ -2,7 +2,8 @@
 
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { AREA_OPTIONS, MAX_GOALS, MEDICAL_SCHOOLS, isValidName, normalizeBrPhone, normalizeName, userTypes, type Goal, type OnboardingAnswersPatch, type OnboardingState, type RequiredProfileField, type Segment, type UserType } from '@remoa/contracts';
+import { AREA_OPTIONS, MAX_GOALS, isValidName, normalizeBrPhone, normalizeName, userTypes, type Goal, type OnboardingAnswersPatch, type OnboardingState, type RequiredProfileField, type Segment, type UserType } from '@remoa/contracts';
+import { MEDICAL_SCHOOLS } from '@remoa/contracts/medical-schools';
 import { t, type StringKey } from '@remoa/strings';
 import { Alert, Autocomplete, Button, ChoiceCard, ChoiceRow, Input, Logo, Stepper, type AutocompleteValue } from '@remoa/ui';
 import { track } from '@/lib/analytics';

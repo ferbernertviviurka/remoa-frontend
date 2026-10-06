@@ -3,7 +3,7 @@ import { gotoLanding } from './ready';
 import { signUpViaForm } from '../sign-up';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { strings } from '@remoa/strings';
+import { strings } from '@remoa/strings/full';
 
 const L = strings.landing;
 const waitlistPhase = (process.env.NEXT_PUBLIC_LAUNCH_PHASE ?? 'waitlist') !== 'open';

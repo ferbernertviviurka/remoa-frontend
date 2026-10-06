@@ -1,5 +1,5 @@
 import type { BlogCategory, BlogListItem, BlogPublicPost } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import {
   ArticleBody, AuthorBox, BlogCategoryChips, BlogGrid, BlogIndexHeader, BlogSearch, Breadcrumbs, EducationalNotice, Pagination,
   FeaturedPost, PostCard, PostCta, PostHero, PostLayout, QuickSummary, RelatedPosts, Toc, blogStagger,

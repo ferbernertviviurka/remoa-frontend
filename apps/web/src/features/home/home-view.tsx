@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { ActivationItem, BoardSummary, CoverageRow, HomeSummary, UpcomingEvents } from '@remoa/contracts';
-import { t, type StringKey } from '@remoa/strings';
+import { t, type StringKey } from '@remoa/strings/full';
 import { Constellation, Hero, Icon, type IconName } from '@remoa/ui';
 import { toConstellation } from './constellation';
 import { eyebrowDate, hourIn, salutationKey, todayIso, weekdayName } from './format';
-import { MapSlider } from './slider/map-slider';
+import { LazyMapSlider } from './slider/lazy-map-slider';
 import { ActivationChecklist } from '@/features/onboarding/activation-checklist';
 import { GoButton, HeroActions, HomeHeaderActions } from './home-actions';
 import { CalendarStrip, UpcomingCard } from './home-calendar';
@@ -145,7 +145,7 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart, ch
           >
             <Constellation {...toConstellation(live)} />
           </Hero>
-          <MapSlider maps={boards} />
+          <LazyMapSlider maps={boards} />
           <Panel id="home-cov" size="lg" title={t('home.coverage')} aside={<span className="text-[13px] text-muted">{t('home.coverageHint')}</span>}>
             {slots?.coverage ?? <CoverageRows coverage={coverage} />}
           </Panel>

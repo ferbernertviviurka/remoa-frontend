@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/store';
 import { Alert, Button, useToast } from '@remoa/ui';
 import { SectionCard } from '../account/shared/section-card';
 import { storeApi, type StoreWaitlistEntry } from './api';

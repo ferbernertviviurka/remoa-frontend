@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BLOG_LIMITS, blogTemplates, type BlogTemplate } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/admin';
 import { Button, Dialog, Input, TemplatePicker } from '@remoa/ui';
 import { blogAction } from '../api';
 

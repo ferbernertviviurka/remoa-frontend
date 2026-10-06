@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { referralSummaryFixtures } from '@remoa/contracts/mocks';
 import type { ReferralSummary } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { api } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import { ReferralView } from './referral-view';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/referral';
 import { Textarea } from '@remoa/ui';
 import { ReferralCopyField, ShareChannels, type CopyResult, type ShareChannel } from '@remoa/ui';
 import { track } from '@/lib/analytics';

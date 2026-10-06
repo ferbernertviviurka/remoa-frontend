@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/store';
 import { Alert, Button, FilterChip, Icon, Input, WaitlistSuccess } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { storeApi, type StoreInterest, type StoreSellerRole, type StoreWaitlistEntry } from './api';

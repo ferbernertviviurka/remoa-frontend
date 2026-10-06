@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { PLAN_LIMITS, annualDiscountPercent, planDefinition, type PublicPriceBook } from '@remoa/contracts';
-import { strings } from '@remoa/strings';
+import { strings } from '@remoa/strings/full';
 
 const track = vi.fn();
 vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));

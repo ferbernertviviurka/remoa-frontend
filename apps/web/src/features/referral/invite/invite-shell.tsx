@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { Logo } from '@remoa/ui';
 
 /** Header (logo + "Já tenho conta · Entrar") and footer (regulamento, FR-25) shared by `/i/[code]` and `/regulamento-indicacao`. */

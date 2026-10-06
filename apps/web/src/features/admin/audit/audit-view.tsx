@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { adminActions, formatAuditId, auditResults, type AdminAction, type AuditEntry, type AuditPage } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/admin';
 import { AdminHeader, AdminSearch, Button, DataTable, Drawer, DrawerFacts, FilterGroup, Icon, JsonDiff, ReasonDialog, Select, StatusPill, SummaryChip } from '@remoa/ui';
 import { exportAdminCsv } from '../shared/actions';
 import { formatCount } from '../shared/format';

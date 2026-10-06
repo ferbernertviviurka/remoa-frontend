@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { strings } from '@remoa/strings';
+import { strings } from '@remoa/strings/full';
 
 // G11: the real copy (seo.test.tsx stubs t()) must fit Google's SERP limits.
 describe('landing SEO copy', () => {

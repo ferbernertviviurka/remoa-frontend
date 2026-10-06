@@ -1,6 +1,6 @@
 // F18 T7 (FR-14): public invite page. Always noindex; the code never goes into <title>/metadata.
 import type { Metadata } from 'next';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { getUser } from '@/server/auth/session';
 import { lookupInvite } from '@/features/referral/invite/attribution';
 import { InviteShell } from '@/features/referral/invite/invite-shell';

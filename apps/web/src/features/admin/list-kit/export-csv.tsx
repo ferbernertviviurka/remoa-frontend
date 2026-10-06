@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/admin';
 import { Button, Icon, ReasonDialog } from '@remoa/ui';
 import { exportAdminCsv } from '../shared/actions';
 import { downloadCsv } from './download';

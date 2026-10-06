@@ -1,4 +1,4 @@
-import { strings, t } from '@remoa/strings';
+import { strings, t } from '@remoa/strings/full';
 import { BentoTile, Marquee, ProgressLine, Reveal, Section, StepCard, Tag } from '@remoa/ui';
 import type { LandingFlags } from '../flags';
 import { RevealFallback } from './use-reveal-fallback';

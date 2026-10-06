@@ -1,4 +1,4 @@
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { defaultOgImage } from '@/lib/seo/og-default';
 
 export const alt = t('landing.seo.ogTitle');

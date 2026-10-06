@@ -2,7 +2,7 @@
 // so the web builds without the backend checkout (Vercel clones only this repo).
 //   pnpm contracts:sync   copy ../remoa-backend/packages/contracts/src here (tests excluded), removing files that no longer exist
 //   pnpm contracts:check  exit 1 if the copy differs from the backend (CI runs it with both repos checked out)
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -44,5 +44,12 @@ if (check) {
     mkdirSync(dirname(join(target, p)), { recursive: true });
     cpSync(join(source, p), join(target, p));
   }
+  // D-1018: exports/sideEffects of the copy's package.json follow the backend's (subpaths such as ./medical-schools).
+  const backendPkg = JSON.parse(readFileSync(join(root, '..', 'remoa-backend', 'packages', 'contracts', 'package.json'), 'utf8'));
+  const copyPath = join(root, 'packages', 'contracts', 'package.json');
+  const copyPkg = JSON.parse(readFileSync(copyPath, 'utf8'));
+  copyPkg.exports = backendPkg.exports;
+  copyPkg.sideEffects = backendPkg.sideEffects;
+  writeFileSync(copyPath, `${JSON.stringify(copyPkg, null, 2)}\n`);
   process.stdout.write(`contracts: synced ${from.length} files from remoa-backend\n`);
 }

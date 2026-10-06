@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { AuditEntry } from '@remoa/contracts';
 import { formatAuditId } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/admin';
 import {
   AdminHeader, AdminSearch, Button, DataTable, Drawer, DrawerActions, DrawerAuditTrail, DrawerFacts, DrawerTimeline, FilterGroup, ReasonDialog, SummaryChip,
   type DataColumn,

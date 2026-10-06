@@ -1,6 +1,6 @@
 'use client';
 
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/referral';
 import { Icon, type IconName } from '@remoa/ui';
 
 const steps: ReadonlyArray<{ icon: IconName; title: 'step1' | 'step2' | 'step3' }> = [

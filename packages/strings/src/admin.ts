@@ -1,7 +1,8 @@
+import { adminShell } from './shell';
 export const admin = {
   // FR-11: Papéis e navegação
   navigation: {
-    admin: 'Admin',
+    ...adminShell.navigation,
     brand: 'Remoa',
     sealBadge: 'ADMIN',
     ariaLabel: 'Painel de administração',

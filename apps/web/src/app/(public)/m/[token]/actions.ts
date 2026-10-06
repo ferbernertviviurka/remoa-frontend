@@ -5,7 +5,7 @@
 // D-327: share access cookie is scoped to `/m/<token>`, httpOnly, secure (except local http), sameSite=lax.
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
+import { revalidatePaths } from '@/lib/cache';
 import { SHARE_ACCESS_COOKIE, SHARE_ACCESS_HEADER, shareTokenSchema, type CopyBoardInput } from '@remoa/contracts';
 import type { Board } from '@remoa/contracts';
 import { apiBase, apiFetch } from '@/lib/api';
@@ -55,7 +55,7 @@ export async function unlockBoardAction(token: string, password: string): Promis
     expires: new Date(expiresAt),
   });
 
-  revalidatePath(`/m/${token}`);
+  revalidatePaths([`/m/${token}`]);
   return { ok: true };
 }
 

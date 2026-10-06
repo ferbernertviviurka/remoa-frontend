@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/admin';
 import { AdminSidebar, type AdminNavItem } from '@remoa/ui';
 import { signOutToLogin } from '@/features/auth/sign-out';
 import { initialsOf } from '@/features/account/shell/format';

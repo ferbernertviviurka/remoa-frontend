@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { strings } from '@remoa/strings';
+import { strings } from '@remoa/strings/full';
 
 const PAGE = process.env.HERO_URL ?? '/';
 const h = strings.landing.hero;

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { AdminMapPage, AdminMapRow, AuditEntry } from '@remoa/contracts';
-import { strings, t } from '@remoa/strings';
+import { strings, t } from '@remoa/strings/admin';
 import { PersonCell, StatusPill, type StatusPillProps } from '@remoa/ui';
 import { act, ActionError, AdminList, auditLine, type ActionSpec } from '../list-kit/admin-list';
 import { formatDay } from '../list-kit/download';

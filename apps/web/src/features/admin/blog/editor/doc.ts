@@ -5,7 +5,7 @@ import {
   blogDocSchema, countWords, docHrefs, isExternalHref, isInternalHref, seoChecklist,
   type BlogDoc, type SeoCheckId, type SeoSubject,
 } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 
 /** The editor JSON through the contract (D-909): the same parse the API runs. null = some block is incomplete (alt, button, FAQ). */
 export function parseDoc(json: JSONContent): BlogDoc | null {

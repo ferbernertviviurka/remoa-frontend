@@ -9,7 +9,7 @@ import {
   BLOG_LIMITS, blogErrors, blogPostInputSchema, publishBlockers, slugify,
   type BlogCategory, type BlogPost, type BlogRevision, type BlogTemplate, type PreviewLink, type PublishBlocker, type SeoSubject,
 } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/admin';
 import {
   AdminHeader, AutosaveIndicator, Button, Dialog, Icon, PublishBlockers, PublishPanel, SeoPanel, Tabs, fieldControl, focusRing, useToast,
   type PublishStatus,

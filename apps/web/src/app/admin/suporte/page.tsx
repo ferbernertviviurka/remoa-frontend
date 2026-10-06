@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import type { AdminTicketDetail, AdminTicketPage } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { AdminHeader } from '@remoa/ui';
 import { adminGet, requireAdmin } from '@/features/admin/shared/api';
 import { InboxView } from '@/features/admin/support/inbox-view';

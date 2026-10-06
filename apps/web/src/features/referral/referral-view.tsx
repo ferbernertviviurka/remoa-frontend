@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { referralEntryPoints } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/referral';
 import { Button, SkeletonBlock, SkeletonRegion } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import './referral.css';

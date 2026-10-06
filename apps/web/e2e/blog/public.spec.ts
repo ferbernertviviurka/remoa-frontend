@@ -1,6 +1,6 @@
 // F27 T5: public blog. Runs against the real API (:4000) and does not depend on seeded posts: with posts it also walks the first card.
 import { expect, test } from '@playwright/test';
-import { strings } from '@remoa/strings';
+import { strings } from '@remoa/strings/full';
 
 const B = strings.blog.pages;
 

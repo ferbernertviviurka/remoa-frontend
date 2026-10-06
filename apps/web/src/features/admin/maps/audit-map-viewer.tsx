@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import type { BoardGraph, SharedBoard } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/admin';
 import { Dialog } from '@remoa/ui';
 
 // Same read-only React Flow canvas as the public shared map (/m/[token]); it also loads the editor css it needs.

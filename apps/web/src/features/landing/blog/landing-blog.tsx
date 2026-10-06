@@ -1,4 +1,4 @@
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { LandingBlogSection } from '@remoa/ui';
 import { cardProps } from '@/features/blog/format';
 import { getLatestPosts } from './latest-posts';

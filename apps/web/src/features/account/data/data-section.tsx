@@ -6,7 +6,6 @@ import { t } from '@remoa/strings';
 import { Alert, Button, DangerCard, Dialog, Icon, Input, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
-import { createClient } from '@/lib/supabase/client';
 import { formatDate } from '@/features/billing/format';
 import { SectionCard } from '../shared/section-card';
 import { useAccount } from '../shell/account-context';
@@ -61,7 +60,7 @@ function ExportCard() {
 
   async function downloadAttempts() {
     try {
-      const { data } = await createClient().auth.getSession();
+      const { data } = await (await import('@/lib/supabase/client')).createClient().auth.getSession();
       const token = data.session?.access_token;
       const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
       const res = await fetch(`${base}/v1/reports/attempts.csv`, { headers: token ? { authorization: `Bearer ${token}` } : {} });

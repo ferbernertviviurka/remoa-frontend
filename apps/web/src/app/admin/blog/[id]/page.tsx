@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/full';
 import { AdminHeader, ToastProvider } from '@remoa/ui';
 import { requireAdmin } from '@/features/admin/shared/api';
 import { getBlogPost, getCategories } from '@/features/admin/blog/api';
-import { PostEditor } from '@/features/admin/blog/editor/post-editor';
+import { LazyPostEditor } from '@/features/admin/blog/editor/lazy-post-editor';
 import { siteUrl } from '@/lib/seo/site';
 
 // F27 T7: /admin/blog/[id], the post editor (FR-5 to FR-11). Non-admin = 404 (rule 9; the layout checks too).
@@ -17,7 +17,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   }
   return (
     <ToastProvider closeLabel={t('adminBlog.editor.ui.toastClose')} viewportLabel={t('adminBlog.editor.ui.toastViewport')}>
-      <PostEditor post={post.data} categories={categories.ok ? categories.data : []} me={{ id: me.id, name: me.name ?? me.email }} site={new URL(siteUrl).host} />
+      <LazyPostEditor post={post.data} categories={categories.ok ? categories.data : []} me={{ id: me.id, name: me.name ?? me.email }} site={new URL(siteUrl).host} />
     </ToastProvider>
   );
 }

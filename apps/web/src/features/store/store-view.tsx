@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { AccountSnapshot } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/store';
 import { Accordion, Button, Eyebrow, Icon, LockedListingCard, SoonBanner, SoonSeal, SplitSimulator, StatusTrack, StepList, StoreHeroArt, StoreLink, StoreTabs, Tag } from '@remoa/ui';
 import { api } from '@/lib/api';
 import { track } from '@/lib/analytics';

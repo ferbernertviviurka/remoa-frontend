@@ -9,7 +9,6 @@ import { Button, Checkbox, Input, PasswordMeter, Stepper } from '@remoa/ui';
 import { signUp } from '@/server/auth/actions';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
-import { createClient } from '@/lib/supabase/client';
 import { attributeReferral } from '@/features/referral/invite/actions';
 import { APP_HOME, ONBOARDING_HOME, safeNext } from '@/lib/safe-next';
 import { emptyPersonal, PersonalFields, validatePersonal, type PersonalErrors, type PersonalValues } from '../account/profile/personal-fields';
@@ -92,7 +91,7 @@ export function SignUpWizard({ next, referred = false }: { next?: string; referr
       return;
     }
     track('signup', { method: 'password' });
-    const { data } = await createClient().auth.getUser();
+    const { data } = await (await import('@/lib/supabase/client')).createClient().auth.getUser();
     if (!data.user) { setPendingEmail(v.email); setBusy(false); return; } // e-mail confirmation required: the link opens /auth/callback -> onboarding
     {
       if (referred) {

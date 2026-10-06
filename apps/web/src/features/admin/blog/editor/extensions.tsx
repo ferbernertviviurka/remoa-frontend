@@ -16,7 +16,7 @@ import Blockquote from '@tiptap/extension-blockquote';
 import { BulletList, ListItem, ListKeymap, OrderedList } from '@tiptap/extension-list';
 import { Dropcursor, Gapcursor, Placeholder, TrailingNode, UndoRedo } from '@tiptap/extensions';
 import { BLOG_LIMITS, calloutVariants, isSafeHref, type BlogFaqItem, type CalloutVariant } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { t } from '@remoa/strings/admin';
 import { IconButton, Icon, focusRing } from '@remoa/ui';
 
 const FLOW = '(paragraph|bulletList|orderedList)+';

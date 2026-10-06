@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { blogListItemFixtures } from '@remoa/contracts/mocks';
-import { strings } from '@remoa/strings';
+import { strings } from '@remoa/strings/full';
 import { LandingBlog } from './landing-blog';
 import { LandingHeader } from '../shell/landing-header';
 import { headerLabels } from '../shell/header-labels';
