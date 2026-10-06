@@ -14,7 +14,7 @@ const show = vi.fn();
 let ent: { limits: { ai_generations: number | null } } | null = null; // useEntitlements without a provider = null (no client-side gate)
 vi.mock('@/features/shell/entitlements', () => ({ useEntitlements: () => ({ entitlements: ent }) }));
 vi.mock('@/features/billing/paywall', () => ({ usePaywall: () => ({ show: (r: string) => show(r), handle: (e: { code: string; message?: string }) => handle(e) }) }));
-vi.mock('@/features/import/upload', () => ({ putApkg: async () => true }));
+vi.mock('@/features/import/upload', () => ({ uploadApkg: async () => ({ ok: true, data: { key: 'k' } }) }));
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({ auth: { getSession: async () => ({ data: { session: { access_token: 'tok' } } }) } }),
 }));
@@ -128,7 +128,6 @@ describe('NewMapView: "Sobre o mapa" (F17)', () => {
   it('Anki: file → upload on choosing → "Sobre o mapa" named after the root deck → same name asks existing vs new (FR-1, FR-3, FR-11)', async () => {
     const summary = { decks: [{ id: 'd', name: 'Cardio', cardCount: 2, noteCount: 2 }], noteTypes: [{ id: 'n', name: 'Basic', kind: 'basic', fields: ['Front', 'Back'], noteCount: 2, samples: [{ Front: 'a', Back: 'b' }] }], cardCount: 2, mediaCount: 0 };
     api.mockImplementation(async (path: string) => {
-      if (path === '/v1/imports/anki/sign') return { ok: true, data: { url: 'u', key: 'k' } };
       if (path === '/v1/imports/anki/inspect') return { ok: true, data: summary };
       if (path.startsWith('/v1/imports/anki/existing')) return { ok: true, data: { board: { id: 'old', title: 'Cardio' } } };
       if (path === '/v1/imports/anki') return { ok: true, data: { importId: 'i1' } };
@@ -154,7 +153,7 @@ describe('NewMapView: "Sobre o mapa" (F17)', () => {
   it('Anki: Voltar from "Sobre o mapa" keeps the inspected file (FR-1)', async () => {
     const summary = { decks: [{ id: 'd', name: 'Cardio', cardCount: 1, noteCount: 1 }], noteTypes: [], cardCount: 1, mediaCount: 0 };
     api.mockImplementation(async (path: string) =>
-      path === '/v1/imports/anki/sign' ? { ok: true, data: { url: 'u', key: 'k' } } : path === '/v1/imports/anki/inspect' ? { ok: true, data: summary } : { ok: true, data: [] },
+      path === '/v1/imports/anki/inspect' ? { ok: true, data: summary } : { ok: true, data: [] },
     );
     render(<NewMapView items={items} initialPath="anki" />);
     next();
@@ -164,7 +163,7 @@ describe('NewMapView: "Sobre o mapa" (F17)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
     expect(screen.getByText('deck.apkg')).toBeTruthy();
     expect((screen.getByRole('button', { name: 'Continuar' }) as HTMLButtonElement).disabled).toBe(false);
-    expect(api.mock.calls.filter((c) => c[0] === '/v1/imports/anki/sign')).toHaveLength(1);
+    expect(api.mock.calls.filter((c) => c[0] === '/v1/imports/anki/inspect')).toHaveLength(1);
   });
 
   it('PDF on Free (ai_generations 0): the paywall opens with reason pdf and nothing is uploaded', async () => {

@@ -8,7 +8,7 @@ import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { usePaywall } from '@/features/billing/paywall';
 import { defaultPlan, estimate } from './plan';
-import { putApkg } from './upload';
+import { uploadApkg } from './upload';
 
 const t = withStrings({ import: more.import });
 
@@ -53,17 +53,18 @@ export function useAnkiImport() {
           paywall.show('anki');
           return set({ kind: 'idle' });
         }
-        const sign = await post<{ url: string; key: string }>('/v1/imports/anki/sign', { sizeBytes: file.size });
-        if (!sign.ok) {
-          if (paywall.handle(sign.error)) return set({ kind: 'idle' });
-          return set({ kind: 'error', message: sign.error.message || t('import.errors.upload') });
+        // D-1443: through the API (no browser PUT to the bucket); the server checks quota, size and that it is a zip.
+        const up = await uploadApkg(file, (pct) => run.current === id && set({ kind: 'uploading', pct }));
+        if (run.current !== id) return;
+        if (!up.ok) {
+          if (paywall.handle(up.error)) return set({ kind: 'idle' });
+          return set({ kind: 'error', message: t('import.errors.upload') });
         }
-        if (!(await putApkg(sign.data.url, file, (pct) => run.current === id && set({ kind: 'uploading', pct })))) return set({ kind: 'error', message: t('import.errors.upload') });
         set({ kind: 'inspecting' });
-        const insp = await post<ApkgSummary>('/v1/imports/anki/inspect', { key: sign.data.key });
+        const insp = await post<ApkgSummary>('/v1/imports/anki/inspect', { key: up.data.key });
         if (run.current !== id) return;
         if (!insp.ok) return set({ kind: 'error', message: insp.error.message || t('errors.internal') });
-        set({ kind: 'preview', key: sign.data.key, summary: insp.data, plan: defaultPlan(insp.data), maxCards: ent?.ok ? ent.data.ankiImportMaxCards : null }); // null = no per-file cap
+        set({ kind: 'preview', key: up.data.key, summary: insp.data, plan: defaultPlan(insp.data), maxCards: ent?.ok ? ent.data.ankiImportMaxCards : null }); // null = no per-file cap
       } catch {
         set({ kind: 'error', message: t('errors.internal') });
       }
