@@ -2,10 +2,13 @@
 
 import { useState, type ReactNode } from 'react';
 import type { ReviewHub } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { ColumnChart, Donut, Heatmap, KpiCard, LineChart, Segmented } from '@remoa/ui';
 import { parseDay, SectionCard } from './section-card';
 import { useCountUp } from './use-count-up';
+
+const t = withStrings({ review: more.review }); // P-512: namespace fora do núcleo
 
 const fmt = (d: Date, o: Intl.DateTimeFormatOptions) => d.toLocaleDateString('pt-BR', o);
 const tableLabel = t('review.hub.table');

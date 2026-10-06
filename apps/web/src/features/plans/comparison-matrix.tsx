@@ -1,6 +1,6 @@
 'use client';
 
-import { comparisonRows, formatBRL, type ComparisonRow as Row, type PlanFeatureKey } from '@remoa/contracts';
+import { comparisonRows, formatBRL, type ComparisonRow as Row, type PlanFeatureKey } from '@remoa/contracts/constants';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { ComparisonTable, PlanColumnHeader, PriceTicker, type ComparisonRow } from '@remoa/ui';

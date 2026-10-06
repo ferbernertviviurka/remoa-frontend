@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { strings, t } from '../../../strings/src';
+import { strings, t } from '../../../strings/src/t-app';
 import { Button } from '../button';
 import { Dialog } from '../dialog';
 import {

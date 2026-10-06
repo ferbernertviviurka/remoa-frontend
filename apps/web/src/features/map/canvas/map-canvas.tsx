@@ -28,6 +28,8 @@ import { useChallenge, type Scope } from '@/features/challenge/provider';
 import { MatrixLinkButton } from '@/features/coverage/matrix-suggestions';
 import { CanvasHeader, type Mode } from './canvas-header';
 import { primeCardDetail } from './card-detail';
+import { desktopFrame, fitToImages, hasNewImage, imageIdsOf } from './image-fit';
+import { loadAsset } from '@/features/cards/upload';
 import { CardNodeView, FocusCard } from './card-node';
 import { applyOps, freshen, invertAll, patchCard, snapPos, type CardCache, type CardNode, type Graph, type LinkEdge } from './graph';
 import { emptyHistory, push, redo, undo, type History } from './history';
@@ -311,13 +313,23 @@ function Canvas({ data }: { data: BoardGraph }) {
   const onCardSaved = useCallback(
     (d: CardDetail, input: SaveCardInput) => {
       primeCardDetail(d);
+      const before = g.current.nodes.find((n) => n.id === d.id)?.data.card;
       setGraph(
         patchCard(g.current, cache.current, d.id, {
-          title: d.title, shape: d.shape, front: d.front, frontAssetId: d.frontAssetId, back: d.back, source: d.source, preview: d.preview ?? previewOf(input),
+          title: d.title, shape: d.shape, front: d.front, frontAssetId: d.frontAssetId, backAssetId: d.backAssetId, back: d.back, source: d.source, preview: d.preview ?? previewOf(input),
         }),
       );
+      // D-1211: a new image grows the card so it shows whole (one undoable resizeCards, like the handles)
+      const after = g.current.nodes.find((n) => n.id === d.id)?.data.card;
+      if (!after || !hasNewImage(before, after)) return;
+      void Promise.all(imageIdsOf(after).map(loadAsset)).then((assets) => {
+        const card = g.current.nodes.find((n) => n.id === d.id)?.data.card;
+        if (!card || (card.type === 'concept' && card.shape !== 'rect')) return;
+        const size = fitToImages(sizeOf(card), assets.filter((a) => a !== null), desktopFrame(card));
+        if (size) commit([{ op: 'resizeCards', opId: uuid(), boardId: board.id, sizes: [{ cardId: d.id, size }] }]);
+      });
     },
-    [setGraph],
+    [board.id, commit, setGraph],
   );
 
   /** G04: shape preview while the editor autosaves it (and the rollback); sizeOf/nodeSize follow `card.shape`. */

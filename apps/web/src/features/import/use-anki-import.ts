@@ -2,12 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ApkgSummary, Entitlements, ExistingBoard, FieldMapping, ImportBoardInput, ImportProgress, ImportReport, Result } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { usePaywall } from '@/features/billing/paywall';
 import { defaultPlan, estimate } from './plan';
 import { putApkg } from './upload';
+
+const t = withStrings({ import: more.import });
 
 export type Plan = { deckIds: string[]; mappings: FieldMapping[] };
 export type AnkiState =

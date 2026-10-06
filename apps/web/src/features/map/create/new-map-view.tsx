@@ -2,19 +2,18 @@
 
 import { AiNotice, AiWarning } from '@/features/ai/ai-notice';
 import { useNavigate } from '@/features/shell/use-navigate';
+import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
 import type { Board, BoardGenerationProgress, ImportBoardInput, ImportTarget, MatrixItem } from '@remoa/contracts';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
-import { Alert, Button, ChoiceCard, ChoiceRow, Dialog, Dropzone, Icon, IconButton, Logo, Progress, Stepper } from '@remoa/ui';
+import { Alert, Button, ChoiceCard, ChoiceRow, Dialog, Dropzone, Icon, IconButton, Logo, Progress, Skeleton, SkeletonRegion, Stepper } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { usePaywall } from '@/features/billing/paywall';
 import { useEntitlements } from '@/features/shell/entitlements';
 import { useMatrixSuggestions } from '@/features/coverage/matrix-suggestions';
 import Link from 'next/link';
-import { AnkiImportFlow } from '@/features/import/anki-import-flow';
-import { ExistingBoardDialog } from '@/features/import/existing-board-dialog';
 import { defaultBoardTitle, estimate } from '@/features/import/plan';
 import { useAnkiImport } from '@/features/import/use-anki-import';
 import { AboutMapForm, aboutErrors, aboutPayload, emptyAboutMap, type AboutMap } from './about-map-form';
@@ -30,6 +29,18 @@ const PATHS: ReadonlyArray<{ id: Path; icon: 'file' | 'archive' | 'book' | 'plus
   { id: 'blank', icon: 'plus' },
 ];
 const OPTS = { pdf: ['flows', 'rubrics'] } as const;
+
+// P-516: the Anki flow (summary, "Ajustar importação" with accordion/checkbox/select) and the existing-board dialog only download on the Anki path;
+// choosing it prefetches them, so the skeleton rarely shows. `useAnkiImport` stays static: its state drives the stepper, title and CTA.
+const loadFlow = () => import('@/features/import/anki-import-flow');
+const AnkiImportFlow = dynamic(() => loadFlow().then((m) => m.AnkiImportFlow), {
+  loading: () => (
+    <SkeletonRegion label={t('common.loading')}>
+      <Skeleton />
+    </SkeletonRegion>
+  ),
+});
+const ExistingBoardDialog = dynamic(() => import('@/features/import/existing-board-dialog').then((m) => m.ExistingBoardDialog));
 
 /** `items`: every CM matrix item (groups label the leaves in the picker). */
 type Props = { items: MatrixItem[]; initialPath?: Path; initialItemId?: string; initialStep?: 0 | 1 | 2 };
@@ -70,6 +81,10 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
     if (path === 'pdf' && file) setAbout((a) => ({ ...a, title: file.name.replace(/\.pdf$/i, '').slice(0, 120) }));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only when a new file is read
   }, [ankiKey, file, path]);
+
+  useEffect(() => {
+    if (path === 'anki') void loadFlow();
+  }, [path]);
 
   useEffect(() => {
     if (path !== 'seed') return;
@@ -428,7 +443,7 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
 
       <MapPreview path={path} step={step} name={about.title.trim()} area={area} item={firstItem?.title ?? ''} />
 
-      <ExistingBoardDialog open={existing != null} existing={existing} onChoose={importAnki} onCancel={() => setExisting(null)} />
+      {path === 'anki' ? <ExistingBoardDialog open={existing != null} existing={existing} onChoose={importAnki} onCancel={() => setExisting(null)} /> : null}
       {/* D-068/D-071: PDF (F05), Anki (F06) and mapas prontos (F10/F12) do not exist in the backend yet; never pretend they generated. */}
       <Dialog open={soon} onOpenChange={setSoon} title={t('boards.soon.title')} description={t('boards.soon.body')} closeLabel={t('common.close')}>
         <Button onClick={() => setSoon(false)}>{t('common.close')}</Button>

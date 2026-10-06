@@ -1,6 +1,6 @@
 'use client';
 
-import { annualDiscountPercent } from '@remoa/contracts';
+import { annualDiscountPercent } from '@remoa/contracts/constants';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { PeriodToggle } from '@remoa/ui';

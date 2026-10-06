@@ -84,12 +84,13 @@ describe('SignUpWizard', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Criar conta');
   });
 
-  const toAbout = () => { fillAccount(); click('Continuar'); };
+  // the personal-data form downloads after the first paint (P-514): wait for it
+  const toAbout = async () => { fillAccount(); click('Continuar'); await screen.findByLabelText('Telefone'); };
   const fillAbout = () => { type('Como podemos te chamar?', 'Ana Souza'); type('Telefone', '11912345678'); };
 
-  it('avança, volta sem perder o digitado e marca o passo atual', () => {
+  it('avança, volta sem perder o digitado e marca o passo atual', async () => {
     render(<SignUpWizard />);
-    toAbout();
+    await toAbout();
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Sobre você');
     expect(screen.getByRole('listitem', { current: 'step' }).textContent).toContain('Sobre você');
     type('Como podemos te chamar?', 'Ana Souza');
@@ -99,16 +100,16 @@ describe('SignUpWizard', () => {
     expect((screen.getByLabelText('Como podemos te chamar?') as HTMLInputElement).value).toBe('Ana Souza');
   });
 
-  it('não repete o onboarding: sem momento, objetivo ou área', () => {
+  it('não repete o onboarding: sem momento, objetivo ou área', async () => {
     render(<SignUpWizard />);
-    toAbout();
+    await toAbout();
     expect(screen.queryByText(/objetivo/i)).toBeNull();
     expect(screen.queryByRole('radio', { name: '5º–6º ano' })).toBeNull();
   });
 
-  it('G20: "Continuar" só ativa com nome e telefone válidos; valor inválido mostra o erro inline', () => {
+  it('G20: "Continuar" só ativa com nome e telefone válidos; valor inválido mostra o erro inline', async () => {
     render(<SignUpWizard />);
-    toAbout();
+    await toAbout();
     expect(screen.getByRole('button', { name: 'Continuar' })).toBeDisabled();
     type('Como podemos te chamar?', 'Ana Souza');
     expect(screen.getByRole('button', { name: 'Continuar' })).toBeDisabled(); // falta o telefone
@@ -123,9 +124,9 @@ describe('SignUpWizard', () => {
     expect(screen.getByRole('button', { name: 'Continuar' })).toBeDisabled();
   });
 
-  it('não pergunta "Você é"; endereço incompleto bloqueia o passo', () => {
+  it('não pergunta "Você é"; endereço incompleto bloqueia o passo', async () => {
     render(<SignUpWizard />);
-    toAbout();
+    await toAbout();
     fillAbout();
     expect(screen.queryByRole('radio', { name: 'Aluno' })).toBeNull();
     type('Logradouro', 'Rua A');
@@ -134,9 +135,9 @@ describe('SignUpWizard', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Sobre você');
   });
 
-  it('telefone ganha máscara BR enquanto digita', () => {
+  it('telefone ganha máscara BR enquanto digita', async () => {
     render(<SignUpWizard />);
-    toAbout();
+    await toAbout();
     type('Telefone', '11912345678');
     expect((screen.getByLabelText('Telefone') as HTMLInputElement).value).toBe('(11) 91234-5678');
   });
@@ -145,7 +146,7 @@ describe('SignUpWizard', () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ logradouro: 'Avenida Paulista', bairro: 'Bela Vista', localidade: 'São Paulo', uf: 'SP' }) });
     vi.stubGlobal('fetch', fetchMock);
     render(<SignUpWizard />);
-    toAbout();
+    await toAbout();
     type('CEP', '01310100');
     expect(screen.getByRole('status').textContent).toMatch(/Buscando o CEP/);
     await waitFor(() => expect((screen.getByLabelText('Logradouro') as HTMLInputElement).value).toBe('Avenida Paulista'));
@@ -169,7 +170,7 @@ describe('SignUpWizard', () => {
   it('exige o consentimento (erro visível), envia nome e grava os dados pessoais pelo PATCH, sem nulls', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ logradouro: 'Avenida Paulista', bairro: 'Bela Vista', localidade: 'São Paulo', uf: 'SP' }) }));
     render(<SignUpWizard next="/app/mapas" />);
-    toAbout();
+    await toAbout();
     fillAbout();
     fireEvent.click(screen.getByRole('radio', { name: 'Feminino' }));
     type('CEP', '01310100');
@@ -201,7 +202,7 @@ describe('SignUpWizard', () => {
 
   it('só nome e telefone: vai ao onboarding e grava só o telefone no PATCH', async () => {
     render(<SignUpWizard />);
-    toAbout();
+    await toAbout();
     fillAbout();
     click('Continuar');
     fireEvent.click(screen.getByRole('checkbox'));
@@ -213,7 +214,7 @@ describe('SignUpWizard', () => {
   it('e-mail já cadastrado volta ao passo 1 com o erro no campo', async () => {
     signUp.mockResolvedValue({ ok: false, error: { code: 'conflict', message: 'x' } });
     render(<SignUpWizard />);
-    toAbout();
+    await toAbout();
     fillAbout();
     click('Continuar');
     fireEvent.click(screen.getByRole('checkbox'));
@@ -226,7 +227,7 @@ describe('SignUpWizard', () => {
   it('com confirmação de e-mail: mostra a tela de confirmação, reenvia e não navega', async () => {
     session = false;
     render(<SignUpWizard />);
-    toAbout();
+    await toAbout();
     fillAbout();
     click('Continuar');
     fireEvent.click(screen.getByRole('checkbox'));

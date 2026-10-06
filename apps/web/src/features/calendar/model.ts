@@ -1,5 +1,5 @@
 // F25: pure helpers between the API contract (`@remoa/contracts/calendar`) and the presentational `@remoa/ui` calendar components.
-import { CALENDAR_PALETTE, CALENDAR_REMINDER_RULES, calendarColors } from '@/lib/contracts-lite'; // zod-free (P-507)
+import { CALENDAR_PALETTE, CALENDAR_REMINDER_RULES, calendarColors } from '@remoa/contracts/constants'; // zod-free (CCR-058)
 import type {
   CalendarColor,
   CalendarEvent,

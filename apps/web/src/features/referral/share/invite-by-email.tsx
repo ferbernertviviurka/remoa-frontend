@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { InviteResult } from '@remoa/contracts';
-import { REFERRAL_LIMITS, referralErrors } from '@remoa/contracts';
+import { REFERRAL_LIMITS, referralErrors } from '@remoa/contracts/constants';
 import { t } from '@remoa/strings/referral';
 import { ChipInput } from '@remoa/ui';
 import { api } from '@/lib/api';

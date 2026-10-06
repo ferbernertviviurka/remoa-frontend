@@ -2,7 +2,8 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { PLAN_LIMITS, type PaywallReason } from '@remoa/contracts';
+import type { PaywallReason } from '@remoa/contracts';
+import { PLAN_LIMITS } from '@remoa/contracts/constants';
 import { t } from '@remoa/strings';
 import { Button, Dialog } from '@remoa/ui';
 import { track } from '@/lib/analytics';

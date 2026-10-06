@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { PLAN_LIMITS, type CheckoutSessionStatus } from '@remoa/contracts';
+import type { CheckoutSessionStatus } from '@remoa/contracts';
+import { PLAN_LIMITS } from '@remoa/contracts/constants';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Alert, Button, Dialog, SuccessPanel } from '@remoa/ui';

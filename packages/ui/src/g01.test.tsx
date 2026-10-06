@@ -52,9 +52,23 @@ describe('G01 primitives', () => {
   it('Menu ícone: nome acessível, abre com teclado e seleciona', async () => {
     const onSelect = vi.fn();
     render(<Menu trigger="icon" label="Mais ações" icon={<span>⋯</span>} items={[{ label: 'Renomear', onSelect }]} />);
-    screen.getByRole('button', { name: 'Mais ações' }).focus();
+    const trigger = screen.getByRole('button', { name: 'Mais ações' });
+    expect(trigger).toHaveAttribute('aria-haspopup', 'menu'); // gatilho leve até o 1º uso (P-512)
+    trigger.focus();
     await userEvent.keyboard('{Enter}');
+    expect(await screen.findByRole('menuitem', { name: 'Renomear' })).toHaveFocus(); // aberto pelo teclado: foco no 1º item, como no Radix
     await userEvent.keyboard('{ArrowDown}{Enter}');
     expect(onSelect).toHaveBeenCalledOnce();
+    expect(screen.getByRole('button', { name: 'Mais ações' })).toHaveFocus(); // fechou e o foco voltou ao gatilho
+  });
+  it('Menu: abre com o ponteiro; Esc fecha e reabre (Radix já montado)', async () => {
+    render(<Menu trigger="icon" label="Mais ações" icon={<span>⋯</span>} items={[{ label: 'Renomear' }, { label: 'Excluir', tone: 'danger' }]} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Mais ações' }));
+    expect(await screen.findByRole('menu')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mais ações', hidden: true })).toHaveAttribute('aria-expanded', 'true');
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Mais ações' }));
+    expect(screen.getByRole('menu')).toBeInTheDocument();
   });
 });

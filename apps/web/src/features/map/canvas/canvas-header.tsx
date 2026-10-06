@@ -17,7 +17,7 @@ import { ShareDialog } from '@/features/map/share/share-dialog';
 import type { QueueStatus } from './op-queue';
 import { saveText } from './save-text';
 
-const t = withStrings({ boards: more.boards, map: more.map });
+const t = withStrings({ boards: more.boards, map: more.map, mapProps: more.mapProps, share: more.share });
 type StringKey = Parameters<typeof t>[0];
 
 export { saveText };

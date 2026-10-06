@@ -1,8 +1,11 @@
 'use client';
 
 import type { ImportTarget } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, Dialog } from '@remoa/ui';
+
+const t = withStrings({ importExisting: more.importExisting });
 
 type Props = { open: boolean; existing: { id: string; title: string } | null; onChoose: (target: ImportTarget) => void; onCancel: () => void };
 

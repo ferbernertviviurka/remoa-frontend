@@ -1,23 +1,29 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useNavigate } from '@/features/shell/use-navigate';
-import { isValidName, isValidPassword, normalizeName, passwordStrength } from '@remoa/contracts';
+import { isValidName, isValidPassword, normalizeName, passwordStrength } from '@remoa/contracts/constants';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
-import { Button, Checkbox, Input, PasswordMeter, Stepper } from '@remoa/ui';
+import { Button, Checkbox, Input, PasswordMeter, SkeletonBlock, Stepper } from '@remoa/ui';
 import { signUp } from '@/server/auth/actions';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { attributeReferral } from '@/features/referral/invite/actions';
 import { APP_HOME, ONBOARDING_HOME, safeNext } from '@/lib/safe-next';
-import { emptyPersonal, PersonalFields, validatePersonal, type PersonalErrors, type PersonalValues } from '../account/profile/personal-fields';
+import { emptyPersonal, type PersonalErrors, type PersonalValues } from '../account/profile/personal-basics';
 import { ConfirmEmail } from './confirm-email';
 import { FieldError, PasswordField } from './password-field';
 import { generalMessage, validEmail } from './sign-in-form';
 
 const t = withStrings({ account: more.account, personal: more.personal });
+
+// P-514 (D-1080): the personal-data form (Radix Select, zod schemas, ~45 KB with its deps) is step 2; it downloads after the first paint.
+const loadPersonal = () => import('../account/profile/personal-fields');
+type PersonalModule = Awaited<ReturnType<typeof loadPersonal>>;
+const PersonalFields = dynamic(() => loadPersonal().then((m) => m.PersonalFields), { loading: () => <SkeletonBlock height={320} radius={16} /> });
 
 type Values = { email: string; password: string; name: string; personal: PersonalValues; consent: boolean };
 const NO_TYPE = { userType: false } as const; // "Você é?" lives in the onboarding
@@ -51,6 +57,10 @@ export function SignUpWizard({ next, referred = false }: { next?: string; referr
   const headingRef = useRef<HTMLHeadingElement>(null);
   const mounted = useRef(false);
   const set = <K extends keyof Values>(k: K, val: Values[K]) => setV((p) => ({ ...p, [k]: val }));
+  const [personalMod, setPersonalMod] = useState<PersonalModule | null>(null);
+  useEffect(() => void loadPersonal().then(setPersonalMod, () => undefined), []);
+  // until the form module arrives, "Sobre você" counts as incomplete (the button stays off, never a submit without validation)
+  const validatePersonal: PersonalModule['validatePersonal'] = (p, o) => personalMod?.validatePersonal(p, o) ?? { errors: { phone: '' }, payload: null };
 
   // Foco: primeiro campo ao abrir; ao trocar de passo, o título do passo (anuncia a mudança).
   useEffect(() => {

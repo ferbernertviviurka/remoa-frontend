@@ -1,8 +1,11 @@
 'use client';
 
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, Empty } from '@remoa/ui';
 import { useNavigate } from '@/features/shell/use-navigate';
+
+const t = withStrings({ review: more.review }); // P-512: namespace fora do núcleo
 
 /** FR-16: the hub could not load. */
 export function ReviewError({ message }: { message: string }) {

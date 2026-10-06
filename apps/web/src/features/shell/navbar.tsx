@@ -8,7 +8,7 @@ import { t } from '@remoa/strings';
 import { Alert, AppNavbar, Avatar, Button, Icon, PlanChip, PlanPopover, type LimitMeterProps } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
-import { PLAN_LIMITS } from '@/lib/contracts-lite';
+import { PLAN_LIMITS } from '@remoa/contracts/constants';
 import { initialsOf } from '@/features/account/shell/format';
 import { NotificationBell } from '@/features/notifications/bell/notification-bell';
 import { PaletteButton } from './command-palette';

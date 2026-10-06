@@ -15,14 +15,6 @@ const config: NextConfig = {
   experimental: { optimizePackageImports: ['@remoa/ui', '@xyflow/react', '@dnd-kit/core', '@tiptap/react'] },
   // G21 FR-51: AVIF/WebP (as únicas imagens de `next/image` hoje são SVGs ilustrativos, que o Next não reprocessa).
   images: { formats: ['image/avif', 'image/webp'] },
-  // P-507 (D-1072): no App Router, cada layout e cada página é uma entrada; o padrão do Next (`minSize: 20000`) não separa grupos
-  // pequenos de módulos comuns, que então vão duplicados no chunk do layout e no da página (Dialog, botão, cliente da API...).
-  // Um mínimo menor tira a duplicata do First Load. `SPLIT_MIN` só para medir outros valores.
-  webpack(cfg, { isServer, dev }) {
-    const split = cfg.optimization?.splitChunks;
-    if (!isServer && !dev && split) split.minSize = Number(process.env.SPLIT_MIN ?? 5000);
-    return cfg;
-  },
   // F27: metadados no <head> para todo User-Agent (o streaming do Next 15 os põe no <body>; o Lighthouse não vê a meta description e SEO cai para 92)
   htmlLimitedBots: /.*/,
   // lint roda via `pnpm lint` (ESLint flat config na raiz), não no build

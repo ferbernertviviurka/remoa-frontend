@@ -8,10 +8,13 @@ import { useEffect, useRef, useState } from 'react';
 import type { Board } from '@remoa/contracts';
 import { SHARE_PASSWORD_MIN, SHARE_PASSWORD_MAX, sharePasswordSchema, updateShareInputSchema } from '@remoa/contracts';
 import type { BoardAccess, ShareState } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, CopyField, Dialog, PasswordInput, Segmented, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { getShare, updateShare } from './share-api';
+
+const t = withStrings({ boardsAccess: more.boardsAccess, newMapAbout: more.newMapAbout, share: more.share });
 
 type Props = {
   board: Pick<Board, 'id' | 'access' | 'shareUrl'>;

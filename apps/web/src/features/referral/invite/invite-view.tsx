@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { isValidName, isValidPassword, normalizeName } from '@remoa/contracts';
+import { isValidName, isValidPassword, normalizeName } from '@remoa/contracts/constants';
 import { t } from '@remoa/strings/referral';
 import { Avatar, Button, Icon, Input, buttonVariants } from '@remoa/ui';
 // D-417: the barrel `@remoa/ui` loses the referral exports under Next's optimizePackageImports (file names clash: hero, copy-field); direct entry.

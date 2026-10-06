@@ -1,10 +1,13 @@
 'use client';
 
 import type { CalendarReminderKind } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { CalendarDrawer, EventDetails, dayKeyOf, shortDate, timeOf, type CalendarLabelItem, type DayKey } from '@remoa/ui';
 import { reminderLocal, toItem, type Ev } from './model';
 import { text } from './text';
+
+const t = withStrings({ calendar: more.calendar }); // P-512: namespace fora do núcleo
 
 /** Linha de aviso: o horário vem do `ReminderPlan` da API; sem plano (aviso desligado ou ainda não planejado), da regra 18:00 / 07:00 / 1 h antes. */
 function reminderRow(e: Ev, kind: CalendarReminderKind, tz: string) {

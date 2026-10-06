@@ -1,6 +1,8 @@
 'use client';
 
 import {
+  lazy,
+  Suspense,
   useId,
   useRef,
   useState,
@@ -8,9 +10,12 @@ import {
   useEffect,
   type KeyboardEvent,
 } from 'react';
-import * as Popover from '@radix-ui/react-popover';
 import { focusRing } from './button-styles';
 import { Icon } from './icons';
+
+// P-516: Radix Popover + Popper (~10 KB) só baixam na 1ª interação com o campo (ponteiro em cima ou foco), como o Menu (D-1078).
+const load = () => import('./combobox-popover');
+const ComboboxPopover = lazy(load);
 
 // ---------------------------------------------------------------------------
 // Types
@@ -151,7 +156,7 @@ function OptionItem({
 
 /**
  * Combobox multi com busca, grupos, chips e estado vazio.
- * WAI-ARIA combobox + listbox; Radix Popover para posicionamento.
+ * WAI-ARIA combobox + listbox; Radix Popover para posicionamento (combobox-popover.tsx, carregado na 1ª interação).
  * Sem prop className (D-024). Texto e aria-labels por prop (D-028).
  */
 export function Combobox({
@@ -174,6 +179,7 @@ export function Combobox({
   const [query, setQuery] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const anchorRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const isDisabled = Boolean(disabledMessage);
@@ -303,9 +309,10 @@ export function Combobox({
           {disabledMessage}
         </div>
       ) : (
-        <Popover.Root open={open} onOpenChange={setOpen}>
-          <Popover.Anchor asChild>
+        <>
             <div
+              ref={anchorRef}
+              onPointerEnter={() => void load()}
               onClick={() => { inputRef.current?.focus(); setOpen(true); }}
               className={[
                 'flex min-h-[52px] flex-wrap items-center gap-2 rounded-field border-[1.5px] bg-surface px-4 py-2 transition-[border-color] duration-150 cursor-text',
@@ -345,17 +352,10 @@ export function Combobox({
                 className={`min-h-11 min-w-[120px] flex-1 bg-transparent text-base font-semibold text-ink placeholder:font-normal placeholder:text-muted outline-none ${focusRing}`}
               />
             </div>
-          </Popover.Anchor>
 
-          <Popover.Portal>
-            <Popover.Content
-              onOpenAutoFocus={(e) => e.preventDefault()}
-              onInteractOutside={() => setOpen(false)}
-              sideOffset={6}
-              align="start"
-              aria-label={label}
-              className="z-50 w-[var(--radix-popover-trigger-width)] rounded-map border border-border bg-surface p-1 shadow-lift"
-            >
+          {open ? (
+            <Suspense fallback={null}>
+              <ComboboxPopover anchor={anchorRef} label={label} onOpenChange={setOpen}>
               <div>
                 <div
                   id={listboxId}
@@ -430,9 +430,10 @@ export function Combobox({
                   )}
                 </div>
               </div>
-            </Popover.Content>
-          </Popover.Portal>
-        </Popover.Root>
+              </ComboboxPopover>
+            </Suspense>
+          ) : null}
+        </>
       )}
     </div>
   );

@@ -11,7 +11,7 @@ describe('challenge tour (G14 ponto 19)', () => {
   it('shows once: "Entendi" marks it seen; "Ver de novo" (openChallengeTour) still opens it', async () => {
     render(<ChallengeTourHost />);
     act(() => maybeShowChallengeTour());
-    expect(screen.getByRole('dialog', { name: 'Como funciona o desafio' })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: 'Como funciona o desafio' }, { timeout: 5000 })).toBeInTheDocument(); // lazy dialog (P-507): first import is cold
     for (let i = 0; i < 3; i++) fireEvent.click(screen.getByRole('button', { name: 'Próximo' }));
     fireEvent.click(screen.getByRole('button', { name: 'Entendi' }));
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -21,10 +21,10 @@ describe('challenge tour (G14 ponto 19)', () => {
     act(() => openChallengeTour());
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
-  it('closing with Esc also counts as seen', () => {
+  it('closing with Esc also counts as seen', async () => {
     render(<ChallengeTourHost />);
     act(() => maybeShowChallengeTour());
-    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    fireEvent.keyDown(await screen.findByRole('dialog'), { key: 'Escape' });
     expect(localStorage.getItem(TOUR_KEY)).toBe('1');
   });
 });

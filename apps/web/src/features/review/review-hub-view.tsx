@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { Entitlements, QueueFilter, ReviewHub } from '@remoa/contracts';
-import { REVIEW_SESSION_MAX } from '@/lib/contracts-lite';
-import { t } from '@remoa/strings';
+import { REVIEW_SESSION_MAX } from '@remoa/contracts/constants';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { track } from '@/lib/analytics';
 import { useChallenge } from '@/features/challenge/provider';
 import { useNavigate } from '@/features/shell/use-navigate';
@@ -12,6 +13,8 @@ import { Areas, HardCards, NoData, PerMap } from './focus-section';
 import { computeQueue, DEFAULT_CHIPS, type Chips, type Reason } from './hub-math';
 import { QueuePanel } from './queue-panel';
 import { rememberQueue } from './queue-cache';
+
+const t = withStrings({ review: more.review }); // P-512: namespace fora do núcleo
 
 const TZ = 'America/Sao_Paulo'; // fixed: server and browser must render the same greeting (no hydration mismatch)
 const greeting = (at: Date) => {

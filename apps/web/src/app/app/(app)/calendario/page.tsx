@@ -1,10 +1,13 @@
 import { headers } from 'next/headers';
 import type { CalendarLabelList, CalendarSettings } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { EmptyState } from '@/features/shell/empty-state';
 import { CalendarView } from '@/features/calendar/calendar-view';
 import { initialSettings } from '@/features/calendar/initial-view';
 import { serverApi } from '@/lib/api/server';
+
+const t = withStrings({ calendar: more.calendar }); // P-512: namespace fora do núcleo
 
 export const metadata = { title: t('calendar.navLabel') };
 

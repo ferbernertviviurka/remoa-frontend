@@ -92,6 +92,21 @@ describe('NotificationPopover', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByRole('button', { name: 'Notificações' })).toHaveFocus();
   });
+  it('fechado: o sino já é o gatilho e o painel só monta no clique (P-512); Esc devolve o foco', async () => {
+    const u = userEvent.setup();
+    render(<Demo initialOpen={false} />);
+    const bell = screen.getByRole('button', { name: 'Notificações' });
+    expect(bell).toHaveAttribute('aria-haspopup', 'dialog');
+    expect(bell).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await u.click(bell);
+    expect(await screen.findByRole('dialog', { name: 'Central de notificações' })).toBeInTheDocument();
+    expect(bell).toHaveAttribute('aria-expanded', 'true');
+    expect(bell).toHaveAttribute('aria-controls', screen.getByRole('dialog').id);
+    await u.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(bell).toHaveFocus();
+  });
   it('carregando mostra região de status; erro mostra "Tentar de novo"', async () => {
     const { unmount } = render(<Demo state="loading" />);
     expect(await screen.findByRole('status')).toHaveAttribute('aria-busy', 'true');

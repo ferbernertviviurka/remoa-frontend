@@ -1,13 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { REVIEW_SESSION_MAX } from '@/lib/contracts-lite';
-import { t } from '@remoa/strings';
+import { REVIEW_SESSION_MAX } from '@remoa/contracts/constants';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, Button, Icon } from '@remoa/ui';
 import { useChallenge } from '@/features/challenge/provider';
 import { useNavigate } from '@/features/shell/use-navigate';
 import { ReviewError } from './error-panel';
 import { recallQueue, type SavedQueue } from './queue-cache';
+
+const t = withStrings({ review: more.review }); // P-512: namespace fora do núcleo
 
 /** Shown when the API cannot load the hub: the last queue stored on the device (offline), or the error with "Tentar de novo". */
 export function SavedQueueView({ message }: { message: string }) {

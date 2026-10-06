@@ -142,7 +142,7 @@ describe('NewMapView: "Sobre o mapa" (F17)', () => {
     await waitFor(() => expect((screen.getByRole('button', { name: 'Continuar' }) as HTMLButtonElement).disabled).toBe(false));
     next();
     expect(name().value).toBe('Cardio');
-    expect(screen.getByTestId('import-summary').textContent).toContain('2 cards');
+    expect((await screen.findByTestId('import-summary')).textContent).toContain('2 cards');
     fireEvent.click(screen.getByRole('button', { name: 'Importar 2 cards' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Importar no mapa existente (cards repetidos são ignorados)' }));
     await screen.findByText('Relatório da importação');

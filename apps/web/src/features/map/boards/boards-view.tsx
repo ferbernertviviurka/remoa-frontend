@@ -13,7 +13,7 @@ import { useEntitlements } from '@/features/shell/entitlements';
 import { usePaywall } from '@/features/billing/paywall';
 import { fold, savedAgo } from './saved-ago';
 
-const t = withStrings({ boards: more.boards, home: more.home });
+const t = withStrings({ boards: more.boards, boardsAccess: more.boardsAccess, home: more.home });
 type StringKey = Parameters<typeof t>[0];
 
 type Modal = { kind: 'rename' | 'archive' | 'delete'; board: BoardSummary } | null;

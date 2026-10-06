@@ -1,16 +1,17 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { AREA_OPTIONS, MAX_GOALS, isValidName, normalizeBrPhone, normalizeName, userTypes, type Goal, type OnboardingAnswersPatch, type OnboardingState, type RequiredProfileField, type Segment, type UserType } from '@remoa/contracts';
-import { MEDICAL_SCHOOLS } from '@remoa/contracts/medical-schools';
+import { AREA_OPTIONS, type Goal, type OnboardingAnswersPatch, type OnboardingState, type RequiredProfileField, type Segment, type UserType } from '@remoa/contracts';
+import { MAX_GOALS, isValidName, normalizeBrPhone, normalizeName, userTypes } from '@remoa/contracts/constants';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
-import { Alert, Autocomplete, Button, ChoiceCard, ChoiceRow, Input, Logo, Stepper, type AutocompleteValue } from '@remoa/ui';
+import { Alert, Button, ChoiceCard, ChoiceRow, Input, Logo, SkeletonBlock, Stepper, type AutocompleteValue } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { useAcceptLegal } from '@/features/legal/use-accept-legal';
-import { maskPhone } from '../account/profile/personal-fields';
+import { maskPhone } from '../account/profile/personal-basics';
 import { GOAL_GROUPS, SEGMENTS } from './options';
 
 const t = withStrings({ account: more.account, boards: more.boards, newMap: more.newMap, onboarding: more.onboarding, personal: more.personal });
@@ -24,7 +25,8 @@ const PATHS: ReadonlyArray<{ id: Path; icon: 'file' | 'archive' | 'book' | 'plus
   { id: 'blank', icon: 'plus' },
 ];
 const STEPS = ['segment', 'institution', 'goal', 'area', 'start'] as const;
-const SCHOOL_OPTIONS = MEDICAL_SCHOOLS.map((s) => ({ value: s.id, label: s.name, hint: `${s.city} · ${s.uf}`, keywords: s.acronym ? [s.acronym] : [] }));
+const loadInstitution = () => import('./institution-field');
+const InstitutionField = dynamic(() => loadInstitution().then((m) => m.InstitutionField), { loading: () => <SkeletonBlock height={84} radius={16} /> });
 type StepKey = 'userType' | (typeof STEPS)[number];
 
 type ProfileDraft = { name: string | null; phone: string | null; school: string | null; schoolId: string | null };
@@ -50,6 +52,7 @@ export function OnboardingView({ initial, missing = [], profile, next: nextUrl =
   const [failed, setFailed] = useState(false);
   const h1 = useRef<HTMLHeadingElement>(null);
   const first = useRef(true);
+  useEffect(() => void loadInstitution(), []); // after the first paint, so the institution step is usually ready when reached
   useEffect(() => {
     if (first.current) first.current = false;
     else h1.current?.focus();
@@ -153,10 +156,9 @@ export function OnboardingView({ initial, missing = [], profile, next: nextUrl =
           ) : null}
 
           {key === 'institution' ? (
-            <Autocomplete
+            <InstitutionField
               label={t('onboarding.institution.label')}
               placeholder={t('onboarding.institution.placeholder')}
-              options={SCHOOL_OPTIONS}
               value={institution}
               onValueChange={setInstitution}
               allowCustom

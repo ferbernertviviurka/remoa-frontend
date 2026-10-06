@@ -1,7 +1,7 @@
-import { PLAN_LIMITS } from '@remoa/contracts';
+import { PLAN_LIMITS } from '@remoa/contracts/constants';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
-import { TextMorph } from 'torph/react';
+import { useTextMorph } from '@remoa/ui';
 import { MeasuredText } from './measured-text';
 import { PathArt } from './path-art';
 
@@ -34,12 +34,15 @@ const LIMIT_VARS: Record<Path, Record<string, string | number>> = {
 };
 
 /** Title: short enough for one line, so a plain TextMorph. Paragraphs: MeasuredText (per-line TextMorph by measured width). */
-const Morph = ({ children, className, as }: { children: string; className?: string; as?: 'h2' }) =>
-  as ? (
+function Morph({ children, className, as }: { children: string; className?: string; as?: 'h2' }) {
+  const TextMorph = useTextMorph(); // P-512: Torph after the first paint; plain heading until then
+  if (!as) return <MeasuredText text={children} className={className} />;
+  return TextMorph ? (
     <TextMorph as={as} locale="pt-BR" duration={320} ease="cubic-bezier(0.19, 1, 0.22, 1)" respectReducedMotion className={className}>{children}</TextMorph>
   ) : (
-    <MeasuredText text={children} className={className} />
+    <h2 className={className}>{children}</h2>
   );
+}
 
 function PathInfo({ path, compact, brief = false }: { path: Path; compact: boolean; brief?: boolean }) {
   const k = (f: string) => t(`newMap.info.${path}.${f}` as StringKey);

@@ -2,12 +2,15 @@
 
 import { useState } from 'react';
 import type { CalendarLabel } from '@remoa/contracts';
-import { CALENDAR_LIMITS } from '@/lib/contracts-lite';
-import { strings, t } from '@remoa/strings';
+import { CALENDAR_LIMITS } from '@remoa/contracts/constants';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, Dialog, Input, LabelColorPicker } from '@remoa/ui';
 import type { LabelOutcome } from './use-calendar';
 import { colorHex, colorKey } from './model';
 import { text } from './text';
+
+const t = withStrings({ calendar: more.calendar }); // P-512: namespace fora do núcleo
 
 /** F25 FR-9: criar, renomear, recolorir e excluir etiqueta (excluir move os compromissos para "Pessoal", depois de confirmar). */
 export function LabelDialog({ label, onSave, onDelete, onClose }: {
@@ -21,7 +24,7 @@ export function LabelDialog({ label, onSave, onDelete, onClose }: {
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<'name' | 'limit' | 'error' | null>(null);
   const [confirm, setConfirm] = useState(false);
-  const d = strings.calendar.labelDialog;
+  const d = more.calendar.labelDialog;
 
   const run = async (op: () => Promise<LabelOutcome>) => {
     setBusy(true);

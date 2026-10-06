@@ -1,4 +1,4 @@
-import { strings, t } from '../../../strings/src';
+import { strings, t } from '../../../strings/src/t-app'; // namespace calendar inteiro (fora do núcleo, P-512)
 import { DEFAULT_LABEL_COLORS } from './palette';
 import { addDays } from './dates';
 import type { CalendarEventItem, CalendarLabelItem } from './types';

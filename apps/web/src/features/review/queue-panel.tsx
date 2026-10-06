@@ -7,7 +7,7 @@ import { Alert, Button, Icon, RingProgress, SegmentBar, SwitchRow, ToggleChip } 
 import { type Chips, type Reason } from './hub-math';
 import { useCountUp } from './use-count-up';
 
-const t = withStrings({ boards: more.boards });
+const t = withStrings({ boards: more.boards, review: more.review });
 type StringKey = Parameters<typeof t>[0];
 
 export type QueueModel = { counts: Record<Reason, number>; size: number; minutes: number; firstDue?: ReviewHub['maps'][number] };

@@ -2,7 +2,7 @@
 
 import type { ComponentProps, ReactNode } from 'react';
 import { clsx } from 'clsx';
-import { TextMorph } from 'torph/react';
+import { useTextMorph } from './morph';
 import { Spinner } from './spinner';
 import { buttonVariants, focusRing, pressable } from './button-styles';
 
@@ -13,6 +13,8 @@ import { buttonVariants, focusRing, pressable } from './button-styles';
  * `primary` desabilitado vira cinza-lilás chapado (como no mock do Novo mapa).
  * `icon` fica antes do texto, `iconEnd` depois. Os dois são decorativos.
  * `loading` troca o ícone inicial pelo Spinner e, se `loadingLabel` vier, o Torph anima a troca do rótulo.
+ *   O Torph (~10,5 KB) baixa depois da primeira pintura (P-512): até lá o rótulo é texto simples, igual ao HTML do servidor. Com movimento
+ *   reduzido (sistema ou `<html data-motion="reduced">`) ele nem baixa e a troca é direta.
  * `aria-disabled` (sem `disabled`) esmaece mas mantém o foco: para explicar o bloqueio numa Tooltip.
  * Sem className livre.
  */
@@ -37,11 +39,14 @@ const sizes = {
 } as const;
 
 function Label({ children }: { children: ReactNode }) {
+  const M = useTextMorph();
   if (typeof children === 'string' || typeof children === 'number') {
-    return (
-      <TextMorph duration={280} ease="cubic-bezier(0.19, 1, 0.22, 1)" locale="pt-BR" className="text-inherit">
+    return M ? (
+      <M duration={280} ease="cubic-bezier(0.19, 1, 0.22, 1)" locale="pt-BR" className="text-inherit">
         {children}
-      </TextMorph>
+      </M>
+    ) : (
+      <span className="text-inherit">{children}</span>
     );
   }
   return children;

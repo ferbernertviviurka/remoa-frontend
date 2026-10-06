@@ -1,9 +1,12 @@
 'use client';
 
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, Button, Card, Progress, Spinner } from '@remoa/ui';
 import { AnkiImportSummary } from './anki-import-summary';
 import type { AnkiState, Plan } from './use-anki-import';
+
+const t = withStrings({ import: more.import, importReport: more.importReport });
 
 type Props = { state: Exclude<AnkiState, { kind: 'idle' }>; onPlan: (plan: Plan) => void; onAdjustOpened: () => void; onReset: () => void; onOpen: (boardId: string) => void };
 

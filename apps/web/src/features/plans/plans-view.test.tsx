@@ -85,10 +85,10 @@ describe('PlansView', () => {
     expect(screen.queryByText('Recomendado')).toBeNull();
   });
 
-  it('toggle switches the period, tracks it and moves the Pro price to the annual price', () => {
+  it('toggle switches the period, tracks it and moves the Pro price to the annual price', async () => {
     view();
     const table = screen.getByRole('table');
-    expect(within(table).getByText('R$ 39,00', { selector: '[torph-sr]' })).toBeInTheDocument();
+    expect(await within(table).findByText('R$ 39,00', { selector: '[torph-sr]' })).toBeInTheDocument(); // o Torph chega depois da 1ª pintura (P-512)
     fireEvent.click(screen.getByRole('button', { name: /Anual/ }));
     expect(track).toHaveBeenCalledWith('plans_period_changed', { period: 'annual' });
     expect(screen.getByRole('button', { name: /Anual/ })).toHaveAttribute('aria-pressed', 'true');

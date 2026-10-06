@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { annualSavings, formatBRL, type RedirectUrl, type SwitchToAnnualResult } from '@remoa/contracts';
+import type { RedirectUrl, SwitchToAnnualResult } from '@remoa/contracts';
+import { annualSavings, formatBRL } from '@remoa/contracts/constants';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Alert, Button, Icon, Morph, useToast } from '@remoa/ui';

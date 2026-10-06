@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { PriceTicker } from './price-ticker';
@@ -22,6 +22,7 @@ describe('PriceTicker', () => {
   it('ao mudar o valor o texto real vira o novo e o Torph assume a animação', async () => {
     mm(false);
     const { rerender, container } = render(<PriceTicker value={3900} format={brl} />);
+    await waitFor(() => expect(container.querySelector('[torph-root]')).not.toBeNull()); // o Torph chega depois da 1ª pintura (P-512)
     rerender(<PriceTicker value={34900} format={brl} />);
     await act(async () => {});
     expect(container.querySelector('[torph-sr]')).toHaveTextContent('R$ 349,00');

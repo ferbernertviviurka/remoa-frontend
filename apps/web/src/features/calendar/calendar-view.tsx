@@ -1,21 +1,27 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import type { CalendarLabel, CalendarSettings } from '@remoa/contracts';
-import { strings, t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import {
   Button, CalendarAgendaList, CalendarEmptyState, CalendarMonthGrid, CalendarSkeleton, CalendarViewSwitch, CalendarWeekGrid, EventGalleryCard, Icon, IconButton,
   LabelToggleRow, MiniCalendar, makeKey, monthTitle, parseKey, weekTitle, type CalendarTourCloseHow, type DayKey,
 } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { calendarApi, downloadIcs } from './api';
-import { EventDrawer } from './event-drawer';
-import { EventModal } from './event-modal';
-import { LabelDialog } from './label-dialog';
 import { LazyCalendarTour } from './lazy-calendar-tour';
 import { emptyForm, formFromEv, toItem, toLabelItem } from './model';
 import { text, tourDemo, tourSteps, tourText } from './text';
 import { useCalendar } from './use-calendar';
+
+const t = withStrings({ calendar: more.calendar }); // P-512: namespace fora do núcleo
+
+// P-507 (D-1071): the event form and the label dialog load when opened, out of /app/calendario's initial JS.
+const EventModal = dynamic(() => import('./event-modal').then((m) => m.EventModal), { ssr: false });
+const EventDrawer = dynamic(() => import('./event-drawer').then((m) => m.EventDrawer), { ssr: false });
+const LabelDialog = dynamic(() => import('./label-dialog').then((m) => m.LabelDialog), { ssr: false });
 
 type Modal = { mode: 'create'; date: DayKey } | { mode: 'edit'; id: string } | null;
 
@@ -24,6 +30,8 @@ const typing = (el: EventTarget | null) => el instanceof HTMLElement && (el.isCo
 /** F25 /app/calendario: lateral de 300 px, barra, as quatro visões, modal, gaveta, etiquetas e o tutorial da primeira abertura. */
 export function CalendarView({ settings, labels: initialLabels, nowIso }: { settings: CalendarSettings; labels: CalendarLabel[]; nowIso: string }) {
   const cal = useCalendar({ settings, labels: initialLabels, nowIso });
+  const [drawerUsed, setDrawerUsed] = useState(false); // drawer mounts on the first selected event and stays (closing animates)
+  if (cal.selectedEv && !drawerUsed) setDrawerUsed(true);
   const { today, tz, view, anchor } = cal;
   const [modal, setModal] = useState<Modal>(null);
   const [labelDlg, setLabelDlg] = useState<{ label: CalendarLabel | null } | null>(null);
@@ -61,7 +69,7 @@ export function CalendarView({ settings, labels: initialLabels, nowIso }: { sett
   };
 
   const title =
-    view === 'month' ? monthTitle(p.year, p.month) : view === 'week' ? weekTitle(anchor) : view === 'agenda' ? strings.calendar.agendaTitle : strings.calendar.galleryTitle;
+    view === 'month' ? monthTitle(p.year, p.month) : view === 'week' ? weekTitle(anchor) : view === 'agenda' ? more.calendar.agendaTitle : more.calendar.galleryTitle;
   const arrows = view === 'month' || view === 'week';
   const editing = modal?.mode === 'edit' ? cal.events.find((e) => e.id === modal.id) : undefined;
   const gallery = cal.visible.filter((e) => e.date >= today).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
@@ -69,9 +77,9 @@ export function CalendarView({ settings, labels: initialLabels, nowIso }: { sett
 
   return (
     <div className="-m-4 flex min-h-[calc(100dvh-65px)] md:-m-6">
-      <aside aria-label={strings.calendar.navLabel} className="flex w-[300px] shrink-0 flex-col gap-5 border-r border-border bg-surface p-5 max-lg:hidden">
+      <aside aria-label={more.calendar.navLabel} className="flex w-[300px] shrink-0 flex-col gap-5 border-r border-border bg-surface p-5 max-lg:hidden">
         <div className="grid">
-          <Button size="cta" icon={<Icon name="plus" size={20} />} onClick={() => openNew()}>{strings.calendar.newEvent}</Button>
+          <Button size="cta" icon={<Icon name="plus" size={20} />} onClick={() => openNew()}>{more.calendar.newEvent}</Button>
         </div>
         <MiniCalendar
           year={p.year}
@@ -84,7 +92,7 @@ export function CalendarView({ settings, labels: initialLabels, nowIso }: { sett
           text={text.mini}
         />
         <section aria-labelledby="cal-labels" className="flex flex-col gap-1">
-          <h2 id="cal-labels" className="m-0 pb-1 text-xs font-bold uppercase tracking-[0.12em] text-muted">{strings.calendar.labelsTitle}</h2>
+          <h2 id="cal-labels" className="m-0 pb-1 text-xs font-bold uppercase tracking-[0.12em] text-muted">{more.calendar.labelsTitle}</h2>
           {cal.labels.map((l) => (
             <div key={l.id} className="flex items-center">
               <div className="min-w-0 grow">
@@ -93,18 +101,18 @@ export function CalendarView({ settings, labels: initialLabels, nowIso }: { sett
               <IconButton aria-label={t('calendar.page.editLabel', { name: l.name })} size="md" onClick={() => setLabelDlg({ label: l })}><Icon name="pencil" size={16} /></IconButton>
             </div>
           ))}
-          <Button variant="quiet" size="sm" align="start" icon={<Icon name="plus" size={18} />} onClick={() => setLabelDlg({ label: null })}>{strings.calendar.newLabel}</Button>
+          <Button variant="quiet" size="sm" align="start" icon={<Icon name="plus" size={18} />} onClick={() => setLabelDlg({ label: null })}>{more.calendar.newLabel}</Button>
         </section>
-        <Button variant="quiet" size="sm" align="start" icon={<Icon name="help" size={18} />} onClick={() => setTour({ cta: false })}>{strings.calendar.howItWorks}</Button>
+        <Button variant="quiet" size="sm" align="start" icon={<Icon name="help" size={18} />} onClick={() => setTour({ cta: false })}>{more.calendar.howItWorks}</Button>
       </aside>
 
       <section className="flex min-w-0 grow flex-col gap-4 p-4 md:p-6">
         <div className="flex flex-wrap items-center gap-3">
-          <Button variant="secondary" size="sm" onClick={cal.goToday}>{strings.calendar.today}</Button>
+          <Button variant="secondary" size="sm" onClick={cal.goToday}>{more.calendar.today}</Button>
           {arrows ? (
             <>
-              <IconButton aria-label={strings.calendar.prev} variant="quiet" onClick={() => cal.step(-1)}><Icon name="left" size={20} /></IconButton>
-              <IconButton aria-label={strings.calendar.next} variant="quiet" onClick={() => cal.step(1)}><Icon name="right" size={20} /></IconButton>
+              <IconButton aria-label={more.calendar.prev} variant="quiet" onClick={() => cal.step(-1)}><Icon name="left" size={20} /></IconButton>
+              <IconButton aria-label={more.calendar.next} variant="quiet" onClick={() => cal.step(1)}><Icon name="right" size={20} /></IconButton>
             </>
           ) : null}
           <h1 aria-live="polite" className="m-0 grow font-display text-[28px] font-extrabold leading-tight tracking-[-0.03em] text-ink md:text-[34px]">{title}</h1>
@@ -114,22 +122,22 @@ export function CalendarView({ settings, labels: initialLabels, nowIso }: { sett
         {cal.failed ? (
           <div role="alert" className="flex flex-wrap items-center gap-3 rounded-[16px] bg-review-bg px-4 py-3 text-review-text">
             <span className="grow text-sm font-semibold">{cal.failed.message}</span>
-            <Button size="sm" onClick={cal.failed.retry}>{strings.calendar.page.retry}</Button>
-            <Button size="sm" variant="quiet" onClick={cal.dismissFailed}>{strings.calendar.page.dismiss}</Button>
+            <Button size="sm" onClick={cal.failed.retry}>{more.calendar.page.retry}</Button>
+            <Button size="sm" variant="quiet" onClick={cal.dismissFailed}>{more.calendar.page.dismiss}</Button>
           </div>
         ) : null}
-        {cal.queued > 0 ? <p role="status" className="m-0 rounded-[16px] bg-watch-bg px-4 py-3 text-sm font-semibold text-watch-text">{strings.calendar.page.offline}</p> : null}
+        {cal.queued > 0 ? <p role="status" className="m-0 rounded-[16px] bg-watch-bg px-4 py-3 text-sm font-semibold text-watch-text">{more.calendar.page.offline}</p> : null}
 
         {cal.status === 'error' ? (
           <div role="alert" className="flex flex-wrap items-center gap-3 rounded-list border border-border bg-surface p-6">
-            <span className="grow font-bold">{strings.calendar.page.loadError}</span>
-            <Button onClick={cal.refetch}>{strings.calendar.page.retry}</Button>
+            <span className="grow font-bold">{more.calendar.page.loadError}</span>
+            <Button onClick={cal.refetch}>{more.calendar.page.retry}</Button>
           </div>
         ) : cal.status === 'loading' && cal.events.length === 0 ? (
-          <CalendarSkeleton view={view} label={strings.calendar.states.loading} />
+          <CalendarSkeleton view={view} label={more.calendar.states.loading} />
         ) : (
           <>
-            {empty ? <CalendarEmptyState title={strings.calendar.states.emptyTitle} body={strings.calendar.states.emptyBody} cta={strings.calendar.states.emptyCta} onAdd={() => openNew()} /> : null}
+            {empty ? <CalendarEmptyState title={more.calendar.states.emptyTitle} body={more.calendar.states.emptyBody} cta={more.calendar.states.emptyCta} onAdd={() => openNew()} /> : null}
             {view === 'month' ? (
               <CalendarMonthGrid year={p.year} month={p.month} today={today} timeZone={tz} events={visibleItems} labels={items} onDayClick={openNew} onEventClick={cal.select} text={text.month} />
             ) : view === 'week' ? (
@@ -148,10 +156,10 @@ export function CalendarView({ settings, labels: initialLabels, nowIso }: { sett
       </section>
 
       <div className="fixed bottom-[calc(88px+env(safe-area-inset-bottom))] right-4 z-30 lg:hidden">
-        <IconButton aria-label={strings.calendar.newEvent} variant="primary" size="lg" onClick={() => openNew()}><Icon name="plus" size={24} /></IconButton>
+        <IconButton aria-label={more.calendar.newEvent} variant="primary" size="lg" onClick={() => openNew()}><Icon name="plus" size={24} /></IconButton>
       </div>
 
-      <EventDrawer
+      {drawerUsed ? <EventDrawer
         event={modal ? null : cal.selectedEv}
         label={cal.selectedEv ? labelOf(cal.selectedEv.labelId) : undefined}
         today={today}
@@ -162,7 +170,7 @@ export function CalendarView({ settings, labels: initialLabels, nowIso }: { sett
         onDelete={() => cal.selectedEv && cal.remove(cal.selectedEv.id)}
         onToggleReminder={(kind, on) => cal.selectedEv && cal.setReminder(cal.selectedEv.id, kind, on)}
         onAddToCalendar={() => cal.selectedEv && !cal.selectedEv.pending && void downloadIcs(cal.selectedEv.id)}
-      />
+      /> : null}
 
       {modal?.mode === 'create' && personal ? (
         <EventModal mode="create" initial={emptyForm(modal.date, personal.id)} labels={items} onClose={() => setModal(null)} onSubmit={(v, cover) => { setModal(null); cal.create(v, cover); }} />

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { plansFromSources } from '@remoa/contracts';
+import { plansFromSources } from '@remoa/contracts/constants';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Button, Icon, useToast } from '@remoa/ui';

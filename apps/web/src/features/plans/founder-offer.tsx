@@ -1,6 +1,6 @@
 'use client';
 
-import { formatBRL } from '@remoa/contracts';
+import { formatBRL } from '@remoa/contracts/constants';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Button, Icon } from '@remoa/ui';

@@ -40,6 +40,7 @@ describe('Combobox', () => {
     const user = userEvent.setup();
     const { container } = render(<Controlled />);
     await user.click(screen.getByRole('combobox'));
+    await screen.findByRole('listbox'); // P-516: o Popover carrega na 1ª interação
     // Check the trigger/anchor area (in container) and the listbox (via Portal) separately.
     expect(await violations(container)).toEqual([]);
     expect(screen.getByRole('listbox')).toBeInTheDocument();
@@ -49,6 +50,7 @@ describe('Combobox', () => {
     const user = userEvent.setup();
     render(<Controlled />);
     await user.click(screen.getByRole('combobox'));
+    await screen.findByRole('listbox'); // P-516: o Popover carrega na 1ª interação
     await user.type(screen.getByRole('combobox'), 'SEPSE');
     expect(screen.getByRole('option', { name: /Sepse e choque séptico/i })).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: /Pneumonia/i })).not.toBeInTheDocument();
@@ -58,6 +60,7 @@ describe('Combobox', () => {
     const user = userEvent.setup();
     render(<Controlled />);
     await user.click(screen.getByRole('combobox'));
+    await screen.findByRole('listbox'); // P-516: o Popover carrega na 1ª interação
     await user.type(screen.getByRole('combobox'), 'sépse');
     expect(screen.getByRole('option', { name: /Sepse e choque séptico/i })).toBeInTheDocument();
   });
@@ -66,6 +69,7 @@ describe('Combobox', () => {
     const user = userEvent.setup();
     render(<Controlled />);
     await user.click(screen.getByRole('combobox'));
+    await screen.findByRole('listbox'); // P-516: o Popover carrega na 1ª interação
     await user.type(screen.getByRole('combobox'), 'Choque distributivo');
     expect(screen.getByRole('option', { name: /Sepse/i })).toBeInTheDocument();
   });
@@ -74,6 +78,7 @@ describe('Combobox', () => {
     const user = userEvent.setup();
     render(<Controlled />);
     await user.click(screen.getByRole('combobox'));
+    await screen.findByRole('listbox'); // P-516: o Popover carrega na 1ª interação
     await user.click(screen.getByRole('option', { name: /Infarto agudo/i }));
     // chip remove button confirms selection
     expect(screen.getByRole('button', { name: 'Remover Infarto agudo do miocárdio' })).toBeInTheDocument();
@@ -83,6 +88,7 @@ describe('Combobox', () => {
     const user = userEvent.setup();
     render(<Controlled />);
     await user.click(screen.getByRole('combobox'));
+    await screen.findByRole('listbox'); // P-516: o Popover carrega na 1ª interação
     await user.click(screen.getByRole('option', { name: /Infarto agudo/i }));
     await user.click(screen.getByRole('button', { name: 'Remover Infarto agudo do miocárdio' }));
     // Check the chip remove button is gone (the label text may still be in the listbox option)
@@ -93,6 +99,7 @@ describe('Combobox', () => {
     const user = userEvent.setup();
     render(<Controlled />);
     await user.click(screen.getByRole('combobox'));
+    await screen.findByRole('listbox'); // P-516: o Popover carrega na 1ª interação
     await user.click(screen.getByRole('option', { name: /Infarto agudo/i }));
     const input = screen.getByRole('combobox');
     await user.clear(input);
@@ -105,6 +112,7 @@ describe('Combobox', () => {
     const user = userEvent.setup();
     render(<Controlled />);
     await user.click(screen.getByRole('combobox'));
+    await screen.findByRole('listbox'); // P-516: o Popover carrega na 1ª interação
     expect(screen.getByRole('listbox')).toBeInTheDocument();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
@@ -114,6 +122,7 @@ describe('Combobox', () => {
     const user = userEvent.setup();
     render(<Controlled />);
     await user.click(screen.getByRole('combobox'));
+    await screen.findByRole('listbox'); // P-516: o Popover carrega na 1ª interação
     await user.keyboard('{ArrowDown}');
     await user.keyboard('{Enter}');
     // First option selected → chip visible
@@ -137,6 +146,7 @@ describe('Combobox', () => {
       />,
     );
     await userEvent.click(screen.getByRole('combobox'));
+    await screen.findByRole('listbox'); // P-516: o Popover carrega na 1ª interação
     // All items are at or beyond max; attempting to click one shouldn't add more
     const options = screen.getAllByRole('option');
     if (options[0]) await userEvent.click(options[0]);
@@ -159,6 +169,7 @@ describe('Combobox', () => {
       />,
     );
     await user.click(screen.getByRole('combobox'));
+    await screen.findByRole('listbox'); // P-516: o Popover carrega na 1ª interação
     expect(screen.getByText('Você pode ligar até 2 itens')).toBeInTheDocument();
   });
 
@@ -166,6 +177,7 @@ describe('Combobox', () => {
     const user = userEvent.setup();
     render(<Controlled emptyLabel="Nenhuma opção aqui" />);
     await user.click(screen.getByRole('combobox'));
+    await screen.findByRole('listbox'); // P-516: o Popover carrega na 1ª interação
     await user.type(screen.getByRole('combobox'), 'zzzzz');
     expect(screen.getByText('Nenhuma opção aqui')).toBeInTheDocument();
   });
@@ -180,6 +192,7 @@ describe('Combobox', () => {
     const user = userEvent.setup();
     render(<Controlled suggestions={SUGGESTIONS} suggestionsLabel="Sugeridos" />);
     await user.click(screen.getByRole('combobox'));
+    await screen.findByRole('listbox'); // P-516: o Popover carrega na 1ª interação
     expect(screen.getByText('Sugeridos')).toBeInTheDocument();
   });
 
@@ -187,9 +200,21 @@ describe('Combobox', () => {
     const user = userEvent.setup();
     render(<Controlled />);
     await user.click(screen.getByRole('combobox'));
+    await screen.findByRole('listbox'); // P-516: o Popover carrega na 1ª interação
     // Group headers shouldn't have role=option
     const listbox = screen.getByRole('listbox');
     expect(within(listbox).getByText('Infectologia')).toBeInTheDocument();
     expect(within(listbox).queryByRole('option', { name: 'Infectologia' })).not.toBeInTheDocument();
+  });
+
+  it('P-516: o Popover carregado na 1ª interação não tira o foco nem o texto do campo', async () => {
+    const user = userEvent.setup();
+    render(<Controlled />);
+    const input = screen.getByRole('combobox');
+    await user.type(input, 'sep');
+    await screen.findByRole('listbox');
+    expect(input).toHaveFocus();
+    expect(input).toHaveValue('sep');
+    expect(input).toHaveAttribute('aria-expanded', 'true');
   });
 });

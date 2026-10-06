@@ -3,10 +3,13 @@
 // F17 T7 (FR-14): locked board password form.
 // A11y: PasswordInput has real label, autocomplete=current-password, error announced via aria.
 import { useState, useTransition } from 'react';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, PasswordInput } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { unlockBoardAction } from './actions';
+
+const t = withStrings({ newMapAbout: more.newMapAbout, sharedMap: more.sharedMap });
 
 type Props = { token: string };
 

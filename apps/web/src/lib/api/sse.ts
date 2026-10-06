@@ -1,5 +1,5 @@
 import type { Result } from '@remoa/contracts';
-import { readErrorBody } from './error-body';
+import { readErrorBody } from '@remoa/contracts/constants';
 
 type StreamEvent = { feedback?: unknown; result?: unknown; error?: unknown };
 

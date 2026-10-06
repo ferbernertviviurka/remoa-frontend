@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { api } from '@/lib/api';
 import { accountFreeFixture, accountProFixture } from '@remoa/contracts/mocks';
 import type { AccountSnapshot } from '@remoa/contracts';
@@ -44,6 +44,7 @@ describe('PlanSection', () => {
   it('free: offer with period toggle and upgrade tracking; prices come from /v1/billing/prices (P-094)', async () => {
     vi.mocked(api).mockResolvedValue({ ok: true, data: { monthly: { amount: 4900 }, annual: { amount: 39900 } } } as never);
     view(withUsage(accountFreeFixture, { boards: 0, cards: 0, ai_grades: 0, ai_generations: 0 }));
+    await waitFor(() => expect(document.querySelector('[torph-root]')).not.toBeNull()); // o Torph chega depois da 1ª pintura (P-512)
     expect((await screen.findAllByText('R$ 49'))[0]).toBeVisible();
     expect(api).toHaveBeenCalledWith('/v1/billing/prices');
     fireEvent.click(screen.getByRole('radio', { name: 'Anual' }));
