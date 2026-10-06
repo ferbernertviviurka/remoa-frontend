@@ -77,7 +77,7 @@ export function PostCard({ href, cover, category, title, description, date, date
   }
   const v = V[variant];
   return (
-    <a href={href} className={`lift ${delay !== undefined ? 'rb-card' : ''} flex flex-col overflow-hidden border border-border bg-surface text-ink no-underline ${v.box} ${focusRing}`} style={style}>
+    <a href={href} className={`lift ${delay !== undefined ? 'rb-card' : ''} ${priority ? 'rb-lcp' : ''} flex flex-col overflow-hidden border border-border bg-surface text-ink no-underline ${v.box} ${focusRing}`} style={style}>
       <span className={`block overflow-hidden ${v.img}`}>
         <CoverImage cover={cover} priority={priority} fill={v.img} />
       </span>

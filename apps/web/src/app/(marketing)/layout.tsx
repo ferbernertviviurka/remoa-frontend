@@ -3,6 +3,7 @@ import { t } from '@remoa/strings';
 import { Logo, SiteFooter } from '@remoa/ui';
 import { LEGAL_CONFIG } from '@/features/legal/config';
 import { landingFlags } from '@/features/landing/flags';
+import { headerLabels } from '@/features/landing/shell/header-labels';
 import { LandingHeader } from '@/features/landing/shell/landing-header'; // direct: the shell barrel would ship WaitlistCta too (D-535)
 
 const skip = 'sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:flex focus:min-h-11 focus:items-center focus:rounded-[14px] focus:bg-primary focus:px-4 focus:font-bold focus:text-on-primary';
@@ -14,7 +15,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <a href="#conteudo" className={skip}>{t('landing.nav.skipLink')}</a>
-      <LandingHeader phase={launchPhase} blogLabel={t('blog.navigation.blog')} />
+      <LandingHeader phase={launchPhase} labels={headerLabels()} blogLabel={t('blog.navigation.blog')} />
       <main id="conteudo" className="relative overflow-x-clip pt-[76px]">{children}</main>
       <SiteFooter
         brand={<Logo size={30} withWordmark />}

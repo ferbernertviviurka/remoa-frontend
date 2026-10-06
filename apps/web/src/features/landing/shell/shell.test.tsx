@@ -5,6 +5,7 @@ import { landingViewedProps, scrollPercent } from '../analytics';
 import { buildFaqItems } from './faq';
 import { pricebookPath } from './pricebook';
 import { parseH, parseV } from './variants';
+import { headerLabels } from './header-labels';
 
 const post = vi.hoisted(() => vi.fn());
 vi.mock('./waitlist', async (orig) => ({ ...(await orig<typeof import('./waitlist')>()), postWaitlist: post }));
@@ -92,10 +93,14 @@ describe('WaitlistCta', () => {
 describe('LandingHeader (D-320)', () => {
   test('signed out: Entrar + sign-up; signed in: one CTA back into /app', async () => {
     const { LandingHeader } = await import('./landing-header');
-    const { rerender } = render(<LandingHeader blogLabel="Blog" phase="open" />);
+    const { rerender } = render(<LandingHeader labels={headerLabels()} blogLabel="Blog" phase="waitlist" />);
+    expect(screen.getAllByRole('link', { name: strings.landing.nav.signIn })[0]?.getAttribute('href')).toBe('#cta');
+    expect(screen.getAllByRole('link', { name: strings.landing.nav.createMap })[0]?.getAttribute('href')).toBe('#cta');
+    rerender(<LandingHeader labels={headerLabels()} blogLabel="Blog" phase="open" />);
     expect(screen.getAllByRole('link', { name: strings.landing.nav.signIn })[0]?.getAttribute('href')).toBe('/entrar');
+    expect(screen.getAllByRole('link', { name: strings.landing.nav.createMap })[0]?.getAttribute('href')).toBe('/cadastro');
     expect(screen.queryByRole('link', { name: strings.landing.nav.openApp })).toBeNull();
-    rerender(<LandingHeader blogLabel="Blog" phase="open" signedIn />);
+    rerender(<LandingHeader labels={headerLabels()} blogLabel="Blog" phase="open" signedIn />);
     expect(screen.getAllByRole('link', { name: strings.landing.nav.openApp })[0]?.getAttribute('href')).toBe('/app');
     expect(screen.queryByRole('link', { name: strings.landing.nav.signIn })).toBeNull();
   });
@@ -115,12 +120,15 @@ describe('landing_cta_clicked (D-370)', () => {
   const sent = () => window.__remoaEvents?.filter((e) => e.event === 'landing_cta_clicked').map((e) => e.props);
   test('header: waitlist/create, signin and open_app carry location + cta', async () => {
     const { LandingHeader } = await import('./landing-header');
-    const { rerender } = render(<LandingHeader blogLabel="Blog" phase="waitlist" />);
+    const { rerender } = render(<LandingHeader labels={headerLabels()} blogLabel="Blog" phase="waitlist" />);
     fireEvent.click(screen.getAllByRole('link', { name: strings.landing.nav.createMap })[0]!);
     fireEvent.click(screen.getAllByRole('link', { name: strings.landing.nav.signIn })[0]!);
-    rerender(<LandingHeader blogLabel="Blog" phase="open" signedIn />);
+    rerender(<LandingHeader labels={headerLabels()} blogLabel="Blog" phase="open" />);
+    fireEvent.click(screen.getAllByRole('link', { name: strings.landing.nav.signIn })[0]!);
+    rerender(<LandingHeader labels={headerLabels()} blogLabel="Blog" phase="open" signedIn />);
     fireEvent.click(screen.getAllByRole('link', { name: strings.landing.nav.openApp })[0]!);
     await waitFor(() => expect(sent()).toEqual([
+      { location: 'header', cta: 'waitlist', platform: 'web', plan: 'free', appVersion: '0.0.0' },
       { location: 'header', cta: 'waitlist', platform: 'web', plan: 'free', appVersion: '0.0.0' },
       { location: 'header', cta: 'signin', platform: 'web', plan: 'free', appVersion: '0.0.0' },
       { location: 'header', cta: 'open_app', platform: 'web', plan: 'free', appVersion: '0.0.0' },

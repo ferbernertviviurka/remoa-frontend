@@ -167,10 +167,13 @@
 
 /* F27 Blog (BlogPost*, BlogIndex, Landing "Aprenda a estudar melhor", AdminBlog*) e páginas legais. Só `from`: estado final = estilo do elemento.
    Título do blog sobe 800 ms; cartões entram 500 ms (atraso por `animation-delay` inline, 70 ms entre cartões); barra do SEO 500 ms; elevação 200 ms é `.lift`. */
-@keyframes rb-rise { from { opacity: 0; transform: translateY(56px) scale(0.98); } }
+/* P-410: o h1 do /blog e o cartão com capa `priority` são candidatos a LCP; começar em opacity 0 adia o LCP, então só sobem (sem fade). */
+@keyframes rb-rise { from { transform: translateY(56px) scale(0.98); } }
 @keyframes rb-slide { from { opacity: 0; transform: translateY(14px); } }
+@keyframes rb-nudge { from { transform: translateY(14px); } }
 .rb-rise { animation: rb-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .rb-card { animation: rb-slide 0.5s ease both; }
+.rb-card.rb-lcp { animation-name: rb-nudge; }
 .rb-row { animation: rb-slide 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 /* Texto do post (ArticleBody). O HTML vem sanitizado do renderizador; contrato de classes documentado em blog/article.tsx. */

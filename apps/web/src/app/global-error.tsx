@@ -1,6 +1,6 @@
 'use client';
 
-import { t } from '@remoa/strings/landing';
+import { t } from '@remoa/strings/boundary';
 
 // Replaces the root layout, so no tokens/providers: plain markup with inline style.
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
