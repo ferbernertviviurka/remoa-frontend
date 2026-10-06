@@ -147,7 +147,7 @@ export const account = {
     cancel: 'Cancelar',
     save: 'Salvar foto',
     errorType: 'Esse arquivo não é uma imagem JPG, PNG ou WebP.',
-    errorSize: 'A imagem passa de 5 MB. Escolha uma menor.',
+    errorSize: 'A imagem passa de 100 MB. Escolha uma menor.',
     errorUpload: 'Não conseguimos enviar a foto. Tente de novo.',
     savedPhoto: 'Foto atualizada.',
     savedAvatar: 'Avatar atualizado.',

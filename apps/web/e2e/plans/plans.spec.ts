@@ -5,7 +5,7 @@ import { createSession, events, makeBoards, planUser, subscribe } from './fixtur
 
 test.describe.configure({ mode: 'parallel' });
 
-test('Free com 2 mapas: aviso, anual, FUNDADOR, Pix, overlay, checkout mock e sucesso', async ({ page, request }) => {
+test('Free com 2 mapas: aviso, anual, FUNDADOR, cartão, overlay, checkout mock e sucesso', async ({ page, request }) => {
   const { headers } = await planUser(page, request);
   await makeBoards(request, headers, 2);
   await page.goto('/app/planos?de=library_lock');
@@ -27,14 +27,16 @@ test('Free com 2 mapas: aviso, anual, FUNDADOR, Pix, overlay, checkout mock e su
   await expect(summary.getByText('Preço de fundador aplicado')).toBeVisible();
   await expect(summary.getByText('Total hoje')).toBeVisible();
 
-  await summary.getByRole('radio', { name: /^Pix/ }).click();
+  // D-982: só o cartão está ativo; o Pix fica desabilitado ("Em breve") e o cartão já vem marcado
+  await expect(summary.getByRole('radio', { name: /^Pix/ })).toBeDisabled();
+  await expect(summary.getByRole('radio', { name: /^Cartão/ })).toBeChecked();
   await summary.getByRole('button', { name: 'Assinar o Pro' }).click();
   await expect(page.getByText('Abrindo o pagamento seguro')).toBeVisible();
 
   // eventos antes de sair da página (a navegação ao Stripe zera window.__remoaEvents); sem dado pessoal e sem o código
   const ev = await events(page);
   expect(ev.map((e: { event: string }) => e.event)).toContain('checkout_started');
-  expect(ev).toContainEqual(expect.objectContaining({ event: 'checkout_started', props: expect.objectContaining({ period: 'annual', method: 'pix', coupon: true }) }));
+  expect(ev).toContainEqual(expect.objectContaining({ event: 'checkout_started', props: expect.objectContaining({ period: 'annual', method: 'card', coupon: true }) }));
   expect(JSON.stringify(ev)).not.toMatch(/FUNDADOR|@remoa\.test/i);
 
   await page.waitForURL(/\/planos\/sucesso\?session_id=/);

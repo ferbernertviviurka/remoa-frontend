@@ -4,7 +4,7 @@ import type {
   CalendarLabelList, CalendarLabelPatch, CalendarSettings, CalendarTourSeen, CalendarView, EventRemindersInput, Result, UpcomingEvents,
 } from '@remoa/contracts';
 import { api, apiBase } from '@/lib/api';
-import { putFile } from '@/features/cards/upload';
+import { uploadImage } from '@/features/cards/upload';
 
 const json = (method: string, body?: unknown): RequestInit => ({ method, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
 const base = '/v1/calendar';
@@ -26,19 +26,8 @@ export const calendarApi = {
   upcoming: (limit = 4) => api<UpcomingEvents>(`${base}/upcoming?limit=${limit}`),
 };
 
-const fail = (): Result<never> => ({ ok: false, error: { code: 'internal', message: 'upload failed' } });
-
-/** Cover: sign (`kind: 'calendar_cover'`) → presigned PUT → complete; the server crops to 16:9 and makes the WebP variants. */
-export async function uploadCover(file: File): Promise<Result<AssetRef>> {
-  try {
-    const sign = await api<{ url: string; key: string }>('/v1/uploads/sign', json('POST', { mime: file.type, sizeBytes: file.size, kind: 'calendar_cover' }));
-    if (!sign.ok) return sign;
-    if (!(await putFile(sign.data.url, file, () => {}))) return fail();
-    return await api<AssetRef>('/v1/uploads/complete', json('POST', { key: sign.data.key, license: 'own', attribution: null }));
-  } catch {
-    return fail();
-  }
-}
+/** Cover: same multipart upload as card images (D-1202); the server makes the WebP variants. */
+export const uploadCover = (file: File): Promise<Result<AssetRef>> => uploadImage(file, { license: 'own', attribution: null }, () => {});
 
 /** FR-18: GET /v1/calendar/events/:id.ics needs the Bearer token, so it is fetched and saved as a file (not a plain link). */
 export async function downloadIcs(id: string): Promise<boolean> {

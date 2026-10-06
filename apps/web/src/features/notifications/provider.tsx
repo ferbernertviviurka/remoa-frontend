@@ -63,7 +63,15 @@ export function NotificationsProvider({ timezone = 'America/Sao_Paulo', userId, 
       try {
         const { createClient } = await import('@/lib/supabase/client');
         const supabase = createClient();
-        if (!userId || !alive.current) return;
+        if (!userId) return;
+        // Local session read (no network, unlike getUser): without a JWT on the socket the channel joins as `anon`, RLS filters every
+        // INSERT, yet the status is SUBSCRIBED, so the poll stays off and the badge never moves (G21/D-994 regression, e2e notifications).
+        // Joining as `anon` also makes Realtime reject the filter ("invalid column for filter user_id": anon has no SELECT on
+        // notifications), so no session means no channel, just the poll. setAuth is async: await it so the join carries the JWT.
+        const { data } = await supabase.auth.getSession();
+        if (!alive.current || !data.session) return;
+        await supabase.realtime.setAuth(data.session.access_token);
+        if (!alive.current) return;
         const channel = supabase
           .channel(`notifications:${userId}`)
           .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, (p) => {

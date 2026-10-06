@@ -19,8 +19,12 @@ export type CardPeekProps = {
   nextLabel: string;
   closeLabel: string;
   reviewLabel: string;
+  /** Nome acessível de Editar ("Editar card"); `editText` é o texto visível ("Editar"). */
   editLabel: string;
+  editText: string;
+  /** Nome acessível de Conectar ("Conectar a outro card"); `connectText` é o texto visível ("Conectar"). */
   connectLabel: string;
+  connectText: string;
   onClose: () => void;
   onReview: () => void;
   onEdit: () => void;
@@ -29,12 +33,13 @@ export type CardPeekProps = {
 
 const dot: Record<MapCardState, string> = { review: 'bg-(--state-review-border)', watch: 'bg-(--state-watch-border)', steady: 'bg-(--state-steady-border)', unknown: 'bg-(--state-unknown-soft)' };
 const text: Record<MapCardState, string> = { review: 'text-(--state-review-text)', watch: 'text-(--state-watch-text)', steady: 'text-ink-2', unknown: 'text-muted' };
-const sq = `flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-[15px] border-[1.5px] border-border-strong bg-surface text-ink transition-transform active:scale-95 ${focusRing}`;
+const secondary = `flex h-12 grow basis-0 cursor-pointer items-center justify-center gap-2 rounded-[15px] border-[1.5px] border-border-strong bg-surface text-[15px] font-bold text-ink transition-transform active:scale-[.98] ${focusRing}`;
 
 /**
  * CardPeek (F23 FR-8, `MapaMobileCard.dc.html`): cartão a 104 px do rodapé do mapa com tipo, estado, título, resumo, barra de
- * lembrança e as ações Revisar, Editar e Conectar (alvos 44+ px). O posicionamento é do consumidor só no `bottom`/`z`: aqui já é
- * `absolute`. Entra com `pop`; só `transform`/`opacity` se movem.
+ * lembrança e as ações Revisar, Conectar e Editar (alvos 44+ px). Conectar e Editar têm texto visível (D-1207): só o ícone não
+ * dizia como ligar um card a outro. O posicionamento é do consumidor só no `bottom`/`z`: aqui já é `absolute`. Entra com `pop`;
+ * só `transform`/`opacity` se movem.
  */
 export function CardPeek(p: CardPeekProps) {
   return (
@@ -64,13 +69,19 @@ export function CardPeek(p: CardPeekProps) {
         </span>
         <span className="text-[12.5px] font-bold whitespace-nowrap text-ink-2">{p.nextLabel}</span>
       </div>
+      <button type="button" onClick={p.onReview} className={`flex h-12 cursor-pointer items-center justify-center gap-2 rounded-[15px] bg-primary text-[15px] font-extrabold text-on-primary transition-transform active:scale-[.98] ${focusRing}`}>
+        <MapGlyph name="bolt" size={18} />
+        {p.reviewLabel}
+      </button>
       <div className="flex gap-2">
-        <button type="button" onClick={p.onReview} className={`flex h-12 grow cursor-pointer items-center justify-center gap-2 rounded-[15px] bg-primary text-[15px] font-extrabold text-on-primary transition-transform active:scale-[.98] ${focusRing}`}>
-          <MapGlyph name="bolt" size={18} />
-          {p.reviewLabel}
+        <button type="button" aria-label={p.connectLabel} onClick={p.onConnect} className={secondary}>
+          <MapGlyph name="link" size={18} />
+          {p.connectText}
         </button>
-        <button type="button" aria-label={p.editLabel} onClick={p.onEdit} className={sq}><MapGlyph name="pencil" size={20} /></button>
-        <button type="button" aria-label={p.connectLabel} onClick={p.onConnect} className={sq}><MapGlyph name="link" size={20} /></button>
+        <button type="button" aria-label={p.editLabel} onClick={p.onEdit} className={secondary}>
+          <MapGlyph name="pencil" size={18} />
+          {p.editText}
+        </button>
       </div>
     </section>
   );

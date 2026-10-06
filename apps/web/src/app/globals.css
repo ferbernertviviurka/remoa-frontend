@@ -13,6 +13,9 @@
 
 /* Base v2 (do <helmet><style> dos mocks). Keyframes ring/ringd/pop e as classes .lift/.pulse/.pulsed/.pop vêm de tokens.css. */
 @layer base {
+  /* Landing anchors (#como-funciona, #cta…). <html data-scroll-behavior="smooth"> makes Next skip it on route changes. */
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
   body { margin: 0; font-size: 15px; line-height: 1.5; }
   button:not(:disabled) { cursor: pointer; }
   :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }

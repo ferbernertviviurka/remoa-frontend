@@ -6,7 +6,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { strings } from '@remoa/strings/full';
 
 const L = strings.landing;
-const waitlistPhase = (process.env.NEXT_PUBLIC_LAUNCH_PHASE ?? 'waitlist') !== 'open';
+const waitlistPhase = process.env.NEXT_PUBLIC_LAUNCH_PHASE === 'waitlist';
 
 const axe = async (page: Page) => {
   await page.waitForTimeout(800); // axe reads opacity mid-animation

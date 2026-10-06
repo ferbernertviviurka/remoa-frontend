@@ -28,12 +28,14 @@ export type CardEditorProps = {
   formId?: string;
   /** F23 T7: true while the draft differs from what the server has (the sheet asks before discarding). */
   onDirty?: (dirty: boolean) => void;
+  /** D-1206: true while the save PUT runs, so a Save button outside the form (mobile sheet header) can show it. */
+  onBusy?: (busy: boolean) => void;
 };
 
 type Load = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; rubric: Rubric | null };
 
 /** Inline editor hosted by the inspector: loads GET /v1/cards/:id, validates with the contract, PUTs. */
-export function CardEditor({ card, subs, prepare, onSaved, onClose, onShape, formId, onDirty }: CardEditorProps) {
+export function CardEditor({ card, subs, prepare, onSaved, onClose, onShape, formId, onDirty, onBusy }: CardEditorProps) {
   const [load, setLoad] = useState<Load>({ state: 'loading' });
   const [draft, setDraft] = useState<Draft | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
@@ -66,6 +68,9 @@ export function CardEditor({ card, subs, prepare, onSaved, onClose, onShape, for
   useEffect(() => {
     if (draft && saved.current) onDirty?.(JSON.stringify(draft) !== JSON.stringify(saved.current));
   }, [draft, onDirty]);
+  useEffect(() => {
+    onBusy?.(busy);
+  }, [busy, onBusy]);
 
   const save = useCallback(
     async (d: Draft): Promise<boolean> => {

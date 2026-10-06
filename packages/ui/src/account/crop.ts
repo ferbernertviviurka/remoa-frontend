@@ -1,6 +1,7 @@
 /** Matemática pura do recorte de avatar e validação de arquivo (sem DOM). */
 
-export const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
+/** D-1202: the original may be up to 100 MB; it is cropped to a 512 px WebP before upload. */
+export const AVATAR_MAX_BYTES = 100 * 1024 * 1024;
 export const AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 export const AVATAR_OUT = 512;
 export const AVATAR_QUALITY = 0.85;

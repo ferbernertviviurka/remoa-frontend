@@ -194,13 +194,13 @@ function MobileMapInner({ data }: { data: BoardGraph }) {
     doc, wrap, heat: doc.heat, endOfToday, openEditor: creator.openEditor, review,
     active: prefs.view !== 'list' && !asideOpen && !creator.sheetOpen && !creator.editorOpen,
   });
-  const { selectCard, editLabel } = selection;
+  const { selectCard, editLabel, connectFrom, startConnect } = selection;
   const ctx = useMemo<MobileNodesCtx>(
     () => ({
       heat: doc.heat, query, heatLayer: prefs.heat, labels: prefs.labels, selectedId, endOfToday,
-      selectCard, editLabel, prepare: doc.prepareCard,
+      selectCard, editLabel, prepare: doc.prepareCard, connectFrom, startConnect, resizeCard: doc.resizeCard,
     }),
-    [doc.heat, query, prefs.heat, prefs.labels, selectedId, endOfToday, selectCard, editLabel, doc.prepareCard],
+    [doc.heat, query, prefs.heat, prefs.labels, selectedId, endOfToday, selectCard, editLabel, doc.prepareCard, connectFrom, startConnect, doc.resizeCard],
   );
 
   const fit = useCallback(() => void rf.fitView({ padding: FIT_PADDING, maxZoom: 1, minZoom: MOBILE_MAP_ZOOM_MIN, ...cameraMove() }), [rf]);

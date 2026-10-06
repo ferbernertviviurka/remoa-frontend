@@ -4,7 +4,7 @@
 // (graph.ts, op-queue.ts, history.ts); no second copy of the data (FRD "Regras").
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { applyNodeChanges, type NodeChange, type XYPosition } from '@xyflow/react';
-import { MAX_CARDS_PER_BOARD, type BoardGraph, type CardDetail, type CardType, type MapOp, type RetrievabilityMap, type SaveCardInput } from '@remoa/contracts';
+import { MAX_CARDS_PER_BOARD, type BoardGraph, type CardDetail, type CardSize, type CardType, type MapOp, type RetrievabilityMap, type SaveCardInput } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { useToast } from '@remoa/ui';
 import { previewOf } from '@/features/cards/draft';
@@ -173,6 +173,16 @@ export function useMapDoc(data: BoardGraph) {
     [boardId, commit],
   );
 
+  /** D-1207: the corner handle let go = one undoable resizeCards (same op and `card.size` as the desktop, D-202). */
+  const resizeCard = useCallback(
+    (cardId: string, size: CardSize) => {
+      const cur = g.current.nodes.find((n) => n.id === cardId)?.data.card.size;
+      if (cur?.w === size.w && cur?.h === size.h) return;
+      commit([{ op: 'resizeCards', opId: uuid(), boardId, sizes: [{ cardId, size }] }]);
+    },
+    [boardId, commit],
+  );
+
   /** Edge label (empty = none). Its own undo step, after the one of the edge. */
   const setEdgeLabel = useCallback(
     (edgeId: string, label: string) => {
@@ -213,7 +223,7 @@ export function useMapDoc(data: BoardGraph) {
     else void queue.current?.retry();
   }, []);
 
-  return { graph, graphRef: g, cache, status, heat, heatLoaded, loadHeat, steps, step, select, onNodesChange, createEdge, setEdgeLabel, createCard, discardCard, prepareCard, onCardSaved, retry, initiallyEmpty: init.graph.nodes.length === 0 };
+  return { graph, graphRef: g, cache, status, heat, heatLoaded, loadHeat, steps, step, select, onNodesChange, createEdge, resizeCard, setEdgeLabel, createCard, discardCard, prepareCard, onCardSaved, retry, initiallyEmpty: init.graph.nodes.length === 0 };
 }
 
 export type MapDoc = ReturnType<typeof useMapDoc>;

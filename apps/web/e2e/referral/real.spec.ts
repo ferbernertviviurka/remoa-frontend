@@ -100,13 +100,14 @@ test('1. fluxo completo pela UI: A copia o link, B cadastra por /i/<code>, cria 
   }
   expect(Number(psql(`select count(*) from entitlement_grants where referral_id=(select id from referrals where referee_id='${b.id}')`))).toBe(2);
   // cartão do indicador soma 1 mês; e-mails de recompensa (outbox em memória da API: lido pelo log)
-  // API_LOG explícito (log do stdout da API) ou, sem ele, a pasta .emails/ do backend (outbox de dev: um .json por e-mail, `to` = <userId>@test.local)
+  // API_LOG explícito (log do stdout da API) ou, sem ele, a pasta .emails/ do backend (outbox de dev: um .json por e-mail, `to` = the recipient's address)
   const rewardMails = () => {
     if (process.env.API_LOG) return (readFileSync(process.env.API_LOG, 'utf8').match(/email \((?:console|not sent, no RESEND_API_KEY)\).*1 mês de Pro grátis/g) ?? []).length;
     const dir = process.env.EMAILS_DIR ?? '../../../remoa-backend/.emails';
-    return readdirSync(dir).filter((f) => f.endsWith('.json') && [idA, b.id].some((id) => readFileSync(`${dir}/${f}`, 'utf8').includes(`"to": "${id}@`)) && f.includes('referral-reward')).length;
+    return readdirSync(dir).filter((f) => f.endsWith('.json') && f.includes('referral-reward') && [emailA, emailB].some((e) => readFileSync(`${dir}/${f}`, 'utf8').includes(`"to": "${e}"`))).length;
   };
-  await expect.poll(rewardMails).toBeGreaterThanOrEqual(2);
+  // G21 D-992: the e-mail leaves after the response (and the outbox holds thousands of files): poll up to 60 s, same assertion
+  await expect.poll(rewardMails, { timeout: 60_000 }).toBeGreaterThanOrEqual(2);
   await page.reload();
   await expect(page.getByText(t('referral.reward.label'))).toBeVisible();
   await expect(page.getByTestId('reward-months')).toHaveText('1');

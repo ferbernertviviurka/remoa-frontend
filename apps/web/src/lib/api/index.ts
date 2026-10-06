@@ -13,7 +13,8 @@ export { apiBase };
 export async function apiFetch<T>(path: string, token: string | null, init: RequestInit = {}, onFeedback?: (chunk: string) => void): Promise<Result<T>> {
   const headers = new Headers(init.headers);
   if (token) headers.set('authorization', `Bearer ${token}`);
-  if (init.body) headers.set('content-type', 'application/json');
+  // FormData: the browser sets multipart/form-data with its boundary.
+  if (init.body && !(init.body instanceof FormData)) headers.set('content-type', 'application/json');
   const started = Date.now();
   let res: Response;
   try {
@@ -60,7 +61,12 @@ function trace(method = 'GET', path: string, status: number, started: number, er
  * that only use `apiFetch`/`apiBase` (the landing) do not ship ~60 KB gzip of auth client.
  */
 export async function api<T>(path: string, init?: RequestInit, onFeedback?: (chunk: string) => void): Promise<Result<T>> {
+  return apiFetch<T>(path, await sessionToken(), init, onFeedback);
+}
+
+/** The browser's Supabase access token (local read, no network), for calls that cannot go through `api` (XHR uploads). */
+export async function sessionToken(): Promise<string | null> {
   const { createClient } = await import('@/lib/supabase/client');
   const { data } = await createClient().auth.getSession();
-  return apiFetch<T>(path, data.session?.access_token ?? null, init, onFeedback);
+  return data.session?.access_token ?? null;
 }

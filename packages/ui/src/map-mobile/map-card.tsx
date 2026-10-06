@@ -34,6 +34,10 @@ export type MapCardProps = {
   dimmed?: boolean;
   /** Camada "Mapa de calor da memória": borda e rodapé na cor do estado; desligada = neutra. Default ligada. */
   heat?: boolean;
+  /** Tamanho salvo do card (`card.size`, D-1207); ausente = padrão do tipo. */
+  size?: { w: number; h: number };
+  /** Modo conectar: candidato a destino (contorno tracejado). */
+  target?: boolean;
   /** Nome acessível do botão (título, tipo, estado e lembrança). */
   selectLabel: string;
   onSelect?: () => void;
@@ -54,7 +58,7 @@ const foot: Record<MapCardState, string> = {
  * MapCard (F23 FR-5/FR-6): card compacto do mapa no celular (`MapaMobileMapa.dc.html`). Um `<button>` real que ocupa o nó
  * (≥ 44 px). Título 16 px/800 e resumo 12,5 px (tokens `--map-text-*`), rodapé com ponto e estado (12 px: o mock tem 11,5), barra de 5 px na cor do estado. `selected` desenha anel e sombra; só `opacity`/`box-shadow` mudam.
  */
-export function MapCard({ type, typeLabel, title, state, stateLabel, recallLabel, summary, steps, stepsMore, image, level = 'full', selected, dimmed, heat = true, selectLabel, onSelect }: MapCardProps) {
+export function MapCard({ type, typeLabel, title, state, stateLabel, recallLabel, summary, steps, stepsMore, image, level = 'full', selected, dimmed, heat = true, size, target, selectLabel, onSelect }: MapCardProps) {
   const full = level === 'full';
   return (
     <button
@@ -64,11 +68,13 @@ export function MapCard({ type, typeLabel, title, state, stateLabel, recallLabel
       data-level={level}
       data-state={state}
       data-dimmed={dimmed || undefined}
+      data-connect-target={target || undefined}
       onClick={onSelect}
-      style={{ width: MAP_CARD_W, height: MAP_CARD_H[type] }}
+      style={{ width: size?.w ?? MAP_CARD_W, height: size?.h ?? MAP_CARD_H[type] }}
       className={clsx(
         'relative flex cursor-pointer flex-col overflow-hidden rounded-[20px] border-[2.5px] bg-surface p-0 text-left text-ink transition-[opacity,box-shadow,border-color] duration-300',
         selected ? 'border-primary shadow-[0_0_0_5px_rgba(109,91,208,.22),0_14px_30px_rgba(36,26,92,.2)]' : clsx(heat ? border[state] : 'border-(--border)', 'shadow-[0_8px_20px_rgba(36,26,92,.1)]'),
+        target && 'outline-2 outline-offset-[5px] outline-primary outline-dashed',
         dimmed ? 'opacity-[.22]' : 'opacity-100',
         focusRing,
       )}

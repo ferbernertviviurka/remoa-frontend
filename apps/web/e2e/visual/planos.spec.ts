@@ -57,22 +57,28 @@ test('visual planos: Free, anual + fundador, Pro, redirecionando e sucesso', asy
   await expect(s.getByText('Preço de fundador aplicado')).toBeVisible();
   await shot(page, 'anual-fundador');
 
-  // redirecionando (Mensal + Pix): a criação da sessão fica pendurada para o overlay ficar parado
+  // redirecionando (Mensal + cartão): a criação da sessão fica pendurada para o overlay ficar parado
   await page.goto('/app/planos');
   await expect(page.getByRole('table', { name: 'Comparação entre Free e Pro' })).toBeVisible();
   await page.route('**/v1/billing/checkout', () => new Promise(() => undefined));
   await page.getByRole('button', { name: 'Assinar o Pro' }).click();
   await expect(page.getByText('Abrindo o pagamento seguro')).toBeVisible();
   await shot(page, 'redirecionando', false);
-  await page.unroute('**/v1/billing/checkout');
+  // no `unroute` here: Playwright continues a held request when its route is removed, so the click's POST would reach the API, the page would
+  // follow the mock URL and subscribe the user, and the next createSession would answer 409 ("already subscribed"). The route dies with the page.
 
   // sucesso: o checkout mock completa o cartão e o retorno mostra o diálogo sobre a página já Pro
-  // P-362: the API's mock checkout intermittently answers 500 (pg_advisory_xact_lock "grant:<user>" fails after ~1 s, backend); a new session retries it
+  // P-362: the API's mock checkout intermittently answers 500 (pg_advisory_xact_lock "grant:<user>" fails after ~1 s, backend); a new session retries it.
+  // Only the session creation + completion is retried: once the mock completes, the user is Pro and a second checkout answers 409.
+  let back = '';
   await expect(async () => {
     const { url } = await createSession(request, (await planUserHeaders(page)), { period: 'monthly', method: 'card' });
-    await page.goto(url);
-    await expect(page.getByRole('dialog', { name: 'Você agora é Pro.' })).toBeVisible({ timeout: 10_000 });
+    const r = await request.get(url, { maxRedirects: 0 });
+    expect(r.status()).toBe(302);
+    back = r.headers().location!;
   }).toPass({ timeout: 60_000 });
+  await page.goto(back);
+  await expect(page.getByRole('dialog', { name: 'Você agora é Pro.' })).toBeVisible({ timeout: 30_000 });
   await shot(page, 'sucesso');
 
   await page.goto('/app/planos');

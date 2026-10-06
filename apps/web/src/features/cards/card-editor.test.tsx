@@ -9,7 +9,7 @@ import { violations } from './test-utils';
 
 const api = vi.fn();
 const track = vi.fn();
-vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
+vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a), apiBase: () => 'http://api.test', sessionToken: async () => 'tok' }));
 vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
 
 const U = mocks.fixtureUserId;
@@ -230,29 +230,41 @@ describe('CardEditor: image', () => {
     onload: (() => void) | null = null;
     onerror: (() => void) | null = null;
     onabort: (() => void) | null = null;
+    static status = 200;
     status = 0;
+    responseText = '';
     headers: Record<string, string> = {};
     method = '';
-    open(m: string) {
+    url = '';
+    body: FormData | null = null;
+    open(m: string, url: string) {
       this.method = m;
+      this.url = url;
     }
     setRequestHeader(k: string, v: string) {
       this.headers[k] = v;
     }
-    send() {
+    send(body: FormData) {
       FakeXHR.last = this;
+      this.body = body;
       this.upload.onprogress?.({ lengthComputable: true, loaded: 50, total: 100 });
-      setTimeout(() => {
-        if (FakeXHR.fail) this.onerror?.();
-        else {
-          this.status = 200;
-          this.onload?.();
-        }
+      setTimeout(async () => {
+        if (FakeXHR.fail) return this.onerror?.();
+        this.status = FakeXHR.status;
+        const attribution = body.get('attribution');
+        this.responseText = JSON.stringify(
+          this.status === 200
+            ? await mocks.completeUpload(U, { key: `${U}/up.png`, license: body.get('license') as never, attribution: typeof attribution === 'string' ? attribution : null })
+            : { error: { code: 'validation', message: 'file_too_large' } },
+        );
+        this.onload?.();
       }, 0);
     }
   }
   beforeEach(() => {
     FakeXHR.fail = false;
+    FakeXHR.status = 200;
+    FakeXHR.last = null;
     vi.stubGlobal('XMLHttpRequest', FakeXHR);
   });
   afterEach(() => vi.unstubAllGlobals());
@@ -315,14 +327,25 @@ describe('CardEditor: image', () => {
     expect(input.frontAssetId).toMatch(/^[0-9a-f-]{36}$/);
   });
 
-  it('rejects other formats and > 10 MB before uploading', async () => {
+  it('rejects other formats and > 100 MB before uploading; 50 MB goes to the server (D-1202)', async () => {
     editor(extra[imageId]!);
     await form();
     pick(file('a.gif', 'image/gif'));
     expect(await screen.findByText('Formato não aceito. Use JPG, PNG ou WebP.')).toBeInTheDocument();
-    pick(file('a.png', 'image/png', 11 * 1024 * 1024));
-    expect(await screen.findByText('A imagem passa de 10 MB. Reduza e tente de novo.')).toBeInTheDocument();
-    expect(api).toHaveBeenCalledTimes(1); // only the GET of the card
+    pick(file('a.png', 'image/png', 101 * 1024 * 1024));
+    expect(await screen.findByText('A imagem passa de 100 MB. Reduza e tente de novo.')).toBeInTheDocument();
+    expect(FakeXHR.last).toBeNull();
+    pick(file('big.png', 'image/png', 50 * 1024 * 1024));
+    expect(await screen.findByRole('img', { name: 'Imagem do card Coração' })).toBeInTheDocument();
+    expect(FakeXHR.last?.url).toBe('http://api.test/v1/uploads/direct');
+  });
+
+  it('a 413 from the server shows the size error, not a generic failure', async () => {
+    FakeXHR.status = 413;
+    editor(extra[imageId]!);
+    await form();
+    pick(file('a.png', 'image/png', 4096));
+    expect(await screen.findByText('A imagem passa de 100 MB. Reduza e tente de novo.')).toBeInTheDocument();
   });
 
   it('needs attribution when the license is not "own" (licença não escolhida)', async () => {
@@ -340,12 +363,11 @@ describe('CardEditor: image', () => {
     expect(api).toHaveBeenCalledTimes(1);
     fireEvent.change(screen.getByLabelText('Autoria / atribuição'), { target: { value: 'Servier, CC BY 4.0' } });
     pick(file('a.png', 'image/png'));
-    await waitFor(() =>
-      expect(api).toHaveBeenCalledWith('/v1/uploads/complete', { method: 'POST', body: expect.stringContaining('"license":"servier","attribution":"Servier, CC BY 4.0"') }),
-    );
+    await waitFor(() => expect(FakeXHR.last?.body?.get('license')).toBe('servier'));
+    expect(FakeXHR.last?.body?.get('attribution')).toBe('Servier, CC BY 4.0');
   });
 
-  it('uploads sign → PUT → complete, shows the thumbnail and saves with the asset; failure offers retry', async () => {
+  it('uploads multipart to /v1/uploads/direct, shows the thumbnail and saves with the asset; failure offers retry', async () => {
     FakeXHR.fail = true;
     editor(extra[imageId]!);
     await form();
@@ -354,14 +376,15 @@ describe('CardEditor: image', () => {
 
     pick(file('a.png', 'image/png', 4096));
     expect(await screen.findByText('O envio da imagem falhou.')).toBeInTheDocument();
-    expect(FakeXHR.last?.method).toBe('PUT');
-    expect(FakeXHR.last?.headers['Content-Type']).toBe('image/png');
+    expect(FakeXHR.last?.method).toBe('POST');
+    expect(FakeXHR.last?.url).toBe('http://api.test/v1/uploads/direct');
+    expect(FakeXHR.last?.headers.authorization).toBe('Bearer tok');
+    expect(FakeXHR.last?.body?.get('file')).toBeInstanceOf(File);
 
     FakeXHR.fail = false;
     fireEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }));
     expect(await screen.findByRole('img', { name: 'Imagem do card Coração' })).toHaveAttribute('src', expect.stringContaining('-800.webp'));
     expect(track).toHaveBeenCalledWith('image_uploaded', { sizeKb: 4 });
-    expect(api).toHaveBeenCalledWith('/v1/uploads/complete', expect.objectContaining({ method: 'POST' }));
     expect(screen.getByText('0 máscaras')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));

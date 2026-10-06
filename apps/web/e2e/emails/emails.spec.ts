@@ -2,17 +2,17 @@
 import { expect, test } from '@playwright/test';
 import { API, signUpApi } from '../account/fixture';
 
-// /dev/emails is a dev-only page (404 in a production build): E2E_PROD=1 skips it
-test.skip(!!process.env.E2E_PROD, 'dev-only page');
 
 const rnd = () => `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
 test('prévia /dev/emails lista todas as versões e mostra o assunto de cada uma', async ({ page, request }) => {
+  // /dev/emails is dev-only (404 in a production build): detect it from the response, not from an env var the runner may forget
+  const res = await page.goto('/dev/emails');
+  test.skip(res?.status() === 404, 'dev-only page (production build)');
   const list = ((await (await request.get(`${API}/v1/dev/emails`)).json()) as { data: Array<{ template: string; versions: string[] }> }).data;
   const total = list.reduce((n, l) => n + l.versions.length, 0);
   expect(total).toBeGreaterThan(0);
 
-  await page.goto('/dev/emails');
   const buttons = page.getByRole('navigation', { name: 'Modelos' }).getByRole('button');
   await expect(buttons).toHaveCount(total);
 

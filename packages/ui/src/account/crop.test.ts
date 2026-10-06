@@ -8,7 +8,8 @@ describe('validateAvatarFile', () => {
     expect(validateAvatarFile({ type: 'image/gif', size: 10 })).toEqual({ ok: false, reason: 'type' });
     expect(validateAvatarFile({ type: '', size: 10 })).toEqual({ ok: false, reason: 'type' });
   });
-  it('5 MB passa, acima não', () => {
+  it('100 MB passa, acima não (D-1202)', () => {
+    expect(AVATAR_MAX_BYTES).toBe(100 * 1024 * 1024);
     expect(validateAvatarFile({ type: 'image/png', size: AVATAR_MAX_BYTES }).ok).toBe(true);
     expect(validateAvatarFile({ type: 'image/png', size: AVATAR_MAX_BYTES + 1 })).toEqual({ ok: false, reason: 'size' });
   });

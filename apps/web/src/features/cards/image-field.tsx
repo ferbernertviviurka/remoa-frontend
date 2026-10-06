@@ -92,7 +92,7 @@ export function ImageUpload({ hasImage, onAsset }: { hasImage: boolean; onAsset:
     if (license !== 'own' && !attribution.trim()) return setUpload({ state: 'invalid', problem: 'noLicense' });
     setUpload({ state: 'sending', pct: 0 });
     const r = await uploadImage(file, { license, attribution: attribution.trim() || null }, (pct) => setUpload({ state: 'sending', pct }));
-    if (!r.ok) return setUpload({ state: 'failed', file });
+    if (!r.ok) return setUpload(r.error.message === 'file_too_large' ? { state: 'invalid', problem: 'tooBig' } : { state: 'failed', file });
     setUpload({ state: 'idle' });
     track('image_uploaded', { sizeKb: Math.round(file.size / 1024) });
     onAsset(r.data.id);

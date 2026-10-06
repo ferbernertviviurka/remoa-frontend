@@ -1005,7 +1005,7 @@ export const ptBRCore = {
     image: {
       alt: 'Imagem do card {title}',
       pick: 'Escolher imagem',
-      dropHint: 'Arraste, cole ou escolha uma imagem JPG, PNG ou WebP de até 10 MB.',
+      dropHint: 'Arraste, cole ou escolha uma imagem JPG, PNG ou WebP de até 100 MB.',
       replace: 'Trocar imagem',
       openMasks: 'Abrir editor de máscaras',
       license: 'Licença da imagem',
@@ -1019,7 +1019,7 @@ export const ptBRCore = {
       uploading: 'Enviando imagem… {pct}%',
       uploadProgress: 'Progresso do envio',
       failed: 'O envio da imagem falhou.',
-      tooBig: 'A imagem passa de 10 MB. Reduza e tente de novo.',
+      tooBig: 'A imagem passa de 100 MB. Reduza e tente de novo.',
       badType: 'Formato não aceito. Use JPG, PNG ou WebP.',
       noLicense: 'Licença não escolhida: informe a autoria da imagem para essa licença.',
       masksOne: '1 máscara',

@@ -1,14 +1,18 @@
 'use client';
 
-import { memo, useCallback, useContext } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { memo, useCallback, useContext, useState } from 'react';
+import { Handle, Position, useStore, type NodeProps } from '@xyflow/react';
+import type { CardSize } from '@remoa/contracts';
 import { t } from '@remoa/strings';
-import { MapCard, type MapCardProps } from '@remoa/ui';
+import { CardHandles, MapCard, type MapCardProps } from '@remoa/ui';
 import { useCardFace } from '@/features/cards/card-face';
 import { useCardDetail } from '../../canvas/card-detail';
 import { heatOf, type CardNode } from '../../canvas/graph';
 import { MobileNodesContext } from './mobile-nodes-context';
+import { mobileSizeOf, resizedBy } from './resize';
 import { useIsOverview } from './semantic-zoom';
+
+const KEY_STEP = 8;
 
 const SHOWN_STEPS = 3;
 
@@ -19,11 +23,33 @@ export const matchesQuery = (q: string, ...texts: (string | null | undefined)[])
   return !needle || texts.some((x) => !!x && norm(x).includes(needle));
 };
 
-/** Nó do mapa no celular: `MapCard` do Torph + zoom semântico por seletor booleano. Sem alças visíveis (conectar é por toque, D-667). */
+/**
+ * Nó do mapa no celular: `MapCard` do Torph + zoom semântico por seletor booleano. As alças do React Flow ficam ocultas
+ * (conectar é por toque, D-667); o card selecionado mostra as alças do Torph para conectar e mudar o tamanho (D-1207).
+ */
 export const MobileCardNode = memo(function MobileCardNode({ id, data, selected }: NodeProps<CardNode>) {
   const { card } = data;
   const ctx = useContext(MobileNodesContext);
   const overview = useIsOverview();
+  // only the selected card follows the zoom (its handles stay finger-sized); the others never re-render on zoom
+  const zoom = useStore((s) => (selected ? s.transform[2] : 1));
+  const [live, setLive] = useState<CardSize | null>(null);
+  const size = live ?? card.size;
+  const connecting = ctx.connectFrom != null;
+  const handles = !!selected && !connecting && !!ctx.startConnect && !!ctx.resizeCard;
+  const onResize = useCallback(
+    (dx: number, dy: number, done: boolean) => {
+      const next = resizedBy(mobileSizeOf(card), dx, dy, zoom);
+      if (!done) return setLive(next);
+      setLive(null);
+      ctx.resizeCard?.(id, next);
+    },
+    [card, ctx, id, zoom],
+  );
+  const onResizeStep = useCallback(
+    (dw: number, dh: number) => ctx.resizeCard?.(id, resizedBy(mobileSizeOf(card), dw * KEY_STEP, dh * KEY_STEP, 1)),
+    [card, ctx, id],
+  );
   const face = useCardFace(card);
   const detail = useCardDetail(card.type === 'flow' && !overview ? id : null, ctx.prepare, false);
   const entry = ctx.heat[id];
@@ -62,9 +88,21 @@ export const MobileCardNode = memo(function MobileCardNode({ id, data, selected 
         selected={selected}
         dimmed={!matchesQuery(ctx.query, card.title, face.summary)}
         heat={ctx.heatLayer}
+        {...(size ? { size } : {})}
+        target={connecting && ctx.connectFrom !== id}
         selectLabel={label}
         onSelect={select}
       />
+      {handles ? (
+        <CardHandles
+          connectLabel={t('mapMobile.canvas.connectHandle', { title: card.title })}
+          resizeLabel={t('mapMobile.canvas.resizeHandle', { title: card.title })}
+          scale={1 / zoom}
+          onConnect={() => ctx.startConnect?.(id)}
+          onResize={onResize}
+          onResizeStep={onResizeStep}
+        />
+      ) : null}
       <Handle type="source" position={Position.Right} isConnectable={false} className="!pointer-events-none !opacity-0" />
     </>
   );

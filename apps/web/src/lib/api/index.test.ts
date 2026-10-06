@@ -32,6 +32,18 @@ describe('apiFetch dev trace (D-583)', () => {
   });
 });
 
+describe('apiFetch body', () => {
+  it('JSON bodies get content-type json; FormData keeps the browser multipart boundary', async () => {
+    const fetchMock = vi.fn().mockImplementation(async () => new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+    await apiFetch('/v1/x', 'tok', { method: 'POST', body: '{}' });
+    await apiFetch('/v1/uploads/direct', 'tok', { method: 'POST', body: new FormData() });
+    const ct = (i: number) => (fetchMock.mock.calls[i]![1] as RequestInit & { headers: Headers }).headers.get('content-type');
+    expect(ct(0)).toBe('application/json');
+    expect(ct(1)).toBeNull();
+  });
+});
+
 describe('apiFetch timing (G21/F29 FR-3)', () => {
   it('dev trace shows the API db time and query count from Server-Timing', async () => {
     vi.stubEnv('NODE_ENV', 'development');

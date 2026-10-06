@@ -14,8 +14,8 @@ import type { MapDoc } from '../canvas/use-map-doc';
 import { cameraMove } from '../canvas/view';
 import { useHoldMove } from './use-hold-move';
 
-/** Screen px the card sits above the centre so the peek (≈ 200 px at the bottom) does not cover it. */
-const PEEK_SHIFT = 90;
+/** Screen px the card sits above the centre so the peek (≈ 260 px at the bottom) does not cover it. */
+const PEEK_SHIFT = 120;
 
 type Args = {
   doc: MapDoc;
@@ -121,7 +121,7 @@ export function useMapSelection({ doc, wrap, heat, endOfToday, active, openEdito
       ) : null}
     </>
   );
-  return { selectCard, editLabel, element };
+  return { selectCard, editLabel, connectFrom: from, startConnect: setFrom, element };
 }
 
 function Peek({ node, heat, endOfToday, onClose, onReview, onEdit, onConnect }: { node: CardNode; heat: RetrievabilityMap; endOfToday: number; onClose: () => void; onReview: () => void; onEdit: () => void; onConnect: () => void }) {
@@ -149,7 +149,9 @@ function Peek({ node, heat, endOfToday, onClose, onReview, onEdit, onConnect }: 
       closeLabel={t('mapMobile.peek.closeLabel')}
       reviewLabel={t('mapMobile.peek.reviewAction')}
       editLabel={t('mapMobile.peek.editLabel')}
+      editText={t('mapMobile.peek.editText')}
       connectLabel={t('mapMobile.peek.connectLabel')}
+      connectText={t('mapMobile.peek.connectText')}
       onClose={onClose}
       onReview={onReview}
       onEdit={onEdit}

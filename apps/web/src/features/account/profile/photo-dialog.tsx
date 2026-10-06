@@ -8,7 +8,6 @@ import { Avatar, AvatarCropper, Button, Dialog, Dropzone, Icon, focusRing, useTo
 import { useRouter } from 'next/navigation';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
-import { putFile } from '@/features/cards/upload';
 import { useAccount } from '../shell/account-context';
 import { initialsOf } from '../shell/format';
 import { useOnline } from '../shell/use-online';
@@ -104,16 +103,12 @@ function PhotoForm({ onClose }: { onClose: () => void }) {
     onClose();
     try {
       if (blob) {
-        const upload = new File([blob], 'avatar.webp', { type: 'image/webp' });
-        const sign = await api<{ url: string; key: string }>('/v1/uploads/sign', {
-          method: 'POST',
-          body: JSON.stringify({ kind: 'avatar', mime: upload.type, sizeBytes: upload.size }),
-        });
-        if (!sign.ok) throw new Error(sign.error.code);
-        if (!(await putFile(sign.data.url, upload, () => undefined))) throw new Error('put');
-        const done = await api<AvatarVariants>('/v1/account/avatar', { method: 'POST', body: JSON.stringify({ key: sign.data.key }) });
+        // D-1202: the API receives the file and compresses it (no browser PUT to the bucket).
+        const form = new FormData();
+        form.append('file', new File([blob], 'avatar.webp', { type: 'image/webp' }));
+        const done = await api<AvatarVariants>('/v1/account/avatar/direct', { method: 'POST', body: form });
         if (!done.ok) throw new Error(done.error.code);
-        setAccount((p) => ({ ...p, profile: { ...p.profile, avatarKey: sign.data.key }, avatarUrls: done.data }));
+        setAccount((p) => ({ ...p, avatarUrls: done.data }));
       } else if (removed) {
         const r = await api('/v1/account/avatar', { method: 'DELETE' });
         if (!r.ok) throw new Error(r.error.code);
