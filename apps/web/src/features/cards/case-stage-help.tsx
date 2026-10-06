@@ -1,8 +1,11 @@
 'use client';
 
 import type { CaseStage } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { IconButton, Tooltip } from '@remoa/ui';
+
+const t = withStrings({ cards: more.cards });
 
 const help = (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

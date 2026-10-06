@@ -9,6 +9,9 @@
     "./tokens.css": "./src/tokens.css",
     "./motion.css": "./src/motion.css"
   },
+  "sideEffects": [
+    "*.css"
+  ],
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

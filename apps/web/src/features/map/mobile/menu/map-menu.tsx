@@ -6,7 +6,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Board, Card, CoverageRow, MobileMapPrefs, RetrievabilityMap } from '@remoa/contracts';
-import { t, type StringKey } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, Dialog, Input, MapAside, NavRow, ProgressSummary, ToggleRow, useToast } from '@remoa/ui';
 import { usePaywall } from '@/features/billing/paywall';
 import { ShareDialog } from '@/features/map/share/share-dialog';
@@ -15,6 +16,9 @@ import { openSupport } from '@/features/support';
 import { api } from '@/lib/api';
 import { MapThumb } from './map-preview';
 import { summarize } from './priority';
+
+const t = withStrings({ boards: more.boards, mapMobile: more.mapMobile });
+type StringKey = Parameters<typeof t>[0];
 
 type Props = {
   open: boolean;

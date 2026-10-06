@@ -4,8 +4,11 @@
 // alternative to the canvas: every card reachable without dragging. Tapping a row hands the card to the map (focus + peek).
 import { useMemo } from 'react';
 import type { Card, MapState, RetrievabilityMap } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { sortByPriority } from './priority';
+
+const t = withStrings({ mapMobile: more.mapMobile });
 
 const bar: Record<MapState, string> = { review: 'bg-review', watch: 'bg-watch', steady: 'bg-steady', unknown: 'bg-unknown-soft' };
 const text: Record<MapState, string> = { review: 'text-review-text', watch: 'text-watch-text', steady: 'text-steady-text', unknown: 'text-unknown-text' };

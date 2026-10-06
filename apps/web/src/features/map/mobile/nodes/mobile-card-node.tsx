@@ -3,7 +3,8 @@
 import { memo, useCallback, useContext, useState } from 'react';
 import { Handle, Position, useStore, type NodeProps } from '@xyflow/react';
 import type { CardSize } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { CardHandles, MapCard, type MapCardProps } from '@remoa/ui';
 import { useCardFace } from '@/features/cards/card-face';
 import { useCardDetail } from '../../canvas/card-detail';
@@ -11,6 +12,8 @@ import { heatOf, type CardNode } from '../../canvas/graph';
 import { MobileNodesContext } from './mobile-nodes-context';
 import { mobileSizeOf, resizedBy } from './resize';
 import { useIsOverview } from './semantic-zoom';
+
+const t = withStrings({ mapMobile: more.mapMobile });
 
 const KEY_STEP = 8;
 

@@ -1,9 +1,12 @@
 // T6: what a map card shows per type, from `Card` + `preview` only (no payload fetch per node).
 import { useMemo } from 'react';
 import type { Card } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { stripMarkdown } from './markdown';
 import { useAsset } from './upload';
+
+const t = withStrings({ cards: more.cards });
 
 export type CardFace = {
   /** Front (D-097): the question/hint; never the answer. */

@@ -2,11 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { annualSavings, formatBRL, monthlyEquivalent, type CouponValidation, type PaymentMethod, type RedirectUrl } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, Button, CouponField, Icon, MethodChoice, OrderSummary, PriceTicker, RedirectOverlay } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { usePlans } from '../plans-context';
+
+const t = withStrings({ plans: more.plans });
 
 export const MIN_REDIRECT_MS = 600;
 

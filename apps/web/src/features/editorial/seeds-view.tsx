@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { usePaywall } from '@/features/billing/paywall';
+
+const t = withStrings({ boards: more.boards, editorial: more.editorial, newMap: more.newMap });
 
 type Seed = { id: string; title: string; area: string; temporalMark: string | null; reviewerName?: string | null; reviewerCrm?: string | null; approvedAt?: string | null };
 

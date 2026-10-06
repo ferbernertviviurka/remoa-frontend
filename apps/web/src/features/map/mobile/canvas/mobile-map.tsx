@@ -10,7 +10,8 @@ import {
   Background, BackgroundVariant, ReactFlow, ReactFlowProvider, useReactFlow, useStore, type ReactFlowState, type Viewport,
 } from '@xyflow/react';
 import { CHALLENGE_MIN_CARDS, MOBILE_MAP_ZOOM_MAX, MOBILE_MAP_ZOOM_MIN, type BoardGraph, type ReviewHub } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { CompactMapHeader, FloatingMapBar, IconPill, MapGlyph, useToast } from '@remoa/ui';
 import { useMobileCardCreator } from '@/features/cards/mobile/mobile-card-creator';
 import { placeCard } from '@/features/cards/mobile/place-card';
@@ -26,6 +27,8 @@ import { MobileCardNode, MobileLinkEdge, MobileNodesContext, type MobileNodesCtx
 import { useMobileMapPrefs, withViewport } from './prefs';
 import { useMapDoc } from './use-map-doc';
 import { cameraMove, fromViewport, MOBILE_CARD, stepZoom, toViewport, urgentCenter, VIRTUALIZE_ABOVE } from './view';
+
+const t = withStrings({ mapMobile: more.mapMobile });
 
 const nodeTypes = { card: MobileCardNode };
 const edgeTypes = { link: MobileLinkEdge };

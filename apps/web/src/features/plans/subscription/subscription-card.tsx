@@ -3,12 +3,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { annualSavings, formatBRL, type RedirectUrl, type SwitchToAnnualResult } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, Button, Icon, Morph, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { formatDate } from '@/features/billing/format';
 import { usePlans } from '../plans-context';
+
+const t = withStrings({ plans: more.plans });
 
 /** F15 FR-9: "Sua assinatura" (right column when the student is Pro). */
 export function SubscriptionCard() {

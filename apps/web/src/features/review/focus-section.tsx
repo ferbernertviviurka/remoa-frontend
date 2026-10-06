@@ -2,11 +2,15 @@
 
 import Link from 'next/link';
 import type { QueueFilter, ReviewHub } from '@remoa/contracts';
-import { t, type StringKey } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, Icon } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { sortAreas } from './hub-math';
 import { SectionCard } from './section-card';
+
+const t = withStrings({ boards: more.boards });
+type StringKey = Parameters<typeof t>[0];
 
 export type StartFn = (filter: QueueFilter) => void;
 const areaName = (a: string) => t(`boards.area.${a as 'CM'}` as StringKey);

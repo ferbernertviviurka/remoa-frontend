@@ -1,8 +1,11 @@
 'use client';
 
 import { cardShapes, type CardShape } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { ChoiceRow } from '@remoa/ui';
+
+const t = withStrings({ cards: more.cards });
 
 /** Outline previews (decorative), same proportions as the NodeCard shapes. */
 const outline: Record<CardShape, string> = {

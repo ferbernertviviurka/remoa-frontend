@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
 import { matrixAreas, type BoardSummary, type CoverageRow, type HomeSummary, type MatrixItem } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { CoverageView } from '@/features/coverage/coverage-view';
 import { EmptyState } from '@/features/shell/empty-state';
 import { serverApi } from '@/lib/api/server';
+
+const t = withStrings({ coverage: more.coverage });
 
 export const metadata: Metadata = { title: t('pages.coverage') };
 

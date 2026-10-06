@@ -1,0 +1,20 @@
+// P-507 (D-1069): one module per namespace, so a page only ships the namespaces it uses (webpack keeps or drops whole modules).
+export const devEmails = {
+  title: 'Prévia de e-mails',
+  templates: 'Modelos',
+  width: 'Largura da prévia',
+  desktop: '600 px',
+  mobile: '360 px',
+  view: 'Formato',
+  html: 'HTML',
+  text: 'Texto simples',
+  subject: 'Assunto',
+  preheader: 'Pré-cabeçalho',
+  class: 'Classe',
+  size: 'Tamanho',
+  frame: 'Prévia do e-mail',
+  loading: 'Carregando...',
+  error: 'Não foi possível carregar a prévia. A API está no ar?',
+  kb: '{kb} KB',
+  classes: { transactional: 'Transacional', reminder: 'Lembrete', list: 'Lista' },
+} as const;

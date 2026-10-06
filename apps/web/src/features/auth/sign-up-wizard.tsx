@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useNavigate } from '@/features/shell/use-navigate';
 import { isValidName, isValidPassword, normalizeName, passwordStrength } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, Checkbox, Input, PasswordMeter, Stepper } from '@remoa/ui';
 import { signUp } from '@/server/auth/actions';
 import { track } from '@/lib/analytics';
@@ -15,6 +16,8 @@ import { emptyPersonal, PersonalFields, validatePersonal, type PersonalErrors, t
 import { ConfirmEmail } from './confirm-email';
 import { FieldError, PasswordField } from './password-field';
 import { generalMessage, validEmail } from './sign-in-form';
+
+const t = withStrings({ account: more.account, personal: more.personal });
 
 type Values = { email: string; password: string; name: string; personal: PersonalValues; consent: boolean };
 const NO_TYPE = { userType: false } as const; // "Você é?" lives in the onboarding

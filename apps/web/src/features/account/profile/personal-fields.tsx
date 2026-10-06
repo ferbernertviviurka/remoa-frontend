@@ -2,8 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { addressSchema, brUfs, normalizeBrPhone, sexes, signUpProfileInputSchema, userTypes, type Address, type Sex, type UserType } from '@remoa/contracts';
-import { t, type StringKey } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { ChoiceChip, Input, Select } from '@remoa/ui';
+
+const t = withStrings({ personal: more.personal });
+type StringKey = Parameters<typeof t>[0];
 
 /** G14 S1 (D-594–D-596): dados pessoais do cadastro e do perfil. PII: vive só em estado local e vai ao PATCH /v1/account/profile; nunca em log/evento. */
 export type AddressDraft = { cep: string; street: string; number: string; complement: string; district: string; city: string; uf: string };

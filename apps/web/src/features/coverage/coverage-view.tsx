@@ -3,12 +3,15 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { matrixAreas, type BoardSummary, type CoverageRow, type HomeSummary, type MatrixArea, type MatrixItem } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, FilterChip, Input, Pill, Progress, Ring, Segmented, Stat, useToast, type PillProps } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { LinkDialog, TopicActions, linkCls } from './coverage-gaps';
 import { boardsOfItem, buildGroups, countStates, suggestTopics, type TopicEntry, type TopicState } from './coverage-logic';
+
+const t = withStrings({ boards: more.boards, coverage: more.coverage });
 
 export type CoverageViewProps = { rows: CoverageRow[]; items: MatrixItem[]; summary: Pick<HomeSummary, 'dueToday'>; boards: BoardSummary[] };
 

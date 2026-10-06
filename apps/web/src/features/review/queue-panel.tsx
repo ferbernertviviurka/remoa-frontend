@@ -1,10 +1,14 @@
 'use client';
 
 import type { Entitlements, ReviewHub } from '@remoa/contracts';
-import { t, type StringKey } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, Button, Icon, RingProgress, SegmentBar, SwitchRow, ToggleChip } from '@remoa/ui';
 import { type Chips, type Reason } from './hub-math';
 import { useCountUp } from './use-count-up';
+
+const t = withStrings({ boards: more.boards });
+type StringKey = Parameters<typeof t>[0];
 
 export type QueueModel = { counts: Record<Reason, number>; size: number; minutes: number; firstDue?: ReviewHub['maps'][number] };
 

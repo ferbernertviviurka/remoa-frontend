@@ -1,0 +1,20 @@
+// P-507 (D-1069): one module per namespace, so a page only ships the namespaces it uses (webpack keeps or drops whole modules).
+export const progress = {
+  title: 'Progresso',
+  retention7: 'Retenção em 7 dias',
+  retention30: 'Retenção em 30 dias',
+  streak: 'Dias seguidos',
+  none: 'Sem tentativas neste período',
+  chart: 'Revisões por dia',
+  dayCount: '{date}: {n} revisões',
+  weak: 'Cards fracos',
+  weakHint: 'Lembrança estimada abaixo de 70%',
+  weakEmpty: 'Nenhum card com lembrança abaixo de 70%.',
+  accuracyEmpty: 'Sem tentativas neste período.',
+  review: 'Revisar',
+  accuracy: 'Acurácia',
+  topic: 'Tópico da matriz',
+  area: 'Clínica Médica',
+  export: 'Exportar histórico',
+  loadError: 'Não foi possível carregar o progresso.',
+} as const;

@@ -1,10 +1,13 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { missingRequiredProfile, type AccountSnapshot, type OnboardingState } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { OnboardingView } from '@/features/onboarding/onboarding-view';
 import { serverApi } from '@/lib/api/server';
 import { safeNext } from '@/lib/safe-next';
+
+const t = withStrings({ onboarding: more.onboarding });
 
 export const metadata: Metadata = { title: t('onboarding.title') };
 

@@ -3,7 +3,11 @@ import {
   caseStages, saveCardInputSchema,
   type CardDetail, type CardMask, type CardPreview, type CardShape, type CaseStage, type FlowStep, type SaveCardInput,
 } from '@remoa/contracts';
-import { t, type StringKey } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
+
+const t = withStrings({ cards: more.cards });
+type StringKey = Parameters<typeof t>[0];
 
 /**
  * `shape` (D-095, concept only), `frontAssetId` (D-096, question image) and `backAssetId` (D-201, answer image; not on

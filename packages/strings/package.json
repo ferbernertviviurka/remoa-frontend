@@ -11,7 +11,9 @@
     "./admin": "./src/t-admin.ts",
     "./referral": "./src/t-referral.ts",
     "./store": "./src/t-store.ts",
-    "./full": "./src/t-full.ts"
+    "./full": "./src/t-full.ts",
+    "./ns": "./src/ns.ts",
+    "./app": "./src/t-app.ts"
   },
   "scripts": {
     "lint": "eslint .",
@@ -24,5 +26,6 @@
     "@typescript-eslint/utils": "^8.71.0",
     "eslint": "^9.39.5",
     "vitest": "^3.2.7"
-  }
+  },
+  "sideEffects": false
 }

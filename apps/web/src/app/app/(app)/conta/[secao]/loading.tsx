@@ -1,5 +1,8 @@
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { SkeletonBlock as B, SkeletonRegion } from '@remoa/ui';
+
+const t = withStrings({ account: more.account });
 
 export default function Loading() {
   return (

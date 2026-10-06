@@ -1,8 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, Button } from '@remoa/ui';
+
+const t = withStrings({ plans: more.plans });
 
 /** F15 FR-12: the price book failed to load, so there is nothing honest to show. */
 export function PlansError() {

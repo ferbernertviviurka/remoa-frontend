@@ -5,7 +5,8 @@
 import { useCallback, useEffect, useState, type ReactNode, type RefObject } from 'react';
 import { useReactFlow, type NodeChange } from '@xyflow/react';
 import type { RetrievabilityMap } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { CardPeek, ConnectBanner, EdgeLabelField, useToast, type MapCardState } from '@remoa/ui';
 import { useCardFace } from '@/features/cards/card-face';
 import { isDue } from '../../canvas/canvas-context';
@@ -13,6 +14,8 @@ import { heatOf, type CardNode } from '../../canvas/graph';
 import type { MapDoc } from '../canvas/use-map-doc';
 import { cameraMove } from '../canvas/view';
 import { useHoldMove } from './use-hold-move';
+
+const t = withStrings({ mapMobile: more.mapMobile });
 
 /** Screen px the card sits above the centre so the peek (≈ 260 px at the bottom) does not cover it. */
 const PEEK_SHIFT = 120;

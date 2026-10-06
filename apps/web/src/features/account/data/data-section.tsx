@@ -2,7 +2,8 @@
 
 import { useRef, useState } from 'react';
 import { RETENTION, type AccountExport } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, Button, DangerCard, Dialog, Icon, Input, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
@@ -10,6 +11,8 @@ import { formatDate } from '@/features/billing/format';
 import { SectionCard } from '../shared/section-card';
 import { useAccount } from '../shell/account-context';
 import { useOnline } from '../shared/use-online';
+
+const t = withStrings({ account: more.account });
 
 export function DataSection() {
   return (

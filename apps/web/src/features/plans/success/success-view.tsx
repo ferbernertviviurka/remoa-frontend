@@ -3,11 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PLAN_LIMITS, type CheckoutSessionStatus } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, Button, Dialog, SuccessPanel } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { useEntitlements } from '@/features/shell/entitlements';
+
+const t = withStrings({ plans: more.plans });
 
 export const POLL_MS = 3000;
 export const POLL_MAX_MS = 120_000;

@@ -16,6 +16,7 @@ export default defineConfig({
     { name: 'pixel-5', testMatch: phone, use: { ...devices['Pixel 5'] } },
     { name: 'iphone-12', testMatch: ['**/mobile-review.spec.ts', '**/map-mobile/canvas.spec.ts', '**/map-mobile/menu.spec.ts', '**/map-mobile/selection.spec.ts', '**/map-mobile/criteria.spec.ts'], use: { ...devices['iPhone 12'] } },
   ],
+  // D-1076: NEXT_PUBLIC_LAUNCH_PHASE unset = 'open' (features/landing/flags.ts); e2e/landing/page.spec.ts runs the waitlist branch only with NEXT_PUBLIC_LAUNCH_PHASE=waitlist (set it on both build and run).
   // G14 D-606: the challenge tour opens on the first own map (flag in localStorage); specs start with it seen, tour.spec clears it
   use: {
     baseURL: `http://localhost:${process.env.PORT ?? 3000}`,

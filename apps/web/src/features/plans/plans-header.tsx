@@ -1,10 +1,13 @@
 'use client';
 
 import { annualDiscountPercent } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { PeriodToggle } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { usePlans } from './plans-context';
+
+const t = withStrings({ plans: more.plans });
 
 /** F15 FR-2: personalized title; the period toggle exists only for Free and its label is computed, never typed. */
 export function PlansHeader({ tier }: { tier: 'free' | 'pro' | 'founder' }) {

@@ -12,7 +12,8 @@ import {
 import {
   CARD_SIZE_MAX, CARD_SIZE_MIN, CHALLENGE_MIN_CARDS, MAX_CARDS_PER_BOARD, type BoardGraph, type ChallengeOptions, type CardDetail, type CardShape, type CardStudyAction, type CardStudyState, type CardSize, type CardType, type CoverageRow, type MapOp, type MatrixItem, type RetrievabilityMap, type SaveCardInput,
 } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import {
   Button, CanvasToolbar, CompactMapHeader, Dialog, Input, LayerSwitch, Legend, stepZoom, ZOOM_MAX, ZOOM_MIN, ZoomControl,
   useToast, type CommandItem, type NodeLayer, type ToolbarItem,
@@ -41,6 +42,8 @@ import { createOpQueue, type OpQueue, type QueueStatus } from './op-queue';
 import { initialGraph, storage } from './initial-graph';
 import { challengeZoom } from './challenge-camera';
 import { cameraMove } from '../mobile/canvas/view';
+
+const t = withStrings({ canvas: more.canvas, map: more.map, mapMobile: more.mapMobile });
 
 const nodeTypes = { card: CardNodeView };
 const edgeTypes = { link: LinkEdgeView };

@@ -1,8 +1,11 @@
 'use client';
 
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { FaqAccordion } from '@remoa/ui';
 import { track } from '@/lib/analytics';
+
+const t = withStrings({ plans: more.plans });
 
 const items = [1, 2, 3, 4].map((i) => {
   const k = `q${i}` as 'q1' | 'q2' | 'q3' | 'q4';

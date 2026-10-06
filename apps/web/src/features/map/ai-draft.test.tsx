@@ -1,8 +1,11 @@
 import { AI_DRAFT_SOURCE } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { AiDraftTag } from './ai-draft';
+
+const t = withStrings({ inspector: more.inspector });
 
 describe('AiDraftTag', () => {
   it('marks an AI draft and leaves a student card unmarked', () => {

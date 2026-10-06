@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { PlansError } from '@/features/plans/plans-error';
 import { PlansProvider } from '@/features/plans/plans-context';
 import { PlansView } from '@/features/plans/plans-view';
 import { loadPlans } from '@/features/plans/load-plans';
 import { getUser } from '@/server/auth/session';
+
+const t = withStrings({ plans: more.plans });
 
 export function generateMetadata(): Metadata {
   return { title: t('plans.pages.index') };

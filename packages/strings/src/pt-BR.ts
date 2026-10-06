@@ -5,9 +5,9 @@ import { legal } from './legal';
 import { admin } from './admin';
 import { blog } from './blog';
 import { adminBlog } from './admin-blog';
-import { ptBRCore } from './core-dict';
+import { ptBRApp } from './app-full';
 
 /** Dicionário completo (servidor/testes). O bundle cliente usa `ptBRCore` + o namespace pesado de cada rota (G21, P-461). */
-export const ptBR = { ...ptBRCore, landing, referral, store, legal, admin, blog, adminBlog } as const;
+export const ptBR = { ...ptBRApp, landing, referral, store, legal, admin, blog, adminBlog } as const;
 
 export type Dict = typeof ptBR;

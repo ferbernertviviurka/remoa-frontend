@@ -1,5 +1,8 @@
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { SkeletonBlock, SkeletonRegion } from '@remoa/ui';
+
+const t = withStrings({ coverage: more.coverage });
 
 export default function Loading() {
   return (

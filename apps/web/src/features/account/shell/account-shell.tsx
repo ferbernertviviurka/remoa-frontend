@@ -4,7 +4,8 @@ import { useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useSelectedLayoutSegment } from 'next/navigation';
 import { accountSections, type AccountSection } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, Button, Icon, SettingsNav, SettingsNavAction, useToast, type SettingsNavLinkProps } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
@@ -16,6 +17,8 @@ import { useAccount } from './account-context';
 import { formatDay } from './format';
 import { NavIcon } from './nav-icons';
 import { useOnline } from './use-online';
+
+const t = withStrings({ account: more.account });
 
 const NavLink = ({ children, ...p }: SettingsNavLinkProps) => <Link {...p}>{children}</Link>;
 

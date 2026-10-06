@@ -1,8 +1,12 @@
 import { PLAN_LIMITS } from '@remoa/contracts';
-import { t, type StringKey } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { TextMorph } from 'torph/react';
 import { MeasuredText } from './measured-text';
 import { PathArt } from './path-art';
+
+const t = withStrings({ newMap: more.newMap });
+type StringKey = Parameters<typeof t>[0];
 
 export type Path = 'pdf' | 'anki' | 'seed' | 'blank';
 
