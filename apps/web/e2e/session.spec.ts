@@ -15,11 +15,14 @@ async function signIn(page: Page, email: string) {
 
 /** Marca o access token como vencido no cookie (o que o navegador tem depois de 1 h parado). */
 async function expireAccessToken(context: BrowserContext) {
-  const auth = (await context.cookies()).find((c) => /^sb-.+-auth-token$/.test(c.name));
-  expect(auth, 'cookie de sessão').toBeTruthy();
-  const session = JSON.parse(Buffer.from(auth!.value.replace(/^base64-/, ''), 'base64url').toString());
+  // o @supabase/ssr parte o cookie em `.0`, `.1`… quando passa de ~3,2 KB (os metadados do cadastro, F27, aproximam o cookie desse limite)
+  const chunks = (await context.cookies()).filter((c) => /^sb-.+-auth-token(\.\d+)?$/.test(c.name)).sort((x, y) => x.name.localeCompare(y.name, 'en', { numeric: true }));
+  expect(chunks.length, 'cookie de sessão').toBeGreaterThan(0);
+  const session = JSON.parse(Buffer.from(chunks.map((c) => c.value).join('').replace(/^base64-/, ''), 'base64url').toString());
   session.expires_at = Math.floor(Date.now() / 1000) - 60;
-  await context.addCookies([{ ...auth!, value: `base64-${Buffer.from(JSON.stringify(session)).toString('base64url')}` }]);
+  const base = chunks[0]!.name.replace(/\.\d+$/, '');
+  await context.clearCookies({ name: new RegExp(`^${base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\.\\d+)?$`) });
+  await context.addCookies([{ ...chunks[0]!, name: base, value: `base64-${Buffer.from(JSON.stringify(session)).toString('base64url')}` }]);
 }
 
 test('logado: / é a landing com CTA para /app; /entrar e /cadastro voltam para o app; token vencido renova', async ({ page, context }) => {
