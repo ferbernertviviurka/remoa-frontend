@@ -1,5 +1,8 @@
 import type { Goal, Segment } from '@remoa/contracts';
-import type { StringKey } from '@remoa/strings';
+import type { StringKey as AppKey } from '@remoa/strings/app';
+
+/** Keys of the account and onboarding namespaces (P-507: they live in `@remoa/strings/ns`; type-only import, no bundle cost). */
+type StringKey = Extract<AppKey, `account.${string}` | `onboarding.${string}`>;
 
 /** Segment values -> existing account.stageOptions labels (earliest to latest). */
 export const SEGMENTS: ReadonlyArray<{ id: Segment; label: StringKey }> = [

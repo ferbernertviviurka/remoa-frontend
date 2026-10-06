@@ -1,5 +1,8 @@
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import type { QueueStatus } from './op-queue';
+
+const t = withStrings({ map: more.map });
 
 /** "Salvo há 2 min" (D-086: the editor shows its own save state). `savedAt` null = nothing saved this session → board.updatedAt. */
 export function saveText(status: Pick<QueueStatus, 'state' | 'savedAt'>, updatedAt: Date | string, now: number): string {

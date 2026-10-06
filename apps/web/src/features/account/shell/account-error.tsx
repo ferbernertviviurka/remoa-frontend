@@ -1,9 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button } from '@remoa/ui';
 import { EmptyState } from '@/features/shell/empty-state';
+
+const t = withStrings({ account: more.account });
 
 export function AccountError() {
   const router = useRouter();

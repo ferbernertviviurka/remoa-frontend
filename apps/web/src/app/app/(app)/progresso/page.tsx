@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
 import type { ProgressSummary } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { EmptyState } from '@/features/shell/empty-state';
 import { serverApi } from '@/lib/api/server';
 import { ProgressView } from '@/features/reports/progress-view';
+
+const t = withStrings({ progress: more.progress });
 
 export const metadata: Metadata = { title: t('pages.progress') };
 

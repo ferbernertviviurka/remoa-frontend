@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { accountSections, type AccountSection } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { SectionView } from '@/features/account/shell/section-view';
+
+const t = withStrings({ account: more.account });
 
 const valid = (s: string): s is AccountSection => (accountSections as readonly string[]).includes(s);
 

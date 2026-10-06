@@ -2,9 +2,12 @@
 
 import Link from 'next/link';
 import type { BoardSummary, MatrixItem } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, Dialog } from '@remoa/ui';
 import { linkableBoards } from './coverage-logic';
+
+const t = withStrings({ coverage: more.coverage });
 
 export const linkCls = 'inline-flex min-h-11 items-center rounded-[14px] px-4 text-[15px] font-bold text-primary-deep no-underline hover:bg-primary-tint';
 

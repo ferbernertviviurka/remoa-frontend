@@ -1,6 +1,9 @@
 import type { Entitlements } from '@remoa/contracts';
 import type { CreateCardAvailability, CreateCardKind } from '@remoa/ui';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
+
+const t = withStrings({ mapMobile: more.mapMobile });
 
 const left = (limit: number | null, used: number) => (limit === null ? null : Math.max(0, limit - used));
 

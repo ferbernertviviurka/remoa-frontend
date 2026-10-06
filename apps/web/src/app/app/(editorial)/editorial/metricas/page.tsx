@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { serverApi } from '@/lib/api/server';
+
+const t = withStrings({ editorial: more.editorial });
 
 export const metadata: Metadata = { title: t('editorial.metrics') };
 

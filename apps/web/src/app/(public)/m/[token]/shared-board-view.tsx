@@ -6,11 +6,14 @@ import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { SharedBoard } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button } from '@remoa/ui';
 import { track, trackWhenIdle } from '@/lib/analytics';
 import { usePaywall } from '@/features/billing/paywall';
 import { copyBoardAction } from './actions';
+
+const t = withStrings({ boards: more.boards });
 
 const SharedCanvas = dynamic(
   () => import('./shared-canvas').then((m) => m.SharedCanvas),

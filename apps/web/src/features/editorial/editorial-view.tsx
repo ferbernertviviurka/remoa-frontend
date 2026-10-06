@@ -2,11 +2,14 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { rubricPointDiff } from './rubric-diff';
+
+const t = withStrings({ editorial: more.editorial });
 
 type Point = { text: string; essential: boolean };
 type Item = {

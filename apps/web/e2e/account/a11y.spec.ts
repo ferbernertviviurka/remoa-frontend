@@ -96,7 +96,7 @@ test.describe('mobile (390 px)', () => {
         const visible = (el: HTMLElement) => el.offsetParent !== null && getComputedStyle(el).visibility !== 'hidden' && !el.closest('[hidden]');
         // Switch: o trilho tem 32 px, o alvo de 44 px é o ::after (-inset-y-1.5); confere por elementFromPoint.
         const hitsSwitch = (el: HTMLElement) => {
-          el.scrollIntoView({ block: 'center' });
+          el.scrollIntoView({ block: 'center', behavior: 'instant' }); // html tem scroll-behavior: smooth: sem 'instant' o elementFromPoint roda antes de rolar
           const r = el.getBoundingClientRect();
           const x = r.left + r.width / 2;
           return [r.top + r.height / 2 - 21, r.top + r.height / 2 + 21].every((y) => document.elementFromPoint(x, y) === el);

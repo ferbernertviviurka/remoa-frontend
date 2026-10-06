@@ -4,13 +4,17 @@ import { PendingLink } from '@/features/shell/nav-pending';
 import { useNavigate } from '@/features/shell/use-navigate';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { Board, BoardSummary } from '@remoa/contracts';
-import { t, type StringKey } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, Card, Dialog, FilterChip, Icon, Input, LockedSlideCard, MapTile, Menu, NewMapSlideCard, Pill, Segmented, StateBar, useToast, ViewToggle } from '@remoa/ui';
 import { api } from '@/lib/api';
 import { track } from '@/lib/analytics';
 import { useEntitlements } from '@/features/shell/entitlements';
 import { usePaywall } from '@/features/billing/paywall';
 import { fold, savedAgo } from './saved-ago';
+
+const t = withStrings({ boards: more.boards, home: more.home });
+type StringKey = Parameters<typeof t>[0];
 
 type Modal = { kind: 'rename' | 'archive' | 'delete'; board: BoardSummary } | null;
 type Row = { b: BoardSummary; area: string; saved: string; due: { text: string; tone: 'review' | 'unknown' } };

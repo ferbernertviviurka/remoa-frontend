@@ -2,13 +2,16 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { isValidPassword, passwordStrength, type LinkedIdentity, type SessionInfo } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, Button, Icon, Input, PasswordMeter, SkeletonBlock, SkeletonRegion, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { SectionCard } from '../shared/section-card';
 import { useAccount } from '../shell/account-context';
 import { useOnline } from '../shared/use-online';
+
+const t = withStrings({ account: more.account });
 
 const googleOn = process.env.NEXT_PUBLIC_AUTH_GOOGLE === '1';
 const iconBox = 'flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-chip text-[#3A3558]';

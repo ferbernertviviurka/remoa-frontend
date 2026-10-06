@@ -1,11 +1,14 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Select, useToast } from '@remoa/ui';
 import { api } from '@/lib/api';
 import { useAccount } from '../shell/account-context';
 import { Row } from '../shared/section-card';
+
+const t = withStrings({ account: more.account });
 
 const BRAZIL = ['Sao_Paulo', 'Manaus', 'Belem', 'Fortaleza', 'Recife', 'Bahia', 'Cuiaba', 'Porto_Velho', 'Boa_Vista', 'Rio_Branco', 'Noronha', 'Araguaina', 'Maceio', 'Santarem', 'Campo_Grande'].map((c) => `America/${c}`);
 

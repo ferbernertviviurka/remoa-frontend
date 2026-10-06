@@ -1,13 +1,16 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, useToast } from '@remoa/ui';
 import { api } from '@/lib/api';
 import { useAccount } from '../shell/account-context';
 import { useOnline } from '../shell/use-online';
 import { SectionCard } from '../shared/section-card';
 import { PersonalFields, toPersonalValues, validatePersonal, type PersonalErrors, type PersonalValues } from './personal-fields';
+
+const t = withStrings({ account: more.account, personal: more.personal });
 
 /** G14 S1 (D-596): edit the sign-up personal data in the account. PII: never tracked or logged; clearing the address sends null; phone is required (G20) (D-571). */
 export function PersonalCard() {

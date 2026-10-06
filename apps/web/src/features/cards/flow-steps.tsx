@@ -4,11 +4,14 @@ import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, us
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { FlowStep, MapState } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, IconButton, Input, Tag } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { newStep } from './draft';
 import { ImageSlot } from './image-field';
+
+const t = withStrings({ canvas: more.canvas, cards: more.cards });
 
 export const MIN_STEPS = 2;
 export const MAX_STEPS = 12;

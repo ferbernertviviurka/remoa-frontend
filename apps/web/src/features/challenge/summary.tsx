@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import type { ChallengeItemPublic, SessionSummary } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, Stat } from '@remoa/ui';
+
+const t = withStrings({ challenge: more.challenge });
 
 /** FR-9 inside the map panel: acertos, erros, cards que pedem revisão (com link para o mapa), próximo vencimento, "Mais 5". */
 export function Summary({ summary, items, onMore, onExit }: { summary: SessionSummary; items: ChallengeItemPublic[]; onMore: () => void; onExit: () => void }) {

@@ -2,11 +2,14 @@
 
 import { useRef, useState, type ClipboardEvent, type DragEvent } from 'react';
 import { assetLicenses, imageMimes, type AssetLicense, type CardMask } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, Button, Dialog, Input, Progress, Select } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { MaskEditor, MaskOverlay } from './mask-editor';
 import { checkFile, uploadImage, useAsset, type FileProblem } from './upload';
+
+const t = withStrings({ cards: more.cards });
 
 type Upload = { state: 'idle' } | { state: 'sending'; pct: number } | { state: 'failed'; file: File } | { state: 'invalid'; problem: FileProblem | 'noLicense' };
 

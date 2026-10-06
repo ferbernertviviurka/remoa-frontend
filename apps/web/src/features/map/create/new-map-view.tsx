@@ -3,7 +3,8 @@
 import { useNavigate } from '@/features/shell/use-navigate';
 import { useEffect, useRef, useState } from 'react';
 import type { Board, BoardGenerationProgress, ImportBoardInput, ImportTarget, MatrixItem } from '@remoa/contracts';
-import { t, type StringKey } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, Button, ChoiceCard, ChoiceRow, Dialog, Dropzone, Icon, IconButton, Logo, Progress, Stepper } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
@@ -17,6 +18,9 @@ import { defaultBoardTitle, estimate } from '@/features/import/plan';
 import { useAnkiImport } from '@/features/import/use-anki-import';
 import { AboutMapForm, aboutErrors, aboutPayload, emptyAboutMap, type AboutMap } from './about-map-form';
 import { MapPreview, type Path } from './map-preview';
+
+const t = withStrings({ boards: more.boards, editorial: more.editorial, newMap: more.newMap });
+type StringKey = Parameters<typeof t>[0];
 
 const PATHS: ReadonlyArray<{ id: Path; icon: 'file' | 'archive' | 'book' | 'plus' }> = [
   { id: 'pdf', icon: 'file' },

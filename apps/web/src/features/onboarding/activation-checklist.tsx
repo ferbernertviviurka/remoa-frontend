@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import type { ActivationItem } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Icon, Progress } from '@remoa/ui';
+
+const t = withStrings({ onboarding: more.onboarding });
 
 type Row = { id: string; label: string; count?: string; done: boolean; hint?: string };
 

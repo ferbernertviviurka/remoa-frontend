@@ -2,13 +2,16 @@
 
 import { useRouter } from 'next/navigation';
 import { completenessItems, computeCompleteness, type CompletenessItem } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Avatar, Icon } from '@remoa/ui';
 import { CompletenessRing } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { usePhotoDialog } from '../profile/photo-dialog';
 import { useAccount } from './account-context';
 import { formatMonth, initialsOf } from './format';
+
+const t = withStrings({ account: more.account });
 
 const chip = 'rounded-pill bg-white/[.14] px-3 py-[5px] text-[13px] font-semibold text-on-dark-muted-2';
 const todoChip =

@@ -2,12 +2,15 @@
 
 import { memo, useContext } from 'react';
 import { BaseEdge, EdgeLabelRenderer, Position, useInternalNode, type EdgeProps } from '@xyflow/react';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { MapEdgeLabel, routePoints, type Side } from '@remoa/ui';
 import { floatingEnds } from '../../canvas/link-edge';
 import type { LinkEdge } from '../../canvas/graph';
 import { MobileNodesContext } from './mobile-nodes-context';
 import { useIsOverview } from './semantic-zoom';
+
+const t = withStrings({ map: more.map, mapMobile: more.mapMobile });
 
 /** F23 FR-7: cantos de 12 px (o desktop usa 14). */
 export const MOBILE_EDGE_RADIUS = 12;

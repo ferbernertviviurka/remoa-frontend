@@ -3,13 +3,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { PLAN_LIMITS, formatBRL as formatCents, usageRows, type PriceBook, type QuotaKey, type RedirectUrl, type UsageRow } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, Button, Icon, Morph, Segmented, UsageMeter, UsageWarning, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { formatDate } from '@/features/billing/format';
 import { SectionCard } from '../shared/section-card';
 import { useAccount } from '../shell/account-context';
+
+const t = withStrings({ account: more.account });
 
 type Period = 'monthly' | 'annual';
 const nextMonth = () => {

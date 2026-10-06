@@ -1,9 +1,12 @@
 'use client';
 
 import { comparisonRows, formatBRL, type ComparisonRow as Row, type PlanFeatureKey } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { ComparisonTable, PlanColumnHeader, PriceTicker, type ComparisonRow } from '@remoa/ui';
 import { usePlans } from './plans-context';
+
+const t = withStrings({ plans: more.plans });
 
 const num = new Intl.NumberFormat('pt-BR');
 const n = (v: number | null, unlimited: string) => (v === null ? unlimited : v === 0 ? t('plans.matrix.notIncluded') : num.format(v));

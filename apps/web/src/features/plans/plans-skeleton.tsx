@@ -1,5 +1,8 @@
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { SkeletonBlock as B, SkeletonRegion } from '@remoa/ui';
+
+const t = withStrings({ plans: more.plans });
 
 /** F15 FR-12 loading: mirrors header, matrix card and order summary so nothing jumps when data arrives. */
 export function PlansSkeleton() {

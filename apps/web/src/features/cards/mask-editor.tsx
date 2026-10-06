@@ -2,10 +2,13 @@
 
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import { MAX_MASKS_PER_IMAGE, type CardMask } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, Button, Input, Segmented } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { isTiny, moveVertex, nearestVertex, normalize, pointInPolygon, rectToPolygon, toPoints, translate, type Pt } from './polygon';
+
+const t = withStrings({ cards: more.cards });
 
 type Tool = 'select' | 'rect' | 'polygon';
 type Drag = { kind: 'rect'; start: Pt } | { kind: 'move'; id: string; start: Pt; orig: Pt[] } | { kind: 'vertex'; id: string; i: number; orig: Pt[] };

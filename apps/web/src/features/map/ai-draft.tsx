@@ -1,5 +1,8 @@
 import { AI_DRAFT_SOURCE } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
+
+const t = withStrings({ inspector: more.inspector });
 
 /** An AI draft is not a reviewed fact. A card the student wrote stays unmarked. */
 export function showsAiDraftTag(card: { status: string; source: string | null }): boolean {

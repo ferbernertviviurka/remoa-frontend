@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { t } from './index';
+import { t } from './t-app';
 
 // t() only accepts real keys, so exercise the formatter through a cast on a throwaway key.
 import { ptBR } from './pt-BR';

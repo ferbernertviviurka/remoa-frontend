@@ -4,13 +4,17 @@ import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { AREA_OPTIONS, MAX_GOALS, isValidName, normalizeBrPhone, normalizeName, userTypes, type Goal, type OnboardingAnswersPatch, type OnboardingState, type RequiredProfileField, type Segment, type UserType } from '@remoa/contracts';
 import { MEDICAL_SCHOOLS } from '@remoa/contracts/medical-schools';
-import { t, type StringKey } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, Autocomplete, Button, ChoiceCard, ChoiceRow, Input, Logo, Stepper, type AutocompleteValue } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { useAcceptLegal } from '@/features/legal/use-accept-legal';
 import { maskPhone } from '../account/profile/personal-fields';
 import { GOAL_GROUPS, SEGMENTS } from './options';
+
+const t = withStrings({ account: more.account, boards: more.boards, newMap: more.newMap, onboarding: more.onboarding, personal: more.personal });
+type StringKey = Parameters<typeof t>[0];
 
 type Path = 'pdf' | 'anki' | 'seed' | 'blank';
 const PATHS: ReadonlyArray<{ id: Path; icon: 'file' | 'archive' | 'book' | 'plus' }> = [

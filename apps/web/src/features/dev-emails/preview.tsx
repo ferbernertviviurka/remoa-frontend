@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, Segmented, Tag } from '@remoa/ui';
 import { apiBase } from '@/lib/api/base';
+
+const t = withStrings({ devEmails: more.devEmails });
 
 export type DevEmailList = Array<{ template: string; versions: string[] }>;
 export type DevEmail = { subject: string; preheader: string; html: string; text: string; class: 'transactional' | 'reminder' | 'list'; bytes: number };

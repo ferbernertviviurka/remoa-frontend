@@ -3,7 +3,8 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { plansFromSources } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, Icon, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { CheckoutSummary } from './checkout/checkout-summary';
@@ -14,6 +15,8 @@ import { PlansFaq } from './plans-faq';
 import { PlansHeader } from './plans-header';
 import { usePlans } from './plans-context';
 import { SubscriptionCard } from './subscription/subscription-card';
+
+const t = withStrings({ plans: more.plans });
 
 type From = (typeof plansFromSources)[number];
 /** `?de=` is untrusted: anything outside the contract's list is `direct`. */

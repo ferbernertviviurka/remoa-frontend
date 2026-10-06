@@ -3,13 +3,16 @@
 import { memo, useCallback, useContext, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
 import { Handle, NodeResizeControl, Position, useStore, type ControlPosition, type NodeProps, type ReactFlowState } from '@xyflow/react';
 import { CARD_SIZE_MAX, CARD_SIZE_MIN, caseStages, type Card, type CardDetail, type CaseStage as Stage, type MapState } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { CaseStageList, NodeCard, StepTimeline, type CaseStage, type NodeCardProps, type NodeLayer, type NodeStep } from '@remoa/ui';
 import { useCardFace, type CardFace } from '@/features/cards/card-face';
 import { useAsset, useAssets } from '@/features/cards/upload';
 import { CanvasContext, isDue } from './canvas-context';
 import { useCardDetail } from './card-detail';
 import { heatOf, type CardNode } from './graph';
+
+const t = withStrings({ canvas: more.canvas, cards: more.cards });
 
 /**
  * Ports (D-075 → G02): faint at rest so they can be found, solid on hover/selection; above the NodeCard select button

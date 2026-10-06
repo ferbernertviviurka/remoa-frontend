@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Board } from '@remoa/contracts';
 import { boardTitleSchema } from '@remoa/contracts';
-import { t, type StringKey } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { CHALLENGE_MIN_CARDS } from '@remoa/contracts';
 import { Alert, Button, Icon, InlineTitle, Menu, Segmented, Tooltip, useToast } from '@remoa/ui';
 import { openChallengeTour } from '@/features/challenge/tour';
@@ -15,6 +16,9 @@ import { MapPropertiesDialog } from '@/features/map/properties/map-properties-di
 import { ShareDialog } from '@/features/map/share/share-dialog';
 import type { QueueStatus } from './op-queue';
 import { saveText } from './save-text';
+
+const t = withStrings({ boards: more.boards, map: more.map });
+type StringKey = Parameters<typeof t>[0];
 
 export { saveText };
 

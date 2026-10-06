@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { CHALLENGE_MIN_CARDS, SELF_MARK_GRADE, caseStages, challengeErrors, type AnswerOutput, type ChallengeItemPublic, type Grade, type MapState, type RetrievabilityMap } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, Button, QuestionPanel, RatingButton, RatingGroup, Skeleton, Tag, VerdictBox } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import type { AnswerPayload } from './client';
@@ -12,6 +13,8 @@ import { Occlusion } from './occlusion';
 import { MAX_SKIPS, useChallenge, type Scope } from './provider';
 import { countSession } from '@/features/shell/pwa';
 import { Summary } from './summary';
+
+const t = withStrings({ cards: more.cards, challenge: more.challenge });
 
 const grades = ['again', 'hard', 'good', 'easy'] as const;
 const fallbackText = { no_rubric: 'challenge.fallbackNoRubric', grader_error: 'challenge.fallbackGraderError', quota: 'challenge.fallbackQuota', offline: 'challenge.fallbackOffline' } as const;

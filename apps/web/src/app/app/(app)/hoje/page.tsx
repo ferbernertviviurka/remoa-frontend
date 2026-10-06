@@ -10,13 +10,16 @@ import type {
   UpcomingEvents,
 } from "@remoa/contracts";
 import { Suspense } from "react";
-import { t } from "@remoa/strings";
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { EmptyState } from "@/features/shell/empty-state";
 import { HomeView, CoverageRows, type FirstInQueue } from "@/features/home/home-view";
 import { CalendarStrip, UpcomingCard } from "@/features/home/home-calendar";
 import { ActivationChecklist } from "@/features/onboarding/activation-checklist";
 import { SkeletonBlock } from "@remoa/ui";
 import { serverApi } from "@/lib/api/server";
+
+const t = withStrings({ home: more.home });
 
 const data = <T,>(r: { ok: true; data: T } | { ok: false }, fallback: T): T =>
   r.ok ? r.data : fallback;

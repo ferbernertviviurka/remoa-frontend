@@ -5,7 +5,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { applyNodeChanges, type NodeChange, type XYPosition } from '@xyflow/react';
 import { MAX_CARDS_PER_BOARD, type BoardGraph, type CardDetail, type CardSize, type CardType, type MapOp, type RetrievabilityMap, type SaveCardInput } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { useToast } from '@remoa/ui';
 import { previewOf } from '@/features/cards/draft';
 import { usePaywall } from '@/features/billing/paywall';
@@ -16,6 +17,8 @@ import { applyOps, freshen, invertAll, patchCard, snapPos, type CardCache, type 
 import { emptyHistory, push, redo, undo, type History } from '../../canvas/history';
 import { initialGraph, storage } from '../../canvas/initial-graph';
 import { createOpQueue, type OpQueue, type QueueStatus } from '../../canvas/op-queue';
+
+const t = withStrings({ map: more.map });
 
 const uuid = () => crypto.randomUUID();
 

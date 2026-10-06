@@ -1,6 +1,9 @@
 import type { Entitlements } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { LimitBanner } from '@remoa/ui';
+
+const t = withStrings({ plans: more.plans });
 
 /** First of boards/cards at >= 80% of its limit (boards first), or null. Only meaningful for Free. */
 export function limitHit(e: Entitlements | null): { key: 'boards' | 'cards'; used: number; limit: number } | null {

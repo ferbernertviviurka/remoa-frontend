@@ -3,7 +3,8 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { AvatarVariants } from '@remoa/contracts';
 import { AVATAR_COLOR_COUNT } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Avatar, AvatarCropper, Button, Dialog, Dropzone, Icon, focusRing, useToast, validateAvatarFile, type AvatarCropperHandle } from '@remoa/ui';
 import { useRouter } from 'next/navigation';
 import { track } from '@/lib/analytics';
@@ -11,6 +12,8 @@ import { api } from '@/lib/api';
 import { useAccount } from '../shell/account-context';
 import { initialsOf } from '../shell/format';
 import { useOnline } from '../shell/use-online';
+
+const t = withStrings({ account: more.account });
 
 const PhotoCtx = createContext<{ open: () => void } | null>(null);
 

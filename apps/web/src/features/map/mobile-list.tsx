@@ -3,10 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { BoardGraph, MapState, RetrievabilityMap } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, FilterChip, Input } from '@remoa/ui';
 import { api } from '@/lib/api';
 import { AiDraftTag } from './ai-draft';
+
+const t = withStrings({ editorial: more.editorial, map: more.map });
 
 const states = ['all', 'review', 'watch', 'steady', 'unknown'] as const;
 type Filter = (typeof states)[number];

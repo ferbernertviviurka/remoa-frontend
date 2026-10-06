@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { emailSchema, type OnboardingState, goalsSchema, isValidName, normalizeName, stageSchema, ACCOUNT_LIMITS, MAX_GOALS, type Goal, type Stage } from '@remoa/contracts';
 import { MEDICAL_SCHOOLS } from '@remoa/contracts/medical-schools';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, Autocomplete, type AutocompleteValue, Avatar, Button, ChoiceChip, ChoiceChipMulti, Icon, InlineField, Input, Pill, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
@@ -15,6 +16,8 @@ import { useOnline } from '../shell/use-online';
 import { usePhotoDialog } from './photo-dialog';
 import { PersonalCard } from './personal-card';
 import { TimezoneRow } from './timezone-row';
+
+const t = withStrings({ account: more.account, onboarding: more.onboarding, personal: more.personal });
 
 const SCHOOL_OPTIONS = MEDICAL_SCHOOLS.map((s) => ({ value: s.id, label: s.name, hint: `${s.city} · ${s.uf}`, keywords: s.acronym ? [s.acronym] : [] }));
 const patchProfile = (body: object) => api('/v1/account/profile', { method: 'PATCH', body: JSON.stringify(body) });

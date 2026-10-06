@@ -3,9 +3,12 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { ProgressSummary } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { DailyBarChart, Button } from '@remoa/ui';
 import { track } from '@/lib/analytics';
+
+const t = withStrings({ progress: more.progress });
 
 const pct = (n: number | null) => (n == null ? t('progress.none') : `${Math.round(n * 100)}%`);
 

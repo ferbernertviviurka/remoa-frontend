@@ -2,10 +2,13 @@
 
 import { memo, useContext } from 'react';
 import { BaseEdge, EdgeLabelRenderer, Position, useInternalNode, useStore, type EdgeProps, type ReactFlowState } from '@xyflow/react';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { EdgeLabel, routePoints, type Side } from '@remoa/ui';
 import { CanvasContext } from './canvas-context';
 import { EDGE_COLOR, type LinkEdge } from './graph';
+
+const t = withStrings({ map: more.map });
 
 /** FR-6: labels hide below 70% zoom. Boolean selector = re-render only when crossing the threshold. */
 export const labelsVisible = (s: Pick<ReactFlowState, 'transform'>) => s.transform[2] >= 0.7;

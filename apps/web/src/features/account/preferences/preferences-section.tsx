@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { REMINDER_HOURS, type Preferences, type UpdatePreferencesInput } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Alert, ChoiceChip, Segmented, Switch, Tag, useToast } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
@@ -11,6 +12,8 @@ import { SectionCard, SettingRow } from '../shared/section-card';
 import { useAccount } from '../shell/account-context';
 import { StoreWaitlistSetting } from '../../store/account-setting';
 import { applyMotion, useMotionSync } from './motion';
+
+const t = withStrings({ account: more.account });
 
 const hourLabel = (h: number) => `${String(h).padStart(2, '0')}h`;
 

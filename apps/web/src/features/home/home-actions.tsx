@@ -2,11 +2,14 @@
 
 import { useState } from 'react';
 import { useNavigate } from '@/features/shell/use-navigate';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, Dialog, Icon } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { useEntitlements } from '@/features/shell/entitlements';
 import { atBoardLimit } from './slides';
+
+const t = withStrings({ home: more.home });
 
 /** Importar (diálogo "Em breve", D-068) e Novo mapa no topo do Hoje. */
 export function HomeHeaderActions({ mapCount }: { mapCount: number }) {

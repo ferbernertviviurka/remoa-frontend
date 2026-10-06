@@ -2,7 +2,8 @@
 
 import { memo, useState, type ReactNode } from 'react';
 import type { Board, Card, CardDetail, CardShape, CardStudyAction, CardStudyState, MapState, RetrievabilityMap, SaveCardInput } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import {
   Button, CanvasPanel, Dialog, Icon, IconButton, InspectorTabPanel, InspectorTabs, Menu, RubricList, StatePill, StepTimeline, type NodeStep,
 } from '@remoa/ui';
@@ -18,6 +19,8 @@ import { primeCardDetail, useCardDetail } from './card-detail';
 import { usePaywall } from '@/features/billing/paywall';
 import { AiDraftTag } from '../ai-draft';
 import { caseStageItems } from './card-node';
+
+const t = withStrings({ canvas: more.canvas, cardStudy: more.cardStudy, cards: more.cards, inspector: more.inspector, map: more.map });
 
 type Entry = RetrievabilityMap[string] | undefined;
 export type Connection = { id: string; dir: 'out' | 'in'; title: string; label: string | null };

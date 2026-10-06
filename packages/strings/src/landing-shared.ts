@@ -14,66 +14,6 @@ export const challengeMode = {
   case: 'Caso',
 } as const;
 
-export const challenge = {
-  progress: '{n} de {total}',
-  progressLabel: 'Progresso da sessão',
-  loading: 'Montando sua sessão…',
-  loadError: 'Não conseguimos montar a sessão.',
-  backToReview: 'Voltar para Revisar hoje',
-  empty: { title: 'Nada para revisar agora', body: 'Volte mais tarde ou adicione conceitos ao mapa.' },
-  stagesLabel: 'Etapas até aqui',
-  context: 'No mapa',
-  edgeAsk: 'O que liga {from} a {to}?',
-  imageAlt: 'Imagem com regiões cobertas',
-  answerMode: 'Como responder',
-  write: 'Escrever',
-  options: 'Opções',
-  optionsLabel: 'Alternativas',
-  textLabel: 'Sua resposta',
-  submitText: 'Corrigir resposta',
-  grading: 'corrigindo…',
-  submitOption: 'Confirmar alternativa',
-  reveal: 'Revelar resposta',
-  skip: 'Pular',
-  skipLimit: 'Este item já foi pulado duas vezes. Responda para seguir.',
-  skipError: 'Não conseguimos pular agora. Tente de novo.',
-  noRubricBody: 'Este conceito ainda não tem rubrica aprovada. Revele a resposta e diga como foi.',
-  ownRubric: 'Rubrica sua',
-  answerError: 'Não conseguimos registrar a resposta. Tente de novo.',
-  canonical: 'Resposta',
-  yourAnswer: 'Sua resposta',
-  gradeLocked: 'Nota travada em “Não lembrei”: a resposta tem um erro crítico (dose, droga ou conduta). Reveja a resposta acima.',
-  fallbackNoRubric: 'Sem rubrica aprovada para corrigir: avalie você mesmo.',
-  fallbackGraderError: 'A correção automática falhou. Compare com a resposta e avalie você mesmo.',
-  fallbackQuota: 'Suas correções por IA de hoje acabaram. Compare com a resposta e avalie você mesmo.',
-  fallbackOffline: 'Sem conexão. A resposta ficou neste aparelho e a correção por IA acontece quando a rede voltar.',
-  quotaCta: 'Ver planos',
-  rateError: 'Não conseguimos salvar a nota. Tente de novo.',
-  disputed: 'Obrigado. Vamos revisar esta correção.',
-  disputeError: 'Não conseguimos enviar. Tente de novo.',
-  intervalDays: { zero: 'hoje', one: '1 dia', many: '{n} dias' },
-  shortcuts: 'Atalhos: 1 a 4 notas · Enter corrige ou revela · Esc pula',
-  verdict: {
-    title: { correct: 'Acertou', partial: 'Quase lá', incorrect: 'Não foi dessa vez' },
-    matched: 'Acertou',
-    missing: 'Faltou',
-  },
-  summary: {
-    title: 'Sessão concluída',
-    correct: 'Acertos',
-    wrong: 'Erros',
-    duration: 'Tempo',
-    minutes: '{n} min',
-    toReview: 'Cards que pedem revisão',
-    toReviewNone: 'Nenhum card pede revisão agora.',
-    openBoard: 'Abrir no mapa',
-    untitled: 'Card sem título',
-    nextDue: 'Próximo vencimento',
-    nextNone: 'Sem vencimentos agendados',
-    more: 'Mais 5',
-  },
-} as const;
-
 export const editor = {
   headerTitle: '{area} · {title}',
   savedLabel: 'Salvo há {time}',
@@ -109,71 +49,6 @@ export const editor = {
   moreActions: 'Mais ações do mapa',
 } as const;
 
-export const canvas = {
-  layers: { structure: 'Estrutura', retrievability: 'Lembrança estimada', coverage: 'Cobertura' },
-  layersLabel: 'Estados dos cards',
-  legend: 'Legenda dos estados',
-  legendLabel: 'Legenda dos estados',
-  zoom: {
-    in: 'Aumentar zoom',
-    out: 'Diminuir zoom',
-    fit: 'Ajustar à tela',
-    percent: '{n}%',
-    controls: 'Controles de zoom',
-  },
-  toolbar: {
-    label: 'Ferramentas do mapa',
-    concept: 'Card',
-    flow: 'Fluxograma',
-    image: 'Imagem',
-    case: 'Caso',
-    move: 'Mover o mapa',
-    connect: 'Ligar dois cards',
-    organize: 'Organizar o mapa',
-    heat: 'Lembrança estimada',
-    explore: 'Explorar',
-    challenge: 'Desafio',
-    select: 'Selecionar',
-    hint: {
-      select: 'Selecionar: clique num card para ver e editar; arraste para mover.',
-      move: 'Mover o mapa: arraste o fundo para navegar sem mexer nos cards.',
-      concept: 'Adicionar Pergunta e Resposta: cria um card para revisar com pergunta e resposta.',
-      note: 'Adicionar Conteúdo: cria um card de anotação livre.',
-      flow: 'Adicionar fluxograma: cria um card com passos ligados em sequência.',
-      image: 'Adicionar imagem: cria um card com figura para oclusão.',
-      case: 'Adicionar caso clínico: cria um card com as etapas de um caso.',
-      connect: 'Ligar dois cards: arraste de um card para outro e dê um rótulo à conexão.',
-      organize: 'Organizar o mapa: arruma os cards automaticamente.',
-    },
-  },
-  // T5 (editor v2)
-  fitShort: 'Ajustar',
-  layerSwitch: { structure: 'Estrutura', recall: 'Lembrança', coverage: 'Cobertura' },
-  nodeType: { concept: 'Pergunta e Resposta', flow: 'Fluxograma', image: 'Imagem', case: 'Caso clínico', note: 'Conteúdo' },
-  selectCard: 'Selecionar {title}',
-  footer: {
-    recall: '{state} · {pct}%',
-    due: '{text} · vence hoje',
-    none: 'Sem revisões ainda',
-    edges: '{n, plural, =0 {0 conexões} one {# conexão} other {# conexões}}',
-    coverage: 'Entra em {item}',
-    noItem: 'Fora da matriz do Enamed',
-  },
-  edgeDialog: 'Rótulo da conexão',
-  edgeDialogBody: 'Sem rótulo, a conexão não vira pergunta no desafio.',
-  // G02
-  flip: 'Ver resposta',
-  unflip: 'Ver pergunta',
-  backLoading: 'Carregando resposta…',
-  backEmpty: 'Sem resposta ainda.',
-  connectFrom: 'Agora clique no card de destino.',
-  connectStart: 'Clique no card de origem.',
-  // G06
-  stepImageAlt: 'Imagem do passo {n} de {title}',
-  stageImageAlt: 'Imagem da etapa {stage} de {title}',
-  backImageAlt: 'Imagem da resposta de {title}',
-} as const;
-
 export const quiz = {
   exit: 'Sair do desafio',
   challengeBoard: 'Desafiar {n, plural, one {o # que vence} other {os # que vencem}} hoje',
@@ -201,3 +76,5 @@ export const quiz = {
 } as const;
 
 export { boundary } from './boundary';
+export { challenge } from './ns-parts/challenge';
+export { canvas } from './ns-parts/canvas';

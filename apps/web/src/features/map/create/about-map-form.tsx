@@ -2,8 +2,12 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { areas, boardAccess, MAX_MATRIX_ITEMS_PER_BOARD, SHARE_PASSWORD_MAX, SHARE_PASSWORD_MIN, type Area, type BoardAccess, type MatrixItem } from '@remoa/contracts';
-import { t, type StringKey } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Combobox, FilterChip, Input, PasswordInput, Segmented } from '@remoa/ui';
+
+const t = withStrings({ boards: more.boards });
+type StringKey = Parameters<typeof t>[0];
 
 export type AboutMap = { title: string; area: Area; matrixItemIds: string[]; access: BoardAccess; password: string };
 export const emptyAboutMap = (title = '', matrixItemIds: string[] = []): AboutMap => ({ title, area: 'CM', matrixItemIds, access: 'owner', password: '' });

@@ -10,12 +10,15 @@ import 'swiper/css';
 import 'swiper/css/a11y';
 import './slider.css';
 import type { BoardSummary } from '@remoa/contracts';
-import { t } from '@remoa/strings';
+import { withStrings } from '@remoa/strings';
+import * as more from '@remoa/strings/ns';
 import { Button, Icon, LockedSlideCard, MapSlideCard, NewMapSlideCard, SliderArrows } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { PendingLink } from '@/features/shell/nav-pending';
 import { useEntitlements } from '@/features/shell/entitlements';
 import { buildMapSlides, type MapSlide } from '../slides';
+
+const t = withStrings({ boards: more.boards, home: more.home });
 
 const h2 = 'm-0 font-display font-extrabold text-[22px] tracking-[-0.025em] md:text-[26px]';
 
