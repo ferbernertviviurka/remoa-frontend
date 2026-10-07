@@ -11,7 +11,7 @@ export const newMap = {
     ankiDesc: 'Importe o arquivo .apkg: os cards viram conceitos e a oclusão de imagem vem junto.',
     ankiTag: 'Importação',
     seed: 'De um mapa pronto',
-    seedDesc: 'Mapas revisados por médico, com fonte, versão e marco temporal da edição.',
+    seedDesc: 'Mapas com fonte, versão e marco temporal da edição em cada card.',
     seedTag: 'Revisado',
     blank: 'Em branco',
     blankDesc: 'Comece do zero e monte do seu jeito, card por card.',
@@ -77,7 +77,7 @@ export const newMap = {
     },
     seed: {
       title: 'Mapas prontos e revisados',
-      lead: 'Mapas montados e revisados por médico, com fonte e marco temporal.',
+      lead: 'Mapas montados com fonte e marco temporal em cada card.',
       s1: 'Cada card traz a fonte, a edição e o nome e CRM de quem revisou.',
       s2: 'Você escolhe um mapa e o adiciona à sua biblioteca.',
       s3: 'Depois, liga o que já sabe e estuda com a revisão espaçada.',
