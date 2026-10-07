@@ -77,6 +77,24 @@ export function toSessionView(raw: unknown): SessionView | null {
   return { id: raw.id, total: n(raw.total), position: n(raw.position), current: toPublicItem(raw.current) };
 }
 
+const VERDICTS = ['correct', 'partial', 'incorrect'] as const;
+export type SessionReport = {
+  correct: number; partial: number; incorrect: number; pending: number;
+  items: { itemId: string; stem: string; verdict: 'correct' | 'partial' | 'incorrect' | null; feedback: string | null }[];
+};
+
+/** The finish payload, public fields only. A planted expected answer never reaches state. */
+export function toReport(raw: unknown): SessionReport | null {
+  if (!isObj(raw) || !isObj(raw.score)) return null;
+  const n = (v: unknown) => (typeof v === 'number' && Number.isInteger(v) && v >= 0 ? v : 0);
+  const items = arr(raw.items).flatMap((item) => {
+    if (!isObj(item) || typeof item.itemId !== 'string' || typeof item.stem !== 'string') return [];
+    const verdict = (VERDICTS as readonly string[]).includes(String(item.verdict)) ? (item.verdict as SessionReport['items'][number]['verdict']) : null;
+    return [{ itemId: item.itemId, stem: item.stem, verdict, feedback: typeof item.feedback === 'string' ? item.feedback : null }];
+  });
+  return { correct: n(raw.score.correct), partial: n(raw.score.partial), incorrect: n(raw.score.incorrect), pending: n(raw.score.pending), items };
+}
+
 /** Called by the setup flow with the start response; only the sanitized view is written. */
 export function rememberChallengeAiSession(raw: unknown) {
   const view = toSessionView(raw);
@@ -112,6 +130,7 @@ type Props = {
 export function SessionScreen({ sessionId, boardId, initial }: Props) {
   const [session, setSession] = useState<SessionView | null | undefined>(() => (initial === undefined ? undefined : toSessionView(initial)));
   const [finished, setFinished] = useState(false);
+  const [report, setReport] = useState<SessionReport | null>(null);
   useEffect(() => {
     if (session === undefined) setSession(readStored(sessionId));
   }, [session, sessionId]);
@@ -120,8 +139,13 @@ export function SessionScreen({ sessionId, boardId, initial }: Props) {
     const r = await api<unknown>(`/v1/challenge-ai/sessions/${encodeURIComponent(sessionId)}`);
     const view = r.ok ? toSessionView(r.data) : null;
     if (!view || view.id !== sessionId) return;
-    if (!view.current) setFinished(true);
-    else setSession(view);
+    if (view.current) {
+      setSession(view);
+      return;
+    }
+    const fin = await api<unknown>(`/v1/challenge-ai/sessions/${encodeURIComponent(sessionId)}/finish`, { method: 'POST', body: '{}' });
+    setReport(fin.ok ? toReport(fin.data) : null);
+    setFinished(true);
   }
 
   const exit = (
@@ -142,7 +166,23 @@ export function SessionScreen({ sessionId, boardId, initial }: Props) {
         {session === undefined ? (
           <p role="status" className="m-0 text-sm text-muted">{t('challenge.loading')}</p>
         ) : finished ? (
-          <p role="status" className="m-0 text-sm">{t('challengeAi.done')}</p>
+          <div className="flex flex-col gap-3">
+            <p role="status" className="m-0 text-sm">{t('challengeAi.done')}</p>
+            {report ? (
+              <>
+                <p className="m-0 text-sm font-semibold">{t('challengeAi.score', { correct: report.correct, partial: report.partial, incorrect: report.incorrect, pending: report.pending })}</p>
+                <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                  {report.items.map((item) => (
+                    <li key={item.itemId} className="flex flex-col gap-1">
+                      <p className="m-0 text-sm font-semibold">{item.stem}</p>
+                      <p className="m-0 text-sm">{item.verdict ? t(`challengeAi.verdict.${item.verdict}`) : t('challengeAi.verdict.pending')}</p>
+                      {item.feedback ? <p className="m-0 whitespace-pre-wrap text-sm">{item.feedback}</p> : null}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+          </div>
         ) : !session || session.id !== sessionId || !session.current ? (
           <p role="alert" className="m-0 text-sm">{t('challenge.loadError')}</p>
         ) : (
@@ -323,8 +363,7 @@ function ItemView({ sessionId, item, onAdvance }: { sessionId: string; item: AiC
 
       {result ? (
         <div className="flex flex-wrap items-start gap-3">
-          {result.canRetry ? <Button variant="secondary" onClick={retry}>{t('common.retry')}</Button> : null}
-          {result.verdict !== null && !result.canRetry ? <Button onClick={onAdvance}>{t('challengeAi.next')}</Button> : null}
+          {result.canRetry ? <Button variant="secondary" onClick={retry}>{t('common.retry')}</Button> : <Button onClick={onAdvance}>{t('challengeAi.next')}</Button>}
           {result.verdict !== null && dispute !== 'sent' ? (
             <Button
               variant="quiet"

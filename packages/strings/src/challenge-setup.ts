@@ -11,7 +11,7 @@ export const challengeSetup = {
     description: 'Escolha como responder e em que ordem os cards aparecem.',
     format: 'Formato',
     self: { title: 'Eu respondo', description: 'Sem IA: você escreve, revela a resposta do card e marca se acertou ou errou.' },
-    ai: { title: 'IA responde', description: 'A IA corrige a sua resposta com base no card e no mapa e sugere a nota.' },
+    ai: { title: 'IA responde', description: 'A IA corrige a sua resposta com base no card e no mapa e dá a nota.' },
     soon: 'Em breve',
     order: 'Como será a ordem de avaliação?',
     random: { title: 'Aleatório', description: 'Os cards vêm embaralhados.' },

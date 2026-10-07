@@ -79,6 +79,7 @@ describe('ChallengeSetupDialog: desafio com IA (F32)', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Difícil' }));
     fireEvent.click(screen.getByRole('radio', { name: 'Discursiva' }));
     fireEvent.click(screen.getByRole('radio', { name: 'Corrigir no final' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Simulado' }));
     fireEvent.click(screen.getByRole('button', { name: 'Começar desafio' }));
     await waitFor(() => expect(push).toHaveBeenCalledWith(`/app/mapas/${BOARD}/desafio-ia?session=${SESSION}`));
     expect(api).toHaveBeenCalledTimes(1);
@@ -94,7 +95,7 @@ describe('ChallengeSetupDialog: desafio com IA (F32)', () => {
       questionType: 'discursive',
       grading: 'end',
       timerSec: null,
-      preset: null,
+      preset: 'mock',
     });
     expect(onStart).not.toHaveBeenCalled();
     const stored = sessionStorage.getItem(`remoa:challenge-ai:${SESSION}`);

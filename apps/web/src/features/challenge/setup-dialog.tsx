@@ -26,11 +26,13 @@ type AiScope = 'card' | 'module' | 'board';
 type AiDifficulty = ChallengeConfig['difficulty'];
 type AiType = 'discursive' | 'objective' | 'mixed';
 type AiGrading = 'now' | 'end';
+type AiPreset = 'practice' | 'mock';
 
 const SCOPES = ['card', 'module', 'board'] as const;
 const DIFFICULTIES = ['easy', 'medium', 'hard', 'mixed'] as const;
 const TYPES = ['discursive', 'objective', 'mixed'] as const;
 const GRADINGS = ['now', 'end'] as const;
+const PRESETS = ['practice', 'mock'] as const;
 const CARD_SIZES = Array.from({ length: CHALLENGE_CARD_MAX }, (_, i) => i + 1);
 
 /** Group label for Segmented (required for a11y): the options read in order, built from the existing option strings. */
@@ -75,6 +77,7 @@ export function ChallengeSetupDialog({
   const [difficulty, setDifficulty] = useState<AiDifficulty>('mixed');
   const [questionType, setQuestionType] = useState<AiType>('mixed');
   const [gradingTime, setGradingTime] = useState<AiGrading>('now');
+  const [preset, setPreset] = useState<AiPreset>('practice');
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -107,7 +110,7 @@ export function ChallengeSetupDialog({
       ...(format === 'generated' ? { questionType } : {}),
       grading: gradingTime === 'now' ? 'immediate' : 'end',
       timerSec: null,
-      preset: null,
+      preset,
     });
     setBusy(false);
     if (!r.ok) return setFailed(true);
@@ -190,6 +193,12 @@ export function ChallengeSetupDialog({
               value={gradingTime}
               onValueChange={(v) => setGradingTime(v as AiGrading)}
               options={GRADINGS.map((x) => ({ value: x, label: t(`challengeAi.grading.${x}`) }))}
+            />
+            <Segmented
+              aria-label={joined(PRESETS.map((x) => t(`challengeAi.preset.${x}`)))}
+              value={preset}
+              onValueChange={(v) => setPreset(v as AiPreset)}
+              options={PRESETS.map((x) => ({ value: x, label: t(`challengeAi.preset.${x}`) }))}
             />
             <p role="status" className="m-0 text-sm font-semibold text-muted">{t('challengeAi.cost', { n: cost })}</p>
             {failed ? <p role="alert" className="m-0 text-sm font-semibold text-review">{t('errors.internal')}</p> : null}

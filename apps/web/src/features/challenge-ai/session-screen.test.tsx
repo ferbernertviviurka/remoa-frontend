@@ -150,6 +150,32 @@ describe('SessionScreen (F32 T7)', () => {
     await waitFor(() => expect(status()).toHaveTextContent('Pendente de correção'));
     expect(calls[0]!.body).toMatchObject({ itemId: ITEM, answer: { kind: 'dont_know' } });
     expect(screen.queryByRole('button', { name: 'Discordar' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Próxima pergunta' })).toBeVisible();
+  });
+
+  it('the last pending answer finishes the session and does not render a planted key', async () => {
+    reply = (url) => {
+      if (url.includes('/answers')) return { status: 200, body: { ok: true, data: verdict({ verdict: null, gradedBy: 'pending', rating: null, feedback: null }) } };
+      if (url.includes('/finish')) {
+        return {
+          status: 200,
+          body: {
+            ok: true,
+            data: {
+              score: { correct: 0, partial: 0, incorrect: 1, pending: 0, unanswered: 0 },
+              items: [{ itemId: ITEM, stem: 'Defina sepse.', verdict: 'incorrect', feedback: 'Revise o gatilho.', expectedAnswer: SECRET }],
+            },
+          },
+        };
+      }
+      return { status: 200, body: { ok: true, data: start(null) } };
+    };
+    mount(start({ id: ITEM, position: 0, type: 'discursive', stem: 'Defina sepse.' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Não sei' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Próxima pergunta' }));
+    await screen.findByText(/1 incorretas/);
+    expect(calls.some((c) => c.url.includes('/finish') && c.body && Object.keys(c.body).length === 0)).toBe(true);
+    assertNoSecret();
   });
 
   it('Discordar posts /attempts/:id/dispute and confirms', async () => {

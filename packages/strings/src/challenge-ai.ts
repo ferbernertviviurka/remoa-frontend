@@ -60,4 +60,9 @@ export const challengeAi = {
   aiCanErr: 'A IA pode errar. Confira a fonte no card.',
   next: 'Próxima pergunta',
   done: 'Você respondeu todas as perguntas desta sessão.',
+  score: '{correct} corretas · {partial} parciais · {incorrect} incorretas · {pending} pendentes',
+  preset: {
+    practice: 'Treino',
+    mock: 'Simulado',
+  },
 } as const;
