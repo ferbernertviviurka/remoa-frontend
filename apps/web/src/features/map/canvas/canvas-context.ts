@@ -28,6 +28,8 @@ export type CanvasCtx = {
   prepare: (cardId: string) => Promise<boolean>;
   /** D-202: the selected card shows resize handles (mouse editing only: off on touch, in the challenge and outside "Selecionar"). */
   resizable: boolean;
+  /** A ready map or its copy (`board.path`, F31): cards sized from their content (layout `contentSize`). */
+  trail: boolean;
 };
 
 const noop = () => undefined;
@@ -43,6 +45,7 @@ export const CanvasContext = createContext<CanvasCtx>({
   editLabel: noop,
   prepare: () => Promise.resolve(false),
   resizable: false,
+  trail: false,
 });
 
 /** "vence hoje": due today or overdue. */
