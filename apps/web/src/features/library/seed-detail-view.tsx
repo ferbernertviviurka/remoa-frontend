@@ -7,12 +7,13 @@ import * as more from '@remoa/strings/ns';
 import { Button } from '@remoa/ui';
 import { api } from '@/lib/api';
 import { Disclaimer, Provenance, SeedBadges, useSeedCopy, type Seed } from './library-view';
+import { SeedCardBody, type SeedCardData } from './card-didactics';
 import { ReportButton } from './report-button';
 
 const t = withStrings({ boards: more.boards, mapLibrary: more.mapLibrary });
 type StringKey = Parameters<typeof t>[0];
 
-type SeedCard = { id: string; title: string; front: string | null; back: string | null; pathOrder: number | null; sources: { doc: string; local: string }[] };
+type SeedCard = SeedCardData & { id: string; pathOrder: number | null };
 
 /** FR-37 "Ver": the original map, read only, in trail order; each card carries "Reportar erro". */
 export function SeedDetailView({ id }: { id: string }) {
@@ -44,10 +45,7 @@ export function SeedDetailView({ id }: { id: string }) {
         <ol className="m-0 flex list-none flex-col gap-3 p-0">
           {seed.cards.map((c) => (
             <li key={c.id} className="flex flex-col gap-2 rounded-3xl border border-border bg-surface p-4">
-              <h3 className="m-0 font-semibold">{c.title}</h3>
-              {c.front ? <p className="m-0">{c.front}</p> : null}
-              {c.back ? <p className="m-0 text-muted">{c.back}</p> : null}
-              {c.sources.length ? <p className="m-0 text-sm text-muted">{t('mapLibrary.sources', { list: c.sources.map((s) => `${s.doc} ${s.local}`).join('; ') })}</p> : null}
+              <SeedCardBody card={c} />
               <div><ReportButton cardId={c.id} /></div>
             </li>
           ))}
