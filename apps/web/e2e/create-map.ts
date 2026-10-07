@@ -6,8 +6,14 @@ import { expect, type Page } from '@playwright/test';
  * (the dev server may also remount the page while compiling), so the form is retried from a fresh load until the board exists.
  */
 export async function createBlankBoard(page: Page, title: string) {
-  await page.getByRole('button', { name: 'Novo mapa' }).first().click();
-  await expect(page).toHaveURL(/\/mapas\/novo$/);
+  await expect(async () => {
+    if (!/\/mapas\/novo/.test(page.url())) {
+      const novo = page.getByRole('button', { name: 'Novo mapa' }).first();
+      if (await novo.count()) await novo.click();
+      else await page.goto('/app/mapas/novo');
+    }
+    await expect(page).toHaveURL(/\/mapas\/novo$/, { timeout: 4000 });
+  }).toPass({ timeout: 20_000 });
   await expect(async () => {
     if (!/caminho=blank/.test(page.url())) await page.goto('/app/mapas/novo?caminho=blank');
     await page.getByLabel('Nome do mapa').fill(title, { timeout: 5000 });
