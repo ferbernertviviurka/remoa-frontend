@@ -15,6 +15,8 @@ export type PlanCardPlan = {
   description?: string;
   /** Linha sob o preço, anunciada ao mudar (`aria-live="polite"`). */
   note?: string;
+  /** Nota que não muda com o período (ex.: aviso do trial): fica texto simples, porque o Torph força `white-space: nowrap` e uma frase longa vazaria do cartão. */
+  noteStatic?: boolean;
   features: string[];
   cta: ReactNode;
   dark?: boolean;
@@ -71,7 +73,7 @@ export function PlanCards({ period, onPeriodChange, periodLabels, periodGroupLab
                     <span className={`text-[17px] font-semibold ${p.dark ? 'text-on-dark-muted' : 'text-muted'}`}><LazyMorph armed={armed}>{p.cadence}</LazyMorph></span>
                   </div>
                   {p.description ? <span className={`text-[15px] ${p.dark ? 'text-on-dark-muted-2' : 'text-muted'}`}>{p.description}</span> : null}
-                  {p.note ? <span aria-live="polite" className={`text-[15px] ${p.dark ? 'text-on-dark-muted-2' : 'text-muted'}`}><LazyMorph armed={armed}>{p.note}</LazyMorph></span> : null}
+                  {p.note ? <span aria-live="polite" className={`text-[15px] ${p.dark ? 'text-on-dark-muted-2' : 'text-muted'}`}>{p.noteStatic ? p.note : <LazyMorph armed={armed}>{p.note}</LazyMorph>}</span> : null}
                 </div>
                 <ul className="m-0 flex list-none flex-col gap-3 p-0">
                   {p.features.map((f) => (

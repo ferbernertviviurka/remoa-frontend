@@ -64,7 +64,7 @@ export function PlansSectionView({ priceBook, flags, facts }: PlansSectionProps 
           discountLabel={pct > 0 ? `-${pct}%` : undefined}
           plans={[
             { name: t('landing.plans.free.name'), price: { amount: 0, currency: 'BRL' }, cadence: '', description: t('landing.plans.free.description'), features: freeFeatures,
-              note: open ? t('landing.plans.free.trial', { days: TRIAL_DAYS }) : undefined,
+              note: open ? t('landing.plans.free.trial', { days: TRIAL_DAYS }) : undefined, noteStatic: true,
               cta: <Link href={href} onClick={trackCta('plans_free', open ? 'create' : 'waitlist')} className="border-[1.5px] border-border-strong bg-surface text-ink">{t('landing.plans.cta.free')}</Link> },
             { name: t('landing.plans.pro.name'), dark: true, features: proFeatures,
               price: { amount: (annual ? priceBook.annual.amount : priceBook.monthly.amount) / 100, currency: 'BRL' },

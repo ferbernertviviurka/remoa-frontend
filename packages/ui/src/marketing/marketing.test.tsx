@@ -177,6 +177,25 @@ describe('PlanCards', () => {
   });
 });
 
+describe('PlanCards: nota estática', () => {
+  it('nota longa que não muda fica fora do Torph (nowrap vazaria do cartão); a que muda continua morphando', async () => {
+    const { container } = render(
+      <PlanCards
+        period="monthly" onPeriodChange={() => {}} periodLabels={{ monthly: 'Mensal', annual: 'Anual' }} periodGroupLabel="Período"
+        plans={[
+          { name: 'Free', price: { amount: 0, currency: 'BRL' }, cadence: '', note: 'Toda conta nova começa com 15 dias de Pro grátis. Sem cartão.', noteStatic: true, features: ['a'], cta: <a href="#cta">Começar</a> },
+          { name: 'Pro', price: { amount: 39, currency: 'BRL' }, cadence: '/mês', note: 'Cobrado todo mês.', features: ['b'], cta: <a href="#cta">Assinar</a> },
+        ]}
+      />,
+    );
+    await userEvent.hover(screen.getByRole('group', { name: 'Período' }));
+    await waitFor(() => expect(container.querySelector('[torph-sr]')).not.toBeNull());
+    const [free, pro] = [...container.querySelectorAll('[aria-live="polite"]')];
+    expect(free!.querySelector('[torph-sr]')).toBeNull();
+    expect(pro!.querySelector('[torph-sr]')).not.toBeNull();
+  });
+});
+
 describe('QuestionAccordion', () => {
   const qs = [1, 2, 3].map((n) => ({ id: `q${n}`, question: `Pergunta ${n}`, answer: `Resposta ${n}` }));
   it('um aberto por vez, primeiro aberto, onToggle e região por pergunta', async () => {
