@@ -21,7 +21,7 @@ describe('LibraryView', () => {
   it('lists ready maps with stats, reviewer seal, Top 10 badge only where present, and the legal notice', async () => {
     api.mockResolvedValue({ ok: true, data: [seed({ badges: ['top10_enamed'] }), seed({ id: '2', title: 'Pneumonia' })] });
     const { container } = render(<LibraryView />);
-    expect(await screen.findByRole('heading', { level: 3, name: 'Sepse' })).toBeVisible();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Sepse' })).toBeVisible();
     expect(screen.getAllByText('Top 10 ENAMED')).toHaveLength(1);
     expect(screen.getAllByText('Revisado por Dr(a). Ana Lima, CRM 123456-SP')).toHaveLength(2);
     expect(screen.getAllByText(/90 cards · ~135 min · Versão 2026.1/)).toHaveLength(2);
