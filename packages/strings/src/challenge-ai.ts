@@ -55,4 +55,6 @@ export const challengeAi = {
     pending: 'Pendente de correção',
   },
   aiCanErr: 'A IA pode errar. Confira a fonte no card.',
+  next: 'Próxima pergunta',
+  done: 'Você respondeu todas as perguntas desta sessão.',
 } as const;

@@ -119,6 +119,21 @@ describe('SessionScreen (F32 T7)', () => {
     expect(screen.getByRole('radio', { name: /Hemoculturas/ })).toBeDisabled();
   });
 
+  it('after a final verdict, the next question comes from GET /sessions/:id', async () => {
+    const nextId = '55555555-5555-4555-8555-555555555555';
+    mount(start(objective));
+    fireEvent.click(screen.getByRole('radio', { name: /Lactato/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar alternativa' }));
+    await waitFor(() => expect(status()).toHaveTextContent('Incorreta'));
+    reply = (url) => url.includes('/answers')
+      ? { status: 200, body: { ok: true, data: verdict() } }
+      : { status: 200, body: { ok: true, data: start({ id: nextId, position: 1, type: 'discursive', stem: 'Cite um critério de sepse.' }, { position: 1 }) } };
+    fireEvent.click(screen.getByRole('button', { name: 'Próxima pergunta' }));
+    await screen.findByRole('heading', { level: 1, name: 'Cite um critério de sepse.' });
+    expect(calls.some((c) => c.url.includes(`/v1/challenge-ai/sessions/${SESSION}`) && !c.url.includes('/answers'))).toBe(true);
+    assertNoSecret();
+  });
+
   it('has no self-grading or grade editing control', async () => {
     mount(start(objective));
     fireEvent.click(screen.getByRole('radio', { name: /Lactato/ }));

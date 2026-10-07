@@ -111,9 +111,18 @@ type Props = {
 /** F32 T7: one item of a "Desafio com IA" session, full screen. The verdict comes from the server; nothing here can set or edit it. */
 export function SessionScreen({ sessionId, boardId, initial }: Props) {
   const [session, setSession] = useState<SessionView | null | undefined>(() => (initial === undefined ? undefined : toSessionView(initial)));
+  const [finished, setFinished] = useState(false);
   useEffect(() => {
     if (session === undefined) setSession(readStored(sessionId));
   }, [session, sessionId]);
+
+  async function advance() {
+    const r = await api<unknown>(`/v1/challenge-ai/sessions/${encodeURIComponent(sessionId)}`);
+    const view = r.ok ? toSessionView(r.data) : null;
+    if (!view || view.id !== sessionId) return;
+    if (!view.current) setFinished(true);
+    else setSession(view);
+  }
 
   const exit = (
     <Link href={`/app/mapas/${encodeURIComponent(boardId)}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline-offset-2 hover:underline">
@@ -132,17 +141,19 @@ export function SessionScreen({ sessionId, boardId, initial }: Props) {
         </header>
         {session === undefined ? (
           <p role="status" className="m-0 text-sm text-muted">{t('challenge.loading')}</p>
+        ) : finished ? (
+          <p role="status" className="m-0 text-sm">{t('challengeAi.done')}</p>
         ) : !session || session.id !== sessionId || !session.current ? (
           <p role="alert" className="m-0 text-sm">{t('challenge.loadError')}</p>
         ) : (
-          <ItemView key={session.current.id} sessionId={sessionId} item={session.current} />
+          <ItemView key={session.current.id} sessionId={sessionId} item={session.current} onAdvance={() => void advance()} />
         )}
       </div>
     </div>
   );
 }
 
-function ItemView({ sessionId, item }: { sessionId: string; item: AiChallengeItemPublic }) {
+function ItemView({ sessionId, item, onAdvance }: { sessionId: string; item: AiChallengeItemPublic; onAdvance: () => void }) {
   const ids = useId();
   const started = useRef(Date.now());
   const [text, setText] = useState('');
@@ -313,6 +324,7 @@ function ItemView({ sessionId, item }: { sessionId: string; item: AiChallengeIte
       {result ? (
         <div className="flex flex-wrap items-start gap-3">
           {result.canRetry ? <Button variant="secondary" onClick={retry}>{t('common.retry')}</Button> : null}
+          {result.verdict !== null && !result.canRetry ? <Button onClick={onAdvance}>{t('challengeAi.next')}</Button> : null}
           {result.verdict !== null && dispute !== 'sent' ? (
             <Button
               variant="quiet"
