@@ -24,6 +24,9 @@ vi.mock('@/lib/api', () => ({
     if (path.endsWith('/archive')) return archiveReply.ok ? { ok: true, data: null } : { ok: false, error: archiveReply.error };
     if (path.endsWith('/confirm')) return confirmReply ?? { ok: true, data: {} };
     if (init?.method === 'POST') return { ok: true, data: {} };
+    if (path.startsWith('/v1/challenge-ai/taxonomy?kind=area')) return { ok: true, data: [{ id: ID(3), name: 'Clínica Médica' }] };
+    if (path.startsWith('/v1/challenge-ai/taxonomy?kind=domain')) return { ok: true, data: [{ id: ID(4), name: 'Urgência' }] };
+    if (path.startsWith('/v1/challenge-ai/taxonomy?kind=topic')) return { ok: true, data: [{ id: ID(5), name: 'Choque' }] };
     if (path.startsWith('/v1/challenge-ai/topics')) return { ok: true, data: [{ id: ID(7), name: 'Sepse' }, { id: ID(8), name: 'Pneumonia' }] };
     if (path.startsWith('/v1/challenge-ai/bank')) return bank === null ? { ok: false, error: { code: 'internal', message: 'x' } } : { ok: true, data: bank };
     return { ok: false, error: { code: 'not_found', message: path } };
@@ -44,6 +47,7 @@ describe('Banco de questões', () => {
     expect(within(first).getByText('Difícil')).toBeInTheDocument();
     expect(within(first).getByText('Objetiva (A a D)')).toBeInTheDocument();
     expect(within(first).getByText('Gerada por IA, no estilo ENAMED. Não é questão oficial.')).toBeInTheDocument();
+    expect(within(first).getByText('0 acertos · 0 erros')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Reportar erro' })).toHaveLength(2);
     expect(container.textContent).not.toContain(SECRET);
     expect(document.body.innerHTML).not.toContain(SECRET);
@@ -71,6 +75,25 @@ describe('Banco de questões', () => {
     fireEvent.keyDown(screen.getByRole('combobox', { name: 'Mapa' }), { key: 'Enter' });
     fireEvent.keyDown(await screen.findByRole('option', { name: 'Sepse' }), { key: 'Enter' });
     await waitFor(() => expect(bankCalls().at(-1)!.path).toBe(`/v1/challenge-ai/bank?board=${ID(900)}`));
+  });
+
+  it('busca, origem, área, domínio e tema entram na consulta', async () => {
+    Element.prototype.scrollIntoView ??= () => undefined;
+    render(<BankScreen />);
+    await screen.findByRole('article', { name: 'Enunciado da questão 1' });
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Buscar no enunciado' }), { target: { value: 'sepse' } });
+    await waitFor(() => expect(bankCalls().at(-1)!.path).toBe('/v1/challenge-ai/bank?q=sepse'));
+    fireEvent.click(screen.getByRole('button', { name: 'IA' }));
+    await waitFor(() => expect(bankCalls().at(-1)!.path).toBe('/v1/challenge-ai/bank?source=ai&q=sepse'));
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Área' }), { key: 'Enter' });
+    fireEvent.keyDown(await screen.findByRole('option', { name: 'Clínica Médica' }), { key: 'Enter' });
+    await waitFor(() => expect(bankCalls().at(-1)!.path).toContain(`area=${ID(3)}`));
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Domínio' }), { key: 'Enter' });
+    fireEvent.keyDown(await screen.findByRole('option', { name: 'Urgência' }), { key: 'Enter' });
+    await waitFor(() => expect(bankCalls().at(-1)!.path).toContain(`domain=${ID(4)}`));
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Tema' }), { key: 'Enter' });
+    fireEvent.keyDown(await screen.findByRole('option', { name: 'Choque' }), { key: 'Enter' });
+    await waitFor(() => expect(bankCalls().at(-1)!.path).toContain(`topic=${ID(5)}`));
   });
 
   it('arquivar faz POST na rota do item e recarrega a lista', async () => {

@@ -1,10 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { questionBankItemPublicSchema, enamedTopicOptionSchema, questionDifficulties, questionStatuses, questionTypes, type BoardSummary, type QuestionBankItemPublic } from '@remoa/contracts';
+import { questionBankItemPublicSchema, enamedTopicOptionSchema, questionDifficulties, questionSources, questionStatuses, questionTypes, type BoardSummary, type QuestionBankItemPublic } from '@remoa/contracts';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
-import { Alert, Button, Card, Empty, FilterChip, Select, SkeletonBlock, SkeletonRegion, Tag, Textarea } from '@remoa/ui';
+import { Alert, Button, Card, Empty, FilterChip, Input, Select, SkeletonBlock, SkeletonRegion, Tag, Textarea } from '@remoa/ui';
 import { api } from '@/lib/api';
 import { openSupport } from '@/features/support/open';
 
@@ -13,10 +13,15 @@ const t = withStrings({ boards: more.boards, inspector: more.inspector, map: mor
 type Difficulty = (typeof questionDifficulties)[number];
 type QType = (typeof questionTypes)[number];
 type Status = (typeof questionStatuses)[number];
-type Filters = { board: string; difficulty: Difficulty | 'all'; type: QType | 'all'; status: Status | 'all' };
+type Source = (typeof questionSources)[number];
+type Filters = {
+  board: string; area: string; domain: string; topic: string; q: string;
+  difficulty: Difficulty | 'all'; type: QType | 'all'; status: Status | 'all'; source: Source | 'all';
+};
 
 const ALL = 'all';
-const NO_FILTERS: Filters = { board: ALL, difficulty: ALL, type: ALL, status: ALL };
+const NO_FILTERS: Filters = { board: ALL, area: ALL, domain: ALL, topic: ALL, q: '', difficulty: ALL, type: ALL, status: ALL, source: ALL };
+type Named = { id: string; name: string };
 
 const statusLabel = (s: Status) => (s === 'archived' ? t('boards.archivedBadge') : t(`inspector.status.${s}` as 'inspector.status.draft'));
 
@@ -46,12 +51,20 @@ export function BankScreen() {
   const [editing, setEditing] = useState<{ id: string; stem: string } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [topics, setTopics] = useState<Record<string, { id: string; name: string }[]>>({});
+  const [areas, setAreas] = useState<Named[]>([]);
+  const [domains, setDomains] = useState<Named[]>([]);
+  const [topicOptions, setTopicOptions] = useState<Named[]>([]);
   const seq = useRef(0);
 
   const load = useCallback(async () => {
     const n = ++seq.current;
     const qs = new URLSearchParams();
     if (filters.board !== ALL) qs.set('board', filters.board);
+    if (filters.area !== ALL) qs.set('area', filters.area);
+    if (filters.domain !== ALL) qs.set('domain', filters.domain);
+    if (filters.topic !== ALL) qs.set('topic', filters.topic);
+    if (filters.source !== ALL) qs.set('source', filters.source);
+    if (filters.q.trim()) qs.set('q', filters.q.trim());
     if (filters.difficulty !== ALL) qs.set('difficulty', filters.difficulty);
     if (filters.type !== ALL) qs.set('type', filters.type);
     if (filters.status !== ALL) qs.set('status', filters.status);
@@ -81,6 +94,11 @@ export function BankScreen() {
   // The board filter is optional: if the list of maps fails, the other filters keep working.
   useEffect(() => {
     void api<BoardSummary[]>('/v1/boards').then((r) => { if (r.ok) setBoards(r.data); }).catch(() => undefined);
+    const loadKind = (kind: 'area' | 'domain' | 'topic') =>
+      api<unknown>(`/v1/challenge-ai/taxonomy?kind=${kind}`).then((r) => (r.ok ? parseTopics(r.data) : [])).catch(() => [] as Named[]);
+    void loadKind('area').then(setAreas);
+    void loadKind('domain').then(setDomains);
+    void loadKind('topic').then(setTopicOptions);
   }, []);
 
   const set = <K extends keyof Filters>(key: K, value: Filters[K]) => { setActionError(null); setState('loading'); setFilters((f) => ({ ...f, [key]: value })); };
@@ -113,7 +131,8 @@ export function BankScreen() {
     else setActionError(explain(r && !r.ok ? r.error.message : undefined));
   };
 
-  const filtered = Object.values(filters).some((v) => v !== ALL);
+  const filtered = (Object.keys(NO_FILTERS) as (keyof Filters)[]).some((k) => filters[k] !== NO_FILTERS[k]);
+  const namedOptions = (rows: Named[]) => [{ value: ALL, label: t('boards.statusAll') }, ...rows.map((r) => ({ value: r.id, label: r.name }))];
 
   return (
     <div className="mx-auto flex w-full max-w-[1000px] flex-col gap-6 md:px-6 md:py-2">
@@ -122,12 +141,22 @@ export function BankScreen() {
       </header>
 
       <section aria-label={t('challengeAi.bankTitle')} className="flex flex-wrap items-end gap-x-6 gap-y-4">
+        <Input variant="search" label={t('challengeAi.search')} value={filters.q} onChange={(e) => set('q', e.target.value)} />
         <Select
           label={t('library.columns.map')}
           value={filters.board}
           onValueChange={(v) => set('board', v)}
           options={[{ value: ALL, label: t('boards.statusAll') }, ...boards.map((b) => ({ value: b.id, label: b.title }))]}
         />
+        <Select label={t('challengeAi.filterArea')} value={filters.area} onValueChange={(v) => set('area', v)} options={namedOptions(areas)} />
+        <Select label={t('challengeAi.filterDomain')} value={filters.domain} onValueChange={(v) => set('domain', v)} options={namedOptions(domains)} />
+        <Select label={t('challengeAi.filterTopic')} value={filters.topic} onValueChange={(v) => set('topic', v)} options={namedOptions(topicOptions)} />
+        <div role="group" aria-label={t('challengeAi.origin')} className="flex flex-wrap gap-2">
+          <FilterChip pressed={filters.source === ALL} onClick={() => set('source', ALL)}>{t('boards.statusAll')}</FilterChip>
+          {questionSources.map((s) => (
+            <FilterChip key={s} pressed={filters.source === s} onClick={() => set('source', s)}>{t(`challengeAi.source.${s}`)}</FilterChip>
+          ))}
+        </div>
         <div role="group" aria-label={`${t('challengeAi.difficulty.easy')} / ${t('challengeAi.difficulty.medium')} / ${t('challengeAi.difficulty.hard')}`} className="flex flex-wrap gap-2">
           <FilterChip pressed={filters.difficulty === ALL} onClick={() => set('difficulty', ALL)}>{t('boards.statusAll')}</FilterChip>
           {questionDifficulties.map((d) => (
@@ -176,6 +205,7 @@ export function BankScreen() {
                     <Tag tone={q.status === 'approved' ? 'steady' : 'watch'}>{statusLabel(q.status)}</Tag>
                     {q.source === 'ai' ? <span className="text-xs text-muted">{t('challengeAi.generatedLabel')}</span> : null}
                     {q.enamedTopicName ? <span className="text-xs text-muted">{t(q.enamedConfirmed ? 'challengeAi.topicConfirmed' : 'challengeAi.topicSuggested', { name: q.enamedTopicName })}</span> : null}
+                    <span className="text-xs text-muted">{t('challengeAi.stats', { correct: q.stats.correct, incorrect: q.stats.incorrect })}</span>
                   </div>
                   {editing?.id === q.id ? (
                     <form className="flex flex-col gap-3" onSubmit={(e) => { e.preventDefault(); void save(); }}>
