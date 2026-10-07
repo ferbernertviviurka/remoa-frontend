@@ -30,6 +30,8 @@ export const challengeAi = {
   cost: 'Esta sessão usa {n} correções de IA',
   generatedLabel: 'Gerada por IA, no estilo ENAMED. Não é questão oficial.',
   confirmTopic: 'Confirmar tema',
+  chooseTopic: 'Tema do ENAMED',
+  topicNotInList: 'Escolha um tema da lista desta área.',
   topicSuggested: 'Tema sugerido: {name}',
   topicConfirmed: 'Tema confirmado: {name}',
   report: 'Reportar erro',
