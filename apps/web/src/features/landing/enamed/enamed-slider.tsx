@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { strings, t } from '@remoa/strings/landing';
-import { buttonVariants, focusRing } from '@remoa/ui';
+import { LazyMorph, buttonVariants, focusRing } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import type { EnamedSlide, EnamedTone } from './slides';
 
@@ -35,29 +35,34 @@ export function EnamedCta() {
   );
 }
 
+/**
+ * Native scroll-snap track: swipe, trackpad and the arrows all move the same scroll, and the counter follows it.
+ * Mobile shows 1.12 cards (89% basis; the peek invites the swipe); ≥ 768 px shows 3.
+ */
 export function EnamedSlider({ slides }: { slides: EnamedSlide[] }) {
-  const [perView, setPerView] = useState(3);
-  const [start, setStart] = useState(0);
+  const track$ = useRef<HTMLDivElement>(null);
+  const [at, setAt] = useState(0);
+  const [end, setEnd] = useState(false);
+  const [armed, setArmed] = useState(false);
   const total = slides.length;
-  const max = Math.max(0, total - perView);
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)');
-    const apply = () => setPerView(mq.matches ? 1 : 3);
-    apply();
-    mq.addEventListener('change', apply);
-    return () => mq.removeEventListener('change', apply);
-  }, []);
-  useEffect(() => { setStart((n) => Math.min(n, Math.max(0, total - perView))); }, [perView, total]);
 
-  const go = (next: number, control: 'prev' | 'next' | 'dot') => {
-    const clamped = Math.max(0, Math.min(max, next));
-    if (clamped === start) return;
-    setStart(clamped);
-    track('enamed_slider_used', { control });
+  const read = () => {
+    const el = track$.current;
+    const step = (el?.firstElementChild as HTMLElement | null)?.offsetWidth;
+    if (!el || !step) return;
+    const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
+    setEnd(atEnd);
+    setAt(atEnd ? total - 1 : Math.round(el.scrollLeft / step));
   };
-  const onKey = (key: string) => {
-    if (key === 'ArrowRight') go(start + 1, 'next');
-    if (key === 'ArrowLeft') go(start - 1, 'prev');
+  useEffect(read, [total]);
+
+  const go = (dir: 1 | -1) => {
+    const el = track$.current;
+    const step = (el?.firstElementChild as HTMLElement | null)?.offsetWidth;
+    if (!el || !step) return;
+    setArmed(true);
+    el.scrollBy({ left: dir * step, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    track('enamed_slider_used', { control: dir > 0 ? 'next' : 'prev' });
   };
   if (total === 0) {
     return (
@@ -67,42 +72,38 @@ export function EnamedSlider({ slides }: { slides: EnamedSlide[] }) {
       </div>
     );
   }
-  const from = start + 1;
-  const to = Math.min(total, start + perView);
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-5">
+      <div className="mb-6 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <EnamedIntro />
-        <div className="flex items-center gap-3.5">
-          <span aria-live="polite" className="min-w-[120px] text-right text-[14.5px] font-bold text-muted">{t('landing.enamed.counter', { from, to, total })}</span>
-          <Arrow label={e.prev} disabled={start === 0} onClick={() => go(start - 1, 'prev')} dir="prev" />
-          <Arrow label={e.next} disabled={start >= max} onClick={() => go(start + 1, 'next')} dir="next" />
+        <div className="flex items-center justify-end gap-3.5 md:ml-auto">
+          <span aria-live="polite" className="text-right text-[14.5px] font-bold text-muted tabular-nums">
+            <LazyMorph armed={armed}>{t('landing.enamed.counter', { n: at + 1, total })}</LazyMorph>
+          </span>
+          <Arrow label={e.prev} disabled={at === 0} onClick={() => go(-1)} dir="prev" />
+          <Arrow label={e.next} disabled={end} onClick={() => go(1)} dir="next" />
         </div>
       </div>
       <div
+        ref={track$}
         role="region"
         aria-roledescription={e.carousel}
         aria-label={e.region}
         tabIndex={0}
-        onKeyDown={(ev) => onKey(ev.key)}
-        className="overflow-hidden rounded-[34px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        onPointerUp={(ev) => {
-          if (perView !== 1) return;
-          const dx = ev.clientX - (Number(ev.currentTarget.dataset.x) || ev.clientX);
-          if (dx > 40) go(start - 1, 'prev');
-          if (dx < -40) go(start + 1, 'next');
+        onScroll={() => { setArmed(true); read(); }}
+        onKeyDown={(ev) => {
+          if (ev.key === 'ArrowRight') { ev.preventDefault(); go(1); }
+          if (ev.key === 'ArrowLeft') { ev.preventDefault(); go(-1); }
         }}
-        onPointerDown={(ev) => { ev.currentTarget.dataset.x = String(ev.clientX); }}
+        className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-[34px] [scrollbar-width:none] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary [&::-webkit-scrollbar]:hidden"
       >
-        <div className="flex transition-transform duration-[550ms] ease-[cubic-bezier(0.22,1,0.36,1)]" style={{ transform: `translateX(-${start * (100 / perView)}%)` }}>
           {slides.map((slide, i) => (
             <article
               key={slide.slug}
               role="group"
               aria-roledescription={e.slide}
               aria-label={t('landing.enamed.slideLabel', { n: i + 1, total })}
-              className="box-border flex h-[420px] shrink-0 flex-col gap-3 px-2.5"
-              style={{ flexBasis: `${100 / perView}%` }}
+              className="box-border flex h-[420px] shrink-0 basis-[89%] snap-start flex-col gap-3 px-2.5 md:basis-1/3"
             >
               <div className="flex h-full flex-col gap-3 rounded-[32px] border border-border bg-surface px-6 py-6 shadow-[0_18px_44px_rgba(36,26,92,0.08)]">
                 <div className="flex items-center justify-between gap-2.5">
@@ -120,17 +121,6 @@ export function EnamedSlider({ slides }: { slides: EnamedSlide[] }) {
               </div>
             </article>
           ))}
-        </div>
-      </div>
-      <div className="mt-1 flex flex-wrap items-center justify-center">
-        {slides.map((slide, i) => {
-          const on = i >= start && i < start + perView;
-          return (
-            <button key={slide.slug} type="button" aria-label={t('landing.enamed.dot', { n: i + 1 })} aria-current={on ? 'true' : undefined} onClick={() => go(i, 'dot')} className="inline-flex h-11 w-11 items-center justify-center">
-              <span className={`block h-3 w-3 origin-center rounded-md bg-primary transition-[transform,opacity] duration-300 ${on ? 'scale-x-[2.33] opacity-100' : 'scale-x-100 opacity-35'}`} />
-            </button>
-          );
-        })}
       </div>
     </div>
   );

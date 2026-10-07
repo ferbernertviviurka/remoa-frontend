@@ -16,8 +16,8 @@ export type IaFeatureState = 'live' | 'soon';
 /** PDF generation and grading are on `/v1/ai`. Question bank and map summary are not shipped (D-1551). */
 export const iaFeatures = (): Record<IaFeature, IaFeatureState> => ({
   pdf: 'live',
-  gerar: 'soon',
+  gerar: 'live',
   corrigir: 'live',
-  resumo: 'soon',
+  resumo: 'live',
 });
 export type LandingFlags = ReturnType<typeof landingFlags>;

@@ -1,5 +1,5 @@
 /* G24 landing demos. Animated properties: transform, opacity, clip-path only. */
-.iaDemo, .caDemo { height: 480px; }
+.iaDemo, .caDemo { height: 540px; }
 @media (min-width: 768px) { .iaDemo, .caDemo { height: 640px; } }
 .lp-ia .k { animation-duration: 20s; animation-timing-function: linear; animation-iteration-count: infinite; }
 .lp-cal .k { animation-duration: 15s; animation-timing-function: linear; animation-iteration-count: infinite; }

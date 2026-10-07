@@ -16,17 +16,16 @@ const ia = strings.landing.ia;
 const en = strings.landing.enamed;
 
 describe('ia honesty', () => {
-  it('does not claim soon features, and PDF stays a Pro link', () => {
+  it('every IA feature is live (no "Em breve"), and PDF stays a Pro link', () => {
     const features = iaFeatures();
-    expect(iaLead(features)).toBe(ia.leadPartial);
-    expect(iaLead(features)).not.toMatch(/perguntas|resumo/i);
+    expect(iaLead(features)).toBe(ia.lead);
     expect(iaCardBody('gerar', 'soon')).toBe(ia.cards.gerar.soonBody);
-    expect(iaCardBody('resumo', 'soon')).toBe(ia.cards.resumo.soonBody);
+    expect(iaCardBody('resumo', 'live')).toBe(ia.cards.resumo.body);
     expect(iaCardBody('pdf', 'live')).toBe(ia.cards.pdf.body);
     expect(ia.lead + ia.leadPartial + ia.warning).not.toMatch(/anti-cola/i);
     render(<IaSection features={features} />);
     expect(screen.getByRole('heading', { level: 2, name: ia.title })).toBeTruthy();
-    expect(screen.getAllByText(ia.soon)).toHaveLength(2);
+    expect(screen.queryByText(ia.soon)).toBeNull();
     expect(screen.getByRole('link', { name: ia.pro })).toHaveAttribute('href', '/#planos');
     expect(screen.getByRole('img', { name: ia.playerLabel })).toBeTruthy();
     expect(screen.getByText(ia.warning)).toBeTruthy();
@@ -60,16 +59,23 @@ describe('enamed slider', () => {
     slug: `t-${i}`, title: item.title, blurb: item.blurb, areaLabel: 'Clínica Médica', tone: 'cm' as const,
   }));
 
-  it('shows three at a time, moves by keyboard and does not autoplay', () => {
+  it('counter follows the native scroll, has no dots and does not autoplay', () => {
     vi.useFakeTimers();
     render(<EnamedSlider slides={slides} />);
-    expect(screen.getByText('Temas 1 a 3 de 10')).toBeTruthy();
+    expect(screen.getByText('Temas 1 de 10')).toBeTruthy();
     expect(screen.getByRole('button', { name: en.prev })).toBeDisabled();
+    expect(screen.getAllByRole('button')).toHaveLength(2);
     const region = screen.getByRole('region', { name: en.region });
-    fireEvent.keyDown(region, { key: 'ArrowRight' });
-    expect(screen.getByText('Temas 2 a 4 de 10')).toBeTruthy();
+    Object.defineProperty(region.firstElementChild, 'offsetWidth', { value: 300 });
+    Object.defineProperties(region, { clientWidth: { value: 375 }, scrollWidth: { value: 3000 }, scrollLeft: { value: 600, writable: true } });
+    fireEvent.scroll(region);
+    expect(screen.getByText('Temas 3 de 10')).toBeTruthy();
+    region.scrollLeft = 2625;
+    fireEvent.scroll(region);
+    expect(screen.getByText('Temas 10 de 10')).toBeTruthy();
+    expect(screen.getByRole('button', { name: en.next })).toBeDisabled();
     vi.advanceTimersByTime(20000);
-    expect(screen.getByText('Temas 2 a 4 de 10')).toBeTruthy();
+    expect(screen.getByText('Temas 10 de 10')).toBeTruthy();
     vi.useRealTimers();
   });
 });
@@ -91,7 +97,7 @@ describe('demo css', () => {
     expect(css).toContain('prefers-reduced-motion: reduce');
     expect(css).toContain('.ia-sc3');
     expect(css).toContain('.ca-sc2');
-    expect(css).toMatch(/height: 480px/);
+    expect(css).toMatch(/height: 540px/);
     expect(css).toMatch(/height: 640px/);
     const frames = css.match(/@keyframes[\s\S]*?}\s*(?=@|\n@media|$)/g) ?? [];
     for (const frame of frames) {

@@ -27,6 +27,21 @@ export const landing = {
       open: 'Abrir menu',
       close: 'Fechar menu',
     },
+    // Mega menu: every feature in one panel, each item jumps to its section.
+    mega: {
+      label: 'Funcionalidades',
+      map: { title: 'Mapa de conceitos', text: 'Cards conectados num canvas' },
+      cards: { title: 'Quatro tipos de card', text: 'Conceito, caso, fluxograma e imagem' },
+      challenge: { title: 'Desafio no mapa', text: 'O próprio mapa vira a prova' },
+      grading: { title: 'Correção com fonte', text: 'Resposta com suas palavras' },
+      fsrs: { title: 'Revisão espaçada', text: 'Revise na hora certa' },
+      enamed: { title: 'Matriz do ENAMED', text: 'Veja o que já cobriu' },
+      pdf: { title: 'PDF vira cards', text: 'A IA cria cards da sua aula' },
+      questions: { title: 'Perguntas por IA', text: 'Objetivas e discursivas' },
+      summary: { title: 'Resumo do mapa', text: 'Cada ponto cita o card' },
+      ready: { title: 'Mapas prontos', text: 'Os 10 temas que mais caem' },
+      calendar: { title: 'Calendário', text: 'Provas e prazos com aviso' },
+    },
     skipLink: 'Pular para o conteúdo',
   },
 
@@ -322,7 +337,7 @@ export const landing = {
   compare: {
     eyebrow: 'Comparação',
     title: 'Use com o Anki. Ou no lugar dele.',
-    scrollLabel: 'Tabela de comparação, role para o lado',
+    scrollLabel: 'Tabela de comparação',
     featureHeader: 'Recurso',
     yes: 'Sim',
     notNative: 'Não nativo',
