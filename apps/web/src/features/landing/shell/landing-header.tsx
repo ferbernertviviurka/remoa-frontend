@@ -13,6 +13,9 @@ import type { HeaderLabelKey } from './header-labels';
 const ANCHORS = [
   ['como-funciona', 'landing.nav.anchors.howWorks'],
   ['recursos', 'landing.nav.anchors.features'],
+  ['ia', 'landing.nav.anchors.ia'],
+  ['enamed', 'landing.nav.anchors.enamed'],
+  ['calendario', 'landing.nav.anchors.calendar'],
   ['planos', 'landing.nav.anchors.plans'],
   ['faq', 'landing.nav.anchors.faq'],
 ] as const;

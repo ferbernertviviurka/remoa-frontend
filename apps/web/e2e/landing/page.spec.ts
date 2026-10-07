@@ -20,13 +20,16 @@ test.describe('desktop', () => {
   test('header anchors scroll to their sections and mark the active one', async ({ page }) => {
     await gotoLanding(page, '/');
     const nav = page.getByRole('navigation', { name: L.nav.navLabel });
-    for (const [label, id] of [[L.nav.anchors.howWorks, 'como-funciona'], [L.nav.anchors.features, 'recursos'], [L.nav.anchors.plans, 'planos'], [L.nav.anchors.faq, 'faq']] as const) {
+    for (const [label, id] of [[L.nav.anchors.howWorks, 'como-funciona'], [L.nav.anchors.features, 'recursos'], [L.nav.anchors.ia, 'ia'], [L.nav.anchors.enamed, 'enamed'], [L.nav.anchors.calendar, 'calendario'], [L.nav.anchors.plans, 'planos'], [L.nav.anchors.faq, 'faq']] as const) {
       await nav.getByRole('link', { name: label }).click();
       await expect(page).toHaveURL(new RegExp(`#${id}$`));
       await expect(page.locator(`#${id}`)).toBeInViewport();
       await expect(nav.getByRole('link', { name: label })).toHaveAttribute('aria-current', 'location');
     }
-    for (const id of ['topo', 'como-funciona', 'recursos', 'experimente', 'planos', 'faq', 'cta']) await expect(page.locator(`#${id}`)).toHaveCount(1);
+    for (const id of ['topo', 'como-funciona', 'recursos', 'ia', 'enamed', 'calendario', 'experimente', 'planos', 'faq', 'cta']) await expect(page.locator(`#${id}`)).toHaveCount(1);
+    const order = await page.evaluate(() => ['recursos', 'ia', 'enamed', 'calendario', 'experimente'].map((id) => document.getElementById(id)?.offsetTop ?? -1));
+    expect(order.every((n) => n >= 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   });
 
