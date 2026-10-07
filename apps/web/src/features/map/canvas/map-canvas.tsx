@@ -10,7 +10,7 @@ import {
   type XYPosition,
 } from '@xyflow/react';
 import {
-  CARD_SIZE_MAX, CARD_SIZE_MIN, CHALLENGE_MIN_CARDS, MAX_CARDS_PER_BOARD, type BoardGraph, type ChallengeOptions, type CardDetail, type CardShape, type CardStudyAction, type CardStudyState, type CardSize, type CardType, type CoverageRow, type MapOp, type MatrixItem, type RetrievabilityMap, type SaveCardInput,
+  CARD_SIZE_MAX, CARD_SIZE_MIN, CHALLENGE_MIN_CARDS, MAX_CARDS_PER_BOARD, type BoardGraph, type ChallengeOptions, type CardDetail, type CardShape, type CardStudyAction, type CardStudyState, type CardSize, type CardType, type CoverageRow, type MapOp, type MatrixItem, type RetrievabilityMap, type SaveCardInput, type StudyOrder,
 } from '@remoa/contracts';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
@@ -172,6 +172,7 @@ function Canvas({ data }: { data: BoardGraph }) {
   const [labelEdit, setLabelEdit] = useState<string | null>(null);
   const [setupOpen, setSetupOpen] = useState(false);
   const [chOptions, setChOptions] = useState<ChallengeOptions | undefined>(undefined);
+  const [chStudyOrder, setChStudyOrder] = useState<StudyOrder | undefined>(undefined);
   const [editing, setEditing] = useState<string | null>(null);
   const [tool, setToolState] = useState<Tool>('select');
   const [touch] = useState(isTouch); // canvas is client-only (lazy, ssr: false), so no hydration mismatch
@@ -586,9 +587,10 @@ function Canvas({ data }: { data: BoardGraph }) {
     [setMode, missing],
   );
   const startChallenge = useCallback(
-    (o: ChallengeOptions) => {
+    (o: ChallengeOptions, studyOrder?: StudyOrder) => {
       setSetupOpen(false);
       setChOptions(o);
+      setChStudyOrder(studyOrder);
       resetChallenge(); // a new choice always starts a fresh session
       setMode('challenge');
     },
@@ -630,8 +632,8 @@ function Canvas({ data }: { data: BoardGraph }) {
   );
 
   useEffect(() => {
-    if (mode === 'challenge' && missing === 0) ensureChallenge(scope, chOptions);
-  }, [mode, scope, ensureChallenge, chOptions, missing]);
+    if (mode === 'challenge' && missing === 0) ensureChallenge(scope, chOptions, chStudyOrder);
+  }, [mode, scope, ensureChallenge, chOptions, chStudyOrder, missing]);
   const current = mode === 'challenge' && chState.phase === 'running' ? chState.items.find((i) => i.id === chState.queue[0]) : undefined;
   const quiz = useMemo(() => quizView(current, graph), [current, graph]);
   // D-689: each tested card gets a smooth zoom-in (450 ms, --map-ease; none with reduced motion), unless it is already well framed
@@ -934,7 +936,7 @@ function Canvas({ data }: { data: BoardGraph }) {
             />
         </div>
       </section>
-      <ChallengeSetupDialog open={setupOpen} onOpenChange={setSetupOpen} onStart={startChallenge} />
+      <ChallengeSetupDialog hasTrail={!!board.path} open={setupOpen} onOpenChange={setSetupOpen} onStart={startChallenge} />
       <Dialog
         open={!!editedEdge}
         onOpenChange={(o) => !o && setLabelEdit(null)}
