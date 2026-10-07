@@ -29,7 +29,7 @@ type Props = {
 
 /**
  * F17 "Sobre o mapa" (FR-2, FR-4–FR-7), the same form on the Anki, PDF and Em branco paths:
- * name (focused) → area (5, changing clears the items) → matrix items (search, up to 10) → access (+ password on Privado).
+ * name (focused) → area (6, changing clears the items) → matrix items (search, up to 10) → access (+ password on Privado).
  */
 export function AboutMapForm({ value, onChange, items, suggestions, showErrors, accessLocked = false, passwordOptional = false }: Props) {
   const nameRef = useRef<HTMLInputElement>(null);
@@ -95,7 +95,7 @@ export function AboutMapForm({ value, onChange, items, suggestions, showErrors, 
         maxMessage={t('newMapAbout.itemsMax', { max: MAX_MATRIX_ITEMS_PER_BOARD })}
         removeChipAriaLabel={(label) => t('newMapAbout.removeItem', { label })}
         emptyLabel={t('newMapAbout.emptySearch')}
-        disabledMessage={value.area === 'CM' ? undefined : t('newMapAbout.noMatrixMessage')}
+        disabledMessage={value.area === 'CM' ? undefined : t(value.area === 'OUTRO' ? 'newMapAbout.noMatrixOther' : 'newMapAbout.noMatrixMessage')}
       />
 
       <div className="flex flex-col gap-2">

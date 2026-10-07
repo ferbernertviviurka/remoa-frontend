@@ -89,6 +89,11 @@ describe('SharedBoardView', () => {
 
   const token = 'A'.repeat(43);
 
+  it('no medical-review disclaimer on an OUTRO map (D-1470)', () => {
+    render(<SharedBoardView board={{ ...sharedBoardFixture, area: 'OUTRO' }} token={token} />);
+    expect(screen.queryByTestId('shared-board-disclaimer')).toBeNull();
+  });
+
   it('shows disclaimer faixa always visible', () => {
     render(<SharedBoardView board={sharedBoardFixture} token={token} />);
     expect(screen.getByTestId('shared-board-disclaimer')).toBeInTheDocument();
