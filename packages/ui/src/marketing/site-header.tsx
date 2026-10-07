@@ -93,6 +93,7 @@ export function SiteHeader({ brand, links, mega, actions, menuLabel, navLabel, o
                 ref={megaBtn}
                 type="button"
                 aria-expanded={megaOpen}
+                aria-current={mega.active ? 'location' : undefined}
                 aria-controls={megaId}
                 onClick={() => setMegaOpen((v) => !v)}
                 className={`${linkCls} cursor-pointer gap-1.5 border-0 bg-transparent ${megaOpen || mega.active ? 'bg-primary-tint text-primary-deep' : ''}`}
