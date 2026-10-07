@@ -65,14 +65,22 @@ type Insets = { top: number; left: number; right: number; bottom: number };
  * (340 px on the right; bottom sheet on the phone), which only exists while a card is selected (D-098).
  * A map that fits at 100% lands where the mock draws it (top 120, left 64).
  */
+/** Phone challenge sheet: share of the pane, flush with the bottom (no nav in the challenge); the wrapper's `h-[58%]` must match. */
+const PHONE_CHALLENGE_SHEET = 0.58;
 function freeArea(panel: boolean, paneHeight = 0, challenge = false): Insets {
-  if (isPhone()) return { top: challenge ? 76 : 72, left: 16, right: 16, bottom: panel ? Math.round(paneHeight * 0.55) + 16 : 96 };
+  if (isPhone()) {
+    const sheet = Math.round(paneHeight * (challenge ? PHONE_CHALLENGE_SHEET : 0.55));
+    return { top: challenge ? 76 : 72, left: 16, right: 16, bottom: panel ? sheet + 16 : 96 };
+  }
   return { top: 120, left: 64, right: panel ? 432 : 64, bottom: 200 };
 }
 const fitOptions = (panel: boolean): FitViewOptions => {
   const a = freeArea(panel, 0);
   return { padding: { top: `${a.top}px`, left: `${a.left}px`, bottom: `${a.bottom}px`, right: `${a.right}px` }, maxZoom: 1, minZoom: ZOOM_MIN };
 };
+/** D-1565: a card's connections (and their labels) stay lit, the rest fade; edges carry `e-<cardId>` classes (toEdge). */
+const focusCss = (id: string, scope: string) =>
+  `${scope} .react-flow__edge:not(.e-${id}),${scope} .cv-elabel:not(.e-${id}){opacity:.12}${scope} .react-flow__edge.e-${id} .react-flow__edge-path{stroke:var(--primary)}`;
 const clampZoom = (z: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
 /** Zoom to `k` keeping the screen point (clientX/Y) still: Safari's pinch (gesture events) and pinches over the floating pieces. */
 function zoomAt(rf: Pick<ReactFlowInstance, 'getViewport' | 'setViewport'>, el: Element, clientX: number, clientY: number, k: number) {
@@ -161,6 +169,16 @@ function Canvas({ data }: { data: BoardGraph }) {
   const queue = useRef<OpQueue | null>(null);
   const [status, setStatus] = useState<QueueStatus>({ state: 'saved', savedAt: null, pending: 0, dropped: false });
   const wrap = useRef<HTMLElement>(null);
+  // hover is written straight into a <style>: a state would re-render the whole canvas on every card the pointer crosses
+  const hoverCss = useRef<HTMLStyleElement>(null);
+  const onNodeMouseEnter = useCallback((_: unknown, n: CardNode) => {
+    wrap.current?.setAttribute('data-hover', '');
+    if (hoverCss.current) hoverCss.current.textContent = focusCss(n.id, '.cv-editor');
+  }, []);
+  const onNodeMouseLeave = useCallback(() => {
+    wrap.current?.removeAttribute('data-hover');
+    if (hoverCss.current) hoverCss.current.textContent = '';
+  }, []);
   const dragStart = useRef(new Map<string, XYPosition>());
   /** D-202: size and position of each card being resized, as they were when the handle was grabbed (the undo). */
   const resizeStart = useRef(new Map<string, { size: CardSize | null; position: XYPosition }>());
@@ -844,6 +862,8 @@ function Canvas({ data }: { data: BoardGraph }) {
             onDoubleClick={onDoubleClick}
             onNodeDoubleClick={onNodeDoubleClick}
             onNodeClick={tool === 'connect' ? onNodeClick : undefined}
+            onNodeMouseEnter={onNodeMouseEnter}
+            onNodeMouseLeave={onNodeMouseLeave}
             onPaneClick={onPaneClick}
             nodesDraggable={tool === 'select' && !touch}
             // G04: threshold 0 = the card keeps the exact grab offset. With the default (1 px) React Flow measures the offset at
@@ -871,6 +891,8 @@ function Canvas({ data }: { data: BoardGraph }) {
             <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="var(--grid-dot)" bgColor="#fbfafe" />
           </ReactFlow>
           {focusNode ? <FocusLayer node={focusNode} /> : null}
+          <style>{selected ? focusCss(selected.id, '.cv-editor:not([data-hover])') : ''}</style>
+          <style ref={hoverCss} />
         </CanvasContext.Provider>
         {mode === 'challenge' ? (
           // F23: the phone challenge shares the phone map's header pill (exit instead of the menu) and sheet margins
@@ -919,7 +941,7 @@ function Canvas({ data }: { data: BoardGraph }) {
         <div
           ref={panelWrap}
           onAnimationEnd={(e) => /^cv-(panel|sheet)-in$/.test(e.animationName) && focusPanel()}
-          className={`pointer-events-none absolute inset-x-3 bottom-[calc(72px+env(safe-area-inset-bottom))] z-20 md:inset-x-auto md:bottom-5 md:right-5 md:top-5 md:h-auto [&>aside]:pointer-events-auto [&>aside]:max-md:w-full [&>aside]:max-md:rounded-b-none ${mode === 'challenge' ? 'h-[78%]' : 'h-[55%]'}`}
+          className={`pointer-events-none absolute inset-x-3 z-20 md:inset-x-auto md:bottom-5 md:right-5 md:top-5 md:h-auto [&>aside]:pointer-events-auto [&>aside]:max-md:w-full [&>aside]:max-md:rounded-b-none ${mode === 'challenge' ? 'bottom-[env(safe-area-inset-bottom)] h-[58%]' : 'bottom-[calc(72px+env(safe-area-inset-bottom))] h-[55%]'}`}
         >
             <Inspector
               board={board}

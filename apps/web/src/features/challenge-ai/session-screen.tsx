@@ -186,14 +186,16 @@ export function SessionScreen({ sessionId, boardId, initial }: Props) {
         ) : !session || session.id !== sessionId || !session.current ? (
           <p role="alert" className="m-0 text-sm">{t('challenge.loadError')}</p>
         ) : (
-          <ItemView key={session.current.id} sessionId={sessionId} item={session.current} onAdvance={() => void advance()} />
+          <ItemView key={session.current.id} sessionId={sessionId} item={session.current} onAdvance={advance} />
         )}
       </div>
     </div>
   );
 }
 
-function ItemView({ sessionId, item, onAdvance }: { sessionId: string; item: AiChallengeItemPublic; onAdvance: () => void }) {
+function ItemView({ sessionId, item, onAdvance }: { sessionId: string; item: AiChallengeItemPublic; onAdvance: () => Promise<void> }) {
+  // D-1566: the next question may still be generating on the server
+  const [advancing, setAdvancing] = useState(false);
   const ids = useId();
   const started = useRef(Date.now());
   const [text, setText] = useState('');
@@ -363,7 +365,7 @@ function ItemView({ sessionId, item, onAdvance }: { sessionId: string; item: AiC
 
       {result ? (
         <div className="flex flex-wrap items-start gap-3">
-          {result.canRetry ? <Button variant="secondary" onClick={retry}>{t('common.retry')}</Button> : <Button onClick={onAdvance}>{t('challengeAi.next')}</Button>}
+          {result.canRetry ? <Button variant="secondary" onClick={retry}>{t('common.retry')}</Button> : <Button loading={advancing} onClick={() => { setAdvancing(true); void onAdvance().finally(() => setAdvancing(false)); }}>{t('challengeAi.next')}</Button>}
           {result.verdict !== null && dispute !== 'sent' ? (
             <Button
               variant="quiet"

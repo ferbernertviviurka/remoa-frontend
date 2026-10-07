@@ -22,10 +22,12 @@ export type DialogProps = {
   icon?: ReactNode;
   /** título e descrição só para leitor de tela (o conteúdo já tem o próprio título visível; ex.: sucesso do Pro) */
   srOnlyHeader?: boolean;
+  /** Ações fixas embaixo, fora da rolagem (só `md`); o título também fica fixo e só o conteúdo rola. */
+  footer?: ReactNode;
 };
 
 const sizes = {
-  md: 'remoa-dialog left-1/2 top-1/2 max-h-[92vh] w-[min(92vw,480px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-review p-6',
+  md: 'remoa-dialog left-1/2 top-1/2 flex max-h-[92dvh] w-[min(92vw,480px)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-review p-6',
   lg: 'remoa-dialog left-1/2 top-[min(140px,8vh)] w-[min(92vw,560px)] -translate-x-1/2 rounded-[30px] p-7',
   xl: 'remoa-dialog left-1/2 top-[min(70px,5vh)] max-h-[92vh] w-[min(92vw,760px)] -translate-x-1/2 overflow-y-auto rounded-[30px] p-7',
   full: 'remoa-sheet inset-0 flex flex-col overflow-hidden p-6',
@@ -34,7 +36,7 @@ const sizes = {
   tour: 'remoa-dialog left-1/2 top-1/2 max-h-[96vh] w-[min(94vw,720px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto outline-none',
 };
 
-export function Dialog({ title, description, closeLabel, trigger, children, size = 'md', icon, srOnlyHeader, ...root }: DialogProps) {
+export function Dialog({ title, description, closeLabel, trigger, children, size = 'md', icon, srOnlyHeader, footer, ...root }: DialogProps) {
   return (
     <RD.Root {...root}>
       {trigger ? <RD.Trigger asChild>{trigger}</RD.Trigger> : null}
@@ -46,7 +48,8 @@ export function Dialog({ title, description, closeLabel, trigger, children, size
           {description ? (
             <RD.Description className={srOnlyHeader ? 'sr-only' : 'mt-1 text-sm text-muted'}>{description}</RD.Description>
           ) : null}
-          <div className={size === 'full' ? 'mt-4 flex min-h-0 flex-1 flex-col' : (size === 'bare' || size === 'form' || size === 'tour') ? '' : 'mt-4'}>{children}</div>
+          <div className={size === 'full' ? 'mt-4 flex min-h-0 flex-1 flex-col' : size === 'md' ? '-mx-2 mt-4 min-h-0 flex-1 overflow-y-auto px-2 pb-1' : (size === 'bare' || size === 'form' || size === 'tour') ? '' : 'mt-4'}>{children}</div>
+          {footer && size === 'md' ? <div className="mt-4 shrink-0">{footer}</div> : null}
           {(size === 'bare' || size === 'form' || size === 'tour') ? null : (
           <RD.Close
             aria-label={closeLabel}

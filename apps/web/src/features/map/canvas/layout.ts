@@ -16,6 +16,8 @@ const trailWidth = (c: Sized) => {
   if (c.type === 'flow') return 368;
   if (c.type === 'case') return 336;
   const len = (c.title?.length ?? 0) + (c.front?.length ?? 0);
+  // "PERGUNTA E RESPOSTA" (ends at 172 px) + gap + "Ver resposta" (94 px, 10 px from the edge) = 288: narrower hides the label
+  if (c.type === 'concept') return len < 115 ? 296 : len < 150 ? 344 : 392;
   return len < 80 ? 248 : len < 115 ? 296 : len < 150 ? 344 : 392;
 };
 /** Lines a text takes in the NodeCard (17.5 px padding each side); `px` = average glyph width of the font. */
@@ -56,9 +58,10 @@ export function autoLayout(
   nodes: { id: string; width?: number; height?: number }[],
   edges: { source: string; target: string }[],
   origin: Position = { x: 0, y: 0 },
+  sep = { node: 40, rank: 96 },
 ): Map<string, Position> {
   const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: 'LR', nodesep: 40, ranksep: 96, marginx: 0, marginy: 0 });
+  g.setGraph({ rankdir: 'LR', nodesep: sep.node, ranksep: sep.rank, marginx: 0, marginy: 0 });
   g.setDefaultEdgeLabel(() => ({}));
   const ids = new Set(nodes.map((n) => n.id));
   for (const n of nodes) g.setNode(n.id, { width: n.width ?? CARD_W, height: n.height ?? CARD_H });

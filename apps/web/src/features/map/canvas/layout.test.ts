@@ -2,40 +2,43 @@ import { describe, expect, it } from 'vitest';
 import type { Board, BoardGraph } from '@remoa/contracts';
 import { sepseBoard, sepseCards } from '@remoa/contracts/mocks';
 import { initialGraph } from './initial-graph';
-import { autoLayout, CARD_H, CARD_W, sizeOf } from './layout';
+import { autoLayout, CARD_H, CARD_W } from './layout';
 
-describe('ready map on the build grid (F31)', () => {
+describe('ready map never sized (F31, D-1565)', () => {
   const base = sepseCards.find((c) => c.type === 'concept')!;
-  const cards = Array.from({ length: 12 }, (_, i) => ({
+  const ids = Array.from({ length: 12 }, (_, i) => `00000000-0000-4000-8000-${String(100 + i).padStart(12, '0')}`);
+  const cards: BoardGraph['cards'] = ids.map((id, i) => ({
     ...base,
-    id: `00000000-0000-4000-8000-${String(100 + i).padStart(12, '0')}`,
+    id,
     size: null,
     frontAssetId: null,
+    back: 'resposta',
     front: 'texto '.repeat(4 + i * 3),
     position: { x: 80 + (i % 2) * 340, y: 80 + Math.floor(i / 2) * 160 },
   }));
-  const graph = (cs = cards, path: Board['path'] = { slug: 'sepse', modulos: ['fisiopatologia'] } as unknown as Board['path']): BoardGraph => ({ board: { ...sepseBoard, path }, cards: cs, edges: [] });
-  const laidOut = (cs: typeof cards) => {
-    const { graph: g, layout } = initialGraph(graph(cs), new Map(), () => '00000000-0000-4000-8000-000000000001');
-    return { layout, cards: cards.map((c) => ({ ...c, position: g.nodes.find((n) => n.id === c.id)!.position })) };
-  };
+  // a chain with a branch: card i links to i + 1, and 0 also to 6
+  const edge = (id: string, fromCardId: string, toCardId: string) => ({ id, boardId: sepseBoard.id, fromCardId, toCardId, label: null, question: null });
+  const edges = [...ids.slice(1).map((to, i) => edge(`e${i}`, ids[i]!, to)), edge('e-x', ids[0]!, ids[6]!)];
+  const path = { slug: 'sepse', modulos: ['fisiopatologia'] } as unknown as Board['path'];
+  const graph = (cs = cards, p: Board['path'] = path): BoardGraph => ({ board: { ...sepseBoard, path: p }, cards: cs, edges });
+  const newId = () => '00000000-0000-4000-8000-000000000001';
 
-  it('build grid or old columns: module blocks, varied sizes, no overlap, once', () => {
-    const stacked = cards.map((c, i) => ({ ...c, position: { x: 80 + (i % 2) * 400, y: 80 + Math.floor(i / 2) * 300 } }));
-    for (const start of [cards, stacked]) {
-      const { layout, cards: out } = laidOut(start);
-      expect(layout).toHaveLength(1);
-      const boxes = out.map((c) => ({ ...c.position, ...sizeOf(c, true)! }));
-      expect(new Set(boxes.map((b) => b.w)).size).toBeGreaterThan(2);
-      expect(boxes.some((b) => b.h > CARD_H)).toBe(true);
-      for (let i = 0; i < boxes.length; i++)
-        for (let j = i + 1; j < boxes.length; j++) {
-          const a = boxes[i]!;
-          const b = boxes[j]!;
-          expect(a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h, `${i} × ${j}`).toBe(false);
-        }
-      expect(laidOut(out).layout).toEqual([]);
-    }
+  it('lays out by the connections once, with content sizes saved and the label clear of the flip button', () => {
+    const { graph: g, layout } = initialGraph(graph(), new Map(), newId);
+    expect(layout.map((o) => o.op)).toEqual(['moveCards', 'resizeCards']);
+    const boxes = g.nodes.map((n) => ({ id: n.id, ...n.position, ...n.data.card.size! }));
+    expect(boxes.every((b) => b.w >= 296)).toBe(true);
+    expect(new Set(boxes.map((b) => b.w)).size).toBeGreaterThan(1);
+    for (let i = 0; i < boxes.length; i++)
+      for (let j = i + 1; j < boxes.length; j++) {
+        const a = boxes[i]!;
+        const b = boxes[j]!;
+        expect(a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h, `${i} × ${j}`).toBe(false);
+      }
+    const at = new Map(boxes.map((b) => [b.id, b]));
+    for (const e of edges) expect(at.get(e.toCardId)!.x).toBeGreaterThan(at.get(e.fromCardId)!.x);
+    const after = g.nodes.map((n) => n.data.card);
+    expect(initialGraph(graph(after), new Map(), newId).layout).toEqual([]);
   });
 
   it("leaves a student's own map alone", () => {
