@@ -34,6 +34,16 @@ export const challengeAi = {
   dontKnow: 'Não sei',
   bankTitle: 'Banco de questões',
   summaryButton: 'Resumo com IA',
+  summarySize: {
+    quick: 'Rápido',
+    standard: 'Padrão',
+    full: 'Completo',
+  },
+  summaryFocus: {
+    overview: 'Visão geral',
+    high_yield: 'O que costuma cair',
+    exam_eve: 'Véspera de prova',
+  },
   summaryDisclaimer: 'Gerado por IA a partir do seu mapa. Confira a fonte.',
   summaryStale: 'O mapa mudou desde este resumo. Gerar de novo',
   copy: 'Copiar',
