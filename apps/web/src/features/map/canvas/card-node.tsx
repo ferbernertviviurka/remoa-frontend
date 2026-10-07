@@ -2,10 +2,10 @@
 
 import { memo, useCallback, useContext, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
 import { Handle, NodeResizeControl, Position, useStore, type ControlPosition, type NodeProps, type ReactFlowState } from '@xyflow/react';
-import { CARD_SIZE_MAX, CARD_SIZE_MIN, caseStages, type Card, type CardDetail, type CaseStage as Stage, type MapState } from '@remoa/contracts';
+import { CARD_SIZE_MAX, CARD_SIZE_MIN, caseStages, type Card, type CardDetail, type CardSize, type CaseStage as Stage, type MapState } from '@remoa/contracts';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
-import { CaseStageList, NodeCard, StepTimeline, type CaseStage, type NodeCardProps, type NodeLayer, type NodeStep } from '@remoa/ui';
+import { CaseStageList, NodeCard, StepTimeline, nodeSize, type CaseStage, type NodeCardProps, type NodeLayer, type NodeStep } from '@remoa/ui';
 import { useCardFace, type CardFace } from '@/features/cards/card-face';
 import { useAsset, useAssets } from '@/features/cards/upload';
 import { CanvasContext, isDue } from './canvas-context';
@@ -69,12 +69,24 @@ export function caseStageItems(
 
 const list = 'm-0 flex list-none flex-col gap-1 p-0';
 
+/** When the user has not resized, grow concept/note height from question text (ENAMED seeds ship long fronts). */
+function contentFitSize(card: Card, summary: string | null, showFrontImage: boolean): CardSize | null {
+  if (card.size) return card.size;
+  if (card.type !== 'concept' && card.type !== 'note') return null;
+  const shape = card.shape ?? 'rect';
+  const base = nodeSize(card.type, shape, { frontImage: showFrontImage });
+  const chars = (card.title?.length ?? 0) + (summary?.length ?? 0);
+  const extraLines = Math.max(0, Math.ceil(chars / 38) - 3);
+  const h = Math.min(CARD_SIZE_MAX.h, base.h + extraLines * 18);
+  return h > base.h ? { w: base.w, h } : null;
+}
+
 /** D-097: the back face. Flow steps, case stages and mask labels come from the card detail, fetched only once flipped. */
 function Back({ card, face, detail, weak }: { card: Card; face: CardFace; detail: CardDetail | null; weak: (stepId: string) => boolean }): ReactNode {
   const ids = detail?.type === 'flow' ? (detail.payload.steps ?? []).map((s) => s.assetId) : detail?.type === 'case' ? (detail.payload.caseSteps ?? []).map((s) => s.assetId) : [];
   const assets = useAssets(ids);
   const src = (id: string) => assets.get(id)?.urls.w800 ?? null;
-  if (card.type === 'concept') return face.answer ? <p className="m-0 line-clamp-6">{face.answer}</p> : null;
+  if (card.type === 'concept') return face.answer ? <p className="m-0 whitespace-pre-wrap break-words">{face.answer}</p> : null;
   if (!detail) return <p className="m-0 text-muted">{t('canvas.backLoading')}</p>;
   if (detail.type === 'flow') {
     const steps: NodeStep[] = (detail.payload.steps ?? []).map((s, i) => ({
@@ -114,6 +126,7 @@ export function useNodeCardProps(id: string, card: Card, selected: boolean): Nod
   const cached = useCardDetail(card.type === 'case' ? id : null, prepare, false);
   const frontAsset = useAsset(card.frontAssetId);
   const backAsset = useAsset(showBack ? card.backAssetId : null);
+  const showFrontImage = !!card.frontAssetId && card.type !== 'image';
   const subs = entry?.subs;
   const steps = useMemo<NodeStep[] | undefined>(
     () =>
@@ -155,7 +168,7 @@ export function useNodeCardProps(id: string, card: Card, selected: boolean): Nod
     challenge: target ? 'target' : undefined,
     summary: face.summary ?? undefined,
     caseStages: stages,
-    size: card.size ?? undefined,
+    size: contentFitSize(card, face.summary, showFrontImage) ?? undefined,
     backImage,
     steps,
     image,

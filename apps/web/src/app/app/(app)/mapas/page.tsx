@@ -13,7 +13,7 @@ type StringKey = Parameters<typeof t>[0];
 export const metadata: Metadata = { title: t('pages.library') };
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ aba?: string }> }) {
-  if ((await searchParams).aba === 'biblioteca') return <div className="mx-auto flex w-full max-w-5xl flex-col gap-4"><MapsTabs active="library" /><LibraryView /></div>;
+  if ((await searchParams).aba === 'biblioteca') return <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 md:px-6 md:py-[13px]"><MapsTabs active="library" /><LibraryView /></div>;
   const r = await serverApi<BoardSummary[]>('/v1/boards?include=preview');
   if (!r.ok) return <EmptyState title={t('boards.title')} body={t(`errors.${r.error.code}` as StringKey)} />;
   return <><MapsTabs active="mine" /><BoardsView boards={r.data} /></>;
