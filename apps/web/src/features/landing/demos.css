@@ -3,7 +3,7 @@
 @media (min-width: 768px) { .iaDemo, .caDemo { height: 640px; } }
 .lp-ia .k { animation-duration: 20s; animation-timing-function: linear; animation-iteration-count: infinite; }
 .lp-cal .k { animation-duration: 15s; animation-timing-function: linear; animation-iteration-count: infinite; }
-.lp-ia.is-paused .k, .lp-cal.is-paused .k { animation-play-state: paused; }
+.lp-ia.is-paused .k, .lp-cal.is-paused .k, .lp-ia.is-paused .iaDots { animation-play-state: paused; }
 .stepGlow, .toggleFill { opacity: 0; }
 .iaDots { animation-name: iaDots; animation-duration: .9s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
 .iaDots.d1 { animation-delay: .15s; }

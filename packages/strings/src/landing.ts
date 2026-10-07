@@ -549,8 +549,8 @@ export const landing = {
   },
 
   seo: {
-    title: 'Remoa: mapas com IA, Enamed e calendário',
-    description: 'Mapas para a residência: a IA cria cards e corrige com fonte, mapas prontos do Enamed e calendário de provas.',
+    title: 'Remoa: IA, Enamed e calendário da residência médica',
+    description: 'Mapas para a residência médica: a IA cria cards e corrige com fonte, mapas prontos do Enamed e calendário de provas.',
     ogTitle: 'O que você aprende, fica.',
     ogDescription: 'Mapas de medicina que te testam pela conexão.',
     orgName: 'Remoa',

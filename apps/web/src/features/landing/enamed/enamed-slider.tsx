@@ -127,7 +127,7 @@ export function EnamedSlider({ slides }: { slides: EnamedSlide[] }) {
           const on = i >= start && i < start + perView;
           return (
             <button key={slide.slug} type="button" aria-label={t('landing.enamed.dot', { n: i + 1 })} aria-current={on ? 'true' : undefined} onClick={() => go(i, 'dot')} className="inline-flex h-11 w-11 items-center justify-center">
-              <span className={`block h-3 rounded-md transition-[width,background-color] duration-300 ${on ? 'w-7 bg-primary' : 'w-3 bg-[#D9D4F0]'}`} />
+              <span className={`block h-3 w-3 origin-center rounded-md bg-primary transition-[transform,opacity] duration-300 ${on ? 'scale-x-[2.33] opacity-100' : 'scale-x-100 opacity-35'}`} />
             </button>
           );
         })}
