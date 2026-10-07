@@ -40,6 +40,11 @@ export const home = {
   coverageEmpty: 'Ligue um mapa a um item da matriz ao criar para ver a cobertura aqui.',
   weekBarLabel: '{dia}: {done} feitos, {planned} previstos',
   loadError: 'Não foi possível carregar o resumo de hoje.',
+  libraryBanner: {
+    title: 'Mapas prontos atualizados na biblioteca',
+    body: 'Trilhas validadas pela Remoa, com fontes oficiais em cada card. Use uma cópia sua e ela entra na cobertura da matriz do Enamed.',
+    cta: 'Abrir biblioteca de mapas',
+  },
   slider: {
     title: 'Continue de onde parou',
     viewAll: 'Ver todos',

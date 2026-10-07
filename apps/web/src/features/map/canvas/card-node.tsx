@@ -11,6 +11,7 @@ import { useAsset, useAssets } from '@/features/cards/upload';
 import { CanvasContext, isDue } from './canvas-context';
 import { useCardDetail } from './card-detail';
 import { heatOf, type CardNode } from './graph';
+import { contentSize } from './layout';
 
 const t = withStrings({ canvas: more.canvas, cards: more.cards });
 
@@ -74,7 +75,7 @@ function Back({ card, face, detail, weak }: { card: Card; face: CardFace; detail
   const ids = detail?.type === 'flow' ? (detail.payload.steps ?? []).map((s) => s.assetId) : detail?.type === 'case' ? (detail.payload.caseSteps ?? []).map((s) => s.assetId) : [];
   const assets = useAssets(ids);
   const src = (id: string) => assets.get(id)?.urls.w800 ?? null;
-  if (card.type === 'concept') return face.answer ? <p className="m-0 line-clamp-6">{face.answer}</p> : null;
+  if (card.type === 'concept') return face.answer ? <p className="m-0 whitespace-pre-wrap break-words">{face.answer}</p> : null;
   if (!detail) return <p className="m-0 text-muted">{t('canvas.backLoading')}</p>;
   if (detail.type === 'flow') {
     const steps: NodeStep[] = (detail.payload.steps ?? []).map((s, i) => ({
@@ -101,7 +102,7 @@ function Back({ card, face, detail, weak }: { card: Card; face: CardFace; detail
 
 /** NodeCard props for a map card: shared by the React Flow node and the sharp copy drawn over the blurred canvas (challenge). */
 export function useNodeCardProps(id: string, card: Card, selected: boolean): NodeCardProps {
-  const { layer, challenge, quiz, heat, edgeCounts, coverageItem, endOfToday, selectCard, prepare } = useContext(CanvasContext);
+  const { layer, challenge, quiz, heat, edgeCounts, coverageItem, endOfToday, selectCard, prepare, trail } = useContext(CanvasContext);
   const [flipped, setFlipped] = useState(false); // local only (D-097): never persisted, reset when the node unmounts
   const entry = heat[id];
   const state = heatOf(id, heat);
@@ -155,7 +156,7 @@ export function useNodeCardProps(id: string, card: Card, selected: boolean): Nod
     challenge: target ? 'target' : undefined,
     summary: face.summary ?? undefined,
     caseStages: stages,
-    size: card.size ?? undefined,
+    size: contentSize(card, trail) ?? undefined,
     backImage,
     steps,
     image,
@@ -205,9 +206,10 @@ const lodLow = (s: ReactFlowState) => s.transform[2] < LOD_ZOOM && s.nodes.lengt
 export const CardNodeView = memo(function CardNodeView({ id, data, selected }: NodeProps<CardNode>) {
   const full = useNodeCardProps(id, data.card, selected);
   const lod = useStore(lodLow);
-  // D-339: far out (many cards on screen) only the title/colour block is drawn: no images, steps, summary or back
+  // D-339: far out (many cards on screen) only the title/colour block is drawn: no steps, summary, back or question images.
+  // An image card keeps its picture (it is the card's content, and a map has a handful of them).
   const p = useMemo<NodeCardProps>(
-    () => (lod ? { ...full, summary: undefined, caseStages: undefined, steps: undefined, image: undefined, frontImage: undefined, backImage: undefined, back: undefined, footer: undefined } : full),
+    () => (lod ? { ...full, summary: undefined, caseStages: undefined, steps: undefined, frontImage: undefined, backImage: undefined, back: undefined, footer: undefined } : full),
     [lod, full],
   );
   const { resizable } = useContext(CanvasContext);

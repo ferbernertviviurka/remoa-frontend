@@ -1,6 +1,7 @@
 export { Button, type ButtonProps } from './button';
 export { buttonVariants, focusRing, pressable, fieldControl } from './button-styles'; // D-535: lets optimizePackageImports skip button.tsx
 export * from './morph';
+export * from './morph-lazy';
 export * from './icon-button';
 export * from './input';
 export * from './textarea';

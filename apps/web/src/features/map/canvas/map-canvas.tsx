@@ -138,6 +138,7 @@ const legendLabels = { review: t('mapState.review'), watch: t('mapState.watch'),
 
 function Canvas({ data }: { data: BoardGraph }) {
   const board = data.board;
+  const trail = !!board.path;
   const rf = useReactFlow<CardNode, LinkEdge>();
   const { toast } = useToast();
   const paywall = usePaywall();
@@ -327,11 +328,11 @@ function Canvas({ data }: { data: BoardGraph }) {
       void Promise.all(imageIdsOf(after).map(loadAsset)).then((assets) => {
         const card = g.current.nodes.find((n) => n.id === d.id)?.data.card;
         if (!card || (card.type === 'concept' && card.shape !== 'rect')) return;
-        const size = fitToImages(sizeOf(card), assets.filter((a) => a !== null), desktopFrame(card));
+        const size = fitToImages(sizeOf(card, trail), assets.filter((a) => a !== null), desktopFrame(card));
         if (size) commit([{ op: 'resizeCards', opId: uuid(), boardId: board.id, sizes: [{ cardId: d.id, size }] }]);
       });
     },
-    [board.id, commit, setGraph],
+    [board.id, commit, setGraph, trail],
   );
 
   /** G04: shape preview while the editor autosaves it (and the rollback); sizeOf/nodeSize follow `card.shape`. */
@@ -484,7 +485,7 @@ function Canvas({ data }: { data: BoardGraph }) {
 
   const organize = useCallback(() => {
     const { nodes, edges } = g.current;
-    const pos = autoLayout(nodes.map((n) => ({ id: n.id, width: n.measured?.width ?? sizeOf(n.data.card).w, height: n.measured?.height ?? sizeOf(n.data.card).h })), edges);
+    const pos = autoLayout(nodes.map((n) => ({ id: n.id, width: n.measured?.width ?? sizeOf(n.data.card, trail).w, height: n.measured?.height ?? sizeOf(n.data.card, trail).h })), edges);
     const moves = nodes.flatMap((n) => {
       const p = pos.get(n.id)!;
       return p.x !== n.position.x || p.y !== n.position.y ? [{ cardId: n.id, position: p }] : [];
@@ -492,7 +493,7 @@ function Canvas({ data }: { data: BoardGraph }) {
     if (!moves.length) return;
     commit([{ op: 'moveCards', opId: uuid(), boardId: board.id, moves }]);
     requestAnimationFrame(() => void rf.fitView({ ...fitOptions(g.current.nodes.some((n) => n.selected)), duration: 300 }));
-  }, [board.id, commit, rf]);
+  }, [board.id, commit, rf, trail]);
 
   /** Deletes cards/edges; asks first when a card still has connections (they go too). */
   const remove = useCallback((cardIds: string[], edgeIds: string[]) => {
@@ -632,11 +633,11 @@ function Canvas({ data }: { data: BoardGraph }) {
       select(id);
       const n = g.current.nodes.find((x) => x.id === id);
       if (n) {
-        const { w, h } = sizeOf(n.data.card);
+        const { w, h } = sizeOf(n.data.card, trail);
         void rf.setCenter(n.position.x + w / 2, n.position.y + h / 2, { zoom: Math.max(rf.getZoom(), 1), duration: 300 });
       }
     },
-    [rf, select],
+    [rf, select, trail],
   );
 
   useEffect(() => {
@@ -650,7 +651,7 @@ function Canvas({ data }: { data: BoardGraph }) {
     const n = currentCard ? g.current.nodes.find((x) => x.id === currentCard) : undefined;
     const pane = wrap.current?.getBoundingClientRect();
     if (!n || !pane) return;
-    const { w, h } = sizeOf(n.data.card);
+    const { w, h } = sizeOf(n.data.card, trail);
     const a = rf.flowToScreenPosition(n.position);
     const b = rf.flowToScreenPosition({ x: n.position.x + w, y: n.position.y + h });
     // same free area as the fit: below the layers bar, above the toolbar, clear of the challenge panel
@@ -661,7 +662,7 @@ function Canvas({ data }: { data: BoardGraph }) {
     const k = clampZoom(target);
     // centre of the free area (phone: above the sheet)
     void rf.setCenter(n.position.x + w / 2 + (f.right - f.left) / 2 / k, n.position.y + h / 2 + (f.bottom - f.top) / 2 / k, { zoom: k, ...cameraMove() });
-  }, [currentCard, rf]);
+  }, [currentCard, rf, trail]);
 
   const edgeCountsRef = useRef<ReadonlyMap<string, number>>(new Map());
   const edgeCounts = useMemo(() => (edgeCountsRef.current = countEdges(graph.edges, edgeCountsRef.current)), [graph.edges]);
@@ -671,8 +672,9 @@ function Canvas({ data }: { data: BoardGraph }) {
       selectCard: select, editLabel: setLabelEdit, prepare: prepareCard,
       // D-202 + D-148: resize handles only where cards are edited with a mouse (not on touch, not in the challenge)
       resizable: !touch && mode === 'explore' && tool === 'select',
+      trail,
     }),
-    [layer, mode, quiz, retrievability, edgeCounts, coverage, endOfToday, select, prepareCard, touch, tool],
+    [layer, mode, quiz, retrievability, edgeCounts, coverage, endOfToday, select, prepareCard, touch, tool, trail],
   );
 
   const selectedNodes = graph.nodes.filter((n) => n.selected);

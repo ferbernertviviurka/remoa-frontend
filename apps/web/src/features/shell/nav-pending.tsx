@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ComponentProps, type MouseEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { HomeSkeleton, BoardsSkeleton, EditorSkeleton, PageSkeleton, ReviewSkeleton } from './skeletons';
+import { HomeSkeleton, BoardsSkeleton, EditorSkeleton, PageSkeleton, ReviewSkeleton, SeedDetailSkeleton } from './skeletons';
 
 /**
  * Destino de um clique ainda não commitado (trilho, barra inferior, logo, avatar, MapTile). Vale só enquanto a rota for a do
@@ -39,7 +39,9 @@ export function NavPendingProvider({ children }: { children: ReactNode }) {
 
 const skeletons: Record<string, () => ReactNode> = { '/app/hoje': HomeSkeleton, '/app/mapas': BoardsSkeleton, '/app/revisar': ReviewSkeleton };
 /** G02: a map opened from a MapTile (Hoje, Meus mapas) shows the editor skeleton on the click; any other route the generic one. */
-const skeletonOf = (href: string) => skeletons[href] ?? (/^\/app\/mapas\/[0-9a-f-]{36}$/.test(href) ? EditorSkeleton : PageSkeleton);
+const skeletonOf = (href: string) =>
+  skeletons[href]
+  ?? (/^\/app\/mapas\/prontos\/[0-9a-f-]{36}$/i.test(href) ? SeedDetailSkeleton : /^\/app\/mapas\/[0-9a-f-]{36}$/i.test(href) ? EditorSkeleton : PageSkeleton);
 
 /** next/link that marks its destination as pending on a plain click (MapTile `as`), so `MainSlot` swaps in its skeleton at once. */
 export function PendingLink({ onClick, ...p }: ComponentProps<typeof Link>) {

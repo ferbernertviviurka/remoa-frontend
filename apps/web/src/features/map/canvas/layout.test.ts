@@ -1,5 +1,47 @@
 import { describe, expect, it } from 'vitest';
-import { autoLayout, CARD_H, CARD_W } from './layout';
+import type { Board, BoardGraph } from '@remoa/contracts';
+import { sepseBoard, sepseCards } from '@remoa/contracts/mocks';
+import { initialGraph } from './initial-graph';
+import { autoLayout, CARD_H, CARD_W, sizeOf } from './layout';
+
+describe('ready map on the build grid (F31)', () => {
+  const base = sepseCards.find((c) => c.type === 'concept')!;
+  const cards = Array.from({ length: 12 }, (_, i) => ({
+    ...base,
+    id: `00000000-0000-4000-8000-${String(100 + i).padStart(12, '0')}`,
+    size: null,
+    frontAssetId: null,
+    front: 'texto '.repeat(4 + i * 3),
+    position: { x: 80 + (i % 2) * 340, y: 80 + Math.floor(i / 2) * 160 },
+  }));
+  const graph = (cs = cards, path: Board['path'] = { slug: 'sepse', modulos: ['fisiopatologia'] } as unknown as Board['path']): BoardGraph => ({ board: { ...sepseBoard, path }, cards: cs, edges: [] });
+  const laidOut = (cs: typeof cards) => {
+    const { graph: g, layout } = initialGraph(graph(cs), new Map(), () => '00000000-0000-4000-8000-000000000001');
+    return { layout, cards: cards.map((c) => ({ ...c, position: g.nodes.find((n) => n.id === c.id)!.position })) };
+  };
+
+  it('build grid or old columns: module blocks, varied sizes, no overlap, once', () => {
+    const stacked = cards.map((c, i) => ({ ...c, position: { x: 80 + (i % 2) * 400, y: 80 + Math.floor(i / 2) * 300 } }));
+    for (const start of [cards, stacked]) {
+      const { layout, cards: out } = laidOut(start);
+      expect(layout).toHaveLength(1);
+      const boxes = out.map((c) => ({ ...c.position, ...sizeOf(c, true)! }));
+      expect(new Set(boxes.map((b) => b.w)).size).toBeGreaterThan(2);
+      expect(boxes.some((b) => b.h > CARD_H)).toBe(true);
+      for (let i = 0; i < boxes.length; i++)
+        for (let j = i + 1; j < boxes.length; j++) {
+          const a = boxes[i]!;
+          const b = boxes[j]!;
+          expect(a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h, `${i} × ${j}`).toBe(false);
+        }
+      expect(laidOut(out).layout).toEqual([]);
+    }
+  });
+
+  it("leaves a student's own map alone", () => {
+    expect(initialGraph(graph(cards, null), new Map()).layout).toEqual([]);
+  });
+});
 
 describe('autoLayout', () => {
   it('60 cards: no overlap, integer positions on the 8px grid', () => {

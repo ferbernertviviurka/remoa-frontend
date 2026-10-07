@@ -3,8 +3,9 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import type { AdminMapPage, AdminMapRow } from '@remoa/contracts';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() }), usePathname: () => '/admin/mapas', useSearchParams: () => new URLSearchParams() }));
+const approveSeedMap = vi.fn();
 const runAdminAction = vi.fn();
-vi.mock('../shared/actions', () => ({ runAdminAction: (...a: unknown[]) => runAdminAction(...a) }));
+vi.mock('../shared/actions', () => ({ approveSeedMap: (...a: unknown[]) => approveSeedMap(...a), runAdminAction: (...a: unknown[]) => runAdminAction(...a) }));
 vi.mock('../list-kit/detail-action', () => ({ fetchAdminDetail: vi.fn().mockResolvedValue({ ok: false, code: 'not_found' }) }));
 vi.mock('./audit-map-viewer', () => ({ AuditMapViewer: (p: { title: string; auditId: string }) => <div role="dialog" aria-label={p.title}>Modo auditoria {p.auditId}</div> }));
 const { MapsView } = await import('./maps-view');
@@ -40,9 +41,15 @@ describe('Mapas', () => {
   });
 
   it('seed draft offers approve (not archive); approved offers unpublish', async () => {
+    approveSeedMap.mockResolvedValue({ ok: true, auditId: 'a_approve', data: {} });
     render(<MapsView data={page([row({ status: 'seed_draft', origin: 'seed' })])} error={null} page={1} />);
     fireEvent.click(screen.getAllByRole('button', { name: /Sepse/ })[0]!);
     expect(await screen.findByRole('button', { name: 'Aprovar seed' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Aprovar seed' }));
+    const dialog = screen.getByRole('alertdialog');
+    fireEvent.change(within(dialog).getByLabelText('Motivo (obrigatório)'), { target: { value: 'Validado por Remoa' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Aprovar' }));
+    await waitFor(() => expect(approveSeedMap).toHaveBeenCalledWith('b1', { reason: 'Validado por Remoa', institutional: true }));
     expect(screen.queryByRole('button', { name: 'Arquivar' })).not.toBeInTheDocument();
     cleanup();
     render(<MapsView data={page([row({ status: 'seed_approved', origin: 'seed' })])} error={null} page={1} />);

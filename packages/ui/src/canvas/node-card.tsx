@@ -436,7 +436,7 @@ export const NodeCard = memo(function NodeCard({
 function Pic({ image, grow }: { image?: NodeImage | null; grow?: boolean }) {
   const ph = image && !image.src;
   return (
-    <span role={ph ? 'img' : undefined} aria-label={ph ? image.alt : undefined} className={clsx('relative block overflow-hidden rounded-[10px] bg-(--cv-panel-dark)', grow ? 'min-h-8 flex-1' : 'h-[84px] shrink-0')}>
+    <span role={ph ? 'img' : undefined} aria-label={ph ? image.alt : undefined} className={clsx('relative block overflow-hidden rounded-[10px]', image?.src ? 'border border-(--cv-line-soft) bg-canvas' : 'bg-(--cv-panel-dark)', grow ? 'min-h-8 flex-1' : 'h-[84px] shrink-0')}>
       {image?.src ? (
         // object-contain: the whole picture is the content (a cropped X-ray or ECG hides the answer); the map grows the card to its ratio (D-1211)
         <img src={image.src} alt={image.alt} loading="lazy" draggable={false} className="size-full object-contain" />

@@ -12,9 +12,24 @@ import type { HeaderLabelKey } from './header-labels';
 
 const ANCHORS = [
   ['como-funciona', 'landing.nav.anchors.howWorks'],
-  ['recursos', 'landing.nav.anchors.features'],
   ['planos', 'landing.nav.anchors.plans'],
   ['faq', 'landing.nav.anchors.faq'],
+] as const;
+/** Sections grouped under the "Funcionalidades" mega menu; the trigger lights up while one of them is in view. */
+const FEATURE_SECTIONS = ['recursos', 'ia', 'enamed', 'calendario'];
+const SPY = ['como-funciona', ...FEATURE_SECTIONS, 'planos', 'faq'];
+const MEGA = [
+  ['map', 'maps', '/#recurso-map'],
+  ['cards', 'layers', '/#recurso-cards'],
+  ['challenge', 'target', '/#recurso-challenge'],
+  ['grading', 'check', '/#recurso-grading'],
+  ['fsrs', 'clock', '/#recurso-fsrs'],
+  ['enamed', 'bars', '/#enamed'],
+  ['pdf', 'upload', '/#ia'],
+  ['questions', 'sparkle', '/#ia'],
+  ['summary', 'list', '/#ia'],
+  ['ready', 'book', '/mapas-prontos'],
+  ['calendar', 'calendar', '/#calendario'],
 ] as const;
 
 const btn = 'inline-flex min-h-11 items-center justify-center rounded-[14px] px-4 text-[15px] font-bold no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
@@ -64,7 +79,7 @@ export function LandingHeader({ phase, labels, blogLabel, signedIn: signedInProp
     const pick = () => {
       queued = false;
       const line = 92 + window.innerHeight * 0.25;
-      const els = ANCHORS.map(([id]) => document.getElementById(id)).filter((e): e is HTMLElement => !!e);
+      const els = SPY.map((id) => document.getElementById(id)).filter((e): e is HTMLElement => !!e);
       setActive(els.reverse().find((e) => e.getBoundingClientRect().top <= line && e.getBoundingClientRect().bottom > line)?.id ?? '');
     };
     const onScroll = () => { if (!queued) { queued = true; requestAnimationFrame(pick); } };
@@ -76,6 +91,11 @@ export function LandingHeader({ phase, labels, blogLabel, signedIn: signedInProp
   return (
     <SiteHeader
       brand={<Link href={signedIn ? '/app/hoje' : '/'} aria-label={t(signedIn ? 'landing.nav.wordmark.ariaApp' : 'landing.nav.wordmark.aria')} className="inline-flex min-h-11 items-center no-underline"><Logo size={30} withWordmark /></Link>}
+      mega={{
+        label: t('landing.nav.mega.label'),
+        active: FEATURE_SECTIONS.includes(active),
+        items: MEGA.map(([k, icon, href]) => ({ href, icon, title: t(`landing.nav.mega.${k}.title`), text: t(`landing.nav.mega.${k}.text`) })),
+      }}
       links={[...ANCHORS.map(([id, key]) => ({ href: `/#${id}`, label: t(key), active: active === id })), { href: '/blog', label: blogLabel }]}
       menuLabel={t('landing.nav.menu.aria')}
       navLabel={t('landing.nav.navLabel')}

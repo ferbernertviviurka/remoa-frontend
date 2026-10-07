@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { strings, t } from '@remoa/strings/landing';
 import { FeatureExplorer, Section, type FeatureItem } from '@remoa/ui';
 import type { LandingFlags } from '../flags';
@@ -41,7 +41,8 @@ function useAutoAdvance(active: string, setActive: (id: string) => void) {
     const timer = setTimeout(() => setActive(FEATURE_IDS[(i + 1) % FEATURE_IDS.length]!), AUTO_MS);
     return () => clearTimeout(timer);
   }, [running, active, setActive]);
-  return { ref, running, showBar: armed && !stopped, stop: () => setStopped(true) };
+  const stop = useCallback(() => setStopped(true), []);
+  return { ref, running, showBar: armed && !stopped, stop };
 }
 
 /** Decorative step bar (the tabs already expose the state): done steps full, the current one fills over AUTO_MS while running. */
@@ -66,6 +67,21 @@ export function FeaturesSection({ flags }: { flags?: Partial<LandingFlags> }) {
   const approved = !!flags?.approvedContent;
   const [active, setActive] = useState<string>(FEATURE_IDS[0]);
   const auto = useAutoAdvance(active, setActive);
+  const stop = auto.stop;
+  useEffect(() => {
+    // Header mega menu links to `#recurso-<id>`: open that tab, scroll to the section, then reset the hash so the same link works again.
+    const open = () => {
+      const id = /^#recurso-(.+)$/.exec(location.hash)?.[1];
+      if (!id || !FEATURE_IDS.includes(id as (typeof FEATURE_IDS)[number])) return;
+      stop();
+      setActive(id);
+      document.getElementById('recursos')?.scrollIntoView({ block: 'start' });
+      history.replaceState(null, '', '#recursos');
+    };
+    open();
+    window.addEventListener('hashchange', open);
+    return () => window.removeEventListener('hashchange', open);
+  }, [stop]);
   const items: FeatureItem[] = strings.landing.explorer.items.map((it, i) => {
     const id = FEATURE_IDS[i]!;
     return { id, title: it.title, description: id === 'grading' ? (approved ? strings.landing.grading.textApproved : strings.landing.grading.text) : it.description, benefits: [...(id === 'grading' && approved && 'benefitsApproved' in it ? it.benefitsApproved : it.benefits)], image: { src: `/landing/feat-${FILES[i]}.svg`, alt: id === 'grading' && approved ? strings.landing.featureAlts.gradingApproved : strings.landing.featureAlts[id], width: 640, height: 420 } };

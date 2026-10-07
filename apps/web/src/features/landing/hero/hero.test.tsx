@@ -7,7 +7,7 @@ vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
 import { HeroSection } from './hero-section';
 
 const h = strings.landing.hero;
-const flags = { launchPhase: 'waitlist' as const, betaFounder: false, approvedContent: false };
+const flags = { launchPhase: 'waitlist' as const, betaFounder: false, approvedContent: false, ia: { pdf: 'live' as const, gerar: 'soon' as const, corrigir: 'live' as const, resumo: 'soon' as const } };
 let io: IntersectionObserverCallback | undefined;
 let reduced = false;
 

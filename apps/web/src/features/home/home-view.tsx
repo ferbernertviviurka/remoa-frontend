@@ -13,7 +13,7 @@ import { CalendarStrip, UpcomingCard } from './home-calendar';
 export type FirstInQueue = { title: string; pct: number };
 export type HomeViewProps = { now: Date; summary: HomeSummary; boards: BoardSummary[]; coverage: CoverageRow[]; first?: FirstInQueue; queueStart?: ReactNode; checklist?: ActivationItem[]; /** F25: compromissos próximos (null = API fora do ar: some a faixa e o card) e o fuso do perfil */ calendar?: { upcoming: UpcomingEvents; timeZone: string } | null;
   /** D-996 (FR-47): independent sections streamed by the page, each inside its own Suspense. When given, they replace the matching prop above. */
-  slots?: { checklist?: ReactNode; calendarStrip?: ReactNode; calendarCard?: ReactNode; coverage?: ReactNode } };
+  slots?: { checklist?: ReactNode; calendarStrip?: ReactNode; calendarCard?: ReactNode; coverage?: ReactNode; libraryBanner?: ReactNode } };
 
 const h2 = 'm-0 font-display font-extrabold';
 const panel = 'flex flex-col rounded-[28px] border border-border bg-surface';
@@ -126,6 +126,7 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart, ch
       </div>
       <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-7">
+          {slots?.libraryBanner}
           {slots?.calendarStrip ?? (calendar ? <CalendarStrip upcoming={calendar.upcoming} /> : null)}
           {slots?.checklist ?? <ActivationChecklist items={checklist ?? []} />}
           <Hero
