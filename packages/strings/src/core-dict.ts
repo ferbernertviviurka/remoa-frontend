@@ -156,7 +156,7 @@ export const ptBRCore = {
       savedNow: 'Salvo agora',
       import: 'Importar',
       importTitle: 'Importar material',
-      importBody: 'A importação de PDF e de decks do Anki chega em breve.',
+      importBody: 'Crie um mapa a partir de um PDF ou de um arquivo do Anki.',
       themeLight: 'Tema claro',
       themeDark: 'Tema escuro',
       themeToggle: 'Alternar tema',

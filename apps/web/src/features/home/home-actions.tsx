@@ -9,9 +9,10 @@ import { track } from '@/lib/analytics';
 import { useEntitlements } from '@/features/shell/entitlements';
 import { atBoardLimit } from './slides';
 
-const t = withStrings({ home: more.home });
+const t = withStrings({ home: more.home, newMap: more.newMap });
+const IMPORTS = [{ id: 'pdf', icon: 'file' }, { id: 'anki', icon: 'archive' }] as const;
 
-/** Importar (diálogo "Em breve", D-068) e Novo mapa no topo do Hoje. */
+/** Importar (escolhe PDF ou Anki e abre o caminho no Novo mapa, D-1569) e Novo mapa no topo do Hoje. */
 export function HomeHeaderActions({ mapCount }: { mapCount: number }) {
   const [navigating, router] = useNavigate();
   const { entitlements } = useEntitlements();
@@ -34,7 +35,22 @@ export function HomeHeaderActions({ mapCount }: { mapCount: number }) {
       >
         {t('library.newMapButton')}
       </Button>
-      <Dialog open={open} onOpenChange={setOpen} title={t('shell.header.importTitle')} description={t('shell.header.importBody')} closeLabel={t('common.close')} />
+      <Dialog open={open} onOpenChange={setOpen} title={t('shell.header.importTitle')} description={t('shell.header.importBody')} closeLabel={t('common.close')}>
+        <ImportChoices />
+      </Dialog>
+    </div>
+  );
+}
+
+function ImportChoices() {
+  const [navigating, router] = useNavigate();
+  return (
+    <div className="flex flex-col gap-3">
+      {IMPORTS.map((p) => (
+        <Button key={p.id} variant="secondary" size="lg" disabled={navigating} icon={<Icon name={p.icon} size={20} />} onClick={() => router.push(`/app/mapas/novo?caminho=${p.id}`)}>
+          {t(`newMap.path.${p.id}`)}
+        </Button>
+      ))}
     </div>
   );
 }

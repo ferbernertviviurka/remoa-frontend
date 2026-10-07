@@ -64,7 +64,7 @@ export const newMap = {
       s3: 'Tudo chega marcado como “rascunho não revisado”, para você conferir.',
       gets: 'Um mapa editável, com rubricas de correção sugeridas. Cada card leva a marca de rascunho até a sua revisão.',
       limit: 'Mapas gerados de PDF: {free} no Free, {pro} no Pro.',
-      status: 'Em breve: a geração por IA ainda não está ativa.',
+      status: 'Disponível agora.',
     },
     anki: {
       title: 'Do Anki para o mapa',

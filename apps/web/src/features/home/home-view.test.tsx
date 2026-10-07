@@ -32,6 +32,17 @@ describe('HomeView', () => {
     expect(screen.getByRole('link', { name: /Indique um amigo/ })).toHaveAttribute('href', '/app/indicar?de=home');
   });
 
+  it('D-1569: Importar offers PDF and Anki (no "em breve") and opens that path in Novo mapa', () => {
+    render(<HomeView now={now} summary={summary(0, 0)} boards={[board('1', 'Sepse', 0)]} coverage={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: /^Importar/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Importar material' });
+    expect(dialog).not.toHaveTextContent(/em breve/i);
+    fireEvent.click(screen.getByRole('button', { name: /Do meu Anki/ }));
+    expect(push).toHaveBeenCalledWith('/app/mapas/novo?caminho=anki');
+    fireEvent.click(screen.getByRole('button', { name: /Do meu PDF/ }));
+    expect(push).toHaveBeenCalledWith('/app/mapas/novo?caminho=pdf');
+  });
+
 
   it('with due cards: greeting, hero, ring, only-board shortcut and week', async () => {
     render(<HomeView now={now} summary={summary(12)} boards={[board('1', 'Sepse', 7), board('2', 'Asma', 5)]} coverage={[]} first={{ title: 'Choque séptico', pct: 58 }} />);
