@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   CHALLENGE_CARD_MAX,
@@ -67,6 +67,7 @@ export function ChallengeSetupDialog({
   onAiStart?: (sessionId: string) => void;
 }) {
   const router = useRouter();
+  const formId = useId();
   const [gradingMode, setGrading] = useState<GradingMode>(DEFAULT_CHALLENGE_OPTIONS.gradingMode);
   const [order, setOrder] = useState<ChallengeOrder>(DEFAULT_CHALLENGE_OPTIONS.order);
   const [studyOrder, setStudyOrder] = useState<StudyOrder>('trail'); // F31 FR-10 (D-1481): only on trail maps
@@ -120,8 +121,25 @@ export function ChallengeSetupDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} title={t('challengeSetup.dialog.title')} description={t('challengeSetup.dialog.description')} closeLabel={t('common.close')}>
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('challengeSetup.dialog.title')}
+      description={t('challengeSetup.dialog.description')}
+      closeLabel={t('common.close')}
+      footer={
+        <div className="flex flex-col gap-3">
+          {ai ? <p role="status" className="m-0 text-sm font-semibold text-muted">{t('challengeAi.cost', { n: cost })}</p> : null}
+          {ai && failed ? <p role="alert" className="m-0 text-sm font-semibold text-review">{t('errors.internal')}</p> : null}
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => onOpenChange(false)}>{t('challengeSetup.dialog.cancel')}</Button>
+            <Button type="submit" form={formId} loading={busy}>{t('challengeSetup.dialog.start')}</Button>
+          </div>
+        </div>
+      }
+    >
       <form
+        id={formId}
         className="flex flex-col gap-5"
         onSubmit={(e) => {
           e.preventDefault();
@@ -151,7 +169,7 @@ export function ChallengeSetupDialog({
               {locked ? (
                 <p className="m-0 text-sm font-bold">{t('challengeAi.scope.card')}</p>
               ) : (
-                <Segmented
+                <Segmented fill
                   aria-label={joined(SCOPES.map((s) => t(`challengeAi.scope.${s}`)))}
                   value={scope}
                   onValueChange={(v) => setScope(v as AiScope)}
@@ -163,7 +181,7 @@ export function ChallengeSetupDialog({
               ) : null}
             </div>
             <div className="flex flex-col gap-2">
-              <Segmented
+              <Segmented fill
                 aria-label={t('challengeSetup.dialog.format')}
                 value={format}
                 onValueChange={(v) => setFormat(v as ChallengeFormat)}
@@ -172,36 +190,34 @@ export function ChallengeSetupDialog({
             </div>
             <div className="flex flex-col gap-2">
               <span className="text-sm font-bold">{t('challengeAi.count')}</span>
-              <Segmented aria-label={t('challengeAi.count')} value={String(count)} onValueChange={(v) => setCount(Number(v))} options={sizes.map((n) => ({ value: String(n), label: String(n) }))} />
+              <Segmented fill aria-label={t('challengeAi.count')} value={String(count)} onValueChange={(v) => setCount(Number(v))} options={sizes.map((n) => ({ value: String(n), label: String(n) }))} />
             </div>
-            <Segmented
+            <Segmented fill
               aria-label={joined(DIFFICULTIES.map((d) => t(`challengeAi.difficulty.${d}`)))}
               value={difficulty}
               onValueChange={(v) => setDifficulty(v as AiDifficulty)}
               options={DIFFICULTIES.map((d) => ({ value: d, label: t(`challengeAi.difficulty.${d}`) }))}
             />
             {format === 'generated' ? (
-              <Segmented
+              <Segmented fill
                 aria-label={joined(TYPES.map((x) => t(`challengeAi.type.${x}`)))}
                 value={questionType}
                 onValueChange={(v) => setQuestionType(v as AiType)}
                 options={TYPES.map((x) => ({ value: x, label: t(`challengeAi.type.${x}`) }))}
               />
             ) : null}
-            <Segmented
+            <Segmented fill
               aria-label={joined(GRADINGS.map((x) => t(`challengeAi.grading.${x}`)))}
               value={gradingTime}
               onValueChange={(v) => setGradingTime(v as AiGrading)}
               options={GRADINGS.map((x) => ({ value: x, label: t(`challengeAi.grading.${x}`) }))}
             />
-            <Segmented
+            <Segmented fill
               aria-label={joined(PRESETS.map((x) => t(`challengeAi.preset.${x}`)))}
               value={preset}
               onValueChange={(v) => setPreset(v as AiPreset)}
               options={PRESETS.map((x) => ({ value: x, label: t(`challengeAi.preset.${x}`) }))}
             />
-            <p role="status" className="m-0 text-sm font-semibold text-muted">{t('challengeAi.cost', { n: cost })}</p>
-            {failed ? <p role="alert" className="m-0 text-sm font-semibold text-review">{t('errors.internal')}</p> : null}
           </>
         ) : (
           <>
@@ -237,10 +253,6 @@ export function ChallengeSetupDialog({
             ) : null}
           </>
         )}
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => onOpenChange(false)}>{t('challengeSetup.dialog.cancel')}</Button>
-          <Button type="submit" loading={busy}>{t('challengeSetup.dialog.start')}</Button>
-        </div>
       </form>
     </Dialog>
   );

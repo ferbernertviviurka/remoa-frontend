@@ -51,25 +51,26 @@ export const LinkEdgeView = memo(function LinkEdgeView(p: EdgeProps<LinkEdge>) {
   const e = a && b ? floatingEnds(a, b) : p; // not measured yet: handle positions
   const { d, lx, ly } = routePoints([e.sourceX, e.sourceY], side[e.sourcePosition], [e.targetX, e.targetY]);
   const label = p.data?.label ?? null;
+  const pill = `cv-elabel e-${p.source} e-${p.target} nodrag nopan absolute`;
   return (
     <>
       <BaseEdge id={p.id} path={d} markerEnd={p.markerEnd} style={{ stroke: p.selected ? 'var(--primary)' : EDGE_COLOR, strokeWidth: 1.7, strokeLinecap: 'round' }} />
       {showLabel && quiz?.hiddenEdges.has(p.id) ? (
         // the label of the connection being asked is the answer: never in the DOM before /answer
         <EdgeLabelRenderer>
-          <div className="nodrag nopan absolute" style={{ transform: `translate(-50%, -50%) translate(${lx}px, ${ly}px)` }}>
+          <div className={pill} style={{ transform: `translate(-50%, -50%) translate(${lx}px, ${ly}px)` }}>
             <EdgeLabel label={t('quiz.hiddenEdge')} />
           </div>
         </EdgeLabelRenderer>
       ) : showLabel && label && quiz ? (
         <EdgeLabelRenderer>
-          <div className="nodrag nopan absolute" style={{ transform: `translate(-50%, -50%) translate(${lx}px, ${ly}px)` }}>
+          <div className={pill} style={{ transform: `translate(-50%, -50%) translate(${lx}px, ${ly}px)` }}>
             <EdgeLabel label={label} dimmed />
           </div>
         </EdgeLabelRenderer>
       ) : showLabel && (label || p.selected) ? (
         <EdgeLabelRenderer>
-          <div className="nodrag nopan absolute" style={{ transform: `translate(-50%, -50%) translate(${lx}px, ${ly}px)`, pointerEvents: 'all' }}>
+          <div className={pill} style={{ transform: `translate(-50%, -50%) translate(${lx}px, ${ly}px)`, pointerEvents: 'all' }}>
             <EdgeLabel
               label={label ?? t('map.edge.empty')}
               buttonLabel={label ? t('map.edge.editLabel', { label }) : t('map.edge.addLabel')}

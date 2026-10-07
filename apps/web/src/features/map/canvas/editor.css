@@ -18,6 +18,9 @@
    global button pointer: the card reads as something to drag. Controls on the card (flip = .nodrag) keep the pointer. */
 .cv-editor .react-flow__node button:not(.nodrag) { cursor: inherit; }
 
+/* D-1565: focusCss (map-canvas) fades the connections of other cards on hover/selection. */
+.cv-editor .react-flow__edge, .cv-editor .cv-elabel { transition: opacity 0.15s; }
+
 /* D-097: one blur over the whole viewport (nodes + edges) while a challenge item is open, not one filter per node. */
 .cv-editor[data-focus] .react-flow__viewport { filter: blur(5px); }
 

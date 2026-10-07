@@ -18,15 +18,17 @@ export type SegmentedProps = {
   value?: string;
   defaultValue?: string;
   onValueChange?: (value: string) => void;
+  /** Ocupa a largura toda em colunas iguais; rótulo longo quebra centrado e a pílula cresce com ele. */
+  fill?: boolean;
 };
 
-export function Segmented({ options, onValueChange, ...rest }: SegmentedProps) {
+export function Segmented({ options, onValueChange, fill, ...rest }: SegmentedProps) {
   return (
     <TG.Root
       type="single"
       {...rest}
       onValueChange={(v) => { if (v) onValueChange?.(v); }}
-      className={segTrack}
+      className={fill ? `${segTrack} flex w-full` : segTrack}
     >
       {options.map((o) => (
         <TG.Item
@@ -35,7 +37,7 @@ export function Segmented({ options, onValueChange, ...rest }: SegmentedProps) {
           disabled={o.disabled}
           aria-disabled={o.disabled || undefined}
           aria-describedby={o.describedBy}
-          className={`h-[38px] px-5 text-sm max-lg:h-11 ${segItem} ${pressable} ${focusRing}`}
+          className={`${fill ? 'min-h-[38px] min-w-0 flex-1 basis-0 px-3 py-1.5 text-center leading-tight max-lg:min-h-11' : 'h-[38px] px-5 max-lg:h-11'} text-sm ${segItem} ${pressable} ${focusRing}`}
         >
           {o.label}
           {o.badge ? <span className="ml-2">{o.badge}</span> : null}

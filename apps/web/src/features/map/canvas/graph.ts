@@ -28,6 +28,7 @@ export const toEdge = (e: Pick<Edge, 'id' | 'fromCardId' | 'toCardId' | 'label'>
   type: 'link',
   source: e.fromCardId,
   target: e.toCardId,
+  className: `e-${e.fromCardId} e-${e.toCardId}`, // D-1565: focusCss keeps a card's connections lit
   markerEnd: { type: 'arrowclosed', color: EDGE_COLOR, width: 12, height: 12 },
   data: { label: e.label },
 });
