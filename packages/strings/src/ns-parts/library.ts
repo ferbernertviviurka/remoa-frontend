@@ -20,6 +20,7 @@ export const mapLibrary = {
   minutes: '~{n} min',
   version: 'Versão {v}',
   mark: 'Marco: {mark}',
+  approvedByRemoa: 'Aprovado por Remoa',
   reviewedBy: 'Revisado por Dr(a). {name}, CRM {crm}',
   see: 'Ver',
   use: 'Usar este mapa',

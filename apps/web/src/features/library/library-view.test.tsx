@@ -52,6 +52,14 @@ describe('LibraryView', () => {
 });
 
 describe('ReportButton', () => {
+  it('shows "Aprovado por Remoa" (no physician or CRM) for institutional approval', async () => {
+    api.mockResolvedValue({ ok: true, data: [seed({ approvedBy: 'remoa', reviewerName: null, reviewerCrm: null })] });
+    const { container } = render(<LibraryView />);
+    expect(await screen.findByText('Aprovado por Remoa')).toBeVisible();
+    expect(screen.queryByText(/Revisado por|CRM/)).toBeNull();
+    expect(await violations(container)).toEqual([]);
+  });
+
   it('sends the note for the card to the reviewer queue', async () => {
     api.mockResolvedValue({ ok: true, data: { id: 'q1' } });
     render(<ReportButton cardId="card-1" />);
@@ -68,6 +76,12 @@ describe('ReportButton', () => {
 describe('public ready maps and didactics', () => {
   const card = { title: 'Choque séptico', front: 'Qual a 1a droga?', back: 'Noradrenalina', sources: [{ doc: 'SSC', local: 'rec 3' }], didactics: { porQue: 'Mantém a perfusão.', macete: { tipo: 'sigla', texto: 'NORA', explicacao: 'Noradrenalina primeiro' }, pegadinha: 'Não é dopamina.', naProva: 'Cai em todo ano.', naDiretriz: { texto: 'Preferir noradrenalina', data: '2026-03-23' } } };
   const pub = { slug: 'sepse', title: 'Sepse', area: 'CM', temporalMark: 'Enamed 2026.2', version: 2, badges: ['top10_enamed'], contentVersion: '2026.1', cardCount: 90, estimatedMinutes: 135, levels: [1], reviewerName: 'Ana Lima', reviewerCrm: '123456-SP' };
+
+  it('public list shows "Aprovado por Remoa" for institutional approval', () => {
+    render(<PublicSeedList seeds={[{ ...pub, approvedBy: 'remoa', reviewerName: null, reviewerCrm: null }]} />);
+    expect(screen.getByText('Aprovado por Remoa')).toBeVisible();
+    expect(screen.queryByText(/Revisado por/)).toBeNull();
+  });
 
   it('public list links to the sample page with badge, reviewer and the legal notice', async () => {
     const { container } = render(<PublicSeedList seeds={[pub]} />);
