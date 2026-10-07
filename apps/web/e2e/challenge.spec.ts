@@ -107,7 +107,11 @@ test('desafiar este mapa: mínimo de 10 cards, opções, Eu respondo (Acertei/Er
       await expect(page.getByText('minha resposta')).toBeVisible();
       seen.written++;
     } else {
-      await page.keyboard.press('Space'); // G14: Space reveals
+      // G14: Space reveals; a press before the card is interactive (load) is lost, so repeat until the answer shows
+      await expect(async () => {
+        if (!(await page.getByRole('group', { name: 'Você acertou?' }).isVisible())) await page.keyboard.press('Space');
+        await expect(page.getByRole('group', { name: 'Você acertou?' })).toBeVisible({ timeout: 2000 });
+      }).toPass({ timeout: 15_000 });
       seen.revealed++;
     }
     await expect(page.getByRole('group', { name: 'Você acertou?' })).toBeVisible();

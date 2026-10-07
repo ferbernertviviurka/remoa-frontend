@@ -8,7 +8,7 @@ import { strings } from '@remoa/strings/full';
 
 const PAGE = process.env.HERO_URL ?? '/';
 const h = strings.landing.hero;
-const REF = resolve('../../../docs/design/v2/screens/landing-hero-final.png'); // Playwright runs from apps/web
+const REF = resolve('e2e/landing/hero-final.png'); // Playwright runs from apps/web; the old docs/design/v2/screens PNG was removed (G23 QA), this is the sanity reference
 const stage = (page: Page) => page.getByRole('img', { name: h.stageAria });
 
 /** Share of pixels that differ by more than `tol` per channel (in-browser canvas diff: no image deps). */
@@ -28,7 +28,7 @@ async function diffRatio(page: Page, a: Buffer, b: Buffer, tol = 40) {
 test.describe('desktop 1440 × 900', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('final frame vs landing-hero-final.png (sanity, generous threshold)', async ({ page }) => {
+  test('final frame vs hero-final.png (sanity, generous threshold)', async ({ page }) => {
     await gotoLanding(page, PAGE);
     await expect(stage(page)).toHaveAttribute('data-play', '');
     await page.waitForTimeout(7000);
