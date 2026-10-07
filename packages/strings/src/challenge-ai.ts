@@ -1,0 +1,48 @@
+/** F32 G25: opções e rótulos do desafio com IA no mapa. */
+export const challengeAi = {
+  open: 'Desafiar',
+  modalTitle: 'Desafiar este mapa',
+  scope: {
+    card: 'Este card',
+    module: 'Este módulo',
+    board: 'O mapa inteiro',
+  },
+  format: {
+    generated: 'A IA cria as perguntas',
+    map: 'Perguntas do mapa, a IA corrige',
+  },
+  count: 'Quantidade',
+  difficulty: {
+    easy: 'Fácil',
+    medium: 'Médio',
+    hard: 'Difícil',
+    mixed: 'Misto',
+  },
+  type: {
+    discursive: 'Discursiva',
+    objective: 'Objetiva (A a D)',
+    mixed: 'Mista',
+  },
+  grading: {
+    now: 'Corrigir na hora',
+    end: 'Corrigir no final',
+  },
+  cost: 'Esta sessão usa {n} correções de IA',
+  generatedLabel: 'Gerada por IA, no estilo ENAMED. Não é questão oficial.',
+  report: 'Reportar erro',
+  disagree: 'Discordar',
+  dontKnow: 'Não sei',
+  bankTitle: 'Banco de questões',
+  summaryButton: 'Resumo com IA',
+  summaryDisclaimer: 'Gerado por IA a partir do seu mapa. Confira a fonte.',
+  summaryStale: 'O mapa mudou desde este resumo. Gerar de novo',
+  copy: 'Copiar',
+  print: 'Imprimir',
+  verdict: {
+    correct: 'Correta',
+    partial: 'Parcial',
+    incorrect: 'Incorreta',
+    pending: 'Pendente de correção',
+  },
+  aiCanErr: 'A IA pode errar. Confira a fonte no card.',
+} as const;

@@ -3,6 +3,7 @@ import { nav } from './nav';
 import { plan } from './plan';
 import { support } from './support';
 import { challengeSetup } from './challenge-setup';
+import { challengeAi } from './challenge-ai';
 import { mapState, challengeMode, editor, quiz, boundary } from './landing-shared';
 import { calendarCore } from './calendar';
 import { notifications } from './notifications';
@@ -18,6 +19,7 @@ export const ptBRCore = {
   plan,
   support,
   challengeSetup,
+  challengeAi,
   calendar: calendarCore,
   notifications,
   common: {
