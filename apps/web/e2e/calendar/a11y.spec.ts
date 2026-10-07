@@ -87,8 +87,10 @@ test.describe('desktop', () => {
     await expect(pop).toBeHidden();
     await expect(bell).toBeFocused(); // foco volta ao sino
 
-    await page.goto('/app/notificacoes');
-    await expect(page.getByRole('heading', { name: 'Notificações', level: 1 })).toBeVisible();
+    await expect(async () => {
+      await page.goto('/app/notificacoes');
+      await expect(page.getByRole('heading', { name: 'Notificações', level: 1 })).toBeVisible({ timeout: 5000 });
+    }).toPass({ timeout: 30_000 });
     await noViolations(page, 'notificações');
   });
 

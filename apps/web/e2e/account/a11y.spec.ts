@@ -58,10 +58,13 @@ test.describe('desktop', () => {
 
     await page.goto('/app/conta/dados');
     const del = page.getByRole('button', { name: 'Excluir conta' });
-    await del.focus();
-    await page.keyboard.press('Enter');
     const d2 = page.getByRole('dialog');
-    await expect(d2).toBeVisible();
+    // The button is already in the server HTML; Enter before hydration does not open the dialog.
+    await expect(async () => {
+      await del.focus();
+      await page.keyboard.press('Enter');
+      await expect(d2).toBeVisible({ timeout: 1500 });
+    }).toPass({ timeout: 20_000 });
     for (let i = 0; i < 8; i++) {
       await page.keyboard.press('Tab');
       expect(await d2.evaluate((d) => d.contains(document.activeElement)), `Tab ${i + 1}`).toBe(true);
