@@ -70,6 +70,16 @@ export function BankScreen() {
     else setActionError(r && !r.ok && r.error.message === 'ungrounded_number' ? t('challengeAi.ungrounded') : r && !r.ok ? r.error.message : t('errors.internal'));
   };
 
+  const confirm = async (q: QuestionBankItemPublic) => {
+    if (!q.enamedTopicId) return;
+    setBusy(q.id);
+    setActionError(null);
+    const r = await api<unknown>(`/v1/challenge-ai/bank/${q.id}/confirm`, { method: 'POST', body: JSON.stringify({ topicId: q.enamedTopicId }) }).catch(() => null);
+    setBusy(null);
+    if (r?.ok) void load();
+    else setActionError(r && !r.ok ? r.error.message : t('errors.internal'));
+  };
+
   const archive = async (id: string) => {
     setBusy(id);
     setActionError(null);
@@ -141,6 +151,7 @@ export function BankScreen() {
                     <Tag tone="unknown">{t(`challengeAi.type.${q.type}`)}</Tag>
                     <Tag tone={q.status === 'approved' ? 'steady' : 'watch'}>{statusLabel(q.status)}</Tag>
                     {q.source === 'ai' ? <span className="text-xs text-muted">{t('challengeAi.generatedLabel')}</span> : null}
+                    {q.enamedTopicName ? <span className="text-xs text-muted">{t(q.enamedConfirmed ? 'challengeAi.topicConfirmed' : 'challengeAi.topicSuggested', { name: q.enamedTopicName })}</span> : null}
                   </div>
                   {editing?.id === q.id ? (
                     <form className="flex flex-col gap-3" onSubmit={(e) => { e.preventDefault(); void save(); }}>
@@ -150,6 +161,9 @@ export function BankScreen() {
                   ) : null}
                   <div className="flex flex-wrap gap-2">
                     <Button variant="quiet" size="sm" onClick={() => openSupport('fab')}>{t('challengeAi.report')}</Button>
+                    {q.status !== 'archived' && q.enamedTopicId && !q.enamedConfirmed ? (
+                      <Button variant="secondary" size="sm" loading={busy === q.id} disabled={busy === q.id} onClick={() => void confirm(q)}>{t('challengeAi.confirmTopic')}</Button>
+                    ) : null}
                     {q.status !== 'archived' ? (
                       <>
                         <Button variant="secondary" size="sm" onClick={() => { setActionError(null); setEditing({ id: q.id, stem: q.stem }); }}>{t('challengeAi.edit')}</Button>

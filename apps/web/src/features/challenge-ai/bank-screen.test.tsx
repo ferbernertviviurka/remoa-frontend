@@ -7,7 +7,7 @@ const SECRET = 'SECRET_KEY_ZZ';
 const stats = { seen: 0, correct: 0, partial: 0, incorrect: 0 };
 const row = (n: number, over: Record<string, unknown> = {}) => ({
   id: ID(n), boardId: ID(900), type: 'objective', difficulty: 'hard', stem: `Enunciado da questão ${n}`, source: 'ai', status: 'draft',
-  enamedAreaId: null, enamedDomainId: null, enamedTopicId: null, stats, createdAt: '2026-10-07T10:00:00.000Z',
+  enamedAreaId: null, enamedDomainId: null, enamedTopicId: null, enamedTopicName: null, enamedConfirmed: true, stats, createdAt: '2026-10-07T10:00:00.000Z',
   // A faulty server could leak these; the screen must never render them.
   correct_key: SECRET, expectedAnswer: SECRET, ...over,
 });
@@ -114,6 +114,15 @@ describe('Banco de questões', () => {
     fireEvent.click(within(item).getByRole('button', { name: 'Reportar erro' }));
     expect(opened).toHaveBeenCalledTimes(1);
     window.removeEventListener('remoa:open-support', opened);
+  });
+
+  it('tema sugerido pede confirmação e manda o id do tema da lista', async () => {
+    bank = [row(4, { enamedTopicId: ID(7), enamedTopicName: 'Sepse', enamedConfirmed: false })];
+    render(<BankScreen />);
+    const item = await screen.findByRole('article', { name: 'Enunciado da questão 4' });
+    expect(within(item).getByText('Tema sugerido: Sepse')).toBeInTheDocument();
+    fireEvent.click(within(item).getByRole('button', { name: 'Confirmar tema' }));
+    await waitFor(() => expect(calls.some((c) => c.path === `/v1/challenge-ai/bank/${ID(4)}/confirm` && c.init?.body === JSON.stringify({ topicId: ID(7) }))).toBe(true));
   });
 
   it('falha ao listar mostra erro com Tentar de novo, que recarrega', async () => {
