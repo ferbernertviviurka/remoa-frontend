@@ -23,7 +23,7 @@ test('admin lists posts, creates one by template, duplicates, unpublishes with a
 
   // sitemap card: refresh logs an audit entry and toasts
   await page.getByRole('button', { name: 'Atualizar agora' }).click();
-  await expect(page.getByText('Sitemap atualizado')).toBeVisible();
+  await expect(page.getByText('Sitemap atualizado', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Ver URLs' }).click();
   await expect(page.getByRole('cell', { name: '/blog', exact: true })).toBeVisible();
 

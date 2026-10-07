@@ -2,6 +2,7 @@ import { t } from '@remoa/strings/full';
 
 const KEYS = [
   'landing.nav.wordmark.aria', 'landing.nav.wordmark.ariaApp', 'landing.nav.anchors.howWorks', 'landing.nav.anchors.features',
+  'landing.nav.anchors.ia', 'landing.nav.anchors.enamed', 'landing.nav.anchors.calendar',
   'landing.nav.anchors.plans', 'landing.nav.anchors.faq', 'landing.nav.menu.aria', 'landing.nav.navLabel',
   'landing.nav.openApp', 'landing.nav.account', 'landing.nav.signIn', 'landing.nav.createMap',
 ] as const;

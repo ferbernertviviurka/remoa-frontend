@@ -8,7 +8,7 @@ import { SeedCardBody, type SeedCardData } from './card-didactics';
 const t = withStrings({ boards: more.boards, mapLibrary: more.mapLibrary });
 type StringKey = Parameters<typeof t>[0];
 
-export type PublicSeed = Omit<Seed, 'id'> & { slug: string };
+export type PublicSeed = Omit<Seed, 'id'> & { slug: string; topicArea?: string | null };
 export type PublicSeedDetail = PublicSeed & { sample: SeedCardData[] };
 
 export const SAMPLE_SIZE = 10;

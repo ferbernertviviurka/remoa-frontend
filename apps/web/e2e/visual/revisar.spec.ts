@@ -16,7 +16,12 @@ test('revisar: painel da fila e estado vazio', async ({ page, request }) => {
   const { userId, headers } = await signUpAndLogin(page, request);
   // the mask is the row's box; a descender of the greeting (its width changes with the hour) pokes ~13 px below it, so allow that much
   const shot = { maxDiffPixels: 40, stylePath: 'e2e/visual/hide-dev-badge.css' };
-  const masks = () => [page.locator('h1').locator('xpath=../..'), page.locator('time'), page.locator('nextjs-portal'), page.getByText(/(segunda|terça|quarta|quinta|sexta|sábado|domingo)-?(feira)?, \d+ de/)];
+  const masks = () => [
+    page.locator('h1').locator('xpath=../..'), page.locator('time'), page.locator('nextjs-portal'),
+    page.getByText(/(segunda|terça|quarta|quinta|sexta|sábado|domingo)-?(feira)?, \d+ de/),
+    // Monday-first week: which dots are filled moves with the weekday (attempts are "N days ago")
+    page.getByRole('img', { name: /dias da semana com revisão/ }),
+  ];
   await page.goto('/app/revisar');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Vamos começar?');
   await settle(page);

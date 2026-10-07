@@ -2,6 +2,7 @@
 import { expect, test } from '@playwright/test';
 
 test('waitlist submit shows success right after load (no waiting for the island)', async ({ page }) => {
+  test.skip(process.env.NEXT_PUBLIC_LAUNCH_PHASE !== 'waitlist', 'form only in waitlist phase');
   await page.goto('/#cta');
   const email = page.getByRole('textbox', { name: /e-?mail/i }).last();
   await email.waitFor();
