@@ -33,6 +33,9 @@ export const challengeAi = {
   disagree: 'Discordar',
   dontKnow: 'Não sei',
   bankTitle: 'Banco de questões',
+  edit: 'Editar',
+  saveEdit: 'Salvar pergunta',
+  ungrounded: 'Esse número não está na pergunta original.',
   summaryButton: 'Resumo com IA',
   summarySize: {
     quick: 'Rápido',

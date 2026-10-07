@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { questionBankItemPublicSchema, questionDifficulties, questionStatuses, questionTypes, type BoardSummary, type QuestionBankItemPublic } from '@remoa/contracts';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
-import { Alert, Button, Card, Empty, FilterChip, Select, SkeletonBlock, SkeletonRegion, Tag } from '@remoa/ui';
+import { Alert, Button, Card, Empty, FilterChip, Select, SkeletonBlock, SkeletonRegion, Tag, Textarea } from '@remoa/ui';
 import { api } from '@/lib/api';
 import { openSupport } from '@/features/support/open';
 
@@ -32,6 +32,7 @@ export function BankScreen() {
   const [boards, setBoards] = useState<BoardSummary[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [busy, setBusy] = useState<string | null>(null);
+  const [editing, setEditing] = useState<{ id: string; stem: string } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const seq = useRef(0);
 
@@ -58,6 +59,16 @@ export function BankScreen() {
   }, []);
 
   const set = <K extends keyof Filters>(key: K, value: Filters[K]) => { setActionError(null); setState('loading'); setFilters((f) => ({ ...f, [key]: value })); };
+
+  const save = async () => {
+    if (!editing) return;
+    setBusy(editing.id);
+    setActionError(null);
+    const r = await api<unknown>(`/v1/challenge-ai/bank/${editing.id}`, { method: 'POST', body: JSON.stringify({ stem: editing.stem }) }).catch(() => null);
+    setBusy(null);
+    if (r?.ok) { setEditing(null); void load(); }
+    else setActionError(r && !r.ok && r.error.message === 'ungrounded_number' ? t('challengeAi.ungrounded') : r && !r.ok ? r.error.message : t('errors.internal'));
+  };
 
   const archive = async (id: string) => {
     setBusy(id);
@@ -131,10 +142,19 @@ export function BankScreen() {
                     <Tag tone={q.status === 'approved' ? 'steady' : 'watch'}>{statusLabel(q.status)}</Tag>
                     {q.source === 'ai' ? <span className="text-xs text-muted">{t('challengeAi.generatedLabel')}</span> : null}
                   </div>
+                  {editing?.id === q.id ? (
+                    <form className="flex flex-col gap-3" onSubmit={(e) => { e.preventDefault(); void save(); }}>
+                      <Textarea label={t('challengeAi.edit')} value={editing.stem} onChange={(e) => setEditing({ id: q.id, stem: e.target.value })} />
+                      <Button type="submit" size="sm" loading={busy === q.id} disabled={busy === q.id || !editing.stem.trim()}>{t('challengeAi.saveEdit')}</Button>
+                    </form>
+                  ) : null}
                   <div className="flex flex-wrap gap-2">
                     <Button variant="quiet" size="sm" onClick={() => openSupport('fab')}>{t('challengeAi.report')}</Button>
                     {q.status !== 'archived' ? (
-                      <Button variant="secondary" size="sm" loading={busy === q.id} disabled={busy === q.id} onClick={() => void archive(q.id)}>{t('boards.archive')}</Button>
+                      <>
+                        <Button variant="secondary" size="sm" onClick={() => { setActionError(null); setEditing({ id: q.id, stem: q.stem }); }}>{t('challengeAi.edit')}</Button>
+                        <Button variant="secondary" size="sm" loading={busy === q.id} disabled={busy === q.id} onClick={() => void archive(q.id)}>{t('boards.archive')}</Button>
+                      </>
                     ) : null}
                   </div>
                 </article>

@@ -21,12 +21,13 @@ vi.mock('@/lib/api', () => ({
     calls.push({ path, init });
     if (path === '/v1/boards') return { ok: true, data: [board] };
     if (path.endsWith('/archive')) return archiveReply.ok ? { ok: true, data: null } : { ok: false, error: archiveReply.error };
+    if (init?.method === 'POST') return { ok: true, data: {} };
     if (path.startsWith('/v1/challenge-ai/bank')) return bank === null ? { ok: false, error: { code: 'internal', message: 'x' } } : { ok: true, data: bank };
     return { ok: false, error: { code: 'not_found', message: path } };
   }),
 }));
 
-const bankCalls = () => calls.filter((c) => c.path.startsWith('/v1/challenge-ai/bank') && !c.path.endsWith('/archive'));
+const bankCalls = () => calls.filter((c) => c.path.startsWith('/v1/challenge-ai/bank') && c.init?.method !== 'POST');
 
 beforeEach(() => { calls.length = 0; bank = [row(1), row(2, { type: 'discursive', difficulty: 'easy', source: 'student' })]; archiveReply = { ok: true }; });
 afterEach(cleanup);
@@ -79,6 +80,19 @@ describe('Banco de questões', () => {
     const post = calls.find((c) => c.path === `/v1/challenge-ai/bank/${ID(1)}/archive`);
     expect(post?.init?.method).toBe('POST');
     expect(bankCalls().length).toBeGreaterThan(before);
+  });
+
+  it('editar envia o enunciado novo e não o gabarito', async () => {
+    render(<BankScreen />);
+    const first = await screen.findByRole('article', { name: 'Enunciado da questão 1' });
+    fireEvent.click(within(first).getByRole('button', { name: 'Editar' }));
+    const field = within(first).getByLabelText('Editar');
+    fireEvent.change(field, { target: { value: 'Enunciado reescrito' } });
+    fireEvent.click(within(first).getByRole('button', { name: 'Salvar pergunta' }));
+    await waitFor(() => expect(calls.some((c) => c.path === `/v1/challenge-ai/bank/${ID(1)}` && c.init?.method === 'POST')).toBe(true));
+    const post = calls.find((c) => c.path === `/v1/challenge-ai/bank/${ID(1)}` && c.init?.method === 'POST');
+    expect(post?.init?.body).toBe(JSON.stringify({ stem: 'Enunciado reescrito' }));
+    expect(String(post?.init?.body)).not.toContain(SECRET);
   });
 
   it('erro do corpo da API ao arquivar aparece na tela e a questão continua na lista', async () => {
