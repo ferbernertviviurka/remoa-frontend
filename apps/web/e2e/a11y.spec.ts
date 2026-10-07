@@ -109,10 +109,13 @@ test('axe: Preços, Conta (e confirmação de exclusão) e Paywall de mapas', as
   await page.keyboard.press('Escape');
 
   for (let i = 0; i < PLAN_LIMITS.free.limits.boards; i++) expect((await request.post(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/v1/boards`, { headers, data: { title: `M${i}` } })).status()).toBe(201);
-  await page.goto('/app/mapas/novo?caminho=blank'); // G14 17: já abre em "Sobre o mapa"
-  await page.getByLabel('Nome do mapa').fill('Terceiro');
-  await page.getByRole('button', { name: 'Criar mapa', exact: true }).click();
+  // The name field is controlled and a fill before hydration is wiped, so the click only validates. Retry until the quota dialog opens.
+  await expect(async () => {
+    if (!/caminho=blank/.test(page.url())) await page.goto('/app/mapas/novo?caminho=blank');
+    await page.getByLabel('Nome do mapa').fill('Terceiro', { timeout: 5000 });
+    await page.getByRole('button', { name: 'Criar mapa', exact: true }).click({ timeout: 5000 });
+    await expect(page.getByRole('dialog').getByRole('button', { name: 'Continuar no Free' })).toBeVisible({ timeout: 5000 });
+  }).toPass({ timeout: 30_000 });
   const dialog = page.getByRole('dialog');
-  await expect(dialog.getByRole('button', { name: 'Continuar no Free' })).toBeVisible();
   expect(await axe(page), 'paywall').toEqual([]);
 });

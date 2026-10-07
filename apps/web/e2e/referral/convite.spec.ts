@@ -46,6 +46,7 @@ test('logado: "Você já tem conta" leva ao app e não grava rf', async ({ page,
 });
 
 test('cadastro por e-mail com código: atribui (indicador vê o amigo), apaga rf e leva ao primeiro mapa', async ({ page, request }) => {
+  test.setTimeout(120_000);
   const inviter = await createInviter(request);
   await openInvite(page, inviter.code);
   await expect.poll(() => rfCookie(page)).toBeTruthy();
@@ -56,6 +57,25 @@ test('cadastro por e-mail com código: atribui (indicador vê o amigo), apaga rf
   expect(await rfCookie(page)).toBeUndefined();
   expect(await axe(page)).toEqual([]);
   await page.getByRole('link', { name: /Criar meu primeiro mapa/ }).click();
+  // G20: o convite pede o nome, e telefone e tipo ficam no onboarding antes de qualquer tela do app.
+  await expect(page).toHaveURL(/\/app\/onboarding\?next=%2Fapp%2Fmapas%2Fnovo/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Conte quem você é');
+  await page.getByLabel('Telefone').fill('11912345678');
+  await page.getByRole('button', { name: 'Aluno' }).click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Em que momento você está?');
+  await page.getByRole('button', { name: '5º–6º ano' }).click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Onde você estuda (ou estudou)?');
+  await page.getByLabel('Instituição de ensino').fill('sao paulo');
+  await page.getByRole('option').first().click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await page.getByRole('button', { name: 'Enamed 2027.1' }).click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await page.getByRole('button', { name: 'Clínica Médica' }).click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
+  await page.getByRole('button', { name: /Em branco/ }).click();
+  await page.getByRole('button', { name: 'Ir para o primeiro mapa' }).click();
   await expect(page).toHaveURL(/\/app\/mapas\/novo/);
 });
 
