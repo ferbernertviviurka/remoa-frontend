@@ -171,6 +171,7 @@ function Canvas({ data }: { data: BoardGraph }) {
   const [confirmDelete, setConfirmDelete] = useState<MapOp[] | null>(null);
   const [labelEdit, setLabelEdit] = useState<string | null>(null);
   const [setupOpen, setSetupOpen] = useState(false);
+  const [setupCard, setSetupCard] = useState<string | null>(null); // F32: card behind the "Desafiar" button (scope locked to it)
   const [chOptions, setChOptions] = useState<ChallengeOptions | undefined>(undefined);
   const [chStudyOrder, setChStudyOrder] = useState<StudyOrder | undefined>(undefined);
   const [editing, setEditing] = useState<string | null>(null);
@@ -582,7 +583,10 @@ function Canvas({ data }: { data: BoardGraph }) {
   const requestMode = useCallback(
     (m: Mode) => {
       if (m === 'explore') return setMode(m);
-      if (missing === 0) setSetupOpen(true);
+      if (missing === 0) {
+        setSetupCard(null);
+        setSetupOpen(true);
+      }
     },
     [setMode, missing],
   );
@@ -616,6 +620,10 @@ function Canvas({ data }: { data: BoardGraph }) {
     [onConnect, setLinkFrom],
   );
 
+  const challengeCard = useCallback((id: string) => {
+    setSetupCard(id);
+    setSetupOpen(true);
+  }, []);
   const enterChallenge = useCallback(() => requestMode('challenge'), [requestMode]);
   const reviewCard = enterChallenge; // ponytail: the session picks its items; F04 has no per-card session
 
@@ -931,12 +939,22 @@ function Canvas({ data }: { data: BoardGraph }) {
               onDeselect={() => select(null)}
               onDelete={deleteCard}
               onReviewCard={reviewCard}
+              onChallengeCard={challengeCard}
               onResetSize={resetSize}
               onStudy={onCardStudy}
             />
         </div>
       </section>
-      <ChallengeSetupDialog hasTrail={!!board.path} open={setupOpen} onOpenChange={setSetupOpen} onStart={startChallenge} />
+      <ChallengeSetupDialog
+        hasTrail={!!board.path}
+        open={setupOpen}
+        onOpenChange={setSetupOpen}
+        onStart={startChallenge}
+        boardId={board.id}
+        cardId={setupCard}
+        modules={board.path?.modulos ?? []}
+        onAiStart={() => setSetupOpen(false)}
+      />
       <Dialog
         open={!!editedEdge}
         onOpenChange={(o) => !o && setLabelEdit(null)}

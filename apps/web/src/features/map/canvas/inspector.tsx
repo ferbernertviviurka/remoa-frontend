@@ -48,6 +48,8 @@ type Props = EditorHooks & {
   onDeselect: () => void;
   onDelete: (cardId: string) => void;
   onReviewCard: (cardId: string) => void;
+  /** F32 (G25): "Desafiar" opens the challenge dialog with the scope locked to this card. */
+  onChallengeCard?: (cardId: string) => void;
   /** D-202: card menu "Restaurar tamanho padrão" (only while the card has a size of its own). */
   onResetSize: (cardId: string) => void;
   /** F03 FR-9: after suspend/unsuspend/reset the map patches the card (suspendedAt) and, on reset, reloads the heat. */
@@ -161,8 +163,9 @@ function CardPanel(p: Props & { card: Card }) {
             </InspectorTabPanel>
           </div>
           {note ? null : (
-            <div className="border-t border-border px-5 pb-5 pt-3.5 [&>button]:w-full">
+            <div className="flex flex-col gap-2 border-t border-border px-5 pb-5 pt-3.5 [&>button]:w-full">
               <Button icon={bolt} onClick={() => p.onReviewCard(card.id)}>{t('inspector.reviewThis')}</Button>
+              {p.onChallengeCard ? <Button variant="secondary" onClick={() => p.onChallengeCard?.(card.id)}>{t('challengeAi.open')}</Button> : null}
             </div>
           )}
         </>

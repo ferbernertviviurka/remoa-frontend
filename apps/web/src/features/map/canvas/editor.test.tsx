@@ -287,8 +287,7 @@ describe('editor v2 (T5)', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Desafiar este mapa' })[0]!); // header first
     const dlg = await screen.findByRole('dialog', { name: 'Desafiar este mapa' });
     expect(replace).not.toHaveBeenCalled();
-    expect(within(dlg).getByRole('button', { name: /IA responde/ })).toBeDisabled();
-    expect(within(dlg).getByRole('button', { name: /IA responde/ })).toHaveTextContent('Em breve');
+    expect(within(dlg).getByRole('button', { name: /IA responde/ })).toBeEnabled(); // F32 (G25): the AI row opens the AI fields in this dialog
     expect(within(dlg).getByRole('button', { name: /Eu respondo/ })).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(within(dlg).getByRole('button', { name: /Seguindo o fluxo das setas/ }));
     fireEvent.click(within(dlg).getByRole('button', { name: 'Começar desafio' }));
