@@ -85,7 +85,11 @@ test('criar com imagem, ver em Hoje, desligar um aviso e excluir', async ({ page
   const card = page.getByRole('region', { name: 'Próximos compromissos' });
   await expect(card.getByText('Prova de Clínica Médica')).toBeVisible();
   await expect(card.getByText('Amanhã', { exact: true })).toBeVisible();
-  await expect(page.getByRole('navigation', { name: 'Principal' }).getByRole('link', { name: /Calendário/ })).toContainText('Há compromisso nas próximas 24 horas');
+  // the rail dot is on only when the event starts within 24 h: tomorrow 08:00 (BRT, no DST) is that far only after 08:00 today
+  const soon = new Date(`${ymd(1)}T08:00:00-03:00`).getTime() - Date.now() <= 86_400_000;
+  const calLink = page.getByRole('navigation', { name: 'Principal' }).getByRole('link', { name: /Calendário/ });
+  if (soon) await expect(calLink).toContainText('Há compromisso nas próximas 24 horas');
+  else await expect(calLink).not.toContainText('Há compromisso nas próximas 24 horas');
 
   // desligar o aviso "1 dia antes" e conferir que ficou salvo
   await page.goto('/app/calendario');

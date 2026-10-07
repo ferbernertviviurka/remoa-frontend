@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { violations } from '../cards/test-utils';
 import { LibraryView } from './library-view';
 import { ReportButton } from './report-button';
+import { PublicSeedList, PublicSeedPage } from './public-seeds';
 
 const api = vi.fn();
 const push = vi.fn();
@@ -61,5 +62,31 @@ describe('ReportButton', () => {
     fireEvent.click(send);
     await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/editorial/report', expect.objectContaining({ body: JSON.stringify({ cardId: 'card-1', note: 'dose errada' }) })));
     expect(await screen.findByText('Recebido. Um revisor vai analisar este card.')).toBeVisible();
+  });
+});
+
+describe('public ready maps and didactics', () => {
+  const card = { title: 'Choque séptico', front: 'Qual a 1a droga?', back: 'Noradrenalina', sources: [{ doc: 'SSC', local: 'rec 3' }], didactics: { porQue: 'Mantém a perfusão.', macete: { tipo: 'sigla', texto: 'NORA', explicacao: 'Noradrenalina primeiro' }, pegadinha: 'Não é dopamina.', naProva: 'Cai em todo ano.', naDiretriz: { texto: 'Preferir noradrenalina', data: '2026-03-23' } } };
+  const pub = { slug: 'sepse', title: 'Sepse', area: 'CM', temporalMark: 'Enamed 2026.2', version: 2, badges: ['top10_enamed'], contentVersion: '2026.1', cardCount: 90, estimatedMinutes: 135, levels: [1], reviewerName: 'Ana Lima', reviewerCrm: '123456-SP' };
+
+  it('public list links to the sample page with badge, reviewer and the legal notice', async () => {
+    const { container } = render(<PublicSeedList seeds={[pub]} />);
+    expect(screen.getByRole('link', { name: 'Sepse' })).toHaveAttribute('href', '/mapas-prontos/sepse');
+    expect(screen.getByText('Top 10 ENAMED')).toBeVisible();
+    expect(screen.getByText('Revisado por Dr(a). Ana Lima, CRM 123456-SP')).toBeVisible();
+    expect(screen.getByText(/Conteúdo educacional\./)).toBeVisible();
+    expect(await violations(container)).toEqual([]);
+  });
+
+  it('public sample page shows the didactics per card and sends "Usar este mapa" to sign-up then the library', async () => {
+    const { container } = render(<PublicSeedPage seed={{ ...pub, sample: [card] }} />);
+    expect(screen.getByRole('link', { name: 'Usar este mapa' })).toHaveAttribute('href', `/cadastro?next=${encodeURIComponent('/app/mapas?aba=biblioteca')}`);
+    expect(screen.getByText(/Mantém a perfusão\./)).toBeVisible();
+    expect(screen.getByText(/NORA\. Noradrenalina primeiro/)).toBeVisible();
+    expect(screen.getByText(/Não é dopamina\./)).toBeVisible();
+    expect(screen.getByText(/Cai em todo ano\./)).toBeVisible();
+    expect(screen.getByText(/Preferir noradrenalina/)).toBeVisible();
+    expect(screen.getByText(/Fontes: SSC rec 3/)).toBeVisible();
+    expect(await violations(container)).toEqual([]);
   });
 });

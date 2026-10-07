@@ -54,6 +54,7 @@ test('meus mapas: filtrar arquivados, desarquivar e excluir', async ({ page }) =
   await page.getByRole('menuitem', { name: 'Excluir' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('button', { name: 'Excluir' })).toBeDisabled();
+  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => null)))); // axe mid-fade of the overlay/dialog reads blended colours (contrast 3.95 flake)
   const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).exclude('nextjs-portal').analyze();
   expect(axe.violations).toEqual([]);
   await dialog.getByLabel('Para confirmar, digite o nome do mapa').fill('Choque');

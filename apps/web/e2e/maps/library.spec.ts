@@ -25,6 +25,7 @@ test('student sees approved ready maps (never drafts) with the Top 10 badge, rea
   await page.getByRole('button', { name: 'Enviar' }).click();
   await expect(page.getByText('Recebido.')).toBeVisible();
   expect(psql(`select count(*) from review_queue where card_id = '${card}' and flag_source = 'user_disagree' and status = 'pending'`).trim()).toBe('1');
+  await page.getByRole('button', { name: 'Fechar' }).click();
 
   await page.getByRole('button', { name: 'Usar este mapa' }).click();
   await expect(page).toHaveURL(/\/app\/mapas\/[0-9a-f-]{36}$/);
