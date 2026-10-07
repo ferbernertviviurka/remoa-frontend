@@ -17,6 +17,8 @@ export type Seed = {
   id: string; title: string; area: string; temporalMark: string | null; version: number; badges: string[];
   contentVersion: string | null; cardCount: number; estimatedMinutes: number; levels: number[];
   reviewerName: string | null; reviewerCrm: string | null;
+  /** D-1522: 'remoa' = institutional approval, no physician/CRM. */
+  approvedBy?: 'reviewer' | 'remoa' | null;
 };
 
 const ALL = 'all';
@@ -34,7 +36,8 @@ export function SeedBadges({ badges }: { badges: string[] }) {
   return badges.includes('top10_enamed') ? <Tag tone="brand">{t('mapLibrary.badgeTop10')}</Tag> : null;
 }
 
-export function Provenance({ seed }: { seed: Pick<Seed, 'reviewerName' | 'reviewerCrm'> }) {
+export function Provenance({ seed }: { seed: Pick<Seed, 'reviewerName' | 'reviewerCrm' | 'approvedBy'> }) {
+  if (seed.approvedBy === 'remoa') return <span className="block text-sm text-muted">{t('mapLibrary.approvedByRemoa')}</span>;
   return seed.reviewerName && seed.reviewerCrm ? <span className="block text-sm text-muted">{t('mapLibrary.reviewedBy', { name: seed.reviewerName, crm: seed.reviewerCrm })}</span> : null;
 }
 
