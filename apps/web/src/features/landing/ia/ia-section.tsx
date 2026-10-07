@@ -48,7 +48,7 @@ export function IaSection({ features }: { features: Record<IaFeature, IaFeatureS
                 <p className="m-0 text-[15.5px] leading-normal text-muted">{iaCardBody(key, features[key])}</p>
                 {soon ? <span className="mt-auto self-start rounded-full bg-[#F3F2FB] px-3 py-0.5 text-xs font-extrabold text-primary-deep">{ia.soon}</span> : null}
                 {key === 'pdf' && !soon ? (
-                  <a href="/#planos" onClick={() => track('ia_cta_clicked', {})} className="mt-auto self-start rounded-full bg-[#F3F2FB] px-3 py-0.5 text-xs font-extrabold text-primary-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">{ia.pro}</a>
+                  <a href="/#planos" onClick={() => track('ia_cta_clicked', {})} className="mt-auto inline-flex min-h-11 items-center self-start rounded-full bg-[#F3F2FB] px-3 text-xs font-extrabold text-primary-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">{ia.pro}</a>
                 ) : null}
               </article>
             </Reveal>
