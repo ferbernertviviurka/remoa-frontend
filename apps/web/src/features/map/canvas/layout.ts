@@ -10,13 +10,20 @@ export const CARD_H = 176;
 
 type Sized = Pick<Card, 'type' | 'shape' | 'frontAssetId'> & Partial<Pick<Card, 'size' | 'title' | 'front' | 'preview'>>;
 
-const TRAIL_W: Record<Card['type'], number> = { concept: 304, note: 304, flow: 304, case: 304, image: 368 };
+/** Ready-map width: images and flows wide, a question as wide as its text (short ones compact, long ones spread). */
+const trailWidth = (c: Sized) => {
+  if (c.type === 'image') return 432;
+  if (c.type === 'flow') return 368;
+  if (c.type === 'case') return 336;
+  const len = (c.title?.length ?? 0) + (c.front?.length ?? 0);
+  return len < 80 ? 248 : len < 115 ? 296 : len < 150 ? 344 : 392;
+};
 /** Lines a text takes in the NodeCard (17.5 px padding each side); `px` = average glyph width of the font. */
 const linesOf = (text: string | null | undefined, w: number, px: number) => (text ? Math.ceil((text.length * px) / (w - 35)) : 0);
 
 /**
  * Size grown from the content when the user has not resized (null = the type's default fits). `trail` (a ready map or
- * its copy, F31: `board.path`) gives a wider card and a height for the whole title + question, steps, case trail or picture; other cards only
+ * its copy, F31: `board.path`) gives a width by type and text length and a height for the whole title + question, steps, case trail or picture; other cards only
  * grow concept/note height for long questions. Heights follow the NodeCard's free-size line budget (summary 18 px a line,
  * ~100 px of label/footer/padding, 3 title lines of 22 px from 200 px).
  */
@@ -30,7 +37,7 @@ export function contentSize(c: Sized, trail = false): Card['size'] {
     const h = Math.min(CARD_SIZE_MAX.h, base.h + extra * 18);
     return h > base.h ? { w: base.w, h } : null;
   }
-  const w = TRAIL_W[c.type];
+  const w = trailWidth(c);
   const title = linesOf(c.title, w, 9.6);
   const titleH = 66; // from 200 px the NodeCard reserves 3 title lines before the summary
   const body =
