@@ -77,7 +77,7 @@ function SeedMapCard({ seed, areaLabel, copying, onCopy }: { seed: Seed; areaLab
           <span className="text-xs font-bold uppercase tracking-[.12em] text-muted">{areaLabel}</span>
           <SeedBadges badges={seed.badges} />
         </div>
-        <span className="font-display text-[22px] font-bold leading-[1.15] tracking-[-0.02em]">{seed.title}</span>
+        <h2 className="m-0 font-display text-[22px] font-bold leading-[1.15] tracking-[-0.02em]">{seed.title}</h2>
         <span className="text-[13px] text-muted">{seedMeta(seed)}</span>
         <Provenance seed={seed} />
         <div className="mt-1 flex flex-wrap gap-2">

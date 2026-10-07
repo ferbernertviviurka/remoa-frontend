@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { questionBankItemPublicSchema, questionDifficulties, questionStatuses, questionTypes, type BoardSummary, type QuestionBankItemPublic } from '@remoa/contracts';
+import { questionBankItemPublicSchema, enamedTopicOptionSchema, questionDifficulties, questionStatuses, questionTypes, type BoardSummary, type QuestionBankItemPublic } from '@remoa/contracts';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Alert, Button, Card, Empty, FilterChip, Select, SkeletonBlock, SkeletonRegion, Tag, Textarea } from '@remoa/ui';
@@ -25,6 +25,17 @@ const publicItem = questionBankItemPublicSchema.strip();
 const parseItems = (data: unknown): QuestionBankItemPublic[] =>
   Array.isArray(data) ? data.flatMap((d) => { const r = publicItem.safeParse(d); return r.success ? [r.data] : []; }) : [];
 
+const parseTopics = (data: unknown) =>
+  Array.isArray(data) ? data.flatMap((d) => { const r = enamedTopicOptionSchema.safeParse(d); return r.success ? [r.data] : []; }) : [];
+
+/** Known machine codes become sentences. A sentence from the server stays; a raw code does not. */
+const explain = (message: string | undefined) => {
+  if (message === 'ungrounded_number') return t('challengeAi.ungrounded');
+  if (message === 'topic_not_in_list') return t('challengeAi.topicNotInList');
+  if (message && !/^[a-z0-9_]+$/.test(message)) return message;
+  return t('errors.internal');
+};
+
 /** F32 FR-18: banco de questões. A lista mostra o enunciado e os metadados, nunca o gabarito; arquivar e reportar são as únicas ações. */
 export function BankScreen() {
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
@@ -34,6 +45,7 @@ export function BankScreen() {
   const [busy, setBusy] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ id: string; stem: string } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [topics, setTopics] = useState<Record<string, { id: string; name: string }[]>>({});
   const seq = useRef(0);
 
   const load = useCallback(async () => {
@@ -53,6 +65,19 @@ export function BankScreen() {
   }, [filters]);
   useEffect(() => void load(), [load]);
 
+  const openAreas = [...new Set(items.filter((q) => q.status !== 'archived' && !q.enamedConfirmed).map((q) => q.enamedAreaId ?? '*'))].sort().join('\n');
+  useEffect(() => {
+    if (!openAreas) return;
+    let cancel = false;
+    void Promise.all(openAreas.split('\n').map(async (key) => {
+      const areaId = key === '*' ? '' : key;
+      const path = areaId ? `/v1/challenge-ai/topics?areaId=${areaId}` : '/v1/challenge-ai/topics';
+      const r = await api<unknown>(path).catch(() => null);
+      return [areaId, r?.ok ? parseTopics(r.data) : []] as const;
+    })).then((rows) => { if (!cancel) setTopics(Object.fromEntries(rows)); });
+    return () => { cancel = true; };
+  }, [openAreas]);
+
   // The board filter is optional: if the list of maps fails, the other filters keep working.
   useEffect(() => {
     void api<BoardSummary[]>('/v1/boards').then((r) => { if (r.ok) setBoards(r.data); }).catch(() => undefined);
@@ -67,7 +92,16 @@ export function BankScreen() {
     const r = await api<unknown>(`/v1/challenge-ai/bank/${editing.id}`, { method: 'POST', body: JSON.stringify({ stem: editing.stem }) }).catch(() => null);
     setBusy(null);
     if (r?.ok) { setEditing(null); void load(); }
-    else setActionError(r && !r.ok && r.error.message === 'ungrounded_number' ? t('challengeAi.ungrounded') : r && !r.ok ? r.error.message : t('errors.internal'));
+    else setActionError(explain(r && !r.ok ? r.error.message : undefined));
+  };
+
+  const confirm = async (q: QuestionBankItemPublic, topicId: string) => {
+    setBusy(q.id);
+    setActionError(null);
+    const r = await api<unknown>(`/v1/challenge-ai/bank/${q.id}/confirm`, { method: 'POST', body: JSON.stringify({ topicId }) }).catch(() => null);
+    setBusy(null);
+    if (r?.ok) void load();
+    else setActionError(explain(r && !r.ok ? r.error.message : undefined));
   };
 
   const archive = async (id: string) => {
@@ -76,7 +110,7 @@ export function BankScreen() {
     const r = await api<unknown>(`/v1/challenge-ai/bank/${id}/archive`, { method: 'POST' }).catch(() => null);
     setBusy(null);
     if (r?.ok) void load();
-    else setActionError(r && !r.ok ? r.error.message : t('errors.internal'));
+    else setActionError(explain(r && !r.ok ? r.error.message : undefined));
   };
 
   const filtered = Object.values(filters).some((v) => v !== ALL);
@@ -141,15 +175,27 @@ export function BankScreen() {
                     <Tag tone="unknown">{t(`challengeAi.type.${q.type}`)}</Tag>
                     <Tag tone={q.status === 'approved' ? 'steady' : 'watch'}>{statusLabel(q.status)}</Tag>
                     {q.source === 'ai' ? <span className="text-xs text-muted">{t('challengeAi.generatedLabel')}</span> : null}
+                    {q.enamedTopicName ? <span className="text-xs text-muted">{t(q.enamedConfirmed ? 'challengeAi.topicConfirmed' : 'challengeAi.topicSuggested', { name: q.enamedTopicName })}</span> : null}
                   </div>
                   {editing?.id === q.id ? (
                     <form className="flex flex-col gap-3" onSubmit={(e) => { e.preventDefault(); void save(); }}>
                       <Textarea label={t('challengeAi.edit')} value={editing.stem} onChange={(e) => setEditing({ id: q.id, stem: e.target.value })} />
                       <Button type="submit" size="sm" loading={busy === q.id} disabled={busy === q.id || !editing.stem.trim()}>{t('challengeAi.saveEdit')}</Button>
                     </form>
+                  ) : q.status !== 'archived' && !q.enamedConfirmed ? (
+                    <Select
+                      label={t('challengeAi.chooseTopic')}
+                      placeholder={t('challengeAi.chooseTopic')}
+                      value={(topics[q.enamedAreaId ?? ''] ?? []).some((o) => o.id === q.enamedTopicId) ? (q.enamedTopicId ?? undefined) : undefined}
+                      onValueChange={(v) => { if (v) void confirm(q, v); }}
+                      options={(topics[q.enamedAreaId ?? ''] ?? []).map((o) => ({ value: o.id, label: o.name }))}
+                    />
                   ) : null}
                   <div className="flex flex-wrap gap-2">
                     <Button variant="quiet" size="sm" onClick={() => openSupport('fab')}>{t('challengeAi.report')}</Button>
+                    {q.status !== 'archived' && q.enamedTopicId && !q.enamedConfirmed ? (
+                      <Button variant="secondary" size="sm" loading={busy === q.id} disabled={busy === q.id} onClick={() => { const id = q.enamedTopicId; if (id) void confirm(q, id); }}>{t('challengeAi.confirmTopic')}</Button>
+                    ) : null}
                     {q.status !== 'archived' ? (
                       <>
                         <Button variant="secondary" size="sm" onClick={() => { setActionError(null); setEditing({ id: q.id, stem: q.stem }); }}>{t('challengeAi.edit')}</Button>
