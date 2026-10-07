@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { rememberGenerationNotice } from './start-ai';
 import { SESSION_STORAGE_PREFIX, SessionScreen, rememberChallengeAiSession, toAnswerResult, toPublicItem } from './session-screen';
 
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({ auth: { getSession: async () => ({ data: { session: null } }) } }) }));
@@ -88,6 +89,13 @@ describe('SessionScreen (F32 T7)', () => {
     fireEvent.click(screen.getByRole('radio', { name: /Hemoculturas/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar alternativa' }));
     await waitFor(() => expect(status()).toHaveTextContent('Incorreta'));
+    assertNoSecret();
+  });
+
+  it('says how many questions the batch actually delivered', () => {
+    rememberGenerationNotice(SESSION, { requested: 5, shortfall: 3, stoppedBy: null });
+    mount(start(objective));
+    expect(screen.getByText('Entregamos 2 de 5 perguntas. As outras não ficaram fiéis ao mapa.')).toBeVisible();
     assertNoSecret();
   });
 

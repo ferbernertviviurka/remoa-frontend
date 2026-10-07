@@ -116,6 +116,5 @@ test('axe: Preços, Conta (e confirmação de exclusão) e Paywall de mapas', as
     await page.getByRole('button', { name: 'Criar mapa', exact: true }).click({ timeout: 5000 });
     await expect(page.getByRole('dialog').getByRole('button', { name: 'Continuar no Free' })).toBeVisible({ timeout: 5000 });
   }).toPass({ timeout: 30_000 });
-  const dialog = page.getByRole('dialog');
   expect(await axe(page), 'paywall').toEqual([]);
 });

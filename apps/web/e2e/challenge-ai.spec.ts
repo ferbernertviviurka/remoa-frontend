@@ -51,6 +51,14 @@ test('desafio com IA a partir do card: a resposta do mapa não aparece antes nem
   expect(await axe(page), 'sessão depois do Não sei').toEqual([]);
 });
 
+/** Bearer of the logged-in cookie session, for API calls on the same user. */
+async function sessionHeaders(page: Page) {
+  const cookies = await page.context().cookies();
+  const raw = cookies.filter((c) => /auth-token(\.\d+)?$/.test(c.name)).sort((a, b) => a.name.localeCompare(b.name)).map((c) => c.value).join('');
+  const json = JSON.parse(Buffer.from(raw.replace(/^base64-/, ''), 'base64url').toString()) as { access_token: string };
+  return { authorization: `Bearer ${json.access_token}` };
+}
+
 test('formato 1 com IA simulada: a pergunta entra no banco e a resposta do card não aparece', async ({ page }) => {
   test.setTimeout(180_000);
   const bodies: Promise<string>[] = [];
@@ -59,7 +67,15 @@ test('formato 1 com IA simulada: a pergunta entra no banco e a resposta do card 
   });
   await signUpViaForm(page, `e2e-challenge-ai-gen-${Date.now()}@remoa.test`);
   await page.goto('/app/mapas');
-  await createBlankBoard(page, 'Mapa sintético');
+  const api = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+  const list = (await (await page.request.get(`${api}/v1/matrix/items?area=CM`, { headers: await sessionHeaders(page) })).json()).data as { id: string; parentId: string | null }[];
+  const leaf = list.find((x) => !list.some((c) => c.parentId === x.id));
+  expect(leaf, 'folha da matriz de Clínica Médica').toBeTruthy();
+  await page.goto(`/app/mapas/novo?item=${leaf!.id}`);
+  await expect(page.getByRole('heading', { level: 1, name: 'Sobre o mapa' })).toBeVisible();
+  await page.getByLabel('Nome do mapa').fill('Mapa sintético');
+  await page.getByRole('button', { name: 'Criar mapa', exact: true }).click();
+  await expect(page).toHaveURL(/\/mapas\/[0-9a-f-]{36}$/);
   await expect(page.locator('.react-flow__pane')).toBeVisible();
 
   await page.getByRole('toolbar', { name: 'Ferramentas do mapa' }).getByRole('button', { name: 'Adicionar Pergunta e Resposta' }).click();

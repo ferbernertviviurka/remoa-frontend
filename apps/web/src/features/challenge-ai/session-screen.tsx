@@ -14,6 +14,7 @@ import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Button, Icon, RingProgress, Stat, Tag, VerdictBox, buttonVariants, focusRing } from '@remoa/ui';
 import { api } from '@/lib/api';
+import { readStoredGenerationNotice, type GenerationNotice } from './start-ai';
 import { MaskOverlay } from '@/features/cards/mask-editor';
 import { useAsset } from '@/features/cards/upload';
 
@@ -189,6 +190,7 @@ export function SessionScreen({ sessionId, boardId, initial }: Props) {
   const [session, setSession] = useState<SessionView | null | undefined>(() => (initial === undefined ? undefined : toSessionView(initial)));
   const [finished, setFinished] = useState(false);
   const [report, setReport] = useState<SessionReport | null>(null);
+  const [notice] = useState<GenerationNotice | null>(() => readStoredGenerationNotice(sessionId));
   useEffect(() => {
     if (session === undefined) setSession(readStored(sessionId));
   }, [session, sessionId]);
@@ -236,6 +238,11 @@ export function SessionScreen({ sessionId, boardId, initial }: Props) {
             </div>
           ) : null}
         </header>
+        {notice && !finished ? (
+          <p className="m-0 text-sm font-semibold">
+            {t(notice.stoppedBy === 'quota' ? 'challengeAi.shortfallQuota' : notice.stoppedBy === 'ai_error' ? 'challengeAi.shortfallError' : 'challengeAi.shortfall', { got: notice.requested - notice.shortfall, asked: notice.requested })}
+          </p>
+        ) : null}
         {session === undefined ? (
           <p role="status" className="m-0 text-sm text-muted">{t('challenge.loading')}</p>
         ) : finished ? (

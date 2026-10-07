@@ -130,16 +130,15 @@ describe('Banco de questões', () => {
     expect(screen.getByRole('article', { name: 'Enunciado da questão 1' })).toBeInTheDocument();
   });
 
-  it('questão arquivada não oferece arquivar de novo; Reportar abre o suporte', async () => {
+  it('questão arquivada não oferece arquivar de novo; Reportar erro entra na fila do revisor', async () => {
     bank = [row(3, { status: 'archived' })];
-    const opened = vi.fn();
-    window.addEventListener('remoa:open-support', opened);
     render(<BankScreen />);
     const item = await screen.findByRole('article', { name: 'Enunciado da questão 3' });
     expect(within(item).queryByRole('button', { name: 'Arquivar' })).toBeNull();
     fireEvent.click(within(item).getByRole('button', { name: 'Reportar erro' }));
-    expect(opened).toHaveBeenCalledTimes(1);
-    window.removeEventListener('remoa:open-support', opened);
+    await waitFor(() => expect(calls.some((c) => c.path === `/v1/challenge-ai/items/${ID(3)}/report` && c.init?.method === 'POST')).toBe(true));
+    expect(within(item).getByRole('status')).toHaveTextContent('Recebido. Um revisor vai analisar esta pergunta.');
+    expect(within(item).queryByRole('button', { name: 'Reportar erro' })).toBeNull();
   });
 
   it('tema sugerido pede confirmação e manda o id do tema da lista', async () => {

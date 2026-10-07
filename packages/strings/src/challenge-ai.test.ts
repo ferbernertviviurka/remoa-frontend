@@ -12,6 +12,8 @@ describe('challengeAi (F32)', () => {
     expect(t('challengeAi.grading.end')).toBe('Corrigir no final');
     expect(t('challengeAi.verdict.partial')).toBe('Parcial');
     expect(t('challengeAi.aiCanErr')).toBe('A IA pode errar. Confira a fonte no card.');
+    expect(t('challengeAi.reportSent')).toBe('Recebido. Um revisor vai analisar esta pergunta.');
+    expect(t('challengeAi.shortfall', { got: 2, asked: 5 })).toBe('Entregamos 2 de 5 perguntas. As outras não ficaram fiéis ao mapa.');
   });
 
   it('interpolates cost', () => {

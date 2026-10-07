@@ -6,7 +6,6 @@ import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Alert, Button, Card, Empty, FilterChip, Input, Select, SkeletonBlock, SkeletonRegion, Tag, Textarea } from '@remoa/ui';
 import { api } from '@/lib/api';
-import { openSupport } from '@/features/support/open';
 
 const t = withStrings({ boards: more.boards, inspector: more.inspector, map: more.map });
 
@@ -50,6 +49,7 @@ export function BankScreen() {
   const [busy, setBusy] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ id: string; stem: string } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [reported, setReported] = useState<ReadonlySet<string>>(new Set());
   const [topics, setTopics] = useState<Record<string, { id: string; name: string }[]>>({});
   const [areas, setAreas] = useState<Named[]>([]);
   const [domains, setDomains] = useState<Named[]>([]);
@@ -119,6 +119,15 @@ export function BankScreen() {
     const r = await api<unknown>(`/v1/challenge-ai/bank/${q.id}/confirm`, { method: 'POST', body: JSON.stringify({ topicId }) }).catch(() => null);
     setBusy(null);
     if (r?.ok) void load();
+    else setActionError(explain(r && !r.ok ? r.error.message : undefined));
+  };
+
+  const report = async (id: string) => {
+    setBusy(id);
+    setActionError(null);
+    const r = await api<unknown>(`/v1/challenge-ai/items/${id}/report`, { method: 'POST' }).catch(() => null);
+    setBusy(null);
+    if (r?.ok) setReported((prev) => new Set(prev).add(id));
     else setActionError(explain(r && !r.ok ? r.error.message : undefined));
   };
 
@@ -222,7 +231,11 @@ export function BankScreen() {
                     />
                   ) : null}
                   <div className="flex flex-wrap gap-2">
-                    <Button variant="quiet" size="sm" onClick={() => openSupport('fab')}>{t('challengeAi.report')}</Button>
+                    {reported.has(q.id) ? (
+                      <p role="status" className="m-0 text-sm font-semibold">{t('challengeAi.reportSent')}</p>
+                    ) : (
+                      <Button variant="quiet" size="sm" loading={busy === q.id} disabled={busy === q.id} onClick={() => void report(q.id)}>{t('challengeAi.report')}</Button>
+                    )}
                     {q.status !== 'archived' && q.enamedTopicId && !q.enamedConfirmed ? (
                       <Button variant="secondary" size="sm" loading={busy === q.id} disabled={busy === q.id} onClick={() => { const id = q.enamedTopicId; if (id) void confirm(q, id); }}>{t('challengeAi.confirmTopic')}</Button>
                     ) : null}
