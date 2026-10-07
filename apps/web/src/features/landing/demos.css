@@ -18,10 +18,10 @@
 @keyframes calFill1{0%,41.33%{opacity:0}41.33%,64.00%{opacity:1}66.00%,100%{opacity:0}}
 @keyframes calFill2{0%,44.67%{opacity:0}44.67%,64.00%{opacity:1}66.00%,100%{opacity:0}}
 @keyframes bellshake{0%,100%{transform:rotate(0)}15%{transform:rotate(14deg)}30%{transform:rotate(-12deg)}45%{transform:rotate(9deg)}60%{transform:rotate(-6deg)}75%{transform:rotate(3deg)}}
-@keyframes iaK1{0%,0.00%{opacity:0;animation-timing-function:cubic-bezier(.22,1,.36,1)}1.75%,23.00%{opacity:1}24.50%,100%{opacity:0}}
-@keyframes iaK2{0%,25.00%{opacity:0;animation-timing-function:cubic-bezier(.22,1,.36,1)}26.75%,48.00%{opacity:1}49.50%,100%{opacity:0}}
-@keyframes iaK3{0%,50.00%{opacity:0;animation-timing-function:cubic-bezier(.22,1,.36,1)}51.75%,73.00%{opacity:1}74.50%,100%{opacity:0}}
-@keyframes iaK4{0%,75.00%{opacity:0;animation-timing-function:cubic-bezier(.22,1,.36,1)}76.75%,98.50%{opacity:1}100.00%,100%{opacity:0}}
+@keyframes iaK1{0%,0.00%{opacity:0;animation-timing-function:step-end}1.75%,23.00%{opacity:1}24.50%,100%{opacity:0}}
+@keyframes iaK2{0%,25.00%{opacity:0;animation-timing-function:step-end}26.75%,48.00%{opacity:1}49.50%,100%{opacity:0}}
+@keyframes iaK3{0%,50.00%{opacity:0;animation-timing-function:step-end}51.75%,73.00%{opacity:1}74.50%,100%{opacity:0}}
+@keyframes iaK4{0%,75.00%{opacity:0;animation-timing-function:step-end}76.75%,98.50%{opacity:1}100.00%,100%{opacity:0}}
 @keyframes iaK5{0%,1.50%{opacity:0;transform:translateX(-28px);animation-timing-function:cubic-bezier(.22,1,.36,1)}4.50%,23.00%{opacity:1;transform:none}24.50%,100%{opacity:0;transform:translateX(-28px)}}
 @keyframes iaK6{0%,4.00%{opacity:0;animation-timing-function:cubic-bezier(.22,1,.36,1)}5.50%,23.00%{opacity:1}24.50%,100%{opacity:0}}
 @keyframes iaK7{0%,5.00%{transform:scaleX(0);animation-timing-function:cubic-bezier(.22,1,.36,1)}11.50%,23.50%{transform:scaleX(1)}24.50%,100%{transform:scaleX(0)}}
@@ -59,9 +59,9 @@
 @keyframes iaK39{0%,75.50%{opacity:0;animation-timing-function:cubic-bezier(.22,1,.36,1)}77.00%,98.75%{opacity:1}100.00%,100%{opacity:0}}
 @keyframes iaProg{0%{transform:scaleX(0)}100%{transform:scaleX(1)}}
 @keyframes iaDots{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}
-@keyframes calK1{0%,0.00%{opacity:0;animation-timing-function:cubic-bezier(.22,1,.36,1)}2.33%,30.67%{opacity:1}32.67%,100%{opacity:0}}
-@keyframes calK2{0%,33.33%{opacity:0;animation-timing-function:cubic-bezier(.22,1,.36,1)}35.67%,64.00%{opacity:1}66.00%,100%{opacity:0}}
-@keyframes calK3{0%,66.67%{opacity:0;animation-timing-function:cubic-bezier(.22,1,.36,1)}69.00%,98.00%{opacity:1}100.00%,100%{opacity:0}}
+@keyframes calK1{0%,0.00%{opacity:0;animation-timing-function:step-end}2.33%,30.67%{opacity:1}32.67%,100%{opacity:0}}
+@keyframes calK2{0%,33.33%{opacity:0;animation-timing-function:step-end}35.67%,64.00%{opacity:1}66.00%,100%{opacity:0}}
+@keyframes calK3{0%,66.67%{opacity:0;animation-timing-function:step-end}69.00%,98.00%{opacity:1}100.00%,100%{opacity:0}}
 @keyframes calK4{0%,19.33%{opacity:0;transform:scale(.86);animation-timing-function:cubic-bezier(.22,1,.36,1)}22.33%,31.00%{opacity:1;transform:scale(1)}32.67%,100%{opacity:0;transform:scale(.86)}}
 @keyframes calK5{0%,23.33%{opacity:0;transform:scale(.86);animation-timing-function:cubic-bezier(.22,1,.36,1)}26.33%,31.00%{opacity:1;transform:scale(1)}32.67%,100%{opacity:0;transform:scale(.86)}}
 @keyframes calK6{0%,26.67%{opacity:0;transform:scale(.86);animation-timing-function:cubic-bezier(.22,1,.36,1)}29.67%,31.00%{opacity:1;transform:scale(1)}32.67%,100%{opacity:0;transform:scale(.86)}}

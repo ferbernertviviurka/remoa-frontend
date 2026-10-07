@@ -43,8 +43,8 @@ export function CalendarPlayer({ playerRef }: { playerRef: RefObject<HTMLDivElem
               <span className="k calK10 flex h-[50px] items-center rounded-[15px] bg-primary px-5 text-[14.5px] font-extrabold text-white">{c.save}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="font-display text-[22px] font-extrabold tracking-[-0.02em]">{c.month}</span>
-              <span className="text-[12.5px] font-bold text-muted">{c.views}</span>
+              <span className="font-display text-[22px] font-extrabold tracking-[-0.02em] text-ink">{c.month}</span>
+              <span className="text-[12.5px] font-bold text-ink">{c.views}</span>
             </div>
             <div className="grid grid-cols-7 gap-[5px]">
               {c.weekdays.map((d, i) => <span key={`${d}-${i}`} className="text-center text-[11.5px] font-extrabold tracking-wider text-muted">{d}</span>)}
@@ -54,8 +54,8 @@ export function CalendarPlayer({ playerRef }: { playerRef: RefObject<HTMLDivElem
                 return (
                   <span key={i} className="relative h-[60px] rounded-[10px] border border-[#EEEBF8] bg-surface">
                     {today ? <span className="absolute top-1 left-[5px] h-[22px] w-[22px] rounded-full bg-primary" /> : null}
-                    {cell ? <span className={`relative block px-2 pt-1 text-xs font-bold ${today ? 'text-white' : 'text-muted'}`}>{cell.day}</span> : null}
-                    {chip ? <span className={`k ${chip.anim} absolute right-1 bottom-[5px] left-1 flex h-[18px] items-center rounded-md pr-1 pl-1.5 text-[10.5px] font-extrabold text-muted ${chip.tone}`}>{chip.label}</span> : null}
+                    {cell ? <span className={`relative block px-2 pt-1 text-xs font-bold ${today ? 'text-white' : 'text-ink'}`}>{cell.day}</span> : null}
+                    {chip ? <span className={`k ${chip.anim} absolute right-1 bottom-[5px] left-1 flex h-[18px] items-center rounded-md pr-1 pl-1.5 text-[10.5px] font-extrabold text-ink ${chip.tone}`}>{chip.label}</span> : null}
                   </span>
                 );
               })}
