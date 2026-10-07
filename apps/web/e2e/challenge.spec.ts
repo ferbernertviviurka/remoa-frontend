@@ -76,7 +76,7 @@ test('desafiar este mapa: mínimo de 10 cards, opções, Eu respondo (Acertei/Er
   await expect(challengeBtn).not.toHaveAttribute('aria-disabled', 'true');
   await challengeBtn.click();
   const setup = page.getByRole('dialog', { name: 'Desafiar este mapa' });
-  await expect(setup.getByRole('button', { name: /IA responde/ })).toBeDisabled();
+  await expect(setup.getByRole('button', { name: /IA responde/ })).toBeEnabled();
   await setup.getByRole('button', { name: /Seguindo o fluxo das setas/ }).click();
   const started = page.waitForRequest((r) => r.url().endsWith('/v1/challenge/start'));
   const camera = () => page.locator('.react-flow__viewport').getAttribute('style');
