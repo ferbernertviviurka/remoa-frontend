@@ -1,9 +1,6 @@
-import type { Metadata } from 'next';
-import { t } from '@remoa/strings';
-import { SeedsView } from '@/features/editorial/seeds-view';
+import { redirect } from 'next/navigation';
 
-export const metadata: Metadata = { title: t('pages.library') };
-
+/** F31: the library lives in /app/mapas (aba Biblioteca); this old address just points there. */
 export default function Page() {
-  return <SeedsView />;
+  redirect('/app/mapas?aba=biblioteca');
 }
