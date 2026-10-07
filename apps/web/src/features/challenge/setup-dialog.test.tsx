@@ -26,6 +26,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  sessionStorage.clear();
   vi.clearAllMocks();
 });
 
@@ -63,6 +64,16 @@ describe('ChallengeSetupDialog: desafio com IA (F32)', () => {
   });
 
   it('POSTs the config to /v1/challenge-ai/sessions and goes to the AI session; never starts the old one', async () => {
+    const secret = 'gabarito-secreto-nao-mostrar';
+    api.mockResolvedValue({
+      ok: true,
+      data: {
+        id: SESSION,
+        total: 1,
+        position: 0,
+        current: { id: '11111111-1111-4111-8111-111111111111', position: 0, type: 'discursive', stem: 'Defina sepse.', correct_key: secret },
+      },
+    });
     const { onStart } = open();
     fireEvent.click(aiRow());
     fireEvent.click(screen.getByRole('radio', { name: 'Difícil' }));
@@ -86,6 +97,9 @@ describe('ChallengeSetupDialog: desafio com IA (F32)', () => {
       preset: null,
     });
     expect(onStart).not.toHaveBeenCalled();
+    const stored = sessionStorage.getItem(`remoa:challenge-ai:${SESSION}`);
+    expect(stored).toContain('Defina sepse.');
+    expect(stored).not.toContain(secret);
   });
 
   it('format "map" sends no questionType', async () => {

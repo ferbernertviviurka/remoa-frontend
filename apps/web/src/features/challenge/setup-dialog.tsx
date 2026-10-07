@@ -17,6 +17,7 @@ import {
 } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { Button, ChoiceRow, Dialog, Segmented, Select } from '@remoa/ui';
+import { rememberChallengeAiSession } from '@/features/challenge-ai/session-screen';
 import { aiChallengeHref, aiCostUnits, startAiChallenge } from '@/features/challenge-ai/start-ai';
 
 const soon = t('challengeSetup.dialog.soon');
@@ -110,6 +111,7 @@ export function ChallengeSetupDialog({
     });
     setBusy(false);
     if (!r.ok) return setFailed(true);
+    rememberChallengeAiSession(r.data);
     onAiStart?.(r.data.id);
     router.push(aiChallengeHref(boardId, r.data.id));
   }
