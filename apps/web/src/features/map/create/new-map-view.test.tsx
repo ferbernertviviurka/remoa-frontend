@@ -275,7 +275,9 @@ describe('NewMapView: "Sobre o mapa" (F17)', () => {
     next();
     fireEvent.click(screen.getByRole('button', { name: 'Gerar rascunho do mapa' }));
     expect(await screen.findByRole('progressbar', { name: 'Progresso da geração do mapa' })).toBeTruthy();
-    expect(await screen.findByText('Extraindo conceitos… 30%')).toBeTruthy();
+    const status = await screen.findByText('Extraindo conceitos…');
+    expect(status.closest('[role=status]')).toHaveTextContent('Extraindo conceitos…30%');
+    expect(screen.getByRole('button', { name: /Gerar rascunho do mapa/ })).toBeDisabled(); // one quiet bar, no second spinner on the button
     await waitFor(() => expect(push).toHaveBeenCalledWith('/app/mapas/pdf1'));
     expect(track).toHaveBeenCalledWith('board_generated_from_pdf', expect.objectContaining({ cards: 4, edges: 1, pages: 12 }));
     vi.unstubAllGlobals();

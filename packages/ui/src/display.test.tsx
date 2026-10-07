@@ -24,6 +24,14 @@ describe('componentes de exibição', () => {
     render(<Progress aria-label="Progresso" value={40} />);
     expect(screen.getByRole('progressbar', { name: 'Progresso' })).toHaveAttribute('aria-valuenow', '40');
   });
+  it('Progress busy brilha só enquanto ocupado; sm é o trilho fino', () => {
+    const { rerender } = render(<Progress aria-label="Geração" value={30} busy size="sm" />);
+    const bar = screen.getByRole('progressbar', { name: 'Geração' });
+    expect(bar.className).toContain('h-1.5');
+    expect(bar.firstElementChild?.className).toContain('st-shine');
+    rerender(<Progress aria-label="Geração" value={30} />);
+    expect(bar.firstElementChild?.className).not.toContain('st-shine');
+  });
   it('Avatar com foto mostra o anel de carregamento até a imagem carregar', () => {
     render(<Avatar name="Ana Lima" fallback="AL" src="/foto.webp" />);
     expect(screen.getByTestId('avatar-loading')).toBeTruthy();

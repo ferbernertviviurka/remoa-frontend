@@ -16,7 +16,7 @@ export const challenge = {
   optionsLabel: 'Alternativas',
   textLabel: 'Sua resposta',
   submitText: 'Corrigir resposta',
-  grading: 'corrigindo…',
+  grading: 'Corrigindo…',
   submitOption: 'Confirmar alternativa',
   reveal: 'Revelar resposta',
   skip: 'Pular',

@@ -7,3 +7,4 @@ type S = StoryObj<typeof meta>;
 export const Empty: S = { args: { 'aria-label': 'Progresso', value: 0 } };
 export const Half: S = { args: { 'aria-label': 'Progresso', value: 50 } };
 export const Full: S = { args: { 'aria-label': 'Progresso', value: 100 } };
+export const BusySmall: S = { args: { 'aria-label': 'Progresso', value: 30, busy: true, size: 'sm' } };

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { SESSION_STORAGE_PREFIX, SessionScreen, rememberChallengeAiSession, toAnswerResult, toPublicItem } from './session-screen';
 
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({ auth: { getSession: async () => ({ data: { session: null } }) } }) }));
@@ -163,7 +163,14 @@ describe('SessionScreen (F32 T7)', () => {
             ok: true,
             data: {
               score: { correct: 0, partial: 0, incorrect: 1, pending: 0, unanswered: 0 },
-              items: [{ itemId: ITEM, stem: 'Defina sepse.', verdict: 'incorrect', feedback: 'Revise o gatilho.', expectedAnswer: SECRET }],
+              percent: 0,
+              timing: { totalMs: 125_000, avgMs: 42_000 },
+              items: [{ itemId: ITEM, stem: 'Defina sepse.', verdict: 'incorrect', feedback: 'Revise o gatilho.', elapsedMs: 42_000, expectedAnswer: SECRET }],
+              advice: {
+                message: 'Revise os critérios de sepse.',
+                cards: [{ cardId: ITEM, title: 'Sepse', reason: 'Base da pergunta.', expectedAnswer: SECRET }],
+                maps: [{ boardId: BOARD, title: 'Choque', ready: true, reason: null }],
+              },
             },
           },
         };
@@ -173,7 +180,14 @@ describe('SessionScreen (F32 T7)', () => {
     mount(start({ id: ITEM, position: 0, type: 'discursive', stem: 'Defina sepse.' }));
     fireEvent.click(screen.getByRole('button', { name: 'Não sei' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Próxima pergunta' }));
-    await screen.findByText(/1 incorretas/);
+    await screen.findByRole('heading', { level: 1, name: 'Resultado do desafio' });
+    expect(screen.getByRole('img', { name: '0% de aproveitamento' })).toBeVisible();
+    expect(screen.getByText('Erros').nextSibling).toHaveTextContent('1');
+    expect(screen.getByText('Tempo total').nextSibling).toHaveTextContent('2 min 05 s');
+    expect(screen.getByText('Tempo médio por pergunta').nextSibling).toHaveTextContent('42 s');
+    expect(screen.getByText('Revise os critérios de sepse.')).toBeVisible();
+    expect(screen.getByRole('link', { name: /Sepse/ })).toHaveAttribute('href', `/app/mapas/${BOARD}?card=${ITEM}`);
+    expect(screen.getByRole('link', { name: /Choque/ })).toHaveAttribute('href', `/app/mapas/prontos/${BOARD}`);
     expect(calls.some((c) => c.url.includes('/finish') && c.body && Object.keys(c.body).length === 0)).toBe(true);
     assertNoSecret();
   });
@@ -187,8 +201,8 @@ describe('SessionScreen (F32 T7)', () => {
     reply = () => ({ status: 200, body: { ok: true, data: { attemptId: ATTEMPT } } });
     fireEvent.click(screen.getByRole('button', { name: 'Discordar' }));
     await screen.findByText('Obrigado. Vamos revisar esta correção.');
-    expect(calls[1]!.url).toContain(`/v1/challenge-ai/attempts/${ATTEMPT}/dispute`);
-    expect(calls[1]!.body).toEqual({ attemptId: ATTEMPT });
+    expect(calls.at(-1)!.url).toContain(`/v1/challenge-ai/attempts/${ATTEMPT}/dispute`);
+    expect(calls.at(-1)!.body).toEqual({ attemptId: ATTEMPT });
   });
 
   it('bank item: AI label, "can err" notice and Reportar erro; read from sessionStorage', async () => {
@@ -215,7 +229,7 @@ describe('SessionScreen (F32 T7)', () => {
     mount(start({ id: ITEM, position: 0, type: 'next_step', stem: 'Ordene.', steps: [{ id: 's1', text: 'Volume' }, { id: 's2', text: 'Culturas' }, { id: 's3', text: 'Antibiótico' }] }));
     fireEvent.change(screen.getByRole('combobox', { name: 'Culturas' }), { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Corrigir resposta' }));
-    await waitFor(() => expect(calls).toHaveLength(1));
+    await waitFor(() => expect(calls.length).toBeGreaterThan(0));
     expect(calls[0]!.body).toMatchObject({ answer: { kind: 'order', stepIds: ['s2', 's1', 's3'] } });
   });
 
@@ -225,7 +239,7 @@ describe('SessionScreen (F32 T7)', () => {
     assertNoSecret();
     fireEvent.change(screen.getByRole('textbox', { name: 'Sua resposta' }), { target: { value: 'baço' } });
     fireEvent.click(screen.getByRole('button', { name: 'Corrigir resposta' }));
-    await waitFor(() => expect(calls).toHaveLength(1));
+    await waitFor(() => expect(calls.length).toBeGreaterThan(0));
     expect(calls[0]!.body).toMatchObject({ answer: { kind: 'label', text: 'baço' } });
   });
 
@@ -252,6 +266,55 @@ describe('SessionScreen (F32 T7)', () => {
     mount(start({ id: ITEM, type: 'objective', stem: 'x', correct_key: SECRET }));
     expect(screen.getByRole('alert')).toHaveTextContent('Não conseguimos montar a sessão.');
     assertNoSecret();
+  });
+
+  it('last question: the button says Finalizar desafio and opens the result', async () => {
+    reply = (url) => url.includes('/finish')
+      ? { status: 200, body: { ok: true, data: { score: { correct: 1, partial: 0, incorrect: 0, pending: 0, unanswered: 0 }, percent: 100, timing: { totalMs: 9_000, avgMs: 9_000 }, items: [], advice: null } } }
+      : url.includes('/answers') ? { status: 200, body: { ok: true, data: verdict({ verdict: 'correct', rating: 'good' }) } }
+      : { status: 200, body: { ok: true, data: start(null, { position: 5 }) } };
+    mount(start(objective, { position: 4 }));
+    fireEvent.click(screen.getByRole('radio', { name: /Hemoculturas/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar alternativa' }));
+    await waitFor(() => expect(status()).toHaveTextContent('Acertou!'));
+    expect(screen.queryByRole('button', { name: 'Próxima pergunta' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Finalizar desafio' }));
+    await screen.findByRole('heading', { level: 1, name: 'Resultado do desafio' });
+    expect(screen.getByText('Mandou bem! Continue revisando para manter.')).toBeVisible();
+  });
+
+  it('prefetches the next question as soon as the answer is final, and Próxima uses it', async () => {
+    const nextId = '55555555-5555-4555-8555-555555555555';
+    reply = (url) => url.includes('/answers')
+      ? { status: 200, body: { ok: true, data: verdict() } }
+      : { status: 200, body: { ok: true, data: start({ id: nextId, position: 1, type: 'discursive', stem: 'Cite um critério de sepse.' }, { position: 1 }) } };
+    mount(start(objective));
+    fireEvent.click(screen.getByRole('radio', { name: /Lactato/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar alternativa' }));
+    const gets = () => calls.filter((c) => c.url.endsWith(`/v1/challenge-ai/sessions/${SESSION}`));
+    await waitFor(() => expect(gets()).toHaveLength(1));
+    fireEvent.click(screen.getByRole('button', { name: 'Próxima pergunta' }));
+    await screen.findByRole('heading', { level: 1, name: 'Cite um critério de sepse.' });
+    expect(gets()).toHaveLength(1);
+  });
+
+  it('times the question and the session, and sends elapsedMs', async () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
+    try {
+      vi.setSystemTime(new Date('2026-10-07T10:00:30.000Z'));
+      mount(start(objective, { startedAt: '2026-10-07T10:00:00.000Z' }));
+      expect(screen.getByText('No desafio').nextSibling).toHaveTextContent('00:30');
+      expect(screen.getByText('Nesta pergunta').nextSibling).toHaveTextContent('00:00');
+      act(() => vi.advanceTimersByTime(65_000));
+      expect(screen.getByText('Nesta pergunta').nextSibling).toHaveTextContent('01:05');
+      expect(screen.getByText('No desafio').nextSibling).toHaveTextContent('01:35');
+      fireEvent.click(screen.getByRole('radio', { name: /Lactato/ }));
+      fireEvent.click(screen.getByRole('button', { name: 'Confirmar alternativa' }));
+    } finally {
+      vi.useRealTimers();
+    }
+    await waitFor(() => expect(status()).toHaveTextContent('Incorreta'));
+    expect(calls[0]!.body.elapsedMs).toBe(65_000);
   });
 
   it('full screen: fixed layer with min height 100dvh and an exit link to the map', () => {

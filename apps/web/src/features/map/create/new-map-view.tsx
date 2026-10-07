@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Board, BoardGenerationProgress, ImportBoardInput, ImportTarget, MatrixItem } from '@remoa/contracts';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
-import { Alert, Button, ChoiceCard, ChoiceRow, Dialog, Dropzone, Icon, IconButton, Logo, Progress, Skeleton, SkeletonRegion, Stepper } from '@remoa/ui';
+import { Alert, Button, ChoiceCard, ChoiceRow, Dialog, Dropzone, Icon, IconButton, Logo, Morph, Progress, Skeleton, SkeletonRegion, Stepper } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { usePaywall } from '@/features/billing/paywall';
@@ -418,8 +418,11 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
               ) : null}
               {progress != null ? (
                 <div className="flex flex-col gap-2">
-                  <p role="status" className="m-0 text-sm font-semibold">{t('newMap.generating', { stage: t(`newMap.stage.${stage ?? 'extract'}`), n: progress })}</p>
-                  <Progress aria-label={t('newMap.generatingLabel')} value={progress} />
+                  <p role="status" className="m-0 flex items-baseline justify-between gap-3 text-sm text-muted">
+                    <Morph>{t('newMap.generatingStage', { stage: t(`newMap.stage.${stage ?? 'extract'}`) })}</Morph>
+                    <span className="tabular-nums"><Morph>{t('newMap.generatingPercent', { n: progress })}</Morph></span>
+                  </p>
+                  <Progress aria-label={t('newMap.generatingLabel')} value={progress} size="sm" busy={progress < 100} />
                 </div>
               ) : null}
               {progress != null && jobId && busy ? <Button variant="secondary" onClick={cancelJob}>{t('newMap.cancel')}</Button> : null}
@@ -441,7 +444,7 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
             <span className="max-sm:hidden" />
           )}
           {last && path !== 'seed' ? (
-            <Button size="lg" disabled={!canFinish} loading={busy || navigating} loadingLabel={t('common.loading')} iconEnd={path === 'blank' ? <Icon name="right" size={20} /> : undefined} onClick={() => void submit()}>
+            <Button size="lg" disabled={!canFinish || busy} loading={(busy && progress == null) || navigating} loadingLabel={t('common.loading')} iconEnd={path === 'blank' ? <Icon name="right" size={20} /> : undefined} onClick={() => void submit()}>
               {cta}
             </Button>
           ) : !last ? (

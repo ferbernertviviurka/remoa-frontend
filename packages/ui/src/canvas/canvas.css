@@ -26,8 +26,29 @@
 }
 .cv-pop { animation: cv-pop 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
+/* Veredito (D-1567): errou balança a caixa; o selo de acerto salta com um anel que se expande. */
+@keyframes cv-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-7px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(2px); }
+}
+.cv-shake { animation: cv-pop 0.3s cubic-bezier(0.22, 1, 0.36, 1) both, cv-shake 0.45s ease-in-out 0.15s; }
+@keyframes cv-burst {
+  0% { transform: scale(0) rotate(-25deg); }
+  60% { transform: scale(1.25) rotate(8deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+@keyframes cv-ring {
+  from { transform: scale(1); opacity: 0.5; }
+  to { transform: scale(2.3); opacity: 0; }
+}
+.cv-burst { animation: cv-burst 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both; }
+.cv-burst::after { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: inherit; animation: cv-ring 0.7s ease-out 0.35s both; }
+
 @media (prefers-reduced-motion: reduce) {
-  .cv-pulse, .cv-pop { animation: none; }
+  .cv-pulse, .cv-pop, .cv-shake, .cv-burst, .cv-burst::after { animation: none; }
 }
 
 /* Virar o card (D-097): 400 ms; com prefers-reduced-motion troca sem animação. */
