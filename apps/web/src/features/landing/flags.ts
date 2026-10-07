@@ -6,5 +6,18 @@ export const landingFlags = () => ({
   betaFounder: process.env.NEXT_PUBLIC_BETA_FOUNDER === '1',
   /** FR-21: "Revisado por médico" chips/badges only when approved content exists (F10). */
   approvedContent: process.env.NEXT_PUBLIC_APPROVED_CONTENT === '1',
+  /** D-1551: what the landing may claim. `soon` shows "Em breve" and is not stated as available. */
+  ia: iaFeatures(),
+});
+
+export type IaFeature = 'pdf' | 'gerar' | 'corrigir' | 'resumo';
+export type IaFeatureState = 'live' | 'soon';
+
+/** PDF generation and grading are on `/v1/ai`. Question bank and map summary are not shipped (D-1551). */
+export const iaFeatures = (): Record<IaFeature, IaFeatureState> => ({
+  pdf: 'live',
+  gerar: 'soon',
+  corrigir: 'live',
+  resumo: 'soon',
 });
 export type LandingFlags = ReturnType<typeof landingFlags>;

@@ -1,7 +1,10 @@
 // F16 — Landing page copy from PRD (docs/PRD-landing.md) and FRD (docs/features/F16-landing-page.md).
 // No price/percentage/count literals: use placeholders ({price}, {pct}, {n}, {value}).
 // Reuse where possible: common.retry, common.cancel, plan.pro.*, plans.period.{monthly,annual}, billing.*
+import { landingExtras } from './landing-g21';
+
 export const landing = {
+  ...landingExtras,
   // Navigation and layout
   nav: {
     navLabel: 'Navegação da página',
@@ -9,6 +12,9 @@ export const landing = {
     anchors: {
       howWorks: 'Como funciona',
       features: 'Recursos',
+      ia: 'IA',
+      enamed: 'ENAMED',
+      calendar: 'Calendário',
       plans: 'Planos',
       faq: 'Perguntas',
     },
@@ -458,6 +464,14 @@ export const landing = {
         a: 'Sim, em um clique, sem perder seus mapas.',
       },
       {
+        q: 'A IA pode errar?',
+        a: 'Pode. Por isso cada card mostra a origem e você sempre confere a fonte. Não envie dados de pacientes.',
+      },
+      {
+        q: 'Como a IA corrige a minha resposta?',
+        a: 'Você escreve com as suas palavras. A correção olha o sentido e o que está na fonte do card, e mostra o que você acertou e o que faltou. A nota é da IA, e ela pode errar.',
+      },
+      {
         q: 'O que acontece com meus dados?',
         a: 'Exportação e exclusão de conta a um clique, conforme a LGPD. Áudio de resposta por voz não é armazenado.',
       },
@@ -535,8 +549,8 @@ export const landing = {
   },
 
   seo: {
-    title: 'Remoa: revisão espaçada em mapas para residência médica',
-    description: 'Estude para a residência médica num mapa que te testa: revisão espaçada, correção com fonte e cobertura do Enamed. Comece com seu Anki ou um PDF.',
+    title: 'Remoa: mapas com IA, Enamed e calendário',
+    description: 'Mapas para a residência: a IA cria cards e corrige com fonte, mapas prontos do Enamed e calendário de provas.',
     ogTitle: 'O que você aprende, fica.',
     ogDescription: 'Mapas de medicina que te testam pela conexão.',
     orgName: 'Remoa',
