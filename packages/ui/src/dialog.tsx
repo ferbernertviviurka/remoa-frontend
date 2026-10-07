@@ -25,7 +25,7 @@ export type DialogProps = {
 };
 
 const sizes = {
-  md: 'remoa-dialog left-1/2 top-1/2 w-[min(92vw,480px)] -translate-x-1/2 -translate-y-1/2 rounded-review p-6',
+  md: 'remoa-dialog left-1/2 top-1/2 max-h-[92vh] w-[min(92vw,480px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-review p-6',
   lg: 'remoa-dialog left-1/2 top-[min(140px,8vh)] w-[min(92vw,560px)] -translate-x-1/2 rounded-[30px] p-7',
   xl: 'remoa-dialog left-1/2 top-[min(70px,5vh)] max-h-[92vh] w-[min(92vw,760px)] -translate-x-1/2 overflow-y-auto rounded-[30px] p-7',
   full: 'remoa-sheet inset-0 flex flex-col overflow-hidden p-6',
