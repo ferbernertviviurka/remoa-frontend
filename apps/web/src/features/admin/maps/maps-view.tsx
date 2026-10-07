@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { AdminMapPage, AdminMapRow, AuditEntry } from '@remoa/contracts';
 import { strings, t } from '@remoa/strings/admin';
 import { PersonCell, StatusPill, type StatusPillProps } from '@remoa/ui';
+import { approveSeedMap } from '../shared/actions';
 import { act, ActionError, AdminList, auditLine, type ActionSpec } from '../list-kit/admin-list';
 import { formatDay } from '../list-kit/download';
 import { ExportCsv } from '../list-kit/export-csv';
@@ -34,12 +35,19 @@ export function MapsView({ data, error, page }: Props) {
       summary: t(`admin.maps.dialog.${key}Summary` as 'admin.maps.dialog.openSummary'),
       confirmLabel: confirm,
       auditLabel,
-      // approving needs the recorded medical review: the API answers invalid_state when it is missing (D-461)
       run: (reason) => act(path, reason).catch((e: unknown) => { throw id === 'approve' && e instanceof ActionError && e.code === 'invalid_state' ? new ActionError('seed_not_reviewed') : e; }),
       ...(id === 'open' ? { onDone: (r: { auditId: string; data?: unknown }) => setOpen({ graph: (r.data as { graph?: unknown } | undefined)?.graph, title: m.title, auditId: r.auditId }) } : {}),
     });
     const list = [one('open', `/maps/${m.id}/open`, 'open', t('admin.maps.actions.viewReadOnly'), t('admin.maps.dialog.openConfirm'), labels['map.open_readonly']!)];
-    if (m.status === 'seed_draft') list.push(one('approve', `/seeds/${m.id}/approve`, 'approve', t('admin.maps.actions.approveSeed'), t('admin.maps.dialog.approveConfirm'), labels['seed.approve']!));
+    if (m.status === 'seed_draft') {
+      const approve: ActionSpec = {
+        ...one('approve', `/seeds/${m.id}/approve`, 'approve', t('admin.maps.actions.approveSeed'), t('admin.maps.dialog.approveConfirm'), labels['seed.approve']!),
+        run: (reason) => approveSeedMap(m.id, m.origin === 'seed' ? { reason, institutional: true } : { reason })
+          .then((r) => { if (!r.ok) throw new ActionError(r.error.code); return { auditId: r.auditId, data: r.data }; })
+          .catch((e: unknown) => { throw e instanceof ActionError && e.code === 'invalid_state' ? new ActionError('seed_not_reviewed') : e; }),
+      };
+      list.push(approve);
+    }
     if (m.status === 'seed_approved') list.push(one('unpublish', `/seeds/${m.id}/unpublish`, 'unpublish', t('admin.maps.actions.unpublishSeed'), t('admin.maps.dialog.unpublishConfirm'), labels['seed.unpublish']!, true));
     if (m.status !== 'archived' && m.origin !== 'seed') list.push(one('archive', `/maps/${m.id}/archive`, 'archive', t('admin.maps.actions.archive'), t('admin.maps.dialog.archiveConfirm'), labels['map.archive']!, true));
     return list;

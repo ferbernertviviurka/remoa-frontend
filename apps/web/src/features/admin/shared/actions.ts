@@ -1,6 +1,6 @@
 'use server';
 
-import type { adminExportResources, AuditEntry } from '@remoa/contracts';
+import type { adminExportResources, AuditEntry, SeedApproveInput } from '@remoa/contracts';
 import { formatAuditId } from '@remoa/contracts';
 import { createClient } from '@/lib/supabase/server';
 import { apiBase } from '@/lib/api';
@@ -21,6 +21,11 @@ const notFoundOutcome = { ok: false, error: { code: 'not_found', message: 'not f
  * Returns `{ ok, auditId: 'a_1050', data }` or `{ ok: false, error }`; `error.code === 'reauth_required'` (normalized from the API's forbidden + reauth_required, see reauth.ts) means ask the admin to sign in again.
  * The API is the real gate (requireAdmin + withAdmin); the me check only avoids pointless calls.
  */
+/** POST /v1/admin/seeds/:id/approve — mapas prontos (origin seed) usam aprovação institucional (D-1522). */
+export async function approveSeedMap(boardId: string, input: SeedApproveInput): Promise<AdminActionOutcome<unknown>> {
+  return runAdminAction(`/seeds/${boardId}/approve`, input);
+}
+
 export async function runAdminAction<T = unknown>(path: string, body: { reason: string } & Record<string, unknown>): Promise<AdminActionOutcome<T>> {
   if (!safe(path)) return notFoundOutcome;
   const gate = await adminGateCode();

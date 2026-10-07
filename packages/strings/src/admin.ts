@@ -309,7 +309,7 @@ export const admin = {
       archiveSummary: 'O mapa sai da lista do dono e pode ser restaurado por você.',
       archiveConfirm: 'Arquivar',
       approveTitle: 'Aprovar seed',
-      approveSummary: 'A seed fica publicada para todos. Só aprove com a revisão médica registrada.',
+      approveSummary: 'Mapa pronto (seed): publica para todos como "Aprovado por Remoa". Seeds antigas sem trilha ainda exigem revisão médica no editorial.',
       approveConfirm: 'Aprovar',
       unpublishTitle: 'Despublicar seed',
       unpublishSummary: 'A seed deixa de aparecer para os alunos e volta a rascunho.',
