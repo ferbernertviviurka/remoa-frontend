@@ -31,3 +31,4 @@ export { importNs as import } from './ns-parts/import';
 export { ai } from './ns-parts/ai';
 export { calendar } from './ns-parts/calendar';
 export { review } from './ns-parts/review';
+export { mapLibrary } from './ns-parts/library';

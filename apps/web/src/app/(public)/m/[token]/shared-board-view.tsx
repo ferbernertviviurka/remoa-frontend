@@ -104,7 +104,7 @@ export function SharedBoardView({ board, token }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Disclaimer />
+      {board.area === 'OUTRO' ? null : <Disclaimer />}
 
       {/* Board header */}
       <header className="flex flex-col gap-1 border-b border-border bg-surface px-5 py-4" data-testid="shared-board-header">

@@ -97,13 +97,25 @@ describe('NewMapView: "Sobre o mapa" (F17)', () => {
     expect(posted('/v1/boards')).toMatchObject({ access: 'password', password: 'turma2026' });
   });
 
-  it('the 5 areas are clickable; leaving CM clears the items, says so, and the picker shows the no-matrix message (FR-4, FR-6)', async () => {
+  it('Outro assunto: no matrix, own message, posts area OUTRO with no items (D-1470)', async () => {
+    api.mockImplementation(async (path: string) => (path === '/v1/boards' ? { ok: true, data: { id: 'n' } } : { ok: true, data: [] }));
+    render(<NewMapView items={items} initialPath="blank" />);
+    next();
+    fireEvent.click(within(screen.getByRole('group', { name: 'Grande área' })).getByRole('button', { name: 'Outro assunto' }));
+    expect(screen.getByText('Mapas de outro assunto não usam a matriz Enamed.')).toBeTruthy();
+    fireEvent.change(name(), { target: { value: 'Direito Civil' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Criar mapa' }));
+    await waitFor(() => expect(push).toHaveBeenCalled());
+    expect(posted('/v1/boards')).toEqual({ title: 'Direito Civil', area: 'OUTRO', matrixItemIds: [], access: 'owner' });
+  });
+
+  it('the 6 areas are clickable; leaving CM clears the items, says so, and the picker shows the no-matrix message (FR-4, FR-6)', async () => {
     api.mockImplementation(async (path: string) => (path === '/v1/boards' ? { ok: true, data: { id: 'n' } } : { ok: true, data: [] }));
     render(<NewMapView items={items} initialPath="blank" />);
     next();
     const areas = screen.getByRole('group', { name: 'Grande área' });
     expect(within(areas).getAllByRole('button').every((b) => !(b as HTMLButtonElement).disabled)).toBe(true);
-    expect(within(areas).getAllByRole('button')).toHaveLength(5);
+    expect(within(areas).getAllByRole('button')).toHaveLength(6);
     await pickItem('sepse', 'Sepse');
     fireEvent.click(within(areas).getByRole('button', { name: 'Pediatria' }));
     expect(screen.getByText('Os itens foram limpos porque a área mudou.')).toBeTruthy();

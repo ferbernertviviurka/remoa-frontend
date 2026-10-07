@@ -22,6 +22,7 @@ export const newMapAbout = {
   // Aviso de troca de área
   areaChangedWarning: 'Os itens foram limpos porque a área mudou.',
 
+  noMatrixOther: 'Mapas de outro assunto não usam a matriz Enamed.',
   // Área sem matriz
   noMatrixMessage: 'A matriz Enamed desta área ainda não está disponível.',
 

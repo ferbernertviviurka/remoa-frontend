@@ -17,6 +17,7 @@ import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { primeCardDetail, useCardDetail } from './card-detail';
 import { usePaywall } from '@/features/billing/paywall';
+import { ReportButton } from '@/features/library/report-button';
 import { AiDraftTag } from '../ai-draft';
 import { caseStageItems } from './card-node';
 
@@ -362,6 +363,7 @@ function OriginTab({ board, card, detail }: { board: Board; card: Card; detail: 
       <Row term={t('inspector.version')} last>
         {approved ? `v${board.version}` : t('inspector.status.draft')}
       </Row>
+      {card.sourceCardId ? <div className="pt-3"><ReportButton cardId={card.id} /></div> : null}
     </dl>
   );
 }

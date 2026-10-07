@@ -14,11 +14,13 @@ const settle = async (page: import('@playwright/test').Page) => {
 test('revisar: painel da fila e estado vazio', async ({ page, request }) => {
   test.setTimeout(180_000);
   const { userId, headers } = await signUpAndLogin(page, request);
+  // the mask is the row's box; a descender of the greeting (its width changes with the hour) pokes ~13 px below it, so allow that much
+  const shot = { maxDiffPixels: 40, stylePath: 'e2e/visual/hide-dev-badge.css' };
   const masks = () => [page.locator('h1').locator('xpath=../..'), page.locator('time'), page.locator('nextjs-portal'), page.getByText(/(segunda|terça|quarta|quinta|sexta|sábado|domingo)-?(feira)?, \d+ de/)];
   await page.goto('/app/revisar');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Vamos começar?');
   await settle(page);
-  if (process.platform === 'darwin') await expect(page).toHaveScreenshot('revisar-vazio.png', { mask: masks(), stylePath: 'e2e/visual/hide-dev-badge.css' });
+  if (process.platform === 'darwin') await expect(page).toHaveScreenshot('revisar-vazio.png', { ...shot, mask: masks() });
   if (process.env.R1_SHOTS) await page.screenshot({ path: `${process.env.R1_SHOTS}/revisar-vazio-1440.png`, fullPage: true });
 
   await seedMock(request, headers, userId);
@@ -27,7 +29,7 @@ test('revisar: painel da fila e estado vazio', async ({ page, request }) => {
     await expect(page.getByRole('button', { name: /^Começar revisão · \d+$/ })).toBeVisible({ timeout: 3000 });
   }).toPass({ timeout: 90_000, intervals: [5_000] });
   await settle(page);
-  if (process.platform === 'darwin') await expect(page).toHaveScreenshot('revisar-pendente.png', { mask: masks(), stylePath: 'e2e/visual/hide-dev-badge.css' });
+  if (process.platform === 'darwin') await expect(page).toHaveScreenshot('revisar-pendente.png', { ...shot, mask: masks() });
   if (process.env.R1_SHOTS) {
     await page.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 400) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 80)); } window.scrollTo(0, 0); });
     await page.waitForTimeout(2000);

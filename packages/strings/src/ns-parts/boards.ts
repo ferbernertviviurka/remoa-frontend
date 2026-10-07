@@ -46,5 +46,6 @@ export const boards = {
     GO: 'Ginecologia e Obstetrícia',
     PED: 'Pediatria',
     MP: 'Medicina Preventiva e Saúde Coletiva',
+    OUTRO: 'Outro assunto',
   },
 } as const;
