@@ -14,6 +14,7 @@ import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { EmptyState } from "@/features/shell/empty-state";
 import { HomeView, CoverageRows, type FirstInQueue } from "@/features/home/home-view";
+import { LibraryBanner } from "@/features/home/library-banner";
 import { CalendarStrip, UpcomingCard } from "@/features/home/home-calendar";
 import { ActivationChecklist } from "@/features/onboarding/activation-checklist";
 import { SkeletonBlock } from "@remoa/ui";
@@ -84,10 +85,12 @@ export default async function Page() {
   const now = new Date();
   const first = firstInQueue().catch(() => undefined); // dispara já, em paralelo com o resto
   // The hero needs only /home + /boards. Everything else streams in its own Suspense.
-  const [home, boards] = await Promise.all([
+  const [home, boards, seeds] = await Promise.all([
     serverApi<HomeSummary>("/v1/home"),
     serverApi<BoardSummary[]>("/v1/boards?include=preview"),
+    serverApi<{ id: string }[]>("/v1/editorial/seeds"),
   ]);
+  const libraryBanner = seeds.ok && seeds.data.length > 0 ? <LibraryBanner /> : null;
   if (!home.ok)
     return <EmptyState title={t("pages.home")} body={t("home.loadError")} />;
   return (
@@ -97,6 +100,7 @@ export default async function Page() {
       boards={data(boards, [])}
       coverage={[]}
       slots={{
+        libraryBanner,
         checklist: <Suspense fallback={null}><Checklist /></Suspense>,
         calendarStrip: <Suspense fallback={null}><CalendarSlot part="strip" now={now} /></Suspense>,
         calendarCard: <Suspense fallback={null}><CalendarSlot part="card" now={now} /></Suspense>,

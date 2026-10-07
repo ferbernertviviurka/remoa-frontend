@@ -40,6 +40,20 @@ export function HomeSkeleton() {
   );
 }
 
+export function SeedDetailSkeleton() {
+  return (
+    <Region>
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 md:px-6 md:py-[13px]">
+        <B width={160} height={20} radius={10} />
+        <B width={480} height={48} radius={14} />
+        <B width={360} height={16} />
+        <B width={200} height={48} radius={14} />
+        <div className="flex flex-col gap-3"><B height={180} radius={26} /><B height={180} radius={26} /><B height={180} radius={26} /></div>
+      </div>
+    </Region>
+  );
+}
+
 export function BoardsSkeleton() {
   return (
     <Region>
