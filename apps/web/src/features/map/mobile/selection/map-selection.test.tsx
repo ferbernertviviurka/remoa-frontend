@@ -15,6 +15,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 const { MobileMap } = await import('../canvas/mobile-map');
+const { peekView } = await import('./use-map-selection');
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -72,6 +73,29 @@ describe('peek (FR-8)', () => {
     await waitFor(() => expect(screen.getByRole('region', { name: 'Card selecionado' }).textContent).toContain(sepseCards[1]!.title));
     fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
     expect(screen.queryByRole('region', { name: 'Card selecionado' })).toBeNull();
+  });
+
+  it('D-1572: card conceito tem "Ver resposta", que mostra o verso no próprio peek', async () => {
+    mount();
+    fireEvent.click(card(0));
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver resposta' }));
+    expect(screen.getByRole('region', { name: 'Resposta' })).toHaveTextContent(sepseCards[0]!.back!);
+  });
+
+  it('D-1572: o card tocado fica inteiro entre o topo e o peek (Safari: nada por baixo do cartão de ações)', () => {
+    const fits = (card: { w: number; h: number }, peekTop: number) => {
+      const v = peekView(card, 390, 844, peekTop);
+      const top = 844 / 2 - v.shift * v.zoom - (card.h * v.zoom) / 2;
+      return { ...v, top, bottom: top + card.h * v.zoom };
+    };
+    const small = fits({ w: 296, h: 200 }, 430);
+    expect(small.zoom).toBe(1);
+    expect(small.top).toBeGreaterThanOrEqual(80);
+    expect(small.bottom).toBeLessThanOrEqual(430 - 12);
+    const tall = fits({ w: 392, h: 600 }, 430);
+    expect(tall.zoom).toBeLessThan(1);
+    expect(tall.bottom).toBeLessThanOrEqual(430 - 12 + 0.01);
+    expect(peekView({ w: 296, h: 200 }, 390, 844, null).zoom).toBe(1); // peek ainda não medido: usa 60% da tela
   });
 
   it('Editar abre o editor do card e some com o peek e com a barra', async () => {

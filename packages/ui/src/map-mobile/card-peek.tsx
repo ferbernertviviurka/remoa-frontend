@@ -1,5 +1,6 @@
 'use client';
 
+import { useId, useState } from 'react';
 import { focusRing } from '../button-styles';
 import { MapGlyph } from './glyph';
 import type { MapCardState } from './map-card';
@@ -11,8 +12,13 @@ export type CardPeekProps = {
   state: MapCardState;
   stateLabel: string;
   title: string;
-  /** Resumo (2 linhas); vazio = sem linha. */
+  /** Resumo (até 4 linhas); vazio = sem linha. */
   summary?: string;
+  /** Resposta (verso do card). Com ela e os textos, aparece "Ver resposta", que a abre aqui mesmo (D-1572). */
+  answer?: string;
+  showAnswerLabel?: string;
+  hideAnswerLabel?: string;
+  answerLabel?: string;
   /** Lembrança 0–1 (barra); `null` = sem revisões (barra vazia). */
   recall: number | null;
   /** Texto pronto ao lado da barra ("58% · vence hoje"). */
@@ -39,16 +45,20 @@ const text: Record<MapCardState, string> = { review: 'text-(--state-review-text)
 const secondary = `flex h-12 grow basis-0 cursor-pointer items-center justify-center gap-2 rounded-[15px] border-[1.5px] border-border-strong bg-surface text-[15px] font-bold text-ink transition-transform active:scale-[.98] ${focusRing}`;
 
 /**
- * CardPeek (F23 FR-8, `MapaMobileCard.dc.html`): cartão a 104 px do rodapé do mapa com tipo, estado, título, resumo, barra de
- * lembrança e as ações Revisar, Conectar e Editar (alvos 44+ px). Conectar e Editar têm texto visível (D-1207): só o ícone não
- * dizia como ligar um card a outro. O posicionamento é do consumidor só no `bottom`/`z`: aqui já é `absolute`. Entra com `pop`;
- * só `transform`/`opacity` se movem.
+ * CardPeek (F23 FR-8, `MapaMobileCard.dc.html`): cartão logo acima da barra do mapa com tipo, estado, título, resumo, "Ver resposta"
+ * (quando o card tem resposta), barra de lembrança e as ações Revisar, Conectar e Editar (alvos 44+ px). Conectar e Editar têm texto
+ * visível (D-1207). O posicionamento é do consumidor só no `bottom`/`z`: aqui já é `absolute`; `data-card-peek` deixa o mapa medir a
+ * altura para o card tocado não ficar por baixo (D-1572). Entra com `pop`; só `transform`/`opacity` se movem.
  */
 export function CardPeek(p: CardPeekProps) {
+  const [open, setOpen] = useState(false);
+  const answerId = useId();
+  const canAnswer = !!(p.answer && p.showAnswerLabel && p.hideAnswerLabel);
   return (
     <section
       aria-label={p.ariaLabel}
-      className="pop absolute inset-x-3 bottom-[calc(104px+env(safe-area-inset-bottom))] z-[35] flex flex-col gap-2.5 rounded-[28px] bg-surface p-4 pb-3.5 shadow-[0_22px_50px_rgba(36,26,92,.28)]"
+      data-card-peek=""
+      className="pop absolute inset-x-3 bottom-[calc(76px+env(safe-area-inset-bottom))] z-[35] flex max-h-[min(60%,calc(100%-176px-env(safe-area-inset-bottom)))] flex-col gap-2.5 overflow-y-auto overscroll-contain rounded-[28px] bg-surface p-4 pb-3.5 shadow-[0_22px_50px_rgba(36,26,92,.28)]"
     >
       <div className="flex items-start justify-between gap-2.5">
         <div className="flex min-w-0 flex-col gap-[5px]">
@@ -65,24 +75,37 @@ export function CardPeek(p: CardPeekProps) {
           <MapGlyph name="close" size={20} />
         </button>
       </div>
-      {p.summary ? <span className="line-clamp-2 text-sm leading-[1.45] text-ink-2">{p.summary}</span> : null}
+      {p.summary ? <span className="line-clamp-4 text-sm leading-[1.45] text-ink-2">{p.summary}</span> : null}
+      {canAnswer ? (
+        <>
+          <button type="button" aria-expanded={open} aria-controls={answerId} onClick={() => setOpen((o) => !o)} className={`${secondary} w-full shrink-0 grow-0 basis-auto`}>
+            <MapGlyph name={open ? 'eyeOff' : 'eye'} size={18} />
+            {open ? p.hideAnswerLabel : p.showAnswerLabel}
+          </button>
+          {open ? (
+            <div id={answerId} role="region" aria-label={p.answerLabel} className="rounded-[15px] bg-chip px-3.5 py-3 text-sm leading-[1.5] whitespace-pre-line text-ink [overflow-wrap:anywhere]">
+              {p.answer}
+            </div>
+          ) : null}
+        </>
+      ) : null}
       <div className="flex items-center gap-2.5">
         <span aria-hidden="true" className="block h-2 grow overflow-hidden rounded bg-chip">
           <span className={`block h-2 rounded ${dot[p.state]}`} style={{ width: `${Math.round((p.recall ?? 0) * 100)}%` }} />
         </span>
         <span className="text-[12.5px] font-bold whitespace-nowrap text-ink-2">{p.nextLabel}</span>
       </div>
-      <button type="button" onClick={p.onReview} className={`flex h-12 cursor-pointer items-center justify-center gap-2 rounded-[15px] bg-primary text-[15px] font-extrabold text-on-primary transition-transform active:scale-[.98] ${focusRing}`}>
+      <button type="button" onClick={p.onReview} className={`flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[15px] bg-primary text-[15px] font-extrabold text-on-primary transition-transform active:scale-[.98] ${focusRing}`}>
         <MapGlyph name="bolt" size={18} />
         {p.reviewLabel}
       </button>
       {p.onChallenge && p.challengeLabel ? (
-        <button type="button" onClick={p.onChallenge} className={`flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[15px] border-[1.5px] border-border-strong bg-surface text-[15px] font-bold text-ink transition-transform active:scale-[.98] ${focusRing}`}>
+        <button type="button" onClick={p.onChallenge} className={`flex h-12 w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[15px] border-[1.5px] border-border-strong bg-surface text-[15px] font-bold text-ink transition-transform active:scale-[.98] ${focusRing}`}>
           <MapGlyph name="sparkle" size={18} />
           {p.challengeLabel}
         </button>
       ) : null}
-      <div className="flex gap-2">
+      <div className="flex shrink-0 gap-2">
         <button type="button" aria-label={p.connectLabel} onClick={p.onConnect} className={secondary}>
           <MapGlyph name="link" size={18} />
           {p.connectText}

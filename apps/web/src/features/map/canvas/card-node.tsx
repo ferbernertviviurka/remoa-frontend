@@ -2,16 +2,19 @@
 
 import { memo, useCallback, useContext, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
 import { Handle, NodeResizeControl, Position, useStore, type ControlPosition, type NodeProps, type ReactFlowState } from '@xyflow/react';
-import { CARD_SIZE_MAX, CARD_SIZE_MIN, caseStages, type Card, type CardDetail, type CaseStage as Stage, type MapState } from '@remoa/contracts';
+import { CARD_SIZE_MAX, CARD_SIZE_MIN, type Card, type CardDetail, type MapState } from '@remoa/contracts';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
-import { CaseStageList, NodeCard, StepTimeline, type CaseStage, type NodeCardProps, type NodeLayer, type NodeStep } from '@remoa/ui';
+import { CaseStageList, NodeCard, StepTimeline, type NodeCardProps, type NodeLayer, type NodeStep } from '@remoa/ui';
 import { useCardFace, type CardFace } from '@/features/cards/card-face';
 import { useAsset, useAssets } from '@/features/cards/upload';
 import { CanvasContext, isDue } from './canvas-context';
 import { useCardDetail } from './card-detail';
 import { heatOf, type CardNode } from './graph';
 import { contentSize } from './layout';
+import { caseStageItems, hasAnswer } from './card-answer';
+
+export { caseStageItems, hasAnswer };
 
 const t = withStrings({ canvas: more.canvas, cards: more.cards });
 
@@ -30,42 +33,6 @@ export function nodeFooter({ layer, state, r, due, edges, item }: FooterInput): 
   if (state === 'unknown' || r === undefined) return t('canvas.footer.none');
   const text = t('canvas.footer.recall', { state: t(`mapState.${state}`), pct: Math.round(r * 100) });
   return due ? t('canvas.footer.due', { text }) : text;
-}
-
-/** Whether the card has an answer to show on the back (from what the map already has; the text loads on flip). */
-export function hasAnswer(card: Card, face: Pick<CardFace, 'answer'>): boolean {
-  const p = card.preview;
-  const img = !!card.backAssetId; // D-201: an answer image alone is an answer too
-  switch (card.type) {
-    case 'concept':
-      return !!face.answer || img;
-    case 'flow':
-      return (p?.steps ?? 0) > 0 || img;
-    case 'case':
-      return (p?.stages?.length ?? 0) > 0 || img;
-    case 'image':
-      return (p?.masks ?? 0) > 0;
-    case 'note':
-      return false; // D-200: Conteúdo has no back
-  }
-}
-
-/** G06: the four stages of a clinical case, in order, with the tooltip text (what it is, what filling it changes). */
-export function caseStageItems(
-  filled: readonly string[] | undefined,
-  detail: CardDetail | null,
-  image?: (assetId: string, stage: string) => CaseStage['image'],
-): (CaseStage & { key: Stage })[] {
-  // a card born from a map op stores `{}` whatever its type (draft.ts): read the payload defensively
-  const steps = detail?.type === 'case' ? (detail.payload.caseSteps ?? []) : undefined;
-  return caseStages.map((key) => {
-    const s = steps?.find((x) => x.stage === key);
-    const label = t(`cards.case.stage.${key}`);
-    return {
-      key, label, hint: t(`cards.case.hint.${key}`), text: s?.text, filled: steps ? !!s : !!filled?.includes(key),
-      ...(s?.assetId && image ? { image: image(s.assetId, label) } : {}),
-    };
-  });
 }
 
 const list = 'm-0 flex list-none flex-col gap-1 p-0';

@@ -4,7 +4,7 @@ import { Position, type EdgeProps, type NodeProps } from '@xyflow/react';
 import type { ReactNode } from 'react';
 import { MOBILE_MAP_SEMANTIC_ZOOM, type Card } from '@remoa/contracts';
 import type { CardNode, LinkEdge } from '../../canvas/graph';
-import { MobileCardNode, MobileLinkEdge, MobileNodesContext, isOverviewZoom, matchesQuery, type MobileNodesCtx } from '.';
+import { MobileCardNode, MobileLinkEdge, MobileNodesContext, isOverviewZoom, matchesQuery, mobileEnds, type MobileNodesCtx } from '.';
 
 const zoom = vi.hoisted(() => ({ value: 1 }));
 vi.mock('@xyflow/react', async (orig) => ({
@@ -63,6 +63,21 @@ describe('zoom semântico (FR-6)', () => {
     zoom.value = 1;
     rerender(withCtx(ctx({ labels: false }), <MobileLinkEdge {...edge('suspeita')} />));
     expect(screen.queryByText('suspeita')).toBeNull();
+  });
+});
+
+describe('traçado da conexão (D-1572)', () => {
+  const a = { x: 0, y: 0, w: 150, h: 100 };
+  it('colunas diferentes saem pelos lados, mesmo com o alvo bem abaixo; um sobre o outro, por cima/baixo', () => {
+    expect(mobileEnds(a, { x: 300, y: 900, w: 150, h: 100 })).toMatchObject({ sourcePosition: Position.Right, targetPosition: Position.Left, sourceX: 150, targetX: 300 });
+    expect(mobileEnds(a, { x: -300, y: 900, w: 150, h: 100 })).toMatchObject({ sourcePosition: Position.Left, targetPosition: Position.Right, sourceX: 0, targetX: -150 });
+    expect(mobileEnds(a, { x: 40, y: 300, w: 150, h: 100 })).toMatchObject({ sourcePosition: Position.Bottom, targetPosition: Position.Top });
+  });
+  it('uma curva só de card a card, sem trecho reto compartilhado entre colunas', () => {
+    render(<svg>{withCtx(ctx(), <MobileLinkEdge {...edge('a')} />)}</svg>);
+    const d = screen.getByTestId('edge').getAttribute('d')!;
+    expect(d).toMatch(/^M\s?0,0 C/);
+    expect(d).not.toMatch(/[LQ]/);
   });
 });
 

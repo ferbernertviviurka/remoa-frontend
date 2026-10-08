@@ -72,6 +72,10 @@ export const mapMobile = {
     nextReview: '{pct}% · próxima em {date}',
     dueToday: '{pct}% · vence hoje',
     noReviews: 'Sem revisões ainda',
+    showAnswer: 'Ver resposta',
+    hideAnswer: 'Esconder resposta',
+    answerLabel: 'Resposta',
+    answerLoading: 'Carregando resposta…',
   },
 
   // Card no canvas (FR-5, FR-6)

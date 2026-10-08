@@ -32,6 +32,18 @@ describe('CardPeek', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Fechar' }));
     for (const fn of Object.values(f)) expect(fn).toHaveBeenCalledTimes(1);
   });
+  it('D-1572: "Ver resposta" abre e fecha o verso ali mesmo; sem resposta, sem botão', async () => {
+    const { rerender } = render(peek({ answer: 'Noradrenalina', showAnswerLabel: 'Ver resposta', hideAnswerLabel: 'Esconder resposta', answerLabel: 'Resposta' }));
+    const show = screen.getByRole('button', { name: 'Ver resposta' });
+    expect(show).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText('Noradrenalina')).toBeNull();
+    await userEvent.click(show);
+    expect(screen.getByRole('region', { name: 'Resposta' })).toHaveTextContent('Noradrenalina');
+    await userEvent.click(screen.getByRole('button', { name: 'Esconder resposta' }));
+    expect(screen.queryByText('Noradrenalina')).toBeNull();
+    rerender(peek());
+    expect(screen.queryByRole('button', { name: 'Ver resposta' })).toBeNull();
+  });
 });
 
 describe('CardHandles (D-1207)', () => {

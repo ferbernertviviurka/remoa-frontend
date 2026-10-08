@@ -374,7 +374,7 @@ function MobileMapInner({ data }: { data: BoardGraph }) {
 
 const zoomOf = (s: ReactFlowState) => s.transform[2];
 
-/** −, +, ajustar and the percentage (40–180%, 25% steps). Re-renders only on zoom change. */
+/** −, +, ajustar and the percentage (10–300%, 25% steps). Re-renders only on zoom change. */
 const ZoomPill = memo(function ZoomPill({ onFit }: { onFit: () => void }) {
   const rf = useReactFlow();
   const zoom = useStore(zoomOf);

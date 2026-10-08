@@ -21,7 +21,7 @@ export type MapCardProps = {
   stateLabel: string;
   /** Texto pronto ("94%"); só no nível `full`. */
   recallLabel?: string;
-  /** Resumo (conceito, caso, conteúdo); até 3 linhas. Só no nível `full`. */
+  /** Resumo (conceito, caso, conteúdo); até 6 linhas (3 com imagem). Só no nível `full`. */
   summary?: string;
   /** Fluxograma: primeiros passos e o "+ N passos" (ou a contagem quando o texto dos passos ainda não chegou). */
   steps?: readonly string[];
@@ -34,7 +34,7 @@ export type MapCardProps = {
   dimmed?: boolean;
   /** Camada "Mapa de calor da memória": borda e rodapé na cor do estado; desligada = neutra. Default ligada. */
   heat?: boolean;
-  /** Tamanho salvo do card (`card.size`, D-1207); ausente = padrão do tipo. */
+  /** Tamanho salvo do card (`card.size`, D-1207); ausente = padrão do tipo. A altura é mínima: o card cresce com o texto (D-1572). */
   size?: { w: number; h: number };
   /** Modo conectar: candidato a destino (contorno tracejado). */
   target?: boolean;
@@ -70,7 +70,7 @@ export function MapCard({ type, typeLabel, title, state, stateLabel, recallLabel
       data-dimmed={dimmed || undefined}
       data-connect-target={target || undefined}
       onClick={onSelect}
-      style={{ width: size?.w ?? MAP_CARD_W, height: size?.h ?? MAP_CARD_H[type] }}
+      style={{ width: size?.w ?? MAP_CARD_W, minHeight: size?.h ?? MAP_CARD_H[type] }}
       className={clsx(
         'relative flex cursor-pointer flex-col overflow-hidden rounded-[20px] border-[2.5px] bg-surface p-0 text-left text-ink transition-[opacity,box-shadow,border-color] duration-300',
         selected ? 'border-primary shadow-[0_0_0_5px_rgba(109,91,208,.22),0_14px_30px_rgba(36,26,92,.2)]' : clsx(heat ? border[state] : 'border-(--border)', 'shadow-[0_8px_20px_rgba(36,26,92,.1)]'),
@@ -93,7 +93,7 @@ export function MapCard({ type, typeLabel, title, state, stateLabel, recallLabel
         {title}
       </span>
       {full && summary && type !== 'flow' && type !== 'image' ? (
-        <span className={clsx('block px-[11px] pt-[5px] leading-[1.38] text-ink-2', image ? 'line-clamp-2' : 'line-clamp-3')} style={{ fontSize: 'var(--map-text-summary)' }}>{summary}</span>
+        <span className={clsx('block px-[11px] pt-[5px] leading-[1.38] text-ink-2', image ? 'line-clamp-3' : 'line-clamp-6')} style={{ fontSize: 'var(--map-text-summary)' }}>{summary}</span>
       ) : null}
       {full && type === 'flow' ? (
         <span className="flex flex-col gap-[5px] px-[11px] pt-[7px]">

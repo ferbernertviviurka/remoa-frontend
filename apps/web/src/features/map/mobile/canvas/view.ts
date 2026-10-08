@@ -6,7 +6,7 @@ export const ZOOM_STEP = 0.25;
 export const VIRTUALIZE_ABOVE = 150;
 
 export const clampZoom = (z: number) => Math.min(MOBILE_MAP_ZOOM_MAX, Math.max(MOBILE_MAP_ZOOM_MIN, z));
-/** −/+ buttons: 25% steps on the 25% grid (60% → 75%, 100% → 125%), inside 40–180%. */
+/** −/+ buttons: 25% steps on the 25% grid (60% → 75%, 100% → 125%), inside 10–300% (below 25% the next step is the floor). */
 export function stepZoom(z: number, dir: 1 | -1): number {
   const k = Math.round(z / ZOOM_STEP);
   const onGrid = Math.abs(z - k * ZOOM_STEP) < 0.001;

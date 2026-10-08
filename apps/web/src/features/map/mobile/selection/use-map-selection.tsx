@@ -4,12 +4,14 @@
 // label field (FR-10). `selectCard`/`editLabel` go into MobileNodesContext; `element` renders once inside the map.
 import { useCallback, useEffect, useState, type ReactNode, type RefObject } from 'react';
 import { useReactFlow, type NodeChange } from '@xyflow/react';
-import type { RetrievabilityMap } from '@remoa/contracts';
+import type { Card, CardDetail, RetrievabilityMap } from '@remoa/contracts';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { CardPeek, ConnectBanner, EdgeLabelField, useToast, type MapCardState } from '@remoa/ui';
-import { useCardFace } from '@/features/cards/card-face';
+import { useCardFace, type CardFace } from '@/features/cards/card-face';
 import { isDue } from '../../canvas/canvas-context';
+import { useCardDetail } from '../../canvas/card-detail';
+import { caseStageItems, hasAnswer } from '../../canvas/card-answer';
 import { heatOf, type CardNode } from '../../canvas/graph';
 import type { MapDoc } from '../canvas/use-map-doc';
 import { cameraMove } from '../canvas/view';
@@ -17,8 +19,23 @@ import { useHoldMove } from './use-hold-move';
 
 const t = withStrings({ mapMobile: more.mapMobile });
 
-/** Screen px the card sits above the centre so the peek (≈ 260 px at the bottom) does not cover it. */
-const PEEK_SHIFT = 120;
+/** Screen px the header (and its 12 px inset) takes at the top, and the gap kept above the peek. */
+const TOP = 80;
+const GAP = 12;
+/** Below this the card is too small to read: it may then be partly under the peek, which scrolls. */
+const MIN_ZOOM = 0.45;
+
+/**
+ * D-1572: zoom and flow-y shift for `setCenter` so a `card` (flow px) sits whole between the header and the peek's top
+ * (`peekTop`, px from the pane's top; null = not mounted, assume the lower 40%). At most 100%, smaller when it does not fit.
+ */
+export function peekView(card: { w: number; h: number }, paneW: number, paneH: number, peekTop: number | null) {
+  const bottom = (peekTop ?? paneH * 0.6) - GAP;
+  const room = { w: paneW - 24, h: bottom - TOP };
+  const zoom = Math.max(MIN_ZOOM, Math.min(1, room.w / card.w, room.h / card.h));
+  const target = room.h >= card.h * zoom ? (TOP + bottom) / 2 : TOP + (card.h * zoom) / 2; // too tall: top edge under the header
+  return { zoom, shift: (paneH / 2 - target) / zoom };
+}
 
 type Args = {
   doc: MapDoc;
@@ -68,9 +85,18 @@ export function useMapSelection({ doc, wrap, heat, endOfToday, active, openEdito
       if (!n) return;
       const w = n.measured?.width ?? 152;
       const h = n.measured?.height ?? 124;
-      void rf.setCenter(n.position.x + w / 2, n.position.y + h / 2 + PEEK_SHIFT, { zoom: 1, ...cameraMove() });
+      // D-1572: wait for the peek to mount, then fit the card between the header and the peek's real top (Safari's bars and
+      // a tall peek used to leave it underneath)
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          const pane = wrap.current;
+          const peek = pane?.querySelector<HTMLElement>('[data-card-peek]');
+          const v = peekView({ w, h }, pane?.clientWidth ?? 0, pane?.clientHeight ?? 0, peek?.offsetTop ?? null);
+          void rf.setCenter(n.position.x + w / 2, n.position.y + h / 2 + v.shift, { zoom: v.zoom, ...cameraMove() });
+        }),
+      );
     },
-    [doc, from, graphRef, rf, toast],
+    [doc, from, graphRef, rf, toast, wrap],
   );
 
   const editLabel = useCallback(
@@ -118,6 +144,7 @@ export function useMapSelection({ doc, wrap, heat, endOfToday, active, openEdito
           node={card}
           heat={heat}
           endOfToday={endOfToday}
+          prepare={doc.prepareCard}
           onClose={() => doc.select(null)}
           onReview={review}
           onEdit={() => openEditor(card.id)}
@@ -130,9 +157,22 @@ export function useMapSelection({ doc, wrap, heat, endOfToday, active, openEdito
   return { selectCard, editLabel, connectFrom: from, startConnect: setFrom, element };
 }
 
-function Peek({ node, heat, endOfToday, onClose, onReview, onEdit, onConnect, onChallenge }: { node: CardNode; heat: RetrievabilityMap; endOfToday: number; onClose: () => void; onReview: () => void; onEdit: () => void; onConnect: () => void; onChallenge: () => void }) {
+/** D-1572: the back as plain text for the peek's "Ver resposta" (same cards as the desktop flip, `hasAnswer`); null = no answer. */
+function answerText(card: Card, face: CardFace, detail: CardDetail | null): string | null {
+  if (!hasAnswer(card, face)) return null;
+  if (card.type === 'concept') return face.answer ?? null;
+  if (!detail) return t('mapMobile.peek.answerLoading');
+  if (detail.type === 'flow') return (detail.payload.steps ?? []).map((s, i) => `${i + 1}. ${s.text}`).join('\n') || null;
+  if (detail.type === 'case') return caseStageItems(undefined, detail).filter((s) => s.filled && s.text).map((s) => `${s.label}: ${s.text}`).join('\n\n') || null;
+  if (detail.type === 'image') return (detail.payload.masks ?? []).map((m) => m.label).join('\n') || null;
+  return null;
+}
+
+function Peek({ node, heat, endOfToday, prepare, onClose, onReview, onEdit, onConnect, onChallenge }: { node: CardNode; heat: RetrievabilityMap; endOfToday: number; prepare: (id: string) => Promise<boolean>; onClose: () => void; onReview: () => void; onEdit: () => void; onConnect: () => void; onChallenge: () => void }) {
   const { card } = node.data;
   const face = useCardFace(card);
+  const detail = useCardDetail(card.type !== 'concept' && hasAnswer(card, face) ? card.id : null, prepare);
+  const answer = answerText(card, face, detail);
   const entry = heat[card.id];
   const state: MapCardState = heatOf(card.id, heat);
   const pct = entry && state !== 'unknown' ? Math.round(entry.r * 100) : null;
@@ -150,6 +190,7 @@ function Peek({ node, heat, endOfToday, onClose, onReview, onEdit, onConnect, on
       stateLabel={t(`mapMobile.card.stateLabel.${state}`)}
       title={card.title}
       {...(summary ? { summary } : {})}
+      {...(answer ? { answer, showAnswerLabel: t('mapMobile.peek.showAnswer'), hideAnswerLabel: t('mapMobile.peek.hideAnswer'), answerLabel: t('mapMobile.peek.answerLabel') } : {})}
       recall={pct === null ? null : pct / 100}
       nextLabel={nextLabel}
       closeLabel={t('mapMobile.peek.closeLabel')}

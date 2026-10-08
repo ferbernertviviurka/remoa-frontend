@@ -48,6 +48,12 @@ describe('MapCard', () => {
     await userEvent.click(b);
     expect(onSelect).toHaveBeenCalledOnce();
   });
+  it('D-1572: o tamanho salvo é piso, não teto (o card cresce com o texto em vez de cortar)', () => {
+    render(<MapCard {...base} size={{ w: 296, h: 200 }} />);
+    const b = screen.getByRole('button');
+    expect(b).toHaveStyle({ width: '296px', minHeight: '200px' });
+    expect(b.style.height).toBe('');
+  });
   it.each(['review', 'watch', 'steady', 'unknown'] as const)('estado %s sem violações axe', async (state) => {
     const { container } = render(<MapCard {...base} state={state} />);
     expect(await violations(container)).toEqual([]);

@@ -8,10 +8,12 @@ describe('phone zoom steps (FR-4)', () => {
     expect(stepZoom(0.6, 1)).toBe(0.75);
     expect(stepZoom(0.6, -1)).toBe(0.5);
   });
-  it('stays within 40–180%', () => {
-    expect(stepZoom(0.5, -1)).toBe(0.4);
-    expect(stepZoom(1.75, 1)).toBe(1.8);
-    expect(clampZoom(3)).toBe(1.8);
+  it('reaches 10–300% so a large ready map fits on the phone (D-1572)', () => {
+    expect(stepZoom(0.5, -1)).toBe(0.25);
+    expect(stepZoom(0.25, -1)).toBe(0.1);
+    expect(stepZoom(0.1, -1)).toBe(0.1);
+    expect(stepZoom(2.75, 1)).toBe(3);
+    expect(clampZoom(5)).toBe(3);
   });
 });
 
