@@ -849,6 +849,8 @@ function Canvas({ data }: { data: BoardGraph }) {
       >
         <CanvasContext.Provider value={ctx}>
           <ReactFlow<CardNode, LinkEdge>
+            // D-1573: under the phone's full-screen challenge; hidden so VoiceOver and Tab do not walk the cards behind it
+            className={mode === 'challenge' ? 'max-md:invisible' : undefined}
             nodes={graph.nodes}
             edges={graph.edges}
             nodeTypes={nodeTypes}
@@ -895,8 +897,8 @@ function Canvas({ data }: { data: BoardGraph }) {
           <style ref={hoverCss} />
         </CanvasContext.Provider>
         {mode === 'challenge' ? (
-          // F23: the phone challenge shares the phone map's header pill (exit instead of the menu) and sheet margins
-          <div className="absolute inset-x-3 top-[calc(12px+env(safe-area-inset-top))] z-30 md:hidden">
+          // F23: the phone challenge shares the phone map's header pill (exit instead of the menu); D-1573: over the full-screen panel
+          <div className="fixed inset-x-3 top-[calc(12px+env(safe-area-inset-top))] z-[71] md:hidden">
             <CompactMapHeader title={board.title} statusText={t('editor.challenge')} menuLabel={t('quiz.exit')} onMenu={() => setMode('explore')} searchLabel={t('mapMobile.header.searchLabel')} />
           </div>
         ) : null}
@@ -937,11 +939,14 @@ function Canvas({ data }: { data: BoardGraph }) {
             <CanvasToolbar aria-label={t('canvas.toolbar.label')} items={tools} onSelect={onTool} />
           </div>
         </div>
-        {/* desktop: floating 340 px panel on the right; phone: bottom sheet above the nav. The challenge needs more of the screen than a card. */}
+        {/*
+          desktop: floating 340 px panel on the right; phone: bottom sheet above the nav. D-1573: the phone challenge is a full screen of
+          its own (card, answer and grades), over the shell and the map: a sheet under three headers left no room for the answer.
+        */}
         <div
           ref={panelWrap}
           onAnimationEnd={(e) => /^cv-(panel|sheet)-in$/.test(e.animationName) && focusPanel()}
-          className={`pointer-events-none absolute inset-x-3 z-20 md:inset-x-auto md:bottom-5 md:right-5 md:top-5 md:h-auto [&>aside]:pointer-events-auto [&>aside]:max-md:w-full [&>aside]:max-md:rounded-b-none ${mode === 'challenge' ? 'bottom-[env(safe-area-inset-bottom)] h-[58%]' : 'bottom-[calc(72px+env(safe-area-inset-bottom))] h-[55%]'}`}
+          className={`pointer-events-none md:absolute md:inset-x-auto md:bottom-5 md:right-5 md:top-5 md:z-20 md:h-auto [&>aside]:pointer-events-auto [&>aside]:max-md:w-full ${mode === 'challenge' ? 'max-md:pointer-events-auto max-md:fixed max-md:inset-0 max-md:z-[70] max-md:bg-canvas max-md:pt-[calc(88px+env(safe-area-inset-top))] max-md:pb-[env(safe-area-inset-bottom)] [&>aside]:max-md:h-full [&>aside]:max-md:rounded-none' : 'absolute inset-x-3 z-20 bottom-[calc(72px+env(safe-area-inset-bottom))] h-[55%] [&>aside]:max-md:rounded-b-none'}`}
         >
             <Inspector
               board={board}

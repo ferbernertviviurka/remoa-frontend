@@ -140,6 +140,8 @@ function ItemQuestion({ item, n, total, done, state, canSkip, selfMark, onRated 
     { value: 'speak' as const, label: t('challengeSetup.answer.voice'), disabled: true, badge: t('challengeSetup.dialog.soon') },
   ];
   const [text, setText] = useState('');
+  // D-1573: per item (keyed), like the map's own phone check; the phone keeps "Revelar" in the bar under the answer
+  const [phone] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.('(max-width: 767px)').matches);
   const [busy, setBusy] = useState<Busy>(null);
   const [rating, setRating] = useState<Grade | null>(null);
   const [answered, setAnswered] = useState<{ out: AnswerOutput; kind: AnswerPayload['inputKind'] } | null>(null);
@@ -232,6 +234,7 @@ function ItemQuestion({ item, n, total, done, state, canSkip, selfMark, onRated 
     { label: t(`challengeMode.${item.mode}`), tone: 'brand' as const },
     ...(state === 'review' || state === 'watch' ? [{ label: t('quiz.chipState', { subject: t(`quiz.subject.${subjectOf[item.mode]}`), state: t(`mapState.${state}`) }), tone: state }] : []),
   ];
+  const checkLabel = busy === 'text' && ai ? t('challenge.grading') : ai && text.trim() ? t('challenge.submitText') : t('challenge.reveal');
   const suggested = out?.suggestedGrade ?? null;
   const v = out?.verdict;
   const list = (xs: string[], key: 'matched' | 'missing') => (xs.length ? `${t(`challenge.verdict.${key}`)}: ${xs.join('; ')}` : undefined);
@@ -299,6 +302,8 @@ function ItemQuestion({ item, n, total, done, state, canSkip, selfMark, onRated 
   ) : undefined;
 
   const stages = item.mode === 'case' ? item.context.revealed : undefined;
+  // D-1573: the steps before the asked one; the phone challenge has no map behind it to show them
+  const steps = item.mode === 'next_step' ? item.context.revealed : undefined;
   return (
     <div className="flex h-full min-h-0 flex-col">
       {item.mode === 'occlusion' && item.context.image && !out ? (
@@ -326,7 +331,12 @@ function ItemQuestion({ item, n, total, done, state, canSkip, selfMark, onRated 
           ))}
         </ul>
       ) : null}
-      <div className="min-h-0 flex-1">
+      {steps?.length ? (
+        <ol aria-label={t('challenge.stepsLabel')} className="m-0 flex max-h-40 shrink-0 list-decimal flex-col gap-1 overflow-auto border-b border-border py-3 pl-10 pr-5 text-[13px]">
+          {steps.map((x, i) => <li key={i}>{x}</li>)}
+        </ol>
+      ) : null}
+      <div className={`min-h-0 flex-1 ${phone ? '[&_[data-check]]:hidden' : ''}`}>
         <Flip flipped={!!out} front={
 <QuestionPanel
           eyebrow={t('editor.challenge')}
@@ -346,7 +356,7 @@ function ItemQuestion({ item, n, total, done, state, canSkip, selfMark, onRated 
           options={[]}
           selectedOption={null}
           onSelectOption={() => undefined}
-          checkLabel={busy === 'text' && ai ? t('challenge.grading') : ai && text.trim() ? t('challenge.submitText') : t('challenge.reveal')}
+          checkLabel={checkLabel}
           canCheck={!busy}
           onCheck={reveal}
         />
@@ -368,7 +378,7 @@ function ItemQuestion({ item, n, total, done, state, canSkip, selfMark, onRated 
           options={[]}
           selectedOption={null}
           onSelectOption={() => undefined}
-          checkLabel={busy === 'text' && ai ? t('challenge.grading') : ai && text.trim() ? t('challenge.submitText') : t('challenge.reveal')}
+          checkLabel={checkLabel}
           canCheck={!busy}
           onCheck={reveal}
           result={resultNode}
@@ -380,11 +390,17 @@ function ItemQuestion({ item, n, total, done, state, canSkip, selfMark, onRated 
           {busy === 'text' && ai ? <AiStreaming text={live} /> : null}
           {error && ai ? <AiNotice ai={{ status: 'error', code: 'answer_failed', message: null }} onRetry={reveal} /> : error ? <Alert tone="review" role="alert" title={error} /> : null}
           {ai && item.grading === 'none' ? <p className="m-0 text-xs text-muted">{t('challenge.noRubricBody')}</p> : null}
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Button variant="secondary" size="sm" disabled={!canSkip || skipLimit || !!busy} onClick={() => void skip()}>{t('challenge.skip')}</Button>
+            {phone ? (
+              // D-1573: always in reach above the keyboard; the panel's own button is hidden on the phone
+              <div className="flex-1 [&>button]:w-full">
+                <Button size="touch" loading={busy === 'text' || busy === 'self'} disabled={!!busy} onClick={reveal}>{checkLabel}</Button>
+              </div>
+            ) : null}
           </div>
           {skipLimit || !canSkip ? <p role="status" className="m-0 text-xs text-muted">{t('challenge.skipLimit')}</p> : null}
-          <p className="m-0 text-xs text-muted">{selfMark ? t('challengeSetup.answer.shortcutsSelf') : t('challengeSetup.answer.shortcutsDaily')}</p>
+          <p className="m-0 text-xs text-muted max-md:hidden">{selfMark ? t('challengeSetup.answer.shortcutsSelf') : t('challengeSetup.answer.shortcutsDaily')}</p>
         </div>
       ) : null}
     </div>

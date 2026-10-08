@@ -320,4 +320,18 @@ describe('ChallengePanel', () => {
     await user.click(reveal());
     await screen.findByText('RESPOSTA-SECRETA');
   });
+  it('phone (D-1573): one "Revelar" in the bar under the answer, the panel\'s own is hidden; next_step lists the steps', async () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q === '(max-width: 767px)', addEventListener() {}, removeEventListener() {} }));
+    shape = (x) => x.slice(0, 2).map((i) => ({ ...text(i), boardId: BOARD, mode: 'next_step' as const, context: { ...i.context, revealed: ['Passo A', 'Passo B'] } }));
+    overrides.answer = async () => ans();
+    mount();
+    await ready();
+    expect(within(screen.getByRole('list', { name: 'Passos até aqui' })).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Passo A', 'Passo B']);
+    const buttons = screen.getAllByRole('button', { name: 'Revelar resposta' });
+    expect(buttons).toHaveLength(2);
+    expect(buttons[0]!.closest('[class*="data-check"]')).not.toBeNull();
+    await userEvent.setup().click(buttons[1]!);
+    await screen.findByText('Resposta canônica');
+    vi.unstubAllGlobals();
+  });
 });

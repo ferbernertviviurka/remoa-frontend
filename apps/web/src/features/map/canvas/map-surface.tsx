@@ -6,7 +6,7 @@ import type { BoardGraph } from '@remoa/contracts';
 import { LazyMapCanvas } from './lazy-canvas';
 import { LazyMobileMap } from '../mobile/canvas/lazy-mobile-map';
 
-/** F23 (D-660): below 768 px the map is the phone canvas. The challenge still uses the editor's phone sheet layout. */
+/** F23 (D-660): below 768 px the map is the phone canvas. The challenge uses the editor, full screen on the phone (D-1573). */
 export function phoneMap(desktop: boolean, challenge: boolean) {
   return !desktop && !challenge;
 }

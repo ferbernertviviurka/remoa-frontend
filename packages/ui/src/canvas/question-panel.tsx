@@ -155,6 +155,7 @@ export function QuestionPanel(p: QuestionPanelProps) {
               type="button"
               disabled={!p.canCheck}
               onClick={p.onCheck}
+              data-check=""
               className={clsx('h-[50px] cursor-pointer rounded-[15px] text-[15px] font-bold', focusRing, p.canCheck ? 'bg-primary text-on-primary' : 'cursor-default bg-(--cv-border-strong) text-muted')}
             >
               {p.checkLabel}

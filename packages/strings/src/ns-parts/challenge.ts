@@ -7,6 +7,7 @@ export const challenge = {
   backToReview: 'Voltar para Revisar hoje',
   empty: { title: 'Nada para revisar agora', body: 'Volte mais tarde ou adicione conceitos ao mapa.' },
   stagesLabel: 'Etapas até aqui',
+  stepsLabel: 'Passos até aqui',
   context: 'No mapa',
   edgeAsk: 'O que liga {from} a {to}?',
   imageAlt: 'Imagem com regiões cobertas',
