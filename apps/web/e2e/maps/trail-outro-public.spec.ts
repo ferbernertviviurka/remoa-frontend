@@ -45,8 +45,11 @@ test('Outro assunto: cria o mapa e a visão compartilhada não mostra a faixa m�
   const { headers } = await accountUser(page, request);
   await page.goto('/app/mapas/novo?caminho=blank');
   await expect(async () => {
-    await page.getByRole('button', { name: 'Outro assunto' }).click({ timeout: 5000 });
+    const outro = page.getByRole('group', { name: 'Grande área' }).getByRole('button', { name: 'Outro assunto' });
+    await outro.click({ timeout: 5000 });
     await page.getByLabel('Nome do mapa').fill(`Outro ${stamp}`, { timeout: 5000 });
+    // the name field must not put the area back to Clínica Médica
+    await expect(outro).toHaveAttribute('aria-pressed', 'true');
     await page.getByRole('button', { name: 'Criar mapa', exact: true }).click({ timeout: 5000 });
     await expect(page).toHaveURL(/\/mapas\/[0-9a-f-]{36}$/, { timeout: 8000 });
   }).toPass({ timeout: 45_000 });

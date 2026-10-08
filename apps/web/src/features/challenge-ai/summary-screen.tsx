@@ -90,6 +90,8 @@ export function SummaryScreen({ boardId, cardTitles = {}, initial = null }: { bo
   const [summary, setSummary] = useState<MapSummaryPublic | null>(initial);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<StringKey | null>(null);
+  const [reported, setReported] = useState(false);
+  const [reporting, setReporting] = useState(false);
 
   const generate = async () => {
     setPending(true);
@@ -112,6 +114,20 @@ export function SummaryScreen({ boardId, cardTitles = {}, initial = null }: { bo
 
   const open = (cardId: string) => router.push(`/app/mapas/${encodeURIComponent(boardId)}?card=${encodeURIComponent(cardId)}`);
   const copy = () => void navigator.clipboard.writeText(summary ? summaryToText(summary) : '');
+  const report = async () => {
+    if (!summary || reporting) return;
+    setReporting(true);
+    setError(null);
+    try {
+      const r = await api<unknown>(`/v1/challenge-ai/summaries/${encodeURIComponent(summary.id)}/report`, { method: 'POST', body: '{}' });
+      if (!r.ok) setError('errors.internal');
+      else setReported(true);
+    } catch {
+      setError('errors.internal');
+    } finally {
+      setReporting(false);
+    }
+  };
   const submit = (
     <Button loading={pending} disabled={pending} onClick={() => void generate()}>
       {t('challengeAi.summaryButton')}
@@ -165,6 +181,13 @@ export function SummaryScreen({ boardId, cardTitles = {}, initial = null }: { bo
               <Button variant="secondary" size="sm" onClick={() => window.print()}>
                 {t('challengeAi.print')}
               </Button>
+              {reported ? (
+                <p role="status" className="m-0 self-center text-sm font-semibold">{t('challengeAi.reportSent')}</p>
+              ) : (
+                <Button variant="quiet" size="sm" loading={reporting} disabled={reporting} onClick={() => void report()}>
+                  {t('challengeAi.report')}
+                </Button>
+              )}
             </div>
           </div>
         </Card>

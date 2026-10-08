@@ -34,12 +34,14 @@ type Props = {
   onReview: () => void;
   onFit: () => void;
   onCreate: () => void;
+  /** FR-1: Desafiar this map. */
+  onChallenge: () => void;
 };
 
 const date = (d: Date) => new Date(d).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
 type Modal = 'archive' | 'delete' | null;
 
-export function MobileMapMenu({ open, onOpenChange, board, cards, nodes, edgeCount, heat, prefs, onPrefs, dueCount, onReview, onFit, onCreate }: Props) {
+export function MobileMapMenu({ open, onOpenChange, board, cards, nodes, edgeCount, heat, prefs, onPrefs, dueCount, onReview, onFit, onCreate, onChallenge }: Props) {
   const router = useRouter();
   const { toast } = useToast();
   const paywall = usePaywall();
@@ -171,6 +173,7 @@ export function MobileMapMenu({ open, onOpenChange, board, cards, nodes, edgeCou
           { label: t('mapMobile.asideContent.contentLabel'), value: stats },
         ]}
       >
+        <NavRow icon="sparkle" label={t('challengeAi.open')} description={t('challengeAi.modalTitle')} onClick={then(onChallenge)} />
         <NavRow icon="list" label={t('mapMobile.asideContent.listMode')} description={t('mapMobile.asideContent.listModeBody')} onClick={then(() => onPrefs((p) => ({ ...p, view: 'list' })))} />
         <ToggleRow icon="target" label={t('mapMobile.asideContent.heatmap')} description={t('mapMobile.asideContent.heatmapBody')} checked={prefs.heat} onCheckedChange={(v) => onPrefs((p) => ({ ...p, heat: v }))} />
         <ToggleRow icon="link" label={t('mapMobile.asideContent.labels')} description={t('mapMobile.asideContent.labelsBody')} checked={prefs.labels} onCheckedChange={(v) => onPrefs((p) => ({ ...p, labels: v }))} />

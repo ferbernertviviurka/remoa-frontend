@@ -22,17 +22,24 @@ import { aiChallengeHref, aiCostUnits, rememberGenerationNotice, startAiChalleng
 
 const soon = t('challengeSetup.dialog.soon');
 
-type AiScope = 'card' | 'module' | 'board';
+type AiScope = 'card' | 'module' | 'branch' | 'board';
 type AiDifficulty = ChallengeConfig['difficulty'];
 type AiType = 'discursive' | 'objective' | 'mixed';
 type AiGrading = 'now' | 'end';
-type AiPreset = 'practice' | 'mock';
+type AiPreset = 'quick' | 'practice' | 'mock';
 
-const SCOPES = ['card', 'module', 'board'] as const;
+const SCOPES = ['card', 'module', 'branch', 'board'] as const;
 const DIFFICULTIES = ['easy', 'medium', 'hard', 'mixed'] as const;
 const TYPES = ['discursive', 'objective', 'mixed'] as const;
 const GRADINGS = ['now', 'end'] as const;
-const PRESETS = ['practice', 'mock'] as const;
+const PRESETS = ['quick', 'practice', 'mock'] as const;
+const TIMERS = [
+  { value: 'off', sec: null, label: 'off' },
+  { value: '300', sec: 300, label: 'm5' },
+  { value: '600', sec: 600, label: 'm10' },
+  { value: '1200', sec: 1200, label: 'm20' },
+  { value: '1800', sec: 1800, label: 'm30' },
+] as const;
 const CARD_SIZES = Array.from({ length: CHALLENGE_CARD_MAX }, (_, i) => i + 1);
 
 /** Group label for Segmented (required for a11y): the options read in order, built from the existing option strings. */
@@ -54,6 +61,7 @@ export function ChallengeSetupDialog({
   boardId,
   cardId,
   modules = [],
+  cards = [],
   onAiStart,
 }: {
   open: boolean;
@@ -63,6 +71,8 @@ export function ChallengeSetupDialog({
   boardId?: string;
   cardId?: string | null;
   modules?: readonly string[];
+  /** Cards the student can pick as the root of a branch (FR-2). */
+  cards?: readonly { id: string; title: string }[];
   /** Called with the new session id after the AI session was created, right before the navigation. */
   onAiStart?: (sessionId: string) => void;
 }) {
@@ -73,12 +83,14 @@ export function ChallengeSetupDialog({
   const [studyOrder, setStudyOrder] = useState<StudyOrder>('trail'); // F31 FR-10 (D-1481): only on trail maps
   const [scopeChoice, setScope] = useState<AiScope>('board');
   const [moduleChoice, setModule] = useState<string | null>(null);
+  const [branchChoice, setBranch] = useState<string | null>(null);
   const [format, setFormat] = useState<ChallengeFormat>('generated');
   const [countChoice, setCount] = useState<number | null>(null);
   const [difficulty, setDifficulty] = useState<AiDifficulty>('mixed');
   const [questionType, setQuestionType] = useState<AiType>('mixed');
   const [gradingTime, setGradingTime] = useState<AiGrading>('now');
   const [preset, setPreset] = useState<AiPreset>('practice');
+  const [timer, setTimer] = useState<(typeof TIMERS)[number]['value']>('off');
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -88,17 +100,37 @@ export function ChallengeSetupDialog({
   const ai = gradingMode === 'ai' && aiReady;
 
   const locked = !!cardId;
-  const scope: AiScope = locked ? 'card' : scopeChoice === 'module' && modules.length === 0 ? 'board' : scopeChoice;
+  const scope: AiScope = locked
+    ? 'card'
+    : scopeChoice === 'module' && modules.length === 0
+      ? 'board'
+      : scopeChoice === 'branch' && cards.length === 0
+        ? 'board'
+        : scopeChoice;
   const sizes: readonly number[] = scope === 'card' ? CARD_SIZES : CHALLENGE_SIZES;
   const count = countChoice !== null && sizes.includes(countChoice) ? countChoice : scope === 'card' ? 3 : 10;
   const selectedModule = moduleChoice !== null && modules.includes(moduleChoice) ? moduleChoice : modules[0];
+  const selectedRoot = cards.find((c) => c.id === branchChoice) ?? cards[0];
   const type: AiType = format === 'generated' ? questionType : 'mixed';
   const cost = aiCostUnits(format, count, type);
+
+  /** FR-2: Revisão rápida = 5; Treino = 10; Simulado = 20, objetiva, correção no final. No card, a quantidade para em 5. */
+  function applyPreset(next: AiPreset) {
+    setPreset(next);
+    setCount(scope === 'card' ? 5 : next === 'quick' ? 5 : next === 'practice' ? 10 : 20);
+    if (next === 'mock') {
+      setQuestionType('objective');
+      setGradingTime('end');
+    }
+  }
 
   async function startAi() {
     if (!boardId || busy) return;
     const scopeBody: ChallengeConfig['scope'] | null =
-      scope === 'card' ? (cardId ? { kind: 'card', cardId } : null) : scope === 'module' ? (selectedModule ? { kind: 'module', module: selectedModule } : null) : { kind: 'board' };
+      scope === 'card' ? (cardId ? { kind: 'card', cardId } : null)
+      : scope === 'module' ? (selectedModule ? { kind: 'module', module: selectedModule } : null)
+      : scope === 'branch' ? (selectedRoot ? { kind: 'branch', rootCardId: selectedRoot.id } : null)
+      : { kind: 'board' };
     if (!scopeBody) return setFailed(true);
     setBusy(true);
     setFailed(false);
@@ -110,7 +142,7 @@ export function ChallengeSetupDialog({
       difficulty,
       ...(format === 'generated' ? { questionType } : {}),
       grading: gradingTime === 'now' ? 'immediate' : 'end',
-      timerSec: null,
+      timerSec: TIMERS.find((x) => x.value === timer)?.sec ?? null,
       preset,
     });
     setBusy(false);
@@ -174,11 +206,14 @@ export function ChallengeSetupDialog({
                   aria-label={joined(SCOPES.map((s) => t(`challengeAi.scope.${s}`)))}
                   value={scope}
                   onValueChange={(v) => setScope(v as AiScope)}
-                  options={SCOPES.map((s) => ({ value: s, label: t(`challengeAi.scope.${s}`), disabled: s === 'card' || (s === 'module' && modules.length === 0) }))}
+                  options={SCOPES.map((s) => ({ value: s, label: t(`challengeAi.scope.${s}`), disabled: s === 'card' || (s === 'module' && modules.length === 0) || (s === 'branch' && cards.length === 0) }))}
                 />
               )}
               {scope === 'module' && selectedModule ? (
                 <Select label={t('challengeAi.scope.module')} value={selectedModule} onValueChange={setModule} options={modules.map((m) => ({ value: m, label: m }))} />
+              ) : null}
+              {scope === 'branch' && selectedRoot ? (
+                <Select label={t('challengeAi.scope.branch')} value={selectedRoot.id} onValueChange={setBranch} options={cards.map((c) => ({ value: c.id, label: c.title }))} />
               ) : null}
             </div>
             <div className="flex flex-col gap-2">
@@ -214,9 +249,15 @@ export function ChallengeSetupDialog({
               options={GRADINGS.map((x) => ({ value: x, label: t(`challengeAi.grading.${x}`) }))}
             />
             <Segmented fill
+              aria-label={joined(TIMERS.map((x) => t(`challengeAi.timer.${x.label}`)))}
+              value={timer}
+              onValueChange={(v) => setTimer(v as (typeof TIMERS)[number]['value'])}
+              options={TIMERS.map((x) => ({ value: x.value, label: t(`challengeAi.timer.${x.label}`) }))}
+            />
+            <Segmented fill
               aria-label={joined(PRESETS.map((x) => t(`challengeAi.preset.${x}`)))}
               value={preset}
-              onValueChange={(v) => setPreset(v as AiPreset)}
+              onValueChange={(v) => applyPreset(v as AiPreset)}
               options={PRESETS.map((x) => ({ value: x, label: t(`challengeAi.preset.${x}`) }))}
             />
           </>

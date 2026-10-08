@@ -35,10 +35,17 @@ export function AboutMapForm({ value, onChange, items, suggestions, showErrors, 
   const nameRef = useRef<HTMLInputElement>(null);
   const ids = { nameErr: useId(), access: useId() };
   const [areaCleared, setAreaCleared] = useState(false);
+  // The name field and the area chip can both fire before the parent re-renders. Merging onto the prop would drop the area.
+  const valueRef = useRef(value);
+  valueRef.current = value;
   useEffect(() => nameRef.current?.focus(), []);
   const errors = showErrors ? aboutErrors(value) : {};
   if (passwordOptional && !value.password) delete errors.password;
-  const set = (patch: Partial<AboutMap>) => onChange({ ...value, ...patch });
+  const set = (patch: Partial<AboutMap>) => {
+    const next = { ...valueRef.current, ...patch };
+    valueRef.current = next;
+    onChange(next);
+  };
 
   const parents = new Map(items.map((i) => [i.id, i.title]));
   const leaves = items.filter((i) => !items.some((c) => c.parentId === i.id));

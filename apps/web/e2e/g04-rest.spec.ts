@@ -67,7 +67,7 @@ test('6. /mapas/novo: cada alternativa troca título e passos do painel direito'
   const aside = page.getByRole('complementary', { name: 'Prévia do seu mapa' });
   await expect(aside).toBeVisible();
   const cases = [
-    [/Do meu PDF/, 'Do PDF ao rascunho', 'Em breve: a geração por IA'],
+    [/Do meu PDF/, 'Do PDF ao rascunho', 'Disponível agora'],
     [/Do meu Anki/, 'Do Anki para o mapa', 'Disponível agora'],
     [/De um mapa pronto/, 'Mapas prontos e revisados', 'A lista mostra a edição já publicada'],
     [/Em branco/, 'Comece do zero', ''],

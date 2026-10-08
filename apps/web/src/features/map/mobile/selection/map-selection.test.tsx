@@ -67,7 +67,7 @@ describe('peek (FR-8)', () => {
     fireEvent.click(card(0));
     const peek = await screen.findByRole('region', { name: 'Card selecionado' });
     expect(peek.textContent).toContain(sepseCards[0]!.title);
-    for (const n of ['Revisar este conceito', 'Editar card', 'Conectar a outro card', 'Fechar']) expect(screen.getByRole('button', { name: n })).toBeTruthy();
+    for (const n of ['Revisar este conceito', 'Desafiar', 'Editar card', 'Conectar a outro card', 'Fechar']) expect(screen.getByRole('button', { name: n })).toBeTruthy();
     fireEvent.click(card(1));
     await waitFor(() => expect(screen.getByRole('region', { name: 'Card selecionado' }).textContent).toContain(sepseCards[1]!.title));
     fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));

@@ -21,13 +21,13 @@
   :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 }
 
-/* F23 D-677: inside a map on the phone (`[data-mobile-map]`, features/map/mobile/canvas) the map is full screen and the shell
-   chrome marked `data-shell-chrome` (mobile header, bottom nav) steps aside. No route check in the shell: keep only this rule. */
+/* F23 D-677: on the phone, a full-screen map (`[data-mobile-map]`) or Desafio com IA (`[data-challenge-session]`, D-1658)
+   hides the shell chrome marked `data-shell-chrome` (mobile header, bottom nav). No route check in the shell. */
 @media (max-width: 767px) {
-  body:has([data-mobile-map]) {
+  body:has([data-mobile-map], [data-challenge-session]) {
     overflow: hidden;
   }
-  body:has([data-mobile-map]) [data-shell-chrome] {
+  body:has([data-mobile-map], [data-challenge-session]) [data-shell-chrome] {
     display: none;
   }
 }

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { rememberGenerationNotice } from './start-ai';
-import { SESSION_STORAGE_PREFIX, SessionScreen, rememberChallengeAiSession, toAnswerResult, toPublicItem } from './session-screen';
+import { SESSION_STORAGE_PREFIX, SessionScreen, rememberChallengeAiSession, toAnswerResult, toPublicItem, toReport } from './session-screen';
 
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({ auth: { getSession: async () => ({ data: { session: null } }) } }) }));
 vi.mock('@/features/cards/upload', () => ({ useAsset: () => ({ urls: { w800: '/img.webp' } }) }));
@@ -90,6 +90,11 @@ describe('SessionScreen (F32 T7)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar alternativa' }));
     await waitFor(() => expect(status()).toHaveTextContent('Incorreta'));
     assertNoSecret();
+  });
+
+  it('marks the session so the phone shell steps aside (FR-1)', () => {
+    const { container } = mount(start(objective));
+    expect(container.querySelector('[data-challenge-session]')).not.toBeNull();
   });
 
   it('says how many questions the batch actually delivered', () => {
@@ -323,6 +328,52 @@ describe('SessionScreen (F32 T7)', () => {
     }
     await waitFor(() => expect(status()).toHaveTextContent('Incorreta'));
     expect(calls[0]!.body.elapsedMs).toBe(65_000);
+  });
+
+  it('a finished timer stops the question', () => {
+    mount(start(objective, { startedAt: new Date(Date.now() - 60_000).toISOString(), timerSec: 30 }));
+    expect(screen.getByText('O tempo deste desafio acabou.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Confirmar alternativa' })).toBeNull();
+  });
+
+  it('D-1648: the result lists the topic and offers to retry only the misses', async () => {
+    reply = (url) => {
+      if (url.includes('/finish')) {
+        return { status: 200, body: { ok: true, data: {
+          score: { correct: 0, partial: 0, incorrect: 1, pending: 0 }, percent: 0,
+          timing: { totalMs: 1000, avgMs: 1000 },
+          groups: [{ kind: 'topic', label: 'Sepse', correct: 0, partial: 0, incorrect: 1, expectedAnswer: SECRET }],
+          items: [{ itemId: ITEM, stem: 'Qual o primeiro passo na sepse?', verdict: 'incorrect', feedback: 'Revise.', elapsedMs: 1000 }],
+          expectedAnswer: SECRET,
+        } } };
+      }
+      if (url.includes(`/sessions/${SESSION}`) && !url.includes('/answers')) {
+        return { status: 200, body: { ok: true, data: { id: SESSION, total: 1, position: 1, startedAt: null, current: null } } };
+      }
+      return { status: 200, body: { ok: true, data: verdict() } };
+    };
+    mount(start(objective, { total: 1 }));
+    fireEvent.click(screen.getByRole('radio', { name: /Hemoculturas/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar alternativa' }));
+    await waitFor(() => expect(status()).toHaveTextContent('Incorreta'));
+    fireEvent.click(screen.getByRole('button', { name: 'Finalizar desafio' }));
+    expect(await screen.findByRole('heading', { name: 'Resultado do desafio' })).toBeVisible();
+    expect(screen.getByText('Sepse: 0 acertos, 0 parciais, 1 erros')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Refazer só os que errei' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Adicionar à revisão' })).toBeVisible();
+    assertNoSecret();
+  });
+
+  it('D-1648: the report keeps module and topic counts and drops a planted answer', () => {
+    const report = toReport({
+      score: { correct: 1, partial: 0, incorrect: 1, pending: 0 },
+      percent: 50,
+      timing: { totalMs: 1000, avgMs: 1000 },
+      groups: [{ kind: 'topic', label: 'Sepse', correct: 1, partial: 0, incorrect: 1, expectedAnswer: SECRET }, { kind: 'other', label: 'x', correct: 1, partial: 0, incorrect: 0 }],
+      items: [],
+    });
+    expect(report?.groups).toEqual([{ kind: 'topic', label: 'Sepse', correct: 1, partial: 0, incorrect: 1 }]);
+    expect(JSON.stringify(report)).not.toContain(SECRET);
   });
 
   it('full screen: fixed layer with min height 100dvh and an exit link to the map', () => {

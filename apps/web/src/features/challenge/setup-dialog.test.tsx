@@ -90,9 +90,9 @@ describe('ChallengeSetupDialog: desafio com IA (F32)', () => {
       boardId: BOARD,
       scope: { kind: 'board' },
       format: 'generated',
-      n: 10,
+      n: 20,
       difficulty: 'hard',
-      questionType: 'discursive',
+      questionType: 'objective',
       grading: 'end',
       timerSec: null,
       preset: 'mock',
@@ -101,6 +101,38 @@ describe('ChallengeSetupDialog: desafio com IA (F32)', () => {
     const stored = sessionStorage.getItem(`remoa:challenge-ai:${SESSION}`);
     expect(stored).toContain('Defina sepse.');
     expect(stored).not.toContain(secret);
+  });
+
+  it('Revisão rápida pede 5 e manda o preset quick', async () => {
+    open();
+    fireEvent.click(aiRow());
+    fireEvent.click(screen.getByRole('radio', { name: 'Revisão rápida' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Começar desafio' }));
+    await waitFor(() => expect(api).toHaveBeenCalled());
+    const body = JSON.parse((api.mock.calls[0] as [string, RequestInit])[1].body as string) as { n: number; preset: string };
+    expect(body.n).toBe(5);
+    expect(body.preset).toBe('quick');
+  });
+
+  it('a 10 minute timer is sent as timerSec', async () => {
+    open();
+    fireEvent.click(aiRow());
+    fireEvent.click(screen.getByRole('radio', { name: '10 min' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Começar desafio' }));
+    await waitFor(() => expect(api).toHaveBeenCalled());
+    const body = JSON.parse((api.mock.calls[0] as [string, RequestInit])[1].body as string) as { timerSec: number };
+    expect(body.timerSec).toBe(600);
+  });
+
+  it('Este ramo sends the chosen card as the branch root', async () => {
+    const other = '8b2d5f03-6c4e-4a19-8d32-2e9f7b1c4a33';
+    open({ cards: [{ id: CARD, title: 'Sepse' }, { id: other, title: 'Choque' }] });
+    fireEvent.click(aiRow());
+    fireEvent.click(screen.getByRole('radio', { name: 'Este ramo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Começar desafio' }));
+    await waitFor(() => expect(api).toHaveBeenCalled());
+    const body = JSON.parse((api.mock.calls[0] as [string, RequestInit])[1].body as string) as { scope: { kind: string; rootCardId: string } };
+    expect(body.scope).toEqual({ kind: 'branch', rootCardId: CARD });
   });
 
   it('format "map" sends no questionType', async () => {

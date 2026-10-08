@@ -15,6 +15,7 @@ import * as more from '@remoa/strings/ns';
 import { CompactMapHeader, FloatingMapBar, IconPill, MapGlyph, useToast } from '@remoa/ui';
 import { useMobileCardCreator } from '@/features/cards/mobile/mobile-card-creator';
 import { placeCard } from '@/features/cards/mobile/place-card';
+import { ChallengeSetupDialog } from '@/features/challenge/setup-dialog';
 import { useChallenge } from '@/features/challenge/provider';
 import { DEFAULT_CHIPS, computeQueue } from '@/features/review/hub-math';
 import { api } from '@/lib/api';
@@ -82,6 +83,8 @@ function MobileMapInner({ data }: { data: BoardGraph }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [asideOpen, setAsideOpen] = useState(false);
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [setupCard, setSetupCard] = useState<string | null>(null);
   const [endOfToday] = useState(() => endOfDay());
   const now = useNow(30_000);
   const wrap = useRef<HTMLDivElement>(null);
@@ -193,9 +196,15 @@ function MobileMapInner({ data }: { data: BoardGraph }) {
   }, (close, open) => bar(open, close, close));
 
   // T6: peek, hold-to-move, connect by touch and the label field
+  const openChallenge = useCallback((cardId: string | null) => {
+    setSetupCard(cardId);
+    setAsideOpen(false);
+    setSetupOpen(true);
+  }, []);
   const selection = useMapSelection({
     doc, wrap, heat: doc.heat, endOfToday, openEditor: creator.openEditor, review,
-    active: prefs.view !== 'list' && !asideOpen && !creator.sheetOpen && !creator.editorOpen,
+    onChallenge: (id) => openChallenge(id),
+    active: prefs.view !== 'list' && !asideOpen && !creator.sheetOpen && !creator.editorOpen && !setupOpen,
   });
   const { selectCard, editLabel, connectFrom, startConnect } = selection;
   const ctx = useMemo<MobileNodesCtx>(
@@ -342,6 +351,22 @@ function MobileMapInner({ data }: { data: BoardGraph }) {
         onReview={review}
         onFit={fitFromAnywhere}
         onCreate={creator.openSheet}
+        onChallenge={() => openChallenge(null)}
+      />
+      <ChallengeSetupDialog
+        hasTrail={!!board.path}
+        open={setupOpen}
+        onOpenChange={setSetupOpen}
+        onStart={() => {
+          setSetupOpen(false);
+          resetChallenge();
+          router.replace(`${pathname}?modo=desafio`, { scroll: false });
+        }}
+        boardId={board.id}
+        cardId={setupCard}
+        modules={board.path?.modulos ?? []}
+        cards={cards.filter((c) => c.type !== 'note' && !c.suspendedAt).map((c) => ({ id: c.id, title: c.title }))}
+        onAiStart={() => setSetupOpen(false)}
       />
     </div>
   );

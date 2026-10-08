@@ -977,6 +977,7 @@ function Canvas({ data }: { data: BoardGraph }) {
         boardId={board.id}
         cardId={setupCard}
         modules={board.path?.modulos ?? []}
+        cards={graph.nodes.filter((n) => n.data.card.type !== 'note' && !n.data.card.suspendedAt).map((n) => ({ id: n.id, title: n.data.card.title }))}
         onAiStart={() => setSetupOpen(false)}
       />
       <Dialog

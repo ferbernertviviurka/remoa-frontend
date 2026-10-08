@@ -17,6 +17,7 @@ import { track } from '@/lib/analytics';
 import { api } from '@/lib/api';
 import { primeCardDetail, useCardDetail } from './card-detail';
 import { usePaywall } from '@/features/billing/paywall';
+import { CardRubricEditor } from '@/features/challenge-ai/rubric-editor';
 import { ReportButton } from '@/features/library/report-button';
 import { AiDraftTag } from '../ai-draft';
 import { caseStageItems } from './card-node';
@@ -307,16 +308,20 @@ function RubricTab({ detail }: { detail: CardDetail | null }) {
         <p className="m-0 text-sm leading-normal text-(--cv-ink-2)">{t('inspector.noRubricWarning')}</p>
         <Button variant="secondary" icon={<Icon name="sparkle" size={18} />} loading={busy} onClick={() => void generate()}>{t('cards.rubric.generate')}</Button>
         {failed ? <p role="alert" className="m-0 text-sm font-semibold text-review">{t('errors.internal')}</p> : null}
+        <CardRubricEditor cardId={detail.id} />
       </>
     );
   const approved = r.status === 'approved';
   return (
-    <RubricList
-      header={{ badge: t(`inspector.status.${r.status}`), meta: t(approved ? 'inspector.rubricApproved' : 'inspector.rubricDraft', { v: r.version }) }}
-      essentialLabel={t('inspector.essentialLabel')}
-      optionalLabel={t('inspector.optionalLabel')}
-      items={r.points}
-    />
+    <>
+      <RubricList
+        header={{ badge: t(`inspector.status.${r.status}`), meta: t(approved ? 'inspector.rubricApproved' : 'inspector.rubricDraft', { v: r.version }) }}
+        essentialLabel={t('inspector.essentialLabel')}
+        optionalLabel={t('inspector.optionalLabel')}
+        items={r.points}
+      />
+      <CardRubricEditor cardId={detail.id} />
+    </>
   );
 }
 
