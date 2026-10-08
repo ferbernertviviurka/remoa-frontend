@@ -14,7 +14,7 @@ import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Button, Icon, RingProgress, Stat, Tag, VerdictBox, buttonVariants, focusRing } from '@remoa/ui';
 import { api } from '@/lib/api';
-import { readStoredGenerationNotice, type GenerationNotice } from './start-ai';
+import { aiChallengeHref, readStoredGenerationNotice, type GenerationNotice } from './start-ai';
 import { MaskOverlay } from '@/features/cards/mask-editor';
 import { useAsset } from '@/features/cards/upload';
 
@@ -23,7 +23,7 @@ const t = withStrings({ challenge: more.challenge, ai: more.ai });
 /** sessionStorage key where the setup flow leaves the start response (there is no GET of the session yet). */
 export const SESSION_STORAGE_PREFIX = 'remoa:challenge-ai:';
 
-export type SessionView = { id: string; total: number; position: number; startedAt: number | null; current: AiChallengeItemPublic | null };
+export type SessionView = { id: string; total: number; position: number; startedAt: number | null; timerSec: number | null; current: AiChallengeItemPublic | null };
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -76,7 +76,8 @@ export function toSessionView(raw: unknown): SessionView | null {
   if (!isObj(raw) || typeof raw.id !== 'string') return null;
   const n = (v: unknown) => (typeof v === 'number' && Number.isInteger(v) && v >= 0 ? v : 0);
   const started = typeof raw.startedAt === 'number' ? raw.startedAt : typeof raw.startedAt === 'string' ? Date.parse(raw.startedAt) : NaN;
-  return { id: raw.id, total: n(raw.total), position: n(raw.position), startedAt: Number.isFinite(started) ? started : null, current: toPublicItem(raw.current) };
+  const timer = typeof raw.timerSec === 'number' && Number.isInteger(raw.timerSec) && raw.timerSec >= 30 && raw.timerSec <= 3 * 60 * 60 ? raw.timerSec : null;
+  return { id: raw.id, total: n(raw.total), position: n(raw.position), startedAt: Number.isFinite(started) ? started : null, timerSec: timer, current: toPublicItem(raw.current) };
 }
 
 const VERDICTS = ['correct', 'partial', 'incorrect'] as const;
@@ -89,6 +90,7 @@ export type SessionReport = {
   totalMs: number | null;
   avgMs: number | null;
   items: { itemId: string; stem: string; verdict: Verdict | null; feedback: string | null; elapsedMs: number | null }[];
+  groups: { kind: 'module' | 'topic'; label: string; correct: number; partial: number; incorrect: number }[];
   advice: {
     message: string | null;
     cards: { cardId: string; title: string; reason: string | null }[];
@@ -100,6 +102,12 @@ export type SessionReport = {
 export function toReport(raw: unknown): SessionReport | null {
   if (!isObj(raw) || !isObj(raw.score)) return null;
   const n = (v: unknown) => ms(v) ?? 0;
+  const groups = arr(raw.groups).flatMap((g) => {
+    if (!isObj(g) || typeof g.label !== 'string' || !g.label) return [];
+    if (g.kind !== 'module' && g.kind !== 'topic') return [];
+    const kind = g.kind === 'module' ? 'module' as const : 'topic' as const;
+    return [{ kind, label: g.label, correct: n(g.correct), partial: n(g.partial), incorrect: n(g.incorrect) }];
+  });
   const items = arr(raw.items).flatMap((item) => {
     if (!isObj(item) || typeof item.itemId !== 'string' || typeof item.stem !== 'string') return [];
     const verdict = (VERDICTS as readonly string[]).includes(String(item.verdict)) ? (item.verdict as Verdict) : null;
@@ -118,6 +126,7 @@ export function toReport(raw: unknown): SessionReport | null {
     totalMs: ms(timing.totalMs),
     avgMs: ms(timing.avgMs),
     items,
+    groups,
     advice: advice && (advice.message || advice.cards.length || advice.maps.length) ? advice : null,
   };
 }
@@ -135,6 +144,31 @@ const clock = (value: number) => {
   const total = Math.max(0, Math.floor(value / 1000));
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 };
+
+/** Counts down from `from + seconds`. Calls `onEnd` once at zero. Not a live region: it would talk every second. */
+function Countdown({ from, seconds, label, onEnd }: { from: number; seconds: number; label: string; onEnd: () => void }) {
+  const [now, setNow] = useState(() => Date.now());
+  const left = Math.max(0, from + seconds * 1000 - now);
+  const ended = useRef(false);
+  useEffect(() => {
+    if (left === 0) {
+      if (!ended.current) {
+        ended.current = true;
+        onEnd();
+      }
+      return;
+    }
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [left, onEnd]);
+  return (
+    <p className="m-0 flex items-center gap-1.5 text-sm text-muted">
+      <Icon name="clock" size={15} />
+      <span>{label}</span>
+      <span className="font-semibold tabular-nums text-ink">{clock(left)}</span>
+    </p>
+  );
+}
 
 /** Ticks once a second while running; `stoppedMs` freezes it (the answer was sent). Not a live region: it would talk every second. */
 function Clock({ from, stoppedMs, label }: { from: number; stoppedMs?: number | null; label: string }) {
@@ -189,6 +223,7 @@ type Props = {
 export function SessionScreen({ sessionId, boardId, initial }: Props) {
   const [session, setSession] = useState<SessionView | null | undefined>(() => (initial === undefined ? undefined : toSessionView(initial)));
   const [finished, setFinished] = useState(false);
+  const [timeUp, setTimeUp] = useState(false);
   const [report, setReport] = useState<SessionReport | null>(null);
   const [notice] = useState<GenerationNotice | null>(() => readStoredGenerationNotice(sessionId));
   useEffect(() => {
@@ -227,13 +262,17 @@ export function SessionScreen({ sessionId, boardId, initial }: Props) {
   );
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-surface text-ink">
+    <div data-challenge-session="" className="fixed inset-0 z-50 overflow-y-auto bg-surface text-ink">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-2xl flex-col gap-5 px-4 py-5 sm:px-6">
         <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
           {exit}
           {session && !finished ? (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              {session.startedAt !== null ? <Clock from={session.startedAt} label={t('challengeAi.timer.total')} /> : null}
+              {session.startedAt !== null && session.timerSec !== null ? (
+                <Countdown from={session.startedAt} seconds={session.timerSec} label={t('challengeAi.timer.remaining')} onEnd={() => setTimeUp(true)} />
+              ) : session.startedAt !== null ? (
+                <Clock from={session.startedAt} label={t('challengeAi.timer.total')} />
+              ) : null}
               <p className="m-0 text-sm text-muted">{t('challenge.progress', { n: Math.min(session.position + 1, Math.max(session.total, 1)), total: session.total })}</p>
             </div>
           ) : null}
@@ -246,9 +285,11 @@ export function SessionScreen({ sessionId, boardId, initial }: Props) {
         {session === undefined ? (
           <p role="status" className="m-0 text-sm text-muted">{t('challenge.loading')}</p>
         ) : finished ? (
-          report ? <ResultView report={report} boardId={boardId} mapHref={mapHref} /> : <p role="status" className="m-0 text-sm">{t('challengeAi.done')}</p>
+          report ? <ResultView report={report} boardId={boardId} mapHref={mapHref} sessionId={sessionId} /> : <p role="status" className="m-0 text-sm">{t('challengeAi.done')}</p>
         ) : !session || session.id !== sessionId || !session.current ? (
           <p role="alert" className="m-0 text-sm">{t('challenge.loadError')}</p>
+        ) : timeUp ? (
+          <p role="status" className="m-0 text-sm font-semibold">{t('challengeAi.timer.up')}</p>
         ) : (
           <ItemView
             key={session.current.id}
@@ -488,10 +529,35 @@ const VERDICT_TONE = { correct: 'steady', partial: 'watch', incorrect: 'review' 
 const rowLink = `flex min-h-11 items-center gap-3 rounded-field border border-border bg-surface px-3 py-2.5 no-underline text-ink hover:border-primary ${focusRing}`;
 
 /** D-1567: the saved result. The verdicts, times and advice come from the server (finish); nothing here recomputes a grade. */
-function ResultView({ report, boardId, mapHref }: { report: SessionReport; boardId: string; mapHref: string }) {
+function ResultView({ report, boardId, mapHref, sessionId }: { report: SessionReport; boardId: string; mapHref: string; sessionId: string }) {
   const ids = useId();
   const title = useRef<HTMLHeadingElement>(null);
   useEffect(() => title.current?.focus(), []);
+  const [retry, setRetry] = useState<Send>('idle');
+  const [review, setReview] = useState<Send>('idle');
+  const [reviewCount, setReviewCount] = useState<number | null>(null);
+  const missed = report.incorrect + report.partial > 0;
+  async function redo() {
+    setRetry('busy');
+    const r = await api<unknown>(`/v1/challenge-ai/sessions/${encodeURIComponent(sessionId)}/retry`, { method: 'POST', body: '{}' });
+    const view = r.ok ? toSessionView(r.data) : null;
+    if (!view?.current) {
+      setRetry('error');
+      return;
+    }
+    rememberChallengeAiSession(r.ok ? r.data : null);
+    window.location.assign(aiChallengeHref(boardId, view.id));
+  }
+  async function addReview() {
+    setReview('busy');
+    const r = await api<{ cards: number }>(`/v1/challenge-ai/sessions/${encodeURIComponent(sessionId)}/review`, { method: 'POST', body: '{}' });
+    if (!r.ok || typeof r.data.cards !== 'number') {
+      setReview('error');
+      return;
+    }
+    setReviewCount(r.data.cards);
+    setReview('sent');
+  }
   const low = report.percent < 70;
   const counts = [
     ['correct', report.correct],
@@ -584,6 +650,30 @@ function ResultView({ report, boardId, mapHref }: { report: SessionReport; board
           ))}
         </ol>
       </section>
+
+      {report.groups.length ? (
+        <section aria-labelledby={`${ids}-g`} className="flex flex-col gap-2">
+          <h2 id={`${ids}-g`} className="m-0 text-base font-extrabold">{t('challengeAi.result.groups')}</h2>
+          <ul className="m-0 flex list-none flex-col gap-2 p-0">
+            {report.groups.map((g) => (
+              <li key={`${g.kind}:${g.label}`} className="flex flex-wrap items-center gap-2 text-sm">
+                <Tag tone="unknown">{t(g.kind === 'module' ? 'challengeAi.result.groupModule' : 'challengeAi.result.groupTopic')}</Tag>
+                <span>{t('challengeAi.result.groupLine', { label: g.label, correct: g.correct, partial: g.partial, incorrect: g.incorrect })}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {missed ? (
+        <div className="flex flex-wrap gap-2">
+          <Button loading={retry === 'busy'} onClick={() => void redo()}>{t('challengeAi.result.retryMissed')}</Button>
+          <Button variant="secondary" loading={review === 'busy'} onClick={() => void addReview()}>{t('challengeAi.result.addToReview')}</Button>
+        </div>
+      ) : null}
+      {retry === 'error' ? <p role="alert" className="m-0 text-sm">{t('challengeAi.result.retryError')}</p> : null}
+      {review === 'error' ? <p role="alert" className="m-0 text-sm">{t('challengeAi.result.reviewError')}</p> : null}
+      {reviewCount !== null ? <p role="status" className="m-0 text-sm">{t('challengeAi.result.addedToReview', { n: reviewCount })}</p> : null}
 
       <Link href={mapHref} className={`inline-flex min-h-11 items-center justify-center self-start rounded-btn px-5 no-underline ${buttonVariants.primary} ${focusRing}`}>
         {t('challengeAi.result.backToMap')}

@@ -67,6 +67,7 @@ describe('aside content (F23 T8)', () => {
     const progress = within(aside).getByRole('region', { name: 'Progresso' });
     await waitFor(() => expect(progress.textContent).toMatch(/\d+%lembrança estimada/));
     expect(progress.textContent).toContain('para revisar');
+    expect(within(aside).getByRole('button', { name: /^Desafiar/ })).toBeTruthy();
     expect(within(aside).getByText('Detalhes')).toBeTruthy();
     expect(within(aside).getByText(/\d+ cards · \d+ conexões/)).toBeTruthy();
   });

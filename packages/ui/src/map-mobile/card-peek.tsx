@@ -29,6 +29,9 @@ export type CardPeekProps = {
   onReview: () => void;
   onEdit: () => void;
   onConnect: () => void;
+  /** Texto visível de Desafiar. Sem os dois, o botão não aparece. */
+  challengeLabel?: string;
+  onChallenge?: () => void;
 };
 
 const dot: Record<MapCardState, string> = { review: 'bg-(--state-review-border)', watch: 'bg-(--state-watch-border)', steady: 'bg-(--state-steady-border)', unknown: 'bg-(--state-unknown-soft)' };
@@ -73,6 +76,12 @@ export function CardPeek(p: CardPeekProps) {
         <MapGlyph name="bolt" size={18} />
         {p.reviewLabel}
       </button>
+      {p.onChallenge && p.challengeLabel ? (
+        <button type="button" onClick={p.onChallenge} className={`flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-[15px] border-[1.5px] border-border-strong bg-surface text-[15px] font-bold text-ink transition-transform active:scale-[.98] ${focusRing}`}>
+          <MapGlyph name="sparkle" size={18} />
+          {p.challengeLabel}
+        </button>
+      ) : null}
       <div className="flex gap-2">
         <button type="button" aria-label={p.connectLabel} onClick={p.onConnect} className={secondary}>
           <MapGlyph name="link" size={18} />

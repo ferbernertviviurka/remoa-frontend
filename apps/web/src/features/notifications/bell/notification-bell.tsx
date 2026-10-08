@@ -1,10 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import type { Notification, NotificationType } from '@remoa/contracts';
 import { t } from '@remoa/strings';
 import { BellButton, NotificationPopover, type NotificationTab } from '@remoa/ui';
+import { useNavigate } from '@/features/shell/use-navigate';
 import { listNotifications, markRead } from '../api';
 import { useNotifications } from '../provider';
 import { appLinkOf } from '../soft-nav';
@@ -13,7 +13,7 @@ import { formatMeta, groupViews } from '../view';
 
 /** F26 FR-1/FR-2: the bell of every shell screen and its popover. */
 export function NotificationBell() {
-  const router = useRouter();
+  const [, nav] = useNavigate();
   const { unread, timezone, version, changed } = useNotifications();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<NotificationTab>('all');
@@ -45,7 +45,8 @@ export function NotificationBell() {
     void markRead({ ids }).then(changed, changed);
   };
 
-  // clicks on links inside the popover: close and navigate client-side (also from the gear and "Ver todas")
+  // clicks on links inside the popover: close and navigate client-side (also from the gear and "Ver todas").
+  // Capture runs before the popover dismisses the click; the push stays in a transition so closing the panel does not drop it.
   useEffect(() => {
     if (!open) return;
     const onClick = (e: MouseEvent) => {
@@ -54,11 +55,11 @@ export function NotificationBell() {
       if (!href) return;
       e.preventDefault();
       setOpen(false);
-      router.push(href);
+      nav.push(href);
     };
-    document.addEventListener('click', onClick);
-    return () => document.removeEventListener('click', onClick);
-  }, [open, router]);
+    document.addEventListener('click', onClick, true);
+    return () => document.removeEventListener('click', onClick, true);
+  }, [open, nav]);
 
   return (
     <NotificationPopover

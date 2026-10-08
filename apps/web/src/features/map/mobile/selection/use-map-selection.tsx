@@ -29,9 +29,11 @@ type Args = {
   active: boolean;
   openEditor: (cardId: string) => void;
   review: () => void;
+  /** FR-1: Desafiar this card. */
+  onChallenge: (cardId: string) => void;
 };
 
-export function useMapSelection({ doc, wrap, heat, endOfToday, active, openEditor, review }: Args) {
+export function useMapSelection({ doc, wrap, heat, endOfToday, active, openEditor, review, onChallenge }: Args) {
   const rf = useReactFlow<CardNode>();
   const { toast } = useToast();
   const { graph, graphRef } = doc;
@@ -120,6 +122,7 @@ export function useMapSelection({ doc, wrap, heat, endOfToday, active, openEdito
           onReview={review}
           onEdit={() => openEditor(card.id)}
           onConnect={() => setFrom(card.id)}
+          onChallenge={() => onChallenge(card.id)}
         />
       ) : null}
     </>
@@ -127,7 +130,7 @@ export function useMapSelection({ doc, wrap, heat, endOfToday, active, openEdito
   return { selectCard, editLabel, connectFrom: from, startConnect: setFrom, element };
 }
 
-function Peek({ node, heat, endOfToday, onClose, onReview, onEdit, onConnect }: { node: CardNode; heat: RetrievabilityMap; endOfToday: number; onClose: () => void; onReview: () => void; onEdit: () => void; onConnect: () => void }) {
+function Peek({ node, heat, endOfToday, onClose, onReview, onEdit, onConnect, onChallenge }: { node: CardNode; heat: RetrievabilityMap; endOfToday: number; onClose: () => void; onReview: () => void; onEdit: () => void; onConnect: () => void; onChallenge: () => void }) {
   const { card } = node.data;
   const face = useCardFace(card);
   const entry = heat[card.id];
@@ -155,10 +158,12 @@ function Peek({ node, heat, endOfToday, onClose, onReview, onEdit, onConnect }: 
       editText={t('mapMobile.peek.editText')}
       connectLabel={t('mapMobile.peek.connectLabel')}
       connectText={t('mapMobile.peek.connectText')}
+      challengeLabel={t('challengeAi.open')}
       onClose={onClose}
       onReview={onReview}
       onEdit={onEdit}
       onConnect={onConnect}
+      onChallenge={onChallenge}
     />
   );
 }

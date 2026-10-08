@@ -14,6 +14,12 @@ describe('challengeAi (F32)', () => {
     expect(t('challengeAi.aiCanErr')).toBe('A IA pode errar. Confira a fonte no card.');
     expect(t('challengeAi.reportSent')).toBe('Recebido. Um revisor vai analisar esta pergunta.');
     expect(t('challengeAi.shortfall', { got: 2, asked: 5 })).toBe('Entregamos 2 de 5 perguntas. As outras não ficaram fiéis ao mapa.');
+    expect(t('challengeAi.result.retryMissed')).toBe('Refazer só os que errei');
+    expect(t('challengeAi.result.groupLine', { label: 'Sepse', correct: 1, partial: 0, incorrect: 2 })).toBe('Sepse: 1 acertos, 0 parciais, 2 erros');
+    expect(t('challengeAi.result.addedToReview', { n: 1 })).toBe('1 card entrou na revisão de hoje.');
+    expect(t('challengeAi.preset.quick')).toBe('Revisão rápida');
+    expect(t('challengeAi.rubric.save')).toBe('Salvar rubrica');
+    expect(t('challengeAi.rubric.approved')).toBe('Rubrica aprovada. Ela não muda por aqui.');
   });
 
   it('interpolates cost', () => {

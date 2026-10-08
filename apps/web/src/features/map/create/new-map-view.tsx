@@ -66,6 +66,8 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
   const [step, setStep] = useState<0 | 1 | 2>(initialStep);
   const [path, setPath] = useState<Path>(initialPath ?? 'pdf');
   const [about, setAbout] = useState<AboutMap>(() => emptyAboutMap(items.find((i) => i.id === initialItemId)?.title ?? '', initialItemId ? [initialItemId] : []));
+  const aboutRef = useRef(about);
+  aboutRef.current = about;
   const [titleTouched, setTitleTouched] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [existing, setExisting] = useState<{ id: string; title: string } | null>(null);
@@ -107,10 +109,11 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
   const needsFile = path === 'pdf' || path === 'anki';
   const accept = path === 'pdf' ? '.pdf' : '.apkg';
   const suggestedCount = about.matrixItemIds.filter((id) => suggested.some((s) => s.id === id)).length;
-  const payload = aboutPayload(about);
+  const livePayload = () => aboutPayload(aboutRef.current);
   const trackAbout = () => {
-    if (payload.matrixItemIds.length) track('board_linked_to_matrix', { count: payload.matrixItemIds.length, suggestedCount });
-    if (payload.access !== 'owner') track('board_access_changed', { from: 'owner', to: payload.access, source: 'create' });
+    const sent = livePayload();
+    if (sent.matrixItemIds.length) track('board_linked_to_matrix', { count: sent.matrixItemIds.length, suggestedCount });
+    if (sent.access !== 'owner') track('board_access_changed', { from: 'owner', to: sent.access, source: 'create' });
   };
 
   /** Polls a generation job until it ends; failures keep the job id so "Tentar de novo" can call /retry (G22). */
@@ -192,7 +195,7 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
       // D-541: multipart `file` + `board` (D-532); the browser sets the content-type boundary.
       const form = new FormData();
       form.set('file', file);
-      form.set('board', JSON.stringify(payload));
+      form.set('board', JSON.stringify(livePayload()));
       const res = await fetch(`${base}/v1/ai/generate-pdf`, { method: 'POST', headers: { authorization: token ? `Bearer ${token}` : '' }, body: form });
       const body = (await res.json()) as { ok: true; data: { boardId?: string | null; jobId?: string; cards?: number; edges?: number } } | { ok?: false; error: { code: string; message?: string } };
       if (!body.ok) {
@@ -225,7 +228,7 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
     setBusy(true);
     setError(null);
     try {
-      const r = await api<Board>('/v1/boards', { method: 'POST', body: JSON.stringify(payload) });
+      const r = await api<Board>('/v1/boards', { method: 'POST', body: JSON.stringify(livePayload()) });
       if (!r.ok) {
         if (!paywall.handle(r.error)) setError(t(`errors.${r.error.code}` as StringKey));
         return;
@@ -253,18 +256,19 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
   /** FR-11: the existing-board choice comes before the import; access is only sent for a new board. */
   function importAnki(target: ImportTarget) {
     setExisting(null);
-    const board: ImportBoardInput = target === 'new' ? { ...payload, target } : { title: payload.title, area: payload.area, matrixItemIds: payload.matrixItemIds, target };
+    const sent = livePayload();
+    const board: ImportBoardInput = target === 'new' ? { ...sent, target } : { title: sent.title, area: sent.area, matrixItemIds: sent.matrixItemIds, target };
     void anki.confirm(board, { suggestedCount });
   }
 
   async function submit() {
     setShowErrors(true);
-    if (Object.keys(aboutErrors(about)).length) return;
+    if (Object.keys(aboutErrors(aboutRef.current)).length) return;
     if (path === 'blank') return void create();
     if (path === 'pdf') return void generatePdf();
     if (path !== 'anki') return setSoon(true);
     setBusy(true);
-    const found = await anki.findExisting(payload.title);
+    const found = await anki.findExisting(livePayload().title);
     setBusy(false);
     if (found) setExisting(found);
     else importAnki('new');
@@ -296,6 +300,7 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
     <AboutMapForm
       value={about}
       onChange={(v) => {
+        aboutRef.current = v;
         if (v.title !== about.title) setTitleTouched(true);
         setAbout(v);
       }}

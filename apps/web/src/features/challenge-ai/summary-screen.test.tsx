@@ -95,6 +95,17 @@ describe('SummaryScreen', () => {
     expect(print).toHaveBeenCalledTimes(1);
   });
 
+  it('Reportar erro sends the summary id and then hides the button', async () => {
+    const id = summary().id;
+    apiMock.mockResolvedValue({ ok: true, data: { reported: true } });
+    mount({ initial: summary() });
+    fireEvent.click(screen.getByRole('button', { name: t('challengeAi.report') }));
+    await screen.findByRole('status');
+    expect(apiMock).toHaveBeenCalledWith(`/v1/challenge-ai/summaries/${id}/report`, { method: 'POST', body: '{}' });
+    expect(screen.queryByRole('button', { name: t('challengeAi.report') })).toBeNull();
+    expect(screen.getByText(t('challengeAi.reportSent'))).toBeTruthy();
+  });
+
   it('shows an error alert when the API fails or answers outside the schema', async () => {
     apiMock.mockResolvedValueOnce({ ok: false, error: { code: 'quota_exceeded', message: 'q' } });
     mount();
