@@ -238,7 +238,8 @@ function ItemQuestion({ item, n, total, done, state, canSkip, selfMark, onRated 
   const suggested = out?.suggestedGrade ?? null;
   const v = out?.verdict;
   const list = (xs: string[], key: 'matched' | 'missing') => (xs.length ? `${t(`challenge.verdict.${key}`)}: ${xs.join('; ')}` : undefined);
-  const hint = (g: Grade, key: string) => t('challengeSetup.answer.gradeHint', { interval: interval(out!.preview[g].intervalDays), key });
+  // the phone has no keys 1–4: the interval alone
+  const hint = (g: Grade, key: string) => (phone ? interval(out!.preview[g].intervalDays) : t('challengeSetup.answer.gradeHint', { interval: interval(out!.preview[g].intervalDays), key }));
 
   const resultNode = out ? (
     <div ref={result} tabIndex={-1} className="slide flex flex-col gap-4 outline-none">

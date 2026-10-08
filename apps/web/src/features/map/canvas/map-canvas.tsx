@@ -43,6 +43,8 @@ import { usePaletteCommands } from '@/features/shell/command-palette';
 import { createOpQueue, type OpQueue, type QueueStatus } from './op-queue';
 import { initialGraph, storage } from './initial-graph';
 import { challengeZoom } from './challenge-camera';
+import { useKeyboardInset } from './use-keyboard-inset';
+import { useInertOutside } from './use-inert-outside';
 import { cameraMove } from '../mobile/canvas/view';
 
 const t = withStrings({ canvas: more.canvas, map: more.map, mapMobile: more.mapMobile });
@@ -769,6 +771,14 @@ function Canvas({ data }: { data: BoardGraph }) {
   // heading, so the screen reader reads the card/question), unless the user already moved focus somewhere on purpose
   // (into the panel, a field). Closing with focus inside returns it to the card that was selected.
   const panelWrap = useRef<HTMLDivElement>(null);
+  const phoneChallenge = mode === 'challenge' && isPhone();
+  const keyboard = useKeyboardInset(phoneChallenge);
+  useInertOutside(panelWrap, phoneChallenge);
+  // the keyboard opens after the field took focus: once the panel has shrunk above it, bring the field back into view
+  useEffect(() => {
+    const el = document.activeElement;
+    if (keyboard && el instanceof HTMLElement && panelWrap.current?.contains(el)) el.scrollIntoView({ block: 'nearest' });
+  }, [keyboard]);
   const lastSelected = useRef<string | null>(null);
   useEffect(() => {
     if (selected) lastSelected.current = selected.id;
@@ -849,8 +859,6 @@ function Canvas({ data }: { data: BoardGraph }) {
       >
         <CanvasContext.Provider value={ctx}>
           <ReactFlow<CardNode, LinkEdge>
-            // D-1573: under the phone's full-screen challenge; hidden so VoiceOver and Tab do not walk the cards behind it
-            className={mode === 'challenge' ? 'max-md:invisible' : undefined}
             nodes={graph.nodes}
             edges={graph.edges}
             nodeTypes={nodeTypes}
@@ -898,7 +906,7 @@ function Canvas({ data }: { data: BoardGraph }) {
         </CanvasContext.Provider>
         {mode === 'challenge' ? (
           // F23: the phone challenge shares the phone map's header pill (exit instead of the menu); D-1573: over the full-screen panel
-          <div className="fixed inset-x-3 top-[calc(12px+env(safe-area-inset-top))] z-[71] md:hidden">
+          <div data-inert-keep="" className="fixed inset-x-3 top-[calc(12px+env(safe-area-inset-top))] z-[71] md:hidden">
             <CompactMapHeader title={board.title} statusText={t('editor.challenge')} menuLabel={t('quiz.exit')} onMenu={() => setMode('explore')} searchLabel={t('mapMobile.header.searchLabel')} />
           </div>
         ) : null}
@@ -946,6 +954,8 @@ function Canvas({ data }: { data: BoardGraph }) {
         <div
           ref={panelWrap}
           onAnimationEnd={(e) => /^cv-(panel|sheet)-in$/.test(e.animationName) && focusPanel()}
+          // D-1573: with the keyboard open the phone challenge ends above it, so "Revelar" and the grades stay in reach
+          style={keyboard ? { bottom: keyboard, paddingBottom: 0 } : undefined}
           className={`pointer-events-none md:absolute md:inset-x-auto md:bottom-5 md:right-5 md:top-5 md:z-20 md:h-auto [&>aside]:pointer-events-auto [&>aside]:max-md:w-full ${mode === 'challenge' ? 'max-md:pointer-events-auto max-md:fixed max-md:inset-0 max-md:z-[70] max-md:bg-canvas max-md:pt-[calc(88px+env(safe-area-inset-top))] max-md:pb-[env(safe-area-inset-bottom)] [&>aside]:max-md:h-full [&>aside]:max-md:rounded-none' : 'absolute inset-x-3 z-20 bottom-[calc(72px+env(safe-area-inset-bottom))] h-[55%] [&>aside]:max-md:rounded-b-none'}`}
         >
             <Inspector

@@ -332,6 +332,8 @@ describe('ChallengePanel', () => {
     expect(buttons[0]!.closest('[class*="data-check"]')).not.toBeNull();
     await userEvent.setup().click(buttons[1]!);
     await screen.findByText('Resposta canônica');
+    expect(rating('Acertei')).toHaveTextContent(/dias?/);
+    expect(rating('Acertei')).not.toHaveTextContent(/tecla/);
     vi.unstubAllGlobals();
   });
 });
