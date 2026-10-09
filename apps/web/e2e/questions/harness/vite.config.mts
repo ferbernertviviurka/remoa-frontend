@@ -1,0 +1,5 @@
+import react from '@vitejs/plugin-react';
+import { fileURLToPath } from 'node:url';
+import { apiMiddleware } from './server-fixtures';
+const here=fileURLToPath(new URL('.',import.meta.url));const src=fileURLToPath(new URL('../../../src/',import.meta.url));
+export default {root:here,define:{'process.env.NEXT_PUBLIC_APP_VERSION':JSON.stringify('f33-test-only')},plugins:[react(),{name:'f33-test-api-only',configureServer(server:{middlewares:{use:(handler:typeof apiMiddleware)=>void}}){server.middlewares.use(apiMiddleware);}}],resolve:{alias:[{find:/^next\/link$/,replacement:here+'link.tsx'},{find:/^next\/navigation$/,replacement:here+'navigation.ts'},{find:/^@\/lib\/api$/,replacement:here+'api.ts'},{find:'@',replacement:src}]},server:{host:'127.0.0.1',port:4317,strictPort:true,watch:{ignored:['**/*.test.ts','**/*.test.tsx','**/e2e/questions/artifacts/**','**/e2e/questions/*.mjs','**/e2e/questions/README.md']},fs:{allow:[fileURLToPath(new URL('../../../../../..',import.meta.url))]}},css:{postcss:fileURLToPath(new URL('../../../',import.meta.url))}};

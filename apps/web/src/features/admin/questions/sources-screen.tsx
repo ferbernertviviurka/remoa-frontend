@@ -1,0 +1,14 @@
+'use client';
+import { useCallback,useEffect,useState } from 'react';
+import { t } from '@remoa/strings';
+import { Alert,Button,Dialog,Tag } from '@remoa/ui';
+import type { QuestionSource } from '@remoa/contracts';
+import { panel } from '@/features/questions/shared';
+import { listSources,createSource,updateSource } from './api';
+import { SourceForm } from './source-form';
+import { AdminQuestionTabs,AdminQuestionTitle } from './admin-shared';
+import { tq,adminQuestionError } from './labels';
+export function SourcesScreen(){const[sources,setSources]=useState<QuestionSource[]>([]);const[loading,setLoading]=useState(true);const[error,setError]=useState<string|null>(null);const[editing,setEditing]=useState<QuestionSource|true|null>(null);
+  const load=useCallback(async()=>{setLoading(true);setError(null);try{setSources((await listSources()).items);}catch(e){setError(adminQuestionError(e));}finally{setLoading(false);}},[]);useEffect(()=>{void load();},[load]);
+  return <div className="flex flex-col gap-6 p-5 md:p-9"><AdminQuestionTitle title={tq('questionsAdmin.sourcesTitle')} description={tq('questionsAdmin.sourcesDescription')}><Button onClick={()=>setEditing(true)}>{tq('questionsAdmin.sourceNew')}</Button></AdminQuestionTitle><AdminQuestionTabs/>{loading?<p role="status">{t('common.loading')}</p>:error?<Alert role="alert" tone="review" title={error}><Button variant="secondary" onClick={()=>void load()}>{t('common.retry')}</Button></Alert>:sources.length===0?<section className={panel}><h2 className="font-display text-2xl font-bold">{tq('questionsAdmin.sourceEmpty')}</h2></section>:<div className="grid gap-5 lg:grid-cols-2">{sources.map(source=><article key={source.id} className={panel}><div className="flex flex-wrap justify-between gap-3"><h2 className="font-display text-2xl font-bold">{source.name}</h2><Tag tone={source.rightsStatus==='authorized'?'steady':'watch'}>{tq(`questionsAdmin.rightsLabels.${source.rightsStatus}`)}</Tag></div><p className="my-3 text-muted">{source.publisher}</p><a className="break-all text-primary-deep" href={source.url} target="_blank" rel="noopener noreferrer">{source.url}</a>{source.rightsEvidence?<p className="mt-4 whitespace-pre-wrap text-sm text-muted">{source.rightsEvidence}</p>:null}<div className="mt-5"><Button variant="secondary" onClick={()=>setEditing(source)}>{tq('questionsAdmin.editSource')}</Button></div></article>)}</div>}{editing?<Dialog open onOpenChange={v=>{if(!v)setEditing(null);}} title={tq(editing===true?'questionsAdmin.sourceNew':'questionsAdmin.editSource')} closeLabel={t('common.close')}><SourceForm initial={editing===true?undefined:editing} onSave={async input=>{if(editing===true)await createSource(input);else await updateSource(editing.id,input);setEditing(null);await load();}}/></Dialog>:null}</div>;
+}

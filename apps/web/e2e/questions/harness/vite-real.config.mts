@@ -1,0 +1,4 @@
+import react from '@vitejs/plugin-react';
+import {fileURLToPath} from 'node:url';
+const here=fileURLToPath(new URL('.',import.meta.url));const src=fileURLToPath(new URL('../../../src/',import.meta.url));
+export default {root:here,plugins:[react()],resolve:{alias:[{find:/^next\/link$/,replacement:here+'link.tsx'},{find:/^next\/navigation$/,replacement:here+'navigation.ts'},{find:/^@\/lib\/api$/,replacement:here+'api-real.ts'},{find:'@',replacement:src}]},define:{'import.meta.env.VITE_F33_REAL_API':'true','process.env.NEXT_PUBLIC_APP_VERSION':JSON.stringify('f33-test-only')},server:{host:'127.0.0.1',port:4318,strictPort:true,watch:{ignored:['**/*.test.ts','**/*.test.tsx','**/e2e/questions/artifacts/**','**/e2e/questions/*.mjs','**/e2e/questions/README.md']},fs:{allow:[fileURLToPath(new URL('../../../../../..',import.meta.url))]}},css:{postcss:fileURLToPath(new URL('../../../',import.meta.url))}};

@@ -1,0 +1,119 @@
+{
+  "baselineFrontendHead": "79cfecc1eecff985b52ddad1bbfda83f55bf8885",
+  "baselineBackendHead": "86ad6c57a1c00cb441b130de665694797045fe2c",
+  "baselineDirectory": "/private/tmp/remoa-f33-head-baseline",
+  "method": "Complete git archive HEAD, installed external dependencies linked read-only; @remoa workspace links refer to local archived HEAD packages. Next build with real fonts. Temporary NEXT_PUBLIC_API_URL private HTTP 4351 GET404 (HEAD built-in empty public blog data), writes405. No HEAD or production source changes.",
+  "baselineSharedKb": 105,
+  "currentSharedKb": 105,
+  "comparison": [
+    {
+      "route": "/admin/auditoria",
+      "headKb": 258,
+      "currentKb": 267,
+      "ceilingKb": 264,
+      "deltaKb": 9,
+      "alreadyExceededAtHead": false
+    },
+    {
+      "route": "/admin/indicacoes",
+      "headKb": 239,
+      "currentKb": 248,
+      "ceilingKb": 244,
+      "deltaKb": 9,
+      "alreadyExceededAtHead": false
+    },
+    {
+      "route": "/admin/transacoes",
+      "headKb": 241,
+      "currentKb": 249,
+      "ceilingKb": 245,
+      "deltaKb": 8,
+      "alreadyExceededAtHead": false
+    },
+    {
+      "route": "/app/mapas/novo",
+      "headKb": 188,
+      "currentKb": 188,
+      "ceilingKb": 177,
+      "deltaKb": 0,
+      "alreadyExceededAtHead": true
+    }
+  ],
+  "afterNarrowCorrections": {
+    "measuredAt": "2026-10-09T00:23:11.370Z",
+    "comparison": [
+      {
+        "route": "/admin/auditoria",
+        "headKb": 258,
+        "currentKb": 212,
+        "ceilingKb": 264,
+        "deltaKb": -46,
+        "alreadyExceededAtHead": false,
+        "passesCeiling": true
+      },
+      {
+        "route": "/admin/indicacoes",
+        "headKb": 239,
+        "currentKb": 192,
+        "ceilingKb": 244,
+        "deltaKb": -47,
+        "alreadyExceededAtHead": false,
+        "passesCeiling": true
+      },
+      {
+        "route": "/admin/transacoes",
+        "headKb": 241,
+        "currentKb": 194,
+        "ceilingKb": 245,
+        "deltaKb": -47,
+        "alreadyExceededAtHead": false,
+        "passesCeiling": true
+      },
+      {
+        "route": "/app/mapas/novo",
+        "headKb": 188,
+        "currentKb": 188,
+        "ceilingKb": 177,
+        "deltaKb": 0,
+        "alreadyExceededAtHead": true,
+        "passesCeiling": false
+      }
+    ],
+    "description": "Only two admin imports full→admin; new-map PDF notices deferred with accessible fallbacks and editorial namespace narrowed. No legacy ceiling changes."
+  },
+  "latestMeasurement": {
+    "measuredAt": "2026-10-09T01:04:10.503Z",
+    "sharedKb": 105,
+    "routes": [
+      {
+        "route": "/admin/auditoria",
+        "headKb": 258,
+        "currentKb": 213,
+        "ceilingKb": 264,
+        "deltaKb": -45
+      },
+      {
+        "route": "/admin/indicacoes",
+        "headKb": 239,
+        "currentKb": 193,
+        "ceilingKb": 244,
+        "deltaKb": -46
+      },
+      {
+        "route": "/admin/transacoes",
+        "headKb": 241,
+        "currentKb": 195,
+        "ceilingKb": 245,
+        "deltaKb": -46
+      },
+      {
+        "route": "/app/mapas/novo",
+        "headKb": 188,
+        "currentKb": 188,
+        "ceilingKb": 177,
+        "deltaKb": 0
+      }
+    ],
+    "note": "Maps/new returns188 after final bounded split; HEAD188 already exceeds unchanged177 ceiling."
+  }
+}

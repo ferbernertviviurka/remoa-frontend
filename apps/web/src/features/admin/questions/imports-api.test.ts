@@ -1,0 +1,10 @@
+import {beforeEach,expect,it,vi} from 'vitest';
+import {mockQuestionImportPage} from '@remoa/contracts/mocks';
+import {testAudit} from './recovery.test-fixtures';
+vi.mock('@/lib/api',()=>({api:vi.fn()}));
+import {api} from '@/lib/api';
+import {listImportPage} from './imports-api';
+beforeEach(()=>vi.resetAllMocks());
+it('parses exact audited page and encodes bound source/status/search/cursor without ownership fields',async()=>{const result={...mockQuestionImportPage,audit:testAudit};vi.mocked(api).mockResolvedValue({ok:true,data:result});await expect(listImportPage({limit:25,status:'review',sourceId:'00000000-0000-4000-8000-000000000111',search:' prova ',cursor:'opaque cursor'})).resolves.toEqual(result);expect(vi.mocked(api).mock.calls[0]![0]).toBe('/v1/admin/questions/imports/page?limit=25&cursor=opaque+cursor&search=prova&status=review&sourceId=00000000-0000-4000-8000-000000000111');});
+it('rejects malformed fields/audit before display and invalid limit before HTTP',async()=>{await expect(listImportPage({limit:51})).rejects.toThrow();expect(api).not.toHaveBeenCalled();vi.mocked(api).mockResolvedValue({ok:true,data:{items:[],nextCursor:null}});await expect(listImportPage({})).rejects.toMatchObject({code:'invalid_response'});vi.mocked(api).mockResolvedValue({ok:true,data:{...mockQuestionImportPage,audit:testAudit,ownerId:'private'}});await expect(listImportPage({})).rejects.toMatchObject({code:'invalid_response'});});
+it('preserves reauthentication/503 errors and abort signal with no legacy request',async()=>{const abort=new AbortController();vi.mocked(api).mockResolvedValue({ok:false,error:{code:'forbidden',message:'reauth_required'}});await expect(listImportPage({},abort.signal)).rejects.toMatchObject({code:'forbidden',detail:'reauth_required'});expect(api).toHaveBeenCalledWith('/v1/admin/questions/imports/page?limit=25',{signal:abort.signal});vi.mocked(api).mockResolvedValue({ok:false,error:{code:'internal',message:'temporary'}});await expect(listImportPage({})).rejects.toMatchObject({code:'internal'});expect(api).toHaveBeenCalledTimes(2);});

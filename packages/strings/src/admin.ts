@@ -706,11 +706,12 @@ export const admin = {
       period30: '30 dias',
     },
     who: { me: 'Você (admin)', system: 'Sistema', stripe: 'Webhook Stripe', user: 'Sem permissão (não admin)', unknown: 'Admin removido' },
-    targets: { user: 'Usuário', board: 'Mapa', payment: 'Transação', referral: 'Indicação', grant: 'Concessão', ticket: 'Chamado', export: 'Exportação', route: 'Rota', blog_post: 'Post do blog', blog_category: 'Categoria do blog', blog_asset: 'Imagem do blog', sitemap: 'Sitemap' },
+    targets: { user: 'Usuário', board: 'Mapa', payment: 'Transação', referral: 'Indicação', grant: 'Concessão', ticket: 'Chamado', export: 'Exportação', route: 'Rota', blog_post: 'Post do blog', blog_category: 'Categoria do blog', blog_asset: 'Imagem do blog', sitemap: 'Sitemap', question: 'Questão', question_source: 'Fonte de questões', question_import: 'Importação de prova', question_candidate: 'Questão em revisão', question_report: 'Relato sobre questão', question_context: 'Contexto comum de questões' },
     denials: { not_admin: 'Sem papel de admin', reauth_required: 'Reautenticação necessária', missing_reason: 'Sem motivo informado', invalid_state: 'Estado inválido', error: 'Erro ao executar' },
     noReason: '—',
     origin: 'IP …{hash}',
     actions: {
+      question: { catalog_view: 'Consultou catálogo de questões', history_view: 'Consultou histórico de versões e revisões de questão', import: 'Importou prova PDF', import_view: 'Consultou importação de prova', report_view: 'Consultou relatos sobre questão', report_resolve: 'Resolveu relato sobre questão', import_retry: 'Reprocessou importação de prova', import_cancel: 'Cancelou importação de prova', candidate_update: 'Atualizou questão em revisão', candidate_create: 'Recuperou candidata ausente', candidate_number: 'Conferiu número original de candidata', context_resolve: 'Conferiu contexto comum de questões', review: 'Revisou questão', publish: 'Publicou questão', withdraw: 'Retirou questão de circulação', rectify: 'Retificou questão', source_update: 'Atualizou fonte de questões' },
       user: { grant_pro_month: 'Concedeu 1 mês de Pro', password_reset: 'Enviou redefinição de senha', suspend: 'Suspendeu conta', reactivate: 'Reativou conta', schedule_deletion: 'Agendou exclusão da conta', make_admin: 'Criou administrador' },
       map: { open_readonly: 'Abriu mapa de usuário (somente leitura)', archive: 'Arquivou mapa' },
       seed: { approve: 'Aprovou seed', unpublish: 'Despublicou seed' },

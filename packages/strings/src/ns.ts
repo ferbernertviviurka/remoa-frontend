@@ -32,3 +32,7 @@ export { ai } from './ns-parts/ai';
 export { calendar } from './ns-parts/calendar';
 export { review } from './ns-parts/review';
 export { mapLibrary } from './ns-parts/library';
+
+export { questions } from './questions';
+
+export { questionsAdmin } from './questions-admin';

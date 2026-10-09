@@ -1,3 +1,4 @@
+import { questionNavigation } from './questions-shell';
 import { offline } from './offline';
 import { nav } from './nav';
 import { plan } from './plan';
@@ -10,6 +11,7 @@ import { notifications } from './notifications';
 import { referralShell, storeShell, adminShell, legalShell } from './shell';
 
 export const ptBRCore = {
+  questions: questionNavigation,
   referral: referralShell,
   store: storeShell,
   admin: adminShell,

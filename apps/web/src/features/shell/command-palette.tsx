@@ -1,4 +1,5 @@
 'use client';
+import {useQuestionFeatureFlags,questionDestinationEnabled} from '@/features/questions/flags';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
@@ -13,12 +14,14 @@ type Extra = { items: readonly CommandItem[]; run: (c: CommandItem) => void };
 type Ctx = { open: () => void; setExtra: (e: Extra | null) => void };
 const PaletteCtx = createContext<Ctx | null>(null);
 
-const routes = { home: '/app/hoje', maps: '/app/mapas', newMap: '/app/mapas/novo', review: '/app/revisar', progress: '/app/progresso', account: '/app/conta' } as const;
+const routes = { questions: '/app/banco-de-questoes', exams: '/app/provas', home: '/app/hoje', maps: '/app/mapas', newMap: '/app/mapas/novo', review: '/app/revisar', progress: '/app/progresso', account: '/app/conta' } as const;
 const go = (k: keyof typeof routes, label: string, hint: string, group = t('palette.groups.goTo')): CommandItem => ({ id: `go:${k}`, group, label, hint });
 const GLOBAL: CommandItem[] = [
   go('home', t('palette.home.label'), t('palette.home.hint')),
   go('maps', t('palette.maps.label'), t('palette.maps.hint')),
   go('newMap', t('palette.newMap.label'), t('palette.newMap.hint')),
+  go('questions', t('questions.title'), t('questions.subtitle')),
+  go('exams', t('questions.examsTitle'), t('questions.examsDescription')),
   go('review', t('palette.review.label'), t('palette.review.hint')),
   go('progress', t('challengeSetup.palette.progress.label'), t('challengeSetup.palette.progress.hint')),
   go('account', t('challengeSetup.palette.account.label'), t('challengeSetup.palette.account.hint'), t('challengeSetup.palette.groups.account')),
@@ -35,7 +38,7 @@ const inOtherDialog = (el: EventTarget | null) => el instanceof Element && !!el.
  * o atalho global e os comandos globais (ir para…, conta, tutorial, suporte); a tela atual soma os seus por `usePaletteCommands`.
  */
 export function CommandPaletteProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
+  const flags=useQuestionFeatureFlags();const router = useRouter();
   const [open, setOpen] = useState(false);
   const [used, setUsed] = useState(false); // mount the (lazy) dialog on the first open and keep it, so closing still animates
   if (open && !used) setUsed(true);
@@ -50,7 +53,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
-  const items = useMemo(() => [...(extra?.items ?? []), ...GLOBAL], [extra]);
+  const items = useMemo(() => [...(extra?.items ?? []), ...GLOBAL.filter(c=>!c.id.startsWith('go:')||questionDestinationEnabled(routes[c.id.slice(3) as keyof typeof routes]??'',flags))], [extra,flags]);
   const onSelect = useCallback(
     (c: CommandItem) => {
       if (c.id === 'support') return openSupport('command');

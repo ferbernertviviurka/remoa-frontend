@@ -1,0 +1,26 @@
+{
+  "kind": "UI browser + synthetic loader failure; real production DeferredQuestionDialog and ConfigDialog. API stub only; no PostgreSQL, Next SSR or external auth.",
+  "checks": [
+    {
+      "state": "loading-390",
+      "passed": true,
+      "axeViolations": 0
+    },
+    {
+      "state": "failure-390",
+      "passed": true,
+      "axeViolations": 0
+    },
+    {
+      "state": "loaded-draft-390",
+      "passed": true,
+      "axeViolations": 0
+    },
+    {
+      "state": "loaded-draft-1440",
+      "passed": true,
+      "axeViolations": 0
+    }
+  ],
+  "focusEscapeDraft": true
+}

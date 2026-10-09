@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { Rail } from './rail';
 
+vi.mock('@/features/questions/flags',()=>({useQuestionFeatureFlags:()=>({import:true,catalog:true,sessions:true}),questionDestinationEnabled:()=>true}));
 const push = vi.fn();
 let pathname = '/';
 let search = new URLSearchParams();
@@ -49,7 +50,7 @@ describe('Rail Calendário (F25 FR-1)', () => {
     pathname = '/app/calendario';
     const { rerender } = render(<Rail />);
     const links = screen.getAllByRole('link');
-    expect(links).toHaveLength(7); // Progresso is still on the rail (Q-107)
+    expect(links).toHaveLength(9); // Progresso is still on the rail (Q-107)
     expect(links[3]).toHaveAccessibleName('Calendário');
     expect(links[3]).toHaveAttribute('aria-current', 'page');
     expect(screen.queryByText('Há compromisso nas próximas 24 horas')).toBeNull();

@@ -1,0 +1,15 @@
+import {unavailableWarnings} from './parser-warnings.test-fixtures';
+import { afterEach,expect,it,vi } from 'vitest';
+import { cleanup,fireEvent,render,screen,waitFor } from '@testing-library/react';
+import { questionImportDetailSchema } from '@remoa/contracts';
+import {testAudit} from './recovery.test-fixtures';
+import { ImportDetailScreen } from './import-detail-screen';
+vi.mock('@/features/questions/flags',()=>({useQuestionFeatureFlags:()=>({import:true,catalog:true,sessions:true})}));
+vi.mock('./api',()=>({getImportParserWarnings:vi.fn(async()=>unavailableWarnings('not_recorded')),getImport:vi.fn(),importAction:vi.fn()}));
+vi.mock('./private-preview',()=>({PrivatePreview:()=>null}));
+import {getImport,importAction} from './api';
+const id='550e8400-e29b-41d4-a716-446655440000';
+const detail=questionImportDetailSchema.parse({import:{id,status:'extracting',totalPages:10,completedPages:3,candidates:0,accepted:0,rejected:0,duplicate:0,costCents:20,errorCode:null,updatedAt:new Date()},paper:null,candidates:[],documents:[],audit:testAudit});
+afterEach(()=>{cleanup();vi.clearAllMocks();});
+it('shows server progress and cancels with audit reason then refreshes actual state',async()=>{vi.mocked(getImport).mockResolvedValue(detail);vi.mocked(importAction).mockResolvedValue({import:{...detail.import,status:'cancelled'},audit:{} as never});render(<ImportDetailScreen id={id}/>);await screen.findByText('3 de 10 páginas processadas');expect(screen.getByRole('progressbar')).toHaveAttribute('value','3');fireEvent.click(screen.getByRole('button',{name:'Cancelar processamento'}));const buttons=screen.getAllByRole('button',{name:'Cancelar processamento'});expect(buttons.at(-1)).toBeDisabled();fireEvent.change(screen.getByLabelText('Motivo desta operação'),{target:{value:'Lote duplicado identificado'}});vi.mocked(getImport).mockResolvedValue({...detail,import:{...detail.import,status:'cancelled'}});fireEvent.click(screen.getAllByRole('button',{name:'Cancelar processamento'}).at(-1)!);await waitFor(()=>expect(importAction).toHaveBeenCalledWith(id,'cancel','Lote duplicado identificado'));await screen.findByText('Cancelada');});
+it('a failed job offers retry without inventing progress on client',async()=>{vi.mocked(getImport).mockResolvedValue({...detail,import:{...detail.import,status:'failed'}});render(<ImportDetailScreen id={id}/>);await screen.findByText('Falhou');expect(screen.getByRole('button',{name:'Reprocessar lote'})).toBeInTheDocument();expect(screen.queryByRole('button',{name:'Cancelar processamento'})).not.toBeInTheDocument();expect(importAction).not.toHaveBeenCalled();});

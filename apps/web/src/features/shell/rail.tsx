@@ -1,4 +1,5 @@
 'use client';
+import {useQuestionFeatureFlags,questionDestinationEnabled} from '@/features/questions/flags';
 
 import { Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -13,6 +14,8 @@ export const items: { href: string; icon: IconName; label: StringKey }[] = [
   { href: '/app/calendario', icon: 'calendar', label: 'calendar.navLabel' },
   { href: '/app/cobertura', icon: 'bars', label: 'rail.enamed' },
   { href: '/app/progresso', icon: 'list', label: 'shell.nav.progress' },
+  { href: '/app/banco-de-questoes', icon: 'list', label: 'questions.nav' },
+  { href: '/app/provas', icon: 'clock', label: 'questions.proofsNav' },
   { href: '/app/loja', icon: 'store', label: 'rail.store' },
 ];
 
@@ -41,7 +44,7 @@ function RailWithParams({ dueTotal, isAdmin, calendarSoon }: { dueTotal: number;
 }
 
 function RailView({ dueTotal, modo, isAdmin, calendarSoon }: { dueTotal: number; modo: string | null; isAdmin: boolean; calendarSoon: boolean }) {
-  const path = usePathname();
+  const flags=useQuestionFeatureFlags();const path = usePathname();
   // G01 T6: the challenge lives in the map (`/app/mapas/<id>?modo=desafio`) but belongs to Revisar (Desafio.dc.html)
   const challenge = path.startsWith('/app/mapas/') && modo === 'desafio';
   // Destaque otimista: o item clicado fica ativo na hora (estado no NavPendingProvider, que limpa ao mudar a rota).
@@ -50,7 +53,7 @@ function RailView({ dueTotal, modo, isAdmin, calendarSoon }: { dueTotal: number;
     <AppRail
       aria-label={t('pages.navLabel')}
     >
-      {items.map((i) => (
+      {items.filter(i=>questionDestinationEnabled(i.href,flags)).map((i) => (
         <RailItem
           key={i.href}
           as={PendingLink}

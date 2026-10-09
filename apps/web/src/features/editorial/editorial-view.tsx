@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Button } from '@remoa/ui';
@@ -52,7 +52,7 @@ export function EditorialView() {
   const [pending, setPending] = useState<number | null>(null);
   const crmLoaded = useRef(false);
 
-  async function loadQueue(nextFlag = flag, nextBoard = board) {
+  const loadQueue = useCallback(async (nextFlag = '', nextBoard = '') => {
     const params = new URLSearchParams();
     if (nextFlag) params.set('flag', nextFlag);
     if (nextBoard) params.set('board', nextBoard);
@@ -68,7 +68,7 @@ export function EditorialView() {
         setCrm(r.data.reviewer.crm ?? '');
       }
     }
-  }
+  }, []);
 
   async function dispute(reviewItemId: string, outcome: 'rubric_correct' | 'rubric_adjusted', points: Point[]) {
     const rubricPoints = points.map((p) => ({ ...p, text: p.text.trim() })).filter((p) => p.text);
@@ -79,10 +79,10 @@ export function EditorialView() {
     if (r.ok) {
       setNotice(null);
       track('dispute_resolved', { outcome });
-      await loadQueue();
+      await loadQueue(flag, board);
     } else {
       setNotice(noticeOf(r.error));
-      if (r.error.code === 'conflict') await loadQueue();
+      if (r.error.code === 'conflict') await loadQueue(flag, board);
     }
   }
 
@@ -90,7 +90,7 @@ export function EditorialView() {
     void loadQueue();
     void api<Draft[]>('/v1/editorial/drafts').then((r) => { if (r.ok) setDrafts(r.data); });
     void api<Metrics>('/v1/editorial/metrics').then((r) => { if (r.ok) setMetrics(r.data); });
-  }, []);
+  }, [loadQueue]);
 
   async function decide(reviewItemId: string, decision: 'approved' | 'changes_requested' | 'rejected', points: Point[]) {
     const rubricPoints = points.map((p) => ({ ...p, text: p.text.trim() })).filter((p) => p.text);
@@ -101,10 +101,10 @@ export function EditorialView() {
     if (r.ok) {
       setNotice(null);
       if (decision === 'approved') track('card_approved', {});
-      await loadQueue();
+      await loadQueue(flag, board);
     } else {
       setNotice(noticeOf(r.error));
-      if (r.error.code === 'conflict') await loadQueue();
+      if (r.error.code === 'conflict') await loadQueue(flag, board);
     }
   }
 
@@ -147,7 +147,7 @@ export function EditorialView() {
   if (denied) return <p className="m-0 text-muted">{t('editorial.forbidden')}</p>;
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
-      <h1 className="m-0 font-display text-3xl font-extrabold">{t('editorial.title')}</h1>
+      <header className="flex flex-wrap items-center justify-between gap-3"><h1 className="m-0 font-display text-3xl font-extrabold">{t('editorial.title')}</h1><Link href="/app/editorial/questoes" className="inline-flex min-h-11 items-center rounded-btn border border-border px-4 text-primary-deep">{t('questions.title')}</Link></header>
       <div className="flex flex-wrap items-end gap-2">
         <label className="flex min-w-48 flex-col gap-1 text-sm font-semibold">
           {t('editorial.crm')}

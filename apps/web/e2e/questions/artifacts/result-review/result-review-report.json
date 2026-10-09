@@ -1,0 +1,149 @@
+{
+  "kind": "Production components, strict synthetic HTTP only — CCR138/140",
+  "limits": [
+    "Synthetic nonmedical HTTP fixtures only; no SQL/auth/R2/provider/Next SSR verification",
+    "Figure is the authorial harness SVG, not a medical or restricted PDF",
+    "Counts and scores come from typed synthetic report responses; no clinical review or public acquisition claim"
+  ],
+  "measurements": [
+    {
+      "width": 390,
+      "stemCharacters": 19985,
+      "imageNaturalPixels": [
+        1600,
+        600
+      ],
+      "originalScore": [
+        1,
+        4
+      ]
+    },
+    {
+      "width": 1440,
+      "stemCharacters": 19985,
+      "imageNaturalPixels": [
+        1600,
+        600
+      ],
+      "originalScore": [
+        1,
+        4
+      ]
+    }
+  ],
+  "axeDetailsArtifact": "axe-details.json",
+  "checks": [
+    {
+      "name": "Finished review exposes only authorized final choices, figure and distractors; distinct do not know and unanswered",
+      "width": 390,
+      "passed": true,
+      "scrollWidth": 390,
+      "axeViolations": [],
+      "jsErrors": []
+    },
+    {
+      "name": "Per-subject outcomes preserve annulled counts and unknown taxonomy without UUID labels",
+      "width": 390,
+      "passed": true,
+      "scrollWidth": 390,
+      "axeViolations": [],
+      "jsErrors": []
+    },
+    {
+      "name": "Taxonomy HTTP failure preserves counts and explicit keyboard retry loads names",
+      "width": 390,
+      "passed": true,
+      "scrollWidth": 390,
+      "axeViolations": [],
+      "jsErrors": []
+    },
+    {
+      "name": "Partial recalculation identifies ordinal, original number and full original stem without replacement score",
+      "width": 390,
+      "passed": true,
+      "scrollWidth": 390,
+      "axeViolations": [],
+      "jsErrors": []
+    },
+    {
+      "name": "Active simulator exposes no answer keys or report/reference content in HTTP, DOM or storage",
+      "width": 390,
+      "passed": true,
+      "scrollWidth": 390,
+      "axeViolations": [],
+      "jsErrors": []
+    },
+    {
+      "name": "Authorized reviewed annulled publication requires reason/current hash and keeps dialog focus behavior",
+      "width": 390,
+      "passed": true,
+      "scrollWidth": 390,
+      "axeViolations": [],
+      "jsErrors": []
+    },
+    {
+      "name": "Annulled review never relaxes missing medical/source authorization or withdrawn/unavailable gates",
+      "width": 390,
+      "passed": true,
+      "scrollWidth": 390,
+      "axeViolations": [],
+      "jsErrors": []
+    },
+    {
+      "name": "Finished review exposes only authorized final choices, figure and distractors; distinct do not know and unanswered",
+      "width": 1440,
+      "passed": true,
+      "scrollWidth": 1440,
+      "axeViolations": [],
+      "jsErrors": []
+    },
+    {
+      "name": "Per-subject outcomes preserve annulled counts and unknown taxonomy without UUID labels",
+      "width": 1440,
+      "passed": true,
+      "scrollWidth": 1440,
+      "axeViolations": [],
+      "jsErrors": []
+    },
+    {
+      "name": "Taxonomy HTTP failure preserves counts and explicit keyboard retry loads names",
+      "width": 1440,
+      "passed": true,
+      "scrollWidth": 1440,
+      "axeViolations": [],
+      "jsErrors": []
+    },
+    {
+      "name": "Partial recalculation identifies ordinal, original number and full original stem without replacement score",
+      "width": 1440,
+      "passed": true,
+      "scrollWidth": 1440,
+      "axeViolations": [],
+      "jsErrors": []
+    },
+    {
+      "name": "Active simulator exposes no answer keys or report/reference content in HTTP, DOM or storage",
+      "width": 1440,
+      "passed": true,
+      "scrollWidth": 1440,
+      "axeViolations": [],
+      "jsErrors": []
+    },
+    {
+      "name": "Authorized reviewed annulled publication requires reason/current hash and keeps dialog focus behavior",
+      "width": 1440,
+      "passed": true,
+      "scrollWidth": 1440,
+      "axeViolations": [],
+      "jsErrors": []
+    },
+    {
+      "name": "Annulled review never relaxes missing medical/source authorization or withdrawn/unavailable gates",
+      "width": 1440,
+      "passed": true,
+      "scrollWidth": 1440,
+      "axeViolations": [],
+      "jsErrors": []
+    }
+  ]
+}

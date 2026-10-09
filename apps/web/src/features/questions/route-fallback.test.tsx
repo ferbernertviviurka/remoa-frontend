@@ -1,0 +1,10 @@
+import {afterEach,expect,it,vi} from 'vitest';
+import {cleanup,render,screen} from '@testing-library/react';
+vi.mock('@/features/questions/server-flags',()=>({getQuestionFeatureFlags:vi.fn()}));
+vi.mock('next/dynamic',()=>({default:()=>()=> <p>Legacy private question bank</p>}));
+vi.mock('./questions-hub',()=>({QuestionsHub:({initialState,sessionsEnabled}:{initialState?:string;sessionsEnabled:boolean})=><p data-sessions={String(sessionsEnabled)}>Question catalogue {initialState}</p>}));
+import {getQuestionFeatureFlags} from './server-flags';
+import Page from '@/app/app/(app)/banco-de-questoes/page';
+afterEach(()=>{cleanup();vi.resetAllMocks();});
+it('keeps the private legacy bank when the new catalogue is disabled',async()=>{vi.mocked(getQuestionFeatureFlags).mockResolvedValue({catalog:false,sessions:false,import:false});render(await Page({searchParams:Promise.resolve({})}));expect(screen.getByText('Legacy private question bank')).toBeInTheDocument();expect(screen.queryByText(/Question catalogue/)).not.toBeInTheDocument();});
+it('renders the new catalogue with its independent session flag and initial filter',async()=>{vi.mocked(getQuestionFeatureFlags).mockResolvedValue({catalog:true,sessions:false,import:false});render(await Page({searchParams:Promise.resolve({state:'wrong'})}));expect(screen.getByText('Question catalogue wrong')).toHaveAttribute('data-sessions','false');expect(screen.queryByText('Legacy private question bank')).not.toBeInTheDocument();});

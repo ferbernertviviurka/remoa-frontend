@@ -1,0 +1,194 @@
+{
+  "kind": "CCR139 production UI, strict synthetic HTTP only",
+  "status": "Results recorded only when root runs this script",
+  "limits": [
+    "No SQL/auth/reauth/R2/Next SSR/provider verification",
+    "Actor roles simulated by dedicated HTTP paths; opaque synthetic cursors are not production signatures",
+    "Metadata, reviewers and counts are authorial synthetic fixtures"
+  ],
+  "measurements": [
+    {
+      "width": 390,
+      "latestRows": 66,
+      "uniqueIds": 66,
+      "pages": [
+        25,
+        25,
+        16
+      ]
+    },
+    {
+      "width": 1440,
+      "latestRows": 66,
+      "uniqueIds": 66,
+      "pages": [
+        25,
+        25,
+        16
+      ]
+    }
+  ],
+  "axeDetailsArtifact": "axe-details.json",
+  "checks": [
+    {
+      "name": "Admin discovers 66 latest records over three bound pages, without duplicates or total fabrication",
+      "width": 390,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 390,
+      "jsErrors": []
+    },
+    {
+      "name": "Latest draft versus all published predecessor remains explicit; status/search reset the cursor",
+      "width": 390,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 390,
+      "jsErrors": []
+    },
+    {
+      "name": "Source and type filters serialize existing choices, with strict list privacy",
+      "width": 390,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 390,
+      "jsErrors": []
+    },
+    {
+      "name": "Reviewer starts with in-review discovery, editorial DTO has no audit and cross-role cursors fail closed",
+      "width": 390,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 390,
+      "jsErrors": []
+    },
+    {
+      "name": "Catalog 503 is an error and explicit keyboard retry, never an empty or legacy fallback",
+      "width": 390,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 390,
+      "jsErrors": []
+    },
+    {
+      "name": "Flag disabled keeps the legacy reviewer queue and makes no catalog/history HTTP requests",
+      "width": 390,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 390,
+      "jsErrors": []
+    },
+    {
+      "name": "History opens explicitly: canonical versions differ from 31 selected-version medical signatures",
+      "width": 390,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 390,
+      "jsErrors": []
+    },
+    {
+      "name": "An older published selection shows only its own medical reviewer/hash/reason, not newer draft signatures",
+      "width": 390,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 390,
+      "jsErrors": []
+    },
+    {
+      "name": "Mismatched history IDs fail closed while the authorized detail remains visible",
+      "width": 390,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 390,
+      "jsErrors": []
+    },
+    {
+      "name": "An aborted old search cannot replace the newer visible catalog",
+      "width": 390,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 390,
+      "jsErrors": []
+    },
+    {
+      "name": "Admin discovers 66 latest records over three bound pages, without duplicates or total fabrication",
+      "width": 1440,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 1440,
+      "jsErrors": []
+    },
+    {
+      "name": "Latest draft versus all published predecessor remains explicit; status/search reset the cursor",
+      "width": 1440,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 1440,
+      "jsErrors": []
+    },
+    {
+      "name": "Source and type filters serialize existing choices, with strict list privacy",
+      "width": 1440,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 1440,
+      "jsErrors": []
+    },
+    {
+      "name": "Reviewer starts with in-review discovery, editorial DTO has no audit and cross-role cursors fail closed",
+      "width": 1440,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 1440,
+      "jsErrors": []
+    },
+    {
+      "name": "Catalog 503 is an error and explicit keyboard retry, never an empty or legacy fallback",
+      "width": 1440,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 1440,
+      "jsErrors": []
+    },
+    {
+      "name": "Flag disabled keeps the legacy reviewer queue and makes no catalog/history HTTP requests",
+      "width": 1440,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 1440,
+      "jsErrors": []
+    },
+    {
+      "name": "History opens explicitly: canonical versions differ from 31 selected-version medical signatures",
+      "width": 1440,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 1440,
+      "jsErrors": []
+    },
+    {
+      "name": "An older published selection shows only its own medical reviewer/hash/reason, not newer draft signatures",
+      "width": 1440,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 1440,
+      "jsErrors": []
+    },
+    {
+      "name": "Mismatched history IDs fail closed while the authorized detail remains visible",
+      "width": 1440,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 1440,
+      "jsErrors": []
+    },
+    {
+      "name": "An aborted old search cannot replace the newer visible catalog",
+      "width": 1440,
+      "passed": true,
+      "axeViolations": [],
+      "scrollWidth": 1440,
+      "jsErrors": []
+    }
+  ]
+}

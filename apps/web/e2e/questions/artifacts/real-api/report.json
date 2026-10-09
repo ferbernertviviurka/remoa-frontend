@@ -1,0 +1,155 @@
+{
+  "kind": "Real Hono HTTP and isolated PostgreSQL; fake local JWT and private in-memory storage; synthetic nonmedical PDF. Next SSR/auth and external S3/providers not verified.",
+  "checks": [
+    {
+      "name": "Real role and private ownership guards",
+      "passed": true
+    },
+    {
+      "name": "Study saves first answer, reference gate and personal state",
+      "passed": true
+    },
+    {
+      "name": "Simulation retry is idempotent; reload answer then finish unlocks server reference",
+      "passed": true
+    },
+    {
+      "name": "Manual page image with unknown vector geometry preserves draft and requires visual review",
+      "passed": true
+    },
+    {
+      "name": "Synthetic PDFs upload, real extraction, review and publication",
+      "passed": true
+    },
+    {
+      "name": "Deadline passes while absent; server returns frozen expired report",
+      "passed": true
+    },
+    {
+      "name": "Report triage preserves privacy and never changes medical/publication gates",
+      "passed": true
+    },
+    {
+      "name": "Real institution options are separated from paper filter",
+      "passed": true
+    },
+    {
+      "name": "Explicit do not know differs from skip; simulation remains editable",
+      "passed": true
+    },
+    {
+      "name": "Real feature flags fail closed",
+      "passed": true
+    }
+  ],
+  "screens": [
+    {
+      "name": "study",
+      "width": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "personal-note",
+      "width": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "simulation-result",
+      "width": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "simulation-result",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "violations": []
+    },
+    {
+      "name": "manual-page-image",
+      "width": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "manual-page-image",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "violations": []
+    },
+    {
+      "name": "staging",
+      "width": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "reviewer",
+      "width": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "manual-page-published-block",
+      "width": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "published-catalog",
+      "width": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "expired-result",
+      "width": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "admin-report",
+      "width": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "reports-queue",
+      "width": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "reviewer-report",
+      "width": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "institution-filter",
+      "width": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "do-not-know-result",
+      "width": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "comparison-complete",
+      "width": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "comparison-partial",
+      "width": 390,
+      "scrollWidth": 390,
+      "violations": []
+    }
+  ]
+}

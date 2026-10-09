@@ -4,9 +4,11 @@ import { MainSlot, NavPendingProvider } from './nav-pending';
 import { Rail, items } from './rail';
 import { MobileMenu } from './mobile-menu';
 
+const questionFlags=vi.hoisted(()=>({import:true,catalog:true,sessions:true}));
+vi.mock('@/features/questions/flags',async original=>({...await original<typeof import('@/features/questions/flags')>(),useQuestionFeatureFlags:()=>questionFlags}));
 let pathname = '/';
 vi.mock('next/navigation', () => ({ usePathname: () => pathname, useRouter: () => ({ push: vi.fn() }), useSearchParams: () => new URLSearchParams() }));
-afterEach(cleanup);
+afterEach(()=>{cleanup();questionFlags.catalog=true;});
 
 const app = () => (
   <NavPendingProvider>
@@ -16,6 +18,7 @@ const app = () => (
 );
 
 describe('MainSlot', () => {
+  it('disabled catalogue removes only question destinations while existing navigation remains',()=>{questionFlags.catalog=false;render(app());expect(screen.queryByRole('link',{name:'Questões'})).toBeNull();expect(screen.queryByRole('link',{name:'Provas'})).toBeNull();expect(screen.getByRole('link',{name:'Mapas'})).toBeInTheDocument();});
   it('rail click shows the destination skeleton instead of the stale page; the route change shows the real page', () => {
     pathname = '/';
     const { rerender } = render(app());

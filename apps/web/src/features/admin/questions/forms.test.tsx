@@ -1,0 +1,10 @@
+import { afterEach,describe,expect,it,vi } from 'vitest';
+import { cleanup,fireEvent,render,screen,waitFor } from '@testing-library/react';
+import { SourceForm } from './source-form';
+import { ReasonDialog } from './reason-dialog';
+import { QuestionsApiError } from '@/features/questions/api';
+afterEach(cleanup);
+describe('F33 administrative reasons and authorization',()=>{
+  it('source with authorized rights cannot be saved without evidence and audit reason',async()=>{const save=vi.fn(async()=>undefined);render(<SourceForm initial={{name:'Fonte sintética',publisher:'Instituição sintética',url:'https://example.org/prova',rightsStatus:'authorized'}} onSave={save}/>);const button=screen.getByRole('button',{name:'Salvar fonte'});expect(button).toBeDisabled();fireEvent.change(screen.getByRole('textbox',{name:'Evidência de autorização'}),{target:{value:'Autorização demonstrativa'}});expect(button).toBeDisabled();fireEvent.change(screen.getByRole('textbox',{name:'Motivo desta operação'}),{target:{value:'Cadastro autorizado da fonte'}});fireEvent.click(button);await screen.findByText('Fonte salva');expect(save).toHaveBeenCalledOnce();expect(save.mock.calls[0]).toEqual([{name:'Fonte sintética',publisher:'Instituição sintética',url:'https://example.org/prova',rightsStatus:'authorized',rightsEvidence:'Autorização demonstrativa',rightsScope:null,rightsExpiresAt:null,reason:'Cadastro autorizado da fonte'}]);});
+  it('mutation requires an explicit reason and shows denied resource without a fake success',async()=>{const confirm=vi.fn(async()=>{throw new QuestionsApiError('not_found');});const close=vi.fn();render(<ReasonDialog title="Operação sintética" open onOpenChange={close} onConfirm={confirm} confirmLabel="Confirmar operação"/>);expect(screen.getByRole('button',{name:'Confirmar operação'})).toBeDisabled();fireEvent.change(screen.getByRole('textbox',{name:'Motivo desta operação'}),{target:{value:'Motivo conferido pelo administrador'}});fireEvent.click(screen.getByRole('button',{name:'Confirmar operação'}));await screen.findByText('Este recurso não está disponível para seu perfil.');await waitFor(()=>expect(close).not.toHaveBeenCalled());});
+});

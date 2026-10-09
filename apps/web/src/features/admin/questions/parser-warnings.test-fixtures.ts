@@ -1,0 +1,4 @@
+import {questionParserWarningsSchema} from '@remoa/contracts';
+import {testId,testAudit} from './recovery.test-fixtures';
+export const warningFixture=(overrides:Record<string,unknown>={})=>questionParserWarningsSchema.parse({importId:testId,parserVersion:'f33-layout-v6',ocrVersion:null,attempt:1,planHash:'a'.repeat(64),availability:'available',reason:null,phase:'parsed',complete:true,errorCode:null,detectedCandidates:2,detectedContexts:1,total:1,knownCount:1,unknownCount:0,omittedKnownCount:0,items:[{source:'exam',code:'missing_question',number:83,count:1}],truncated:false,audit:testAudit,...overrides});
+export const unavailableWarnings=(reason:'pending'|'not_recorded')=>warningFixture({availability:'not_available',reason,phase:null,complete:false,errorCode:null,detectedCandidates:null,detectedContexts:null,total:null,knownCount:null,unknownCount:null,omittedKnownCount:null,items:[],truncated:false});

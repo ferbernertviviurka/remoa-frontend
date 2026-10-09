@@ -1,0 +1,29 @@
+{
+  "kind": "UI only with synthetic HTTP API; no real authentication/database/backend verification",
+  "checks": [
+    {
+      "name": "Simulation reload preserves answer and never requests reference before finish",
+      "passed": true
+    },
+    {
+      "name": "Study locks first answer and reveals only after acknowledgement",
+      "passed": true
+    },
+    {
+      "name": "Personal note and doubtful state survive reload",
+      "passed": true
+    },
+    {
+      "name": "Private IA empty and API quota states are explicit",
+      "passed": true
+    },
+    {
+      "name": "PDF staging requires visual figure and audit reason",
+      "passed": true
+    },
+    {
+      "name": "Reviewer signs hash then separate administrator publishes",
+      "passed": true
+    }
+  ]
+}

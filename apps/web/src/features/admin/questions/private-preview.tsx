@@ -1,0 +1,13 @@
+'use client';
+import { useEffect,useState } from 'react';
+import { t } from '@remoa/strings';
+import { Alert,Button } from '@remoa/ui';
+import { previewCrop,previewDocument } from './api';
+import { tq,adminQuestionError } from './labels';
+export function PrivatePreview({documentId,page=1,crop,alt,onReady}:{documentId?:string;page?:number;crop?:{importId:string;candidateId:string;index:number};alt?:string;onReady?:(ready:boolean)=>void}){
+  const[url,setUrl]=useState<string|null>(null);const[version,setVersion]=useState(0);const[loading,setLoading]=useState(true);const[error,setError]=useState<string|null>(null);const[expires,setExpires]=useState<number|null>(null);const importId=crop?.importId,candidateId=crop?.candidateId,cropIndex=crop?.index;
+  useEffect(()=>{let active=true;onReady?.(false);setLoading(true);setError(null);setUrl(null);const promise=importId&&candidateId&&cropIndex!==undefined?previewCrop(importId,candidateId,cropIndex):documentId?previewDocument(documentId):null;if(!promise){setLoading(false);return;}void promise.then(data=>{if(active){setUrl(data.url);setExpires(Date.now()+data.expiresInSec*1000);}}).catch(e=>{if(active)setError(adminQuestionError(e));}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[documentId,importId,candidateId,cropIndex,version,onReady]);
+  useEffect(()=>{onReady?.(false);},[page,onReady]);
+  useEffect(()=>{if(!expires)return;const timer=setTimeout(()=>{setUrl(null);onReady?.(false);setError(tq('questionsAdmin.previewExpired'));},Math.max(0,expires-Date.now()));return()=>clearTimeout(timer);},[expires,onReady]);
+  return <div className="flex flex-col gap-3">{loading?<p role="status">{tq('questionsAdmin.previewLoading')}</p>:error?<Alert role="alert" tone="review" title={error}/>:url?importId?<img src={url} alt={alt??tq('questionsAdmin.crop')} className="h-auto max-w-full rounded-map border border-border" onLoad={()=>onReady?.(true)} onError={()=>{setUrl(null);onReady?.(false);setError(tq('questionsAdmin.previewExpired'));}}/>:<iframe onLoad={()=>onReady?.(true)} title={tq('questionsAdmin.documentTitle')} src={`${url}#page=${page}`} className="h-[600px] w-full rounded-map border border-border bg-canvas" referrerPolicy="no-referrer"/>:<p className="text-sm text-muted">{tq('questionsAdmin.previewUnavailable')}</p>}<div className="flex flex-wrap gap-3">{url?<a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-primary-deep">{tq('questionsAdmin.preview')}</a>:null}<Button variant="secondary" disabled={loading} onClick={()=>setVersion(v=>v+1)}>{tq('questionsAdmin.refreshPreview')}</Button>{loading?<span className="sr-only">{t('common.loading')}</span>:null}</div></div>;
+}

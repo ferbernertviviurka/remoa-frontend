@@ -15,6 +15,7 @@ const items = (openTickets: number): AdminNavItem[] => [
   { id: 'lista-de-espera', href: '/admin/lista-de-espera', icon: 'mail', label: t('admin.waitlist.label') },
   { id: 'indicacoes', href: '/admin/indicacoes', icon: 'gift', label: t('admin.referrals.label') },
   { id: 'suporte', href: '/admin/suporte', icon: 'lifebuoy', label: t('admin.support.label'), ...(openTickets > 0 ? { badge: openTickets, badgeLabel: t('admin.shell.openTicketsLabel', { n: openTickets }) } : {}) },
+  { id: 'questoes', href: '/admin/questoes', icon: 'list', label: t('questionsAdmin.navigation') },
   { id: 'blog', href: '/admin/blog', icon: 'pencil', label: t('adminBlog.navigation.blog') },
   { id: 'auditoria', href: '/admin/auditoria', icon: 'audit', label: t('admin.audit.label') },
 ];

@@ -1,0 +1,31 @@
+{
+  "kind": "Authorial nonclinical corpus original; UI fixture only",
+  "source": "docs/content/questions/corpus/output/pdf/C01-exam.pdf",
+  "pdf": {
+    "file": "original-exam.pdf",
+    "sha256": "0572bd5927bb3c45d2430c9cfce13a021ca99fc6e9da0dde0717cf75c2c984e3",
+    "bytes": 4739,
+    "pages": 4
+  },
+  "images": [
+    {
+      "page": 1,
+      "file": "original-page-1.png",
+      "sha256": "42ad228ed0de6d55498f6e6cc263ff586213e62ed474cf9ad69e6a2238823029",
+      "bytes": 94720,
+      "width": 850,
+      "height": 1100,
+      "dpi": 100
+    },
+    {
+      "page": 2,
+      "file": "original-page-2.png",
+      "sha256": "7cda11692c2da84af473dc1c3eb2017a82cf6784a8b79edf558a4ee90cb6f815",
+      "bytes": 96578,
+      "width": 850,
+      "height": 1100,
+      "dpi": 100
+    }
+  ],
+  "limitations": "Original Poppler raster; no OCR, medical review, real storage, backend authorization or SQL verification."
+}

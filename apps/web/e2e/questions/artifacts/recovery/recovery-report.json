@@ -1,0 +1,341 @@
+{
+  "kind": "UI-only recovery QA; strict synthetic HTTP API",
+  "sourceFixture": {
+    "kind": "Authorial nonclinical corpus original; UI fixture only",
+    "source": "docs/content/questions/corpus/output/pdf/C01-exam.pdf",
+    "pdf": {
+      "file": "original-exam.pdf",
+      "sha256": "0572bd5927bb3c45d2430c9cfce13a021ca99fc6e9da0dde0717cf75c2c984e3",
+      "bytes": 4739,
+      "pages": 4
+    },
+    "images": [
+      {
+        "page": 1,
+        "file": "original-page-1.png",
+        "sha256": "42ad228ed0de6d55498f6e6cc263ff586213e62ed474cf9ad69e6a2238823029",
+        "bytes": 94720,
+        "width": 850,
+        "height": 1100,
+        "dpi": 100
+      },
+      {
+        "page": 2,
+        "file": "original-page-2.png",
+        "sha256": "7cda11692c2da84af473dc1c3eb2017a82cf6784a8b79edf558a4ee90cb6f815",
+        "bytes": 96578,
+        "width": 850,
+        "height": 1100,
+        "dpi": 100
+      }
+    ],
+    "limitations": "Original Poppler raster; no OCR, medical review, real storage, backend authorization or SQL verification."
+  },
+  "notes": [
+    "Synthetic strict HTTP API only; no real SQL, authentication, storage, provider or Next SSR.",
+    "PDF is locally generated authorial nonmedical fixture. Viewer load is not proof of native PDF pixel rendering.",
+    "Overlay uses the original page PNG rasterized by Poppler at100dpi; hashes/dimensions match fixture bytes. No backend render/storage/rights/medical validation is claimed."
+  ],
+  "pointerMeasurements": [
+    {
+      "viewport": 390,
+      "imageCssWidth": 306.796875,
+      "imageCssHeight": 397.03125,
+      "requestedPercent": [
+        40,
+        25
+      ],
+      "pointerPercent": [
+        39.896,
+        24.809
+      ],
+      "afterKeyboardPercent": [
+        40.896,
+        24.909
+      ],
+      "overlay": {
+        "x": 0.4089126559714795,
+        "y": 0.24907516725698545,
+        "width": 0.14998726763432646,
+        "height": 0.02998819362455726
+      },
+      "toleranceCssPixels": 1
+    },
+    {
+      "viewport": 1440,
+      "imageCssWidth": 428,
+      "imageCssHeight": 553.875,
+      "requestedPercent": [
+        40,
+        25
+      ],
+      "pointerPercent": [
+        39.953,
+        24.825
+      ],
+      "afterKeyboardPercent": [
+        40.953,
+        24.925
+      ],
+      "overlay": {
+        "x": 0.4094991238317757,
+        "y": 0.24923832092078538,
+        "width": 0.14997079439252337,
+        "height": 0.029987587452042427
+      },
+      "toleranceCssPixels": 1
+    }
+  ],
+  "zoomMeasurements": [
+    {
+      "viewport": 390,
+      "zoomSizes": [
+        {
+          "zoom": 150,
+          "imageCssWidth": 460.1875,
+          "imageCssHeight": 595.53125,
+          "viewportContentWidth": 307,
+          "buttonSize": {
+            "x": 129.3984375,
+            "y": 480.5,
+            "width": 80.625,
+            "height": 46
+          }
+        },
+        {
+          "zoom": 200,
+          "imageCssWidth": 613.59375,
+          "imageCssHeight": 794.0625,
+          "viewportContentWidth": 307,
+          "buttonSize": {
+            "x": 218.0234375,
+            "y": 480.5,
+            "width": 82.90625,
+            "height": 46
+          }
+        },
+        {
+          "zoom": 300,
+          "imageCssWidth": 920.390625,
+          "imageCssHeight": 1191.09375,
+          "viewportContentWidth": 307,
+          "buttonSize": {
+            "x": 40.6015625,
+            "y": 534.5,
+            "width": 83.25,
+            "height": 46
+          }
+        }
+      ],
+      "imageRectAfterScroll": {
+        "x": -234.3984375,
+        "y": 62.5,
+        "width": 920.390625,
+        "height": 1191.09375
+      },
+      "scroll": {
+        "left": 276,
+        "top": 238
+      },
+      "requestedPointer": {
+        "x": 195,
+        "y": 569.5
+      },
+      "expectedNormalized": [
+        0.4665393430099312,
+        0.4256591892955529
+      ],
+      "pointerPercent": [
+        46.654,
+        42.524
+      ],
+      "afterKeyboardNormalized": [
+        0.47654,
+        0.42624
+      ],
+      "overlay": {
+        "x": 0.47653000594177064,
+        "y": 0.42623638987275353,
+        "width": 0.14998726763432646,
+        "height": 0.02998819362455726
+      },
+      "toleranceCssPixels": 1
+    },
+    {
+      "viewport": 1440,
+      "zoomSizes": [
+        {
+          "zoom": 150,
+          "imageCssWidth": 642,
+          "imageCssHeight": 830.8125,
+          "viewportContentWidth": 428,
+          "buttonSize": {
+            "x": 593.796875,
+            "y": 469.5,
+            "width": 80.625,
+            "height": 46
+          }
+        },
+        {
+          "zoom": 200,
+          "imageCssWidth": 856,
+          "imageCssHeight": 1107.75,
+          "viewportContentWidth": 428,
+          "buttonSize": {
+            "x": 682.421875,
+            "y": 469.5,
+            "width": 82.90625,
+            "height": 46
+          }
+        },
+        {
+          "zoom": 300,
+          "imageCssWidth": 1284,
+          "imageCssHeight": 1661.640625,
+          "viewportContentWidth": 428,
+          "buttonSize": {
+            "x": 773.328125,
+            "y": 469.5,
+            "width": 83.25,
+            "height": 46
+          }
+        }
+      ],
+      "imageRectAfterScroll": {
+        "x": 121,
+        "y": -31.5,
+        "width": 1284,
+        "height": 1661.640625
+      },
+      "scroll": {
+        "left": 385,
+        "top": 332
+      },
+      "requestedPointer": {
+        "x": 720,
+        "y": 569.5
+      },
+      "expectedNormalized": [
+        0.4665109034267913,
+        0.36169072358832105
+      ],
+      "pointerPercent": [
+        46.651,
+        36.139
+      ],
+      "afterKeyboardNormalized": [
+        0.47651000000000004,
+        0.36239
+      ],
+      "overlay": {
+        "x": 0.47650165498442365,
+        "y": 0.3623865720062062,
+        "width": 0.1499951323987539,
+        "height": 0.029996708825050542
+      },
+      "toleranceCssPixels": 1
+    }
+  ],
+  "checks": [
+    {
+      "name": "Recover missing question with precise normalized marker and no fabricated answer",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "Repair number preserves unsaved editor draft until explicit reload",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "Binding context invalidates sibling draft and edits reset confirmation",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "Nonquestion decision sends no hidden bindings",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "Conflict updates revisions only after explicit refresh and retains stable candidate ID",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "Original PNG overlay pointer and keyboard coordinates stay aligned and invalidate confirmation",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "Zoom preserves original pixels and confirmation; scrolling keeps pointer and keyboard coordinates normalized",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "API error and mismatched native image dimensions fail closed until explicit retry",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "Refresh and page change reject a slower previous page response",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "Preview expiry and new image load require a new region confirmation",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "Recover missing question with precise normalized marker and no fabricated answer",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "Repair number preserves unsaved editor draft until explicit reload",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "Binding context invalidates sibling draft and edits reset confirmation",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "Nonquestion decision sends no hidden bindings",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "Conflict updates revisions only after explicit refresh and retains stable candidate ID",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "Original PNG overlay pointer and keyboard coordinates stay aligned and invalidate confirmation",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "Zoom preserves original pixels and confirmation; scrolling keeps pointer and keyboard coordinates normalized",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "API error and mismatched native image dimensions fail closed until explicit retry",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "Refresh and page change reject a slower previous page response",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "Preview expiry and new image load require a new region confirmation",
+      "width": 1440,
+      "passed": true
+    }
+  ]
+}

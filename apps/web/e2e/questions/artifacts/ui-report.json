@@ -1,0 +1,254 @@
+{
+  "kind": "UI production components with synthetic HTTP API only",
+  "checks": [
+    {
+      "name": "No JS exceptions 1440",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "No JS exceptions 390",
+      "passed": true,
+      "errors": []
+    }
+  ],
+  "pages": [
+    {
+      "name": "banco",
+      "width": 1440,
+      "overflow": {
+        "viewport": 1440,
+        "width": 1440,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "provas",
+      "width": 1440,
+      "overflow": {
+        "viewport": 1440,
+        "width": 1440,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "prova",
+      "width": 1440,
+      "overflow": {
+        "viewport": 1440,
+        "width": 1440,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "sessao",
+      "width": 1440,
+      "overflow": {
+        "viewport": 1440,
+        "width": 1440,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "acervo",
+      "width": 1440,
+      "overflow": {
+        "viewport": 1440,
+        "width": 1440,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "fontes",
+      "width": 1440,
+      "overflow": {
+        "viewport": 1440,
+        "width": 1440,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "upload",
+      "width": 1440,
+      "overflow": {
+        "viewport": 1440,
+        "width": 1440,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "revisao",
+      "width": 1440,
+      "overflow": {
+        "viewport": 1440,
+        "width": 1440,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "fila-medica",
+      "width": 1440,
+      "overflow": {
+        "viewport": 1440,
+        "width": 1440,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "editorial",
+      "width": 1440,
+      "overflow": {
+        "viewport": 1440,
+        "width": 1440,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "publicacao",
+      "width": 1440,
+      "overflow": {
+        "viewport": 1440,
+        "width": 1440,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "banco",
+      "width": 390,
+      "overflow": {
+        "viewport": 390,
+        "width": 390,
+        "elements": [
+          {
+            "tag": "BUTTON",
+            "text": "Caderno de erros"
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Favoritas"
+          },
+          {
+            "tag": "BUTTON",
+            "text": "Com dúvida"
+          },
+          {
+            "tag": "A",
+            "text": "Meus simulados"
+          }
+        ]
+      },
+      "violations": []
+    },
+    {
+      "name": "provas",
+      "width": 390,
+      "overflow": {
+        "viewport": 390,
+        "width": 390,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "prova",
+      "width": 390,
+      "overflow": {
+        "viewport": 390,
+        "width": 390,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "sessao",
+      "width": 390,
+      "overflow": {
+        "viewport": 390,
+        "width": 390,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "acervo",
+      "width": 390,
+      "overflow": {
+        "viewport": 390,
+        "width": 390,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "fontes",
+      "width": 390,
+      "overflow": {
+        "viewport": 390,
+        "width": 390,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "upload",
+      "width": 390,
+      "overflow": {
+        "viewport": 390,
+        "width": 390,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "revisao",
+      "width": 390,
+      "overflow": {
+        "viewport": 390,
+        "width": 390,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "fila-medica",
+      "width": 390,
+      "overflow": {
+        "viewport": 390,
+        "width": 390,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "editorial",
+      "width": 390,
+      "overflow": {
+        "viewport": 390,
+        "width": 390,
+        "elements": []
+      },
+      "violations": []
+    },
+    {
+      "name": "publicacao",
+      "width": 390,
+      "overflow": {
+        "viewport": 390,
+        "width": 390,
+        "elements": []
+      },
+      "violations": []
+    }
+  ]
+}

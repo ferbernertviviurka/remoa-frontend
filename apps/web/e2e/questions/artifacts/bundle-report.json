@@ -1,0 +1,327 @@
+{
+  "measuredAt": "2026-10-09T04:32:59.891Z",
+  "metric": "Next production build First Load JS gzip rounded kB; see bundle-flow-report for initial plus mandatory async union",
+  "targetKb": 170,
+  "sharedKb": 105,
+  "sharedCeilingKb": 111,
+  "newRoutes": [
+    {
+      "route": "/admin/questoes",
+      "firstLoadKb": 146,
+      "ceilingKb": 224,
+      "beforeLazyFirstLoadKb": 213,
+      "thinBeforeDialogFirstLoadKb": 183,
+      "beforeCcr127FirstLoadKb": 143,
+      "beforeReportsLazyFirstLoadKb": 143,
+      "beforeCcr130FirstLoadKb": 143,
+      "beforeCcr136FirstLoadKb": 145
+    },
+    {
+      "route": "/admin/questoes/fontes",
+      "firstLoadKb": 185,
+      "ceilingKb": 224,
+      "beforeLazyFirstLoadKb": 213,
+      "thinBeforeDialogFirstLoadKb": 211,
+      "beforeCcr127FirstLoadKb": 211,
+      "beforeReportsLazyFirstLoadKb": 182,
+      "beforeCcr130FirstLoadKb": 182,
+      "beforeCcr136FirstLoadKb": 183
+    },
+    {
+      "route": "/admin/questoes/importacoes",
+      "firstLoadKb": 146,
+      "ceilingKb": 224,
+      "beforeLazyFirstLoadKb": 213,
+      "thinBeforeDialogFirstLoadKb": 183,
+      "beforeCcr127FirstLoadKb": 143,
+      "beforeReportsLazyFirstLoadKb": 143,
+      "beforeCcr130FirstLoadKb": 143,
+      "beforeCcr136FirstLoadKb": 145
+    },
+    {
+      "route": "/admin/questoes/importacoes/[id]",
+      "firstLoadKb": 196,
+      "ceilingKb": 228,
+      "beforeLazyFirstLoadKb": 217,
+      "thinBeforeDialogFirstLoadKb": 218,
+      "beforeCcr127FirstLoadKb": 217,
+      "beforeReportsLazyFirstLoadKb": 186,
+      "beforeCcr130FirstLoadKb": 186,
+      "beforeCcr136FirstLoadKb": 191
+    },
+    {
+      "route": "/admin/questoes/importar",
+      "firstLoadKb": 183,
+      "ceilingKb": 225,
+      "beforeLazyFirstLoadKb": 214,
+      "thinBeforeDialogFirstLoadKb": 212,
+      "beforeCcr127FirstLoadKb": 209,
+      "beforeReportsLazyFirstLoadKb": 180,
+      "beforeCcr130FirstLoadKb": 180,
+      "beforeCcr136FirstLoadKb": 181
+    },
+    {
+      "route": "/admin/questoes/relatos",
+      "firstLoadKb": 179,
+      "ceilingKb": 224,
+      "beforeLazyFirstLoadKb": 213,
+      "thinBeforeDialogFirstLoadKb": 211,
+      "beforeCcr127FirstLoadKb": 206,
+      "beforeReportsLazyFirstLoadKb": 206,
+      "beforeCcr130FirstLoadKb": 177,
+      "beforeCcr136FirstLoadKb": 178
+    },
+    {
+      "route": "/admin/questoes/relatos/[id]",
+      "firstLoadKb": 179,
+      "ceilingKb": 224,
+      "beforeLazyFirstLoadKb": 213,
+      "thinBeforeDialogFirstLoadKb": 211,
+      "beforeCcr127FirstLoadKb": 206,
+      "beforeReportsLazyFirstLoadKb": 206,
+      "beforeCcr130FirstLoadKb": 177,
+      "beforeCcr136FirstLoadKb": 178
+    },
+    {
+      "route": "/app/banco-de-questoes",
+      "firstLoadKb": 176,
+      "ceilingKb": 226,
+      "beforeLazyFirstLoadKb": 215,
+      "thinBeforeDialogFirstLoadKb": 204,
+      "beforeCcr127FirstLoadKb": 176,
+      "beforeReportsLazyFirstLoadKb": 176,
+      "beforeCcr130FirstLoadKb": 176,
+      "beforeCcr136FirstLoadKb": 176
+    },
+    {
+      "route": "/app/editorial/questoes",
+      "firstLoadKb": 145,
+      "ceilingKb": 223,
+      "beforeLazyFirstLoadKb": 212,
+      "thinBeforeDialogFirstLoadKb": 181,
+      "beforeCcr127FirstLoadKb": 141,
+      "beforeReportsLazyFirstLoadKb": 142,
+      "beforeCcr130FirstLoadKb": 142,
+      "beforeCcr136FirstLoadKb": 143
+    },
+    {
+      "route": "/app/editorial/questoes/[id]",
+      "firstLoadKb": 186,
+      "ceilingKb": 229,
+      "beforeLazyFirstLoadKb": 218,
+      "thinBeforeDialogFirstLoadKb": 218,
+      "beforeCcr127FirstLoadKb": 218,
+      "beforeReportsLazyFirstLoadKb": 183,
+      "beforeCcr130FirstLoadKb": 183,
+      "beforeCcr136FirstLoadKb": 184
+    },
+    {
+      "route": "/app/editorial/questoes/relatos",
+      "firstLoadKb": 179,
+      "ceilingKb": 224,
+      "beforeLazyFirstLoadKb": 213,
+      "thinBeforeDialogFirstLoadKb": 211,
+      "beforeCcr127FirstLoadKb": 206,
+      "beforeReportsLazyFirstLoadKb": 206,
+      "beforeCcr130FirstLoadKb": 177,
+      "beforeCcr136FirstLoadKb": 178
+    },
+    {
+      "route": "/app/editorial/questoes/relatos/[id]",
+      "firstLoadKb": 179,
+      "ceilingKb": 224,
+      "beforeLazyFirstLoadKb": 213,
+      "thinBeforeDialogFirstLoadKb": 211,
+      "beforeCcr127FirstLoadKb": 206,
+      "beforeReportsLazyFirstLoadKb": 206,
+      "beforeCcr130FirstLoadKb": 177,
+      "beforeCcr136FirstLoadKb": 178
+    },
+    {
+      "route": "/app/provas",
+      "firstLoadKb": 140,
+      "ceilingKb": 219,
+      "beforeLazyFirstLoadKb": 208,
+      "thinBeforeDialogFirstLoadKb": 176,
+      "beforeCcr127FirstLoadKb": 140,
+      "beforeReportsLazyFirstLoadKb": 140,
+      "beforeCcr130FirstLoadKb": 140,
+      "beforeCcr136FirstLoadKb": 140
+    },
+    {
+      "route": "/app/provas/[id]",
+      "firstLoadKb": 140,
+      "ceilingKb": 219,
+      "beforeLazyFirstLoadKb": 208,
+      "thinBeforeDialogFirstLoadKb": 176,
+      "beforeCcr127FirstLoadKb": 140,
+      "beforeReportsLazyFirstLoadKb": 140,
+      "beforeCcr130FirstLoadKb": 140,
+      "beforeCcr136FirstLoadKb": 140
+    },
+    {
+      "route": "/app/simulados",
+      "firstLoadKb": 140,
+      "ceilingKb": 219,
+      "beforeLazyFirstLoadKb": 208,
+      "thinBeforeDialogFirstLoadKb": 176,
+      "beforeCcr127FirstLoadKb": 140,
+      "beforeReportsLazyFirstLoadKb": 140,
+      "beforeCcr130FirstLoadKb": 140,
+      "beforeCcr136FirstLoadKb": 140
+    },
+    {
+      "route": "/app/simulados/[id]",
+      "firstLoadKb": 156,
+      "ceilingKb": 222,
+      "beforeLazyFirstLoadKb": 211,
+      "thinBeforeDialogFirstLoadKb": 180,
+      "beforeCcr127FirstLoadKb": 156,
+      "beforeReportsLazyFirstLoadKb": 156,
+      "beforeCcr130FirstLoadKb": 156,
+      "beforeCcr136FirstLoadKb": 156
+    }
+  ],
+  "legacyFailures": [
+    {
+      "route": "/app/mapas/novo",
+      "kb": 189,
+      "ceiling": 177
+    }
+  ],
+  "unlisted": [
+    "/app/mapas/[id]/desafio-ia",
+    "/app/mapas/[id]/resumo",
+    "/app/mapas/prontos/[id]",
+    "/mapas-prontos",
+    "/mapas-prontos/[slug]"
+  ],
+  "limits": "Only the 16 F33 route ceilings changed; shared/fallback/legacy ceilings preserved. No global --update.",
+  "globalChecker": {
+    "over": [
+      {
+        "route": "/app/mapas/novo",
+        "kb": 189,
+        "ceiling": 177
+      }
+    ],
+    "unlisted": [
+      "/app/mapas/[id]/desafio-ia",
+      "/app/mapas/[id]/resumo",
+      "/app/mapas/prontos/[id]",
+      "/mapas-prontos",
+      "/mapas-prontos/[slug]"
+    ],
+    "passed": false
+  },
+  "buildData": "Private localhost4351 GET404/writes405 empty public blog; no DB/provider",
+  "logs": {
+    "build": "/private/tmp/remoa-f33-ccr130-root-next-build.log",
+    "checker": "/private/tmp/remoa-f33-ccr130-root-bundle-check.log"
+  },
+  "boundaryChanges": "CCR127 constants leaf; exact shared schemas async on submit; administrative draft editor lazy only authorized draft/in-review. All validation and role gates retained. No ceilings changed.",
+  "ccr127GlobalFailure": {
+    "route": "/app/mapas/novo",
+    "actualKb": 189,
+    "ceilingKb": 177,
+    "headKb": 188
+  },
+  "reportsBoundary": "Exact shared resolution input validator now loaded only on submit; other schema imports type-only. Initial four report routes206→177kB. All role/editable/concurrency/reAuth/error focus gates preserved.",
+  "historicalBeforeCcr130": {
+    "measuredAt": "2026-10-09T01:41:07.713158+00:00",
+    "logs": {
+      "build": "/private/tmp/remoa-f33-reports-lazy-next-build.log",
+      "checker": "/private/tmp/remoa-f33-reports-lazy-bundle-check.log"
+    },
+    "newRouteFirstLoadKb": {
+      "/admin/questoes": 143,
+      "/admin/questoes/fontes": 182,
+      "/admin/questoes/importacoes": 143,
+      "/admin/questoes/importacoes/[id]": 186,
+      "/admin/questoes/importar": 180,
+      "/admin/questoes/relatos": 177,
+      "/admin/questoes/relatos/[id]": 177,
+      "/app/banco-de-questoes": 176,
+      "/app/editorial/questoes": 142,
+      "/app/editorial/questoes/[id]": 183,
+      "/app/editorial/questoes/relatos": 177,
+      "/app/editorial/questoes/relatos/[id]": 177,
+      "/app/provas": 140,
+      "/app/provas/[id]": 140,
+      "/app/simulados": 140,
+      "/app/simulados/[id]": 156
+    },
+    "legacyFailures": [
+      {
+        "route": "/app/mapas/novo",
+        "kb": 188,
+        "ceiling": 177
+      }
+    ],
+    "globalChecker": {
+      "over": [
+        {
+          "route": "/app/mapas/novo",
+          "kb": 189,
+          "ceiling": 177
+        }
+      ],
+      "unlisted": [
+        "/app/mapas/[id]/desafio-ia",
+        "/app/mapas/[id]/resumo",
+        "/app/mapas/prontos/[id]",
+        "/mapas-prontos",
+        "/mapas-prontos/[slug]"
+      ],
+      "passed": false
+    }
+  },
+  "ccr130Changes": "Manual missing-candidate and original-number recovery; explicit shared-context resolution with draft/concurrency/focus guards. Current root build succeeded; no ceilings or source changes in this documentation update.",
+  "flowReport": "bundle-flow-report.json; current static gzip union, not observed browser network transfer",
+  "historicalBeforeCcr136": {
+    "measuredAt": "2026-10-09T03:13:01.459029+00:00",
+    "sharedKb": 105,
+    "newRouteFirstLoadKb": {
+      "/admin/questoes": 145,
+      "/admin/questoes/fontes": 183,
+      "/admin/questoes/importacoes": 145,
+      "/admin/questoes/importacoes/[id]": 191,
+      "/admin/questoes/importar": 181,
+      "/admin/questoes/relatos": 178,
+      "/admin/questoes/relatos/[id]": 178,
+      "/app/banco-de-questoes": 176,
+      "/app/editorial/questoes": 143,
+      "/app/editorial/questoes/[id]": 184,
+      "/app/editorial/questoes/relatos": 178,
+      "/app/editorial/questoes/relatos/[id]": 178,
+      "/app/provas": 140,
+      "/app/provas/[id]": 140,
+      "/app/simulados": 140,
+      "/app/simulados/[id]": 156
+    }
+  },
+  "ccr136Verification": {
+    "buildExitCode": 0,
+    "checkerExitCode": 1,
+    "logs": {
+      "build": "/private/tmp/remoa-f33-ccr136-root-next-build-final.log",
+      "checker": "/private/tmp/remoa-f33-ccr136-root-bundle-check-final.log"
+    },
+    "over": [
+      {
+        "route": "/app/mapas/novo",
+        "kb": 189,
+        "ceiling": 177
+      }
+    ],
+    "unlisted": [
+      "/app/mapas/[id]/desafio-ia",
+      "/app/mapas/[id]/resumo",
+      "/app/mapas/prontos/[id]",
+      "/mapas-prontos",
+      "/mapas-prontos/[slug]"
+    ],
+    "allF33RoutesWithinCeilings": true,
+    "ceilingsChanged": false
+  }
+}

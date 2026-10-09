@@ -1,0 +1,38 @@
+'use client';
+import Link from 'next/link';
+import {useEffect,useLayoutEffect,useRef,useState} from 'react';
+import type {QuestionImportPageQuery,QuestionImportProgress,QuestionSource} from '@remoa/contracts';
+import {Alert,Button,Input,Select,Tag} from '@remoa/ui';
+import {t} from '@remoa/strings';
+import {actionLink,panel} from '@/features/questions/shared';
+import {listImports,listSources} from './api';
+import {listImportPage} from './imports-api';
+import {adminQuestionError,tq} from './labels';
+const states=['queued','validating','extracting','ocr','segmenting','matching','review','completed','failed','cancelled','budget_paused'] as const;
+export function ImportsBrowser({enabled,compact=false}:{enabled:boolean;compact?:boolean}){
+ const[search,setSearch]=useState('');const[debounced,setDebounced]=useState('');const[status,setStatus]=useState('all');const[sourceId,setSourceId]=useState('all');const[sources,setSources]=useState<QuestionSource[]>([]);const[sourceError,setSourceError]=useState<string|null>(null);const[sourceRetry,setSourceRetry]=useState(0);
+ const[items,setItems]=useState<QuestionImportProgress[]>([]);const[cursor,setCursor]=useState<string|null>(null);const[loading,setLoading]=useState(true);const[more,setMore]=useState(false);const[error,setError]=useState<string|null>(null);const[retry,setRetry]=useState(0);
+ const generation=useRef(0),abortRef=useRef<AbortController|null>(null),busy=useRef(false),region=useRef<HTMLElement|null>(null),moreButton=useRef<HTMLButtonElement|null>(null),pendingFocus=useRef<string|null>(null);
+ useEffect(()=>{const timeout=setTimeout(()=>setDebounced(search.trim()),250);return()=>clearTimeout(timeout);},[search]);
+ useEffect(()=>{if(!enabled||compact){setSources([]);setSourceError(null);return;}let active=true;setSourceError(null);void listSources().then(value=>{if(active)setSources(value.items);}).catch(reason=>{if(active)setSourceError(adminQuestionError(reason));});return()=>{active=false;};},[enabled,compact,sourceRetry]);
+ const query:Partial<QuestionImportPageQuery>={limit:compact?5:25,...(debounced&&!compact?{search:debounced}:{}),...(status!=='all'&&!compact?{status:status as QuestionImportPageQuery['status']}:{}),...(sourceId!=='all'&&!compact?{sourceId}:{})};
+ const queryRef=useRef(query);queryRef.current=query;const signature=JSON.stringify({enabled,compact,...query});
+ useEffect(()=>{abortRef.current?.abort();const current=++generation.current;const abort=new AbortController();abortRef.current=abort;busy.current=true;pendingFocus.current=null;setItems([]);setCursor(null);setError(null);setLoading(true);setMore(false);
+  const read=enabled?listImportPage(queryRef.current,abort.signal).then(value=>({items:compact?value.items.slice(0,5):value.items,nextCursor:value.nextCursor})):listImports().then(value=>({items:value.items.slice(0,compact?5:50),nextCursor:null}));
+  void read.then(value=>{if(current!==generation.current||abort.signal.aborted)return;setItems(value.items);setCursor(value.nextCursor);}).catch(reason=>{if(current===generation.current&&!abort.signal.aborted)setError(adminQuestionError(reason));}).finally(()=>{if(current===generation.current&&!abort.signal.aborted){busy.current=false;setLoading(false);}});
+  return()=>{abortRef.current?.abort();generation.current=current+1;};
+ },[signature,retry,enabled,compact]);
+ useLayoutEffect(()=>{const target=pendingFocus.current;if(!target||more)return;pendingFocus.current=null;if(document.activeElement!==document.body&&document.activeElement!==moreButton.current)return;if(target==='retry'){region.current?.querySelector<HTMLButtonElement>('[data-import-retry]')?.focus();return;}region.current?.querySelector<HTMLAnchorElement>(`[data-import-id="${target}"] a`)?.focus();},[items,more,error]);
+ const loadMore=async()=>{if(!enabled||compact||!cursor||busy.current)return;const current=generation.current,abort=new AbortController();abortRef.current=abort;busy.current=true;const keyboard=document.activeElement===moreButton.current||Boolean(document.activeElement?.matches('[data-import-retry]'));setMore(true);setError(null);
+  try{const value=await listImportPage({...queryRef.current,cursor},abort.signal);if(current!==generation.current||abort.signal.aborted)return;if(keyboard)pendingFocus.current=value.items.find(item=>!items.some(existing=>existing.id===item.id))?.id??value.items[0]?.id??null;setItems(previous=>[...new Map([...previous,...value.items].map(item=>[item.id,item])).values()]);setCursor(value.nextCursor);}
+  catch(reason){if(current===generation.current&&!abort.signal.aborted){if(keyboard)pendingFocus.current='retry';setError(adminQuestionError(reason));}}
+  finally{if(current===generation.current&&!abort.signal.aborted){busy.current=false;setMore(false);}}
+ };
+ return <section ref={region} aria-label={tq('questionsAdmin.jobsTitle')} className={compact?`${panel} space-y-5`:'min-w-0 space-y-5'}>{compact?<h2 className="font-display text-2xl font-bold">{tq('questionsAdmin.jobsTitle')}</h2>:null}{!enabled?<p className="text-sm text-muted">{tq('questionsAdmin.importHistoryLimited')}</p>:compact?<p className="text-sm text-muted">{tq('questionsAdmin.importPreviewHelp')}</p>:<><Input variant="search" label={tq('questionsAdmin.importHistorySearch')} maxLength={200} value={search} onChange={event=>setSearch(event.target.value)}/><div className="grid min-w-0 gap-4 md:grid-cols-2"><Select label={tq('questionsAdmin.importHistoryStatus')} value={status} onValueChange={setStatus} options={[{value:'all',label:tq('questionsAdmin.importHistoryAll')},...states.map(value=>({value,label:tq(`questionsAdmin.jobStates.${value}`)}))]}/><Select label={tq('questionsAdmin.source')} value={sourceId} onValueChange={setSourceId} options={[{value:'all',label:tq('questionsAdmin.catalogAllSources')},...sources.map(source=>({value:source.id,label:source.name}))]}/></div></>}
+  {compact&&!enabled?<p className="text-sm text-muted">{tq('questionsAdmin.importPreviewHelp')}</p>:null}{sourceError?<Alert role="alert" tone="watch" title={sourceError}><Button variant="secondary" onClick={()=>setSourceRetry(value=>value+1)}>{tq('questionsAdmin.catalogRetrySources')}</Button></Alert>:null}
+  {loading?<p role="status">{t('common.loading')}</p>:!items.length&&!error?<p>{tq('questionsAdmin.jobEmpty')}</p>:items.map(job=><article key={job.id} data-import-id={job.id} className={`${compact?'border-t border-border py-4':panel} flex min-w-0 flex-wrap items-center justify-between gap-4`}><div className="min-w-0"><Tag tone={job.status==='failed'?'review':'brand'}>{tq(`questionsAdmin.jobStates.${job.status}`)}</Tag><p className="mt-3 text-muted">{tq('questionsAdmin.progress',{done:job.completedPages,total:job.totalPages})}</p><p className="mt-2 text-sm text-muted">{tq('questionsAdmin.candidatesCount',{n:job.candidates})} · {tq('questionsAdmin.cost',{value:(job.costCents/100).toLocaleString('pt-BR',{minimumFractionDigits:2})})}</p></div><Link className={actionLink} href={`/admin/questoes/importacoes/${job.id}`}>{tq('questionsAdmin.jobTitle')}</Link></article>)}
+  {error?<Alert role="alert" tone="review" title={error}><Button data-import-retry="" variant="secondary" onClick={()=>{if(items.length&&cursor)void loadMore();else setRetry(value=>value+1);}}>{t('common.retry')}</Button></Alert>:null}
+  {!compact&&cursor?<Button ref={moreButton} variant="secondary" loading={more} disabled={loading} onClick={()=>void loadMore()}>{tq('questionsAdmin.importHistoryMore')}</Button>:null}
+  {compact?<Link href="/admin/questoes/importacoes" className={actionLink}>{tq('questionsAdmin.importHistoryAllLink')}</Link>:null}
+ </section>;
+}

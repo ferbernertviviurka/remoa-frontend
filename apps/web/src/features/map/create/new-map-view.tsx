@@ -1,9 +1,8 @@
 'use client';
 
-import { AiNotice, AiWarning } from '@/features/ai/ai-notice';
 import { useNavigate } from '@/features/shell/use-navigate';
 import dynamic from 'next/dynamic';
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { Board, BoardGenerationProgress, ImportBoardInput, ImportTarget, MatrixItem } from '@remoa/contracts';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
@@ -19,8 +18,10 @@ import { useAnkiImport } from '@/features/import/use-anki-import';
 import { aboutErrors, aboutPayload, emptyAboutMap, type AboutMap } from './about-map';
 import { MapPreview, type Path } from './map-preview';
 
-const t = withStrings({ ankiSteps: more.ankiSteps, boards: more.boards, editorial: more.editorial, import: more.import, newMap: more.newMap, newMapAbout: more.newMapAbout });
+const t = withStrings({ ai:{mayErr:more.ai.mayErr}, ankiSteps: more.ankiSteps, boards: more.boards, editorial:{copy:more.editorial.copy}, import: more.import, newMap: more.newMap, newMapAbout: more.newMapAbout });
 type StringKey = Parameters<typeof t>[0];
+const AiNotice=lazy(()=>import('@/features/ai/ai-notice').then(m=>({default:m.AiNotice})));
+const AiWarning=lazy(()=>import('@/features/ai/ai-notice').then(m=>({default:m.AiWarning})));
 
 const PATHS: ReadonlyArray<{ id: Path; icon: 'file' | 'archive' | 'book' | 'plus' }> = [
   { id: 'pdf', icon: 'file' },
@@ -436,8 +437,8 @@ export function NewMapView({ items, initialPath, initialItemId, initialStep = 0 
                   <Button onClick={ready.go}>{t('newMap.openMap')}</Button>
                 </Alert>
               ) : null}
-              {path === 'pdf' ? <AiWarning /> : null}
-              {error && path === 'pdf' ? <AiNotice ai={{ status: 'error', code: 'generate_failed', message: error }} onRetry={() => void (failedJob ? retryJob() : generatePdf())} /> : error ? <p role="alert" className="text-sm font-semibold text-review">{error}</p> : null}
+              {path === 'pdf' ? <Suspense fallback={<p className="text-xs text-muted">{t('ai.mayErr')}</p>}><AiWarning /></Suspense> : null}
+              {error && path === 'pdf' ? <Suspense fallback={<div role="alert"><p>{error}</p><Button variant="secondary" onClick={()=>void(failedJob?retryJob():generatePdf())}>{t('common.retry')}</Button></div>}><AiNotice ai={{ status: 'error', code: 'generate_failed', message: error }} onRetry={() => void (failedJob ? retryJob() : generatePdf())} /></Suspense> : error ? <p role="alert" className="text-sm font-semibold text-review">{error}</p> : null}
             </>
           ) : null}
         </div>

@@ -73,6 +73,22 @@
     "/regulamento-indicacao": 114,
     "/robots.txt": 111,
     "/sitemap.xml": 111,
-    "/termos-de-uso": 116
+    "/termos-de-uso": 116,
+    "/admin/questoes": 224,
+    "/admin/questoes/fontes": 224,
+    "/admin/questoes/importacoes": 224,
+    "/admin/questoes/importacoes/[id]": 228,
+    "/admin/questoes/importar": 225,
+    "/admin/questoes/relatos": 224,
+    "/admin/questoes/relatos/[id]": 224,
+    "/app/banco-de-questoes": 226,
+    "/app/editorial/questoes": 223,
+    "/app/editorial/questoes/[id]": 229,
+    "/app/editorial/questoes/relatos": 224,
+    "/app/editorial/questoes/relatos/[id]": 224,
+    "/app/provas": 219,
+    "/app/provas/[id]": 219,
+    "/app/simulados": 219,
+    "/app/simulados/[id]": 222
   }
 }

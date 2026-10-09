@@ -1,0 +1,10 @@
+import {beforeEach,expect,it,vi} from 'vitest';
+vi.mock('@/lib/api',()=>({api:vi.fn()}));
+import {api} from '@/lib/api';
+import {previewDocumentPage} from './api';
+import {testId,testAudit} from './recovery.test-fixtures';
+const dto={importId:testId,documentId:testId,page:1,pages:2,width:600,height:800,dpi:100,documentSha256:'a'.repeat(64),imageSha256:'b'.repeat(64),url:'https://example.org/private-page.png',expiresInSec:300,provenance:{documentId:testId,page:1,bbox:[0,0,1,1]},audit:testAudit};
+beforeEach(()=>vi.resetAllMocks());
+it('validates the exact PNG DTO and routes its abort signal with no mutation',async()=>{vi.mocked(api).mockResolvedValue({ok:true,data:dto});const abort=new AbortController();await expect(previewDocumentPage(testId,testId,1,abort.signal)).resolves.toMatchObject({width:600,height:800,imageSha256:'b'.repeat(64)});expect(api).toHaveBeenCalledWith(`/v1/admin/questions/imports/${testId}/documents/${testId}/pages/1/preview`,{signal:abort.signal});});
+it('rejects a schema-valid response belonging to another requested page or job',async()=>{vi.mocked(api).mockResolvedValue({ok:true,data:{...dto,page:2,provenance:{...dto.provenance,page:2}}});await expect(previewDocumentPage(testId,testId,1)).rejects.toMatchObject({code:'validation',detail:'invalid_page_preview'});vi.mocked(api).mockResolvedValue({ok:true,data:{...dto,importId:'550e8400-e29b-41d4-a716-446655440001'}});await expect(previewDocumentPage(testId,testId,1)).rejects.toMatchObject({code:'validation',detail:'invalid_page_preview'});});
+it('rejects invalid PNG dimensions, unsafe URLs and cropped provenance without an alternate renderer',async()=>{for(const patch of [{width:0},{url:'javascript:alert(1)'},{provenance:{...dto.provenance,bbox:[0,0,.5,.5]}}]){vi.mocked(api).mockResolvedValue({ok:true,data:{...dto,...patch}});await expect(previewDocumentPage(testId,testId,1)).rejects.toMatchObject({code:'invalid_response'});}expect(api).toHaveBeenCalledTimes(3);});

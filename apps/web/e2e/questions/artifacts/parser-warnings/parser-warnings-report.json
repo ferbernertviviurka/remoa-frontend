@@ -1,0 +1,79 @@
+{
+  "kind": "UI-only original-extraction warnings; strict synthetic HTTP",
+  "limits": [
+    "No SQL/auth/storage/provider/Next SSR/parser execution",
+    "Manual staging changes do not erase original-extraction warnings"
+  ],
+  "checks": [
+    {
+      "name": "Original-extraction warning opens empty manual recovery with focus restoration",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "Empty known list with unknown warnings makes no clean-extraction claim",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "Incomplete diagnostics do not fabricate candidate or total counts",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "Pending and absent historical records stay unknown instead of zero",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "Truncated and unknown counts remain visible and no publication action is introduced",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "Denied snapshot fails closed and requires explicit retry",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "Manual recovery changes staging revision but refresh preserves original-extraction evidence",
+      "width": 390,
+      "passed": true
+    },
+    {
+      "name": "Original-extraction warning opens empty manual recovery with focus restoration",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "Empty known list with unknown warnings makes no clean-extraction claim",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "Incomplete diagnostics do not fabricate candidate or total counts",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "Pending and absent historical records stay unknown instead of zero",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "Truncated and unknown counts remain visible and no publication action is introduced",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "Denied snapshot fails closed and requires explicit retry",
+      "width": 1440,
+      "passed": true
+    },
+    {
+      "name": "Manual recovery changes staging revision but refresh preserves original-extraction evidence",
+      "width": 1440,
+      "passed": true
+    }
+  ]
+}

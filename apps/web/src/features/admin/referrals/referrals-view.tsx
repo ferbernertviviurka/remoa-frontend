@@ -1,7 +1,7 @@
 'use client';
 
 import type { AdminReferralDetail, AdminReferralPage, AdminReferralRow, AdminUserRef } from '@remoa/contracts';
-import { strings, t } from '@remoa/strings/full';
+import { strings, t } from '@remoa/strings/admin';
 import { PersonCell, StatusPill, type StatusPillProps } from '@remoa/ui';
 import { act, AdminList, auditLine, type ActionSpec } from '../list-kit/admin-list';
 import { formatDay } from '../list-kit/download';
