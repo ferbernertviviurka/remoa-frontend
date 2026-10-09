@@ -9,8 +9,8 @@ import { RevealFallback } from './use-reveal-fallback';
 import '../shell/shell.css';
 
 /** ids match the `feature_tab_selected` enum in contracts. */
-export const FEATURE_IDS = ['map', 'cards', 'challenge', 'grading', 'fsrs', 'enamed', 'bank'] as const;
-const FILES = ['mapa', 'cards', 'desafio', 'correcao', 'fsrs', 'enamed', 'questoes'];
+export const FEATURE_IDS = ['map', 'cards', 'challenge', 'grading', 'fsrs', 'enamed'] as const;
+const FILES = ['mapa', 'cards', 'desafio', 'correcao', 'fsrs', 'enamed'];
 const AUTO_MS = 4000;
 
 /**
@@ -82,7 +82,7 @@ export function FeaturesSection({ flags }: { flags?: Partial<LandingFlags> }) {
     window.addEventListener('hashchange', open);
     return () => window.removeEventListener('hashchange', open);
   }, [stop]);
-  const items: FeatureItem[] = strings.landing.explorer.items.map((it, i) => {
+  const items: FeatureItem[] = strings.landing.explorer.items.slice(0, FEATURE_IDS.length).map((it, i) => {
     const id = FEATURE_IDS[i]!;
     return { id, title: it.title, description: id === 'grading' ? (approved ? strings.landing.grading.textApproved : strings.landing.grading.text) : it.description, benefits: [...(id === 'grading' && approved && 'benefitsApproved' in it ? it.benefitsApproved : it.benefits)], image: { src: `/landing/feat-${FILES[i]}.svg`, alt: id === 'grading' && approved ? strings.landing.featureAlts.gradingApproved : strings.landing.featureAlts[id], width: 640, height: 420 } };
   });

@@ -25,7 +25,6 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
           { items: [
             { href: '/#como-funciona', label: t('landing.footer.links.howWorks') },
             { href: '/#recursos', label: t('landing.footer.links.features') },
-            { href: '/#banco', label: t('landing.footer.links.bank') },
             { href: '/#planos', label: t('landing.footer.links.plans') },
             { href: '/#faq', label: t('landing.footer.links.faq') },
           ] },

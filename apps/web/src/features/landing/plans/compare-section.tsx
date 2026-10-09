@@ -17,7 +17,7 @@ export function CompareSection() {
         featureHeader={t('landing.compare.featureHeader')}
         columns={[<><span className="hidden md:inline-flex"><Logo size={22} onDark /></span>{columns.remoa}</>, columns.anki, columns.notion]}
         highlightColumn={0}
-        rows={rows.map((r) => ({ feature: r.feature, cells: [cell(r.remoa, true), cell(r.anki, false), cell(r.notion, false)] }))}
+        rows={rows.filter((r) => r.feature !== strings.landing.nav.anchors.bank).map((r) => ({ feature: r.feature, cells: [cell(r.remoa, true), cell(r.anki, false), cell(r.notion, false)] }))}
       />
       <p className="m-0 text-[13px] leading-normal text-muted">{footnote}</p>
     </Section>

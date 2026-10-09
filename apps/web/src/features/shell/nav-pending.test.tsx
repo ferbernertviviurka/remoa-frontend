@@ -18,7 +18,7 @@ const app = () => (
 );
 
 describe('MainSlot', () => {
-  it('disabled catalogue removes only question destinations while existing navigation remains',()=>{questionFlags.catalog=false;render(app());expect(screen.queryByRole('link',{name:'Questões'})).toBeNull();expect(screen.queryByRole('link',{name:'Provas'})).toBeNull();expect(screen.getByRole('link',{name:'Mapas'})).toBeInTheDocument();});
+  it('the rail hides Questões and Provas while the rest of the navigation stays',()=>{questionFlags.catalog=true;render(app());expect(screen.queryByRole('link',{name:'Questões'})).toBeNull();expect(screen.queryByRole('link',{name:'Provas'})).toBeNull();expect(screen.getByRole('link',{name:'Mapas'})).toBeInTheDocument();});
   it('rail click shows the destination skeleton instead of the stale page; the route change shows the real page', () => {
     pathname = '/';
     const { rerender } = render(app());

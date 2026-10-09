@@ -14,14 +14,12 @@ type Extra = { items: readonly CommandItem[]; run: (c: CommandItem) => void };
 type Ctx = { open: () => void; setExtra: (e: Extra | null) => void };
 const PaletteCtx = createContext<Ctx | null>(null);
 
-const routes = { questions: '/app/banco-de-questoes', exams: '/app/provas', home: '/app/hoje', maps: '/app/mapas', newMap: '/app/mapas/novo', review: '/app/revisar', account: '/app/conta' } as const;
+const routes = { home: '/app/hoje', maps: '/app/mapas', newMap: '/app/mapas/novo', review: '/app/revisar', account: '/app/conta' } as const;
 const go = (k: keyof typeof routes, label: string, hint: string, group = t('palette.groups.goTo')): CommandItem => ({ id: `go:${k}`, group, label, hint });
 const GLOBAL: CommandItem[] = [
   go('home', t('palette.home.label'), t('palette.home.hint')),
   go('maps', t('palette.maps.label'), t('palette.maps.hint')),
   go('newMap', t('palette.newMap.label'), t('palette.newMap.hint')),
-  go('questions', t('questions.title'), t('questions.subtitle')),
-  go('exams', t('questions.examsTitle'), t('questions.examsDescription')),
   go('review', t('palette.review.label'), t('palette.review.hint')),
   go('account', t('challengeSetup.palette.account.label'), t('challengeSetup.palette.account.hint'), t('challengeSetup.palette.groups.account')),
   { id: 'tour', group: t('palette.groups.goTo'), label: t('challengeSetup.palette.tour.label'), hint: t('challengeSetup.palette.tour.hint') },

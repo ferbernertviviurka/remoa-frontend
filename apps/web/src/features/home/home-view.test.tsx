@@ -27,9 +27,9 @@ const board = (id: string, title: string, dueCount: number): BoardSummary =>
   }) as unknown as BoardSummary;
 
 describe('HomeView', () => {
-  it('the aside links to the question bank', () => {
+  it('the aside hides the question bank and exams', () => {
     render(<HomeView now={now} summary={summary(0, 0)} boards={[board('1', 'Sepse', 0)]} coverage={[]} />);
-    expect(screen.getByRole('link', { name: /Banco de questões/ })).toHaveAttribute('href', '/app/banco-de-questoes');
+    expect(screen.queryByRole('link', { name: /Banco de questões|Questões|Provas/ })).toBeNull();
   });
 
   it('"Indique um amigo" links to /app/indicar?de=home', () => {

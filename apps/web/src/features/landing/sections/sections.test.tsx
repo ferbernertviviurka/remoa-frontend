@@ -9,11 +9,11 @@ afterEach(() => {
 });
 
 describe('landing sections', () => {
-  test('explorer: 7 tabs, active image has the right alt, selecting fires feature_tab_selected', async () => {
+  test('explorer: 6 tabs, active image has the right alt, selecting fires feature_tab_selected', async () => {
     render(<FeaturesSection />);
     const tabs = screen.getAllByRole('tab');
-    expect(tabs).toHaveLength(7);
-    expect(screen.getByRole('tab', { name: 'Banco de questões' })).toBeTruthy();
+    expect(tabs).toHaveLength(6);
+    expect(screen.queryByRole('tab', { name: 'Banco de questões' })).toBeNull();
     expect(screen.getByAltText(strings.landing.featureAlts.map)).toBeTruthy();
     expect(screen.getByText('Imagem da plataforma: mapa de conceitos')).toBeTruthy();
     fireEvent.click(tabs[4]!);
