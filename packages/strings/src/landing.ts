@@ -12,6 +12,7 @@ export const landing = {
     anchors: {
       howWorks: 'Como funciona',
       features: 'Recursos',
+      bank: 'Banco de questões',
       ia: 'IA',
       enamed: 'ENAMED',
       calendar: 'Calendário',
@@ -557,6 +558,7 @@ export const landing = {
     links: {
       howWorks: 'Como funciona',
       features: 'Recursos',
+      bank: 'Banco de questões',
       plans: 'Planos',
       faq: 'Perguntas',
       terms: 'Termos',
