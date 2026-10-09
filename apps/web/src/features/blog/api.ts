@@ -4,7 +4,8 @@ import {
   blogCategorySchema, blogListItemSchema, blogPublicListSchema, blogPublicPostSchema, blogSlugResponseSchema,
   type BlogCategory, type BlogListItem, type BlogPublicList, type BlogPublicPost,
 } from '@remoa/contracts';
-import { apiBase } from '@/lib/api/base';
+import { apiBase, publicFetchTimeout } from '@/lib/api/base';
+import { noStore } from '@/lib/cache';
 
 /** Revalidated on demand by the API (D-908 tags); the long `revalidate` is only the safety net. */
 export const BLOG_REVALIDATE = 86_400;
@@ -17,10 +18,21 @@ export type PostResult = { kind: 'post'; post: BlogPublicPost } | { kind: 'redir
  * ISR page and never stores the failure (D-968); with no previous version the error boundary shows, not a cached 404.
  */
 async function get<T>(path: string, schema: z.ZodType<T, z.ZodTypeDef, unknown>, init: RequestInit & { next?: { tags?: string[]; revalidate?: number } }): Promise<T | null> {
-  const res = await fetch(`${apiBase()}/v1/public/blog/${path}`, init);
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`blog: API ${res.status} on ${path}`);
-  return schema.parse(((await res.json()) as { data?: unknown }).data);
+  try {
+    const timeout = publicFetchTimeout();
+    const signal = init.signal ? AbortSignal.any([init.signal, timeout]) : timeout;
+    const res = await fetch(`${apiBase()}/v1/public/blog/${path}`, { ...init, signal });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`blog: API ${res.status} on ${path}`);
+    return schema.parse(((await res.json()) as { data?: unknown }).data);
+  } catch (error) {
+    // A hung API during `next build` must not spend the static-page budget (D-1677). Outside the build the throw stays, so ISR keeps the last good page (D-968).
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      noStore();
+      return null;
+    }
+    throw error;
+  }
 }
 
 const cached = (...tags: string[]) => ({ next: { tags: ['blog', ...tags], revalidate: BLOG_REVALIDATE } });

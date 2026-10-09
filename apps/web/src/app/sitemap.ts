@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { z } from 'zod';
 import { sitemapEntrySchema, type SitemapEntry } from '@remoa/contracts';
-import { apiBase } from '@/lib/api/base';
+import { apiBase, publicFetchTimeout } from '@/lib/api/base';
 import { buildSitemap } from '@/lib/seo/sitemap';
 import { siteUrl } from '@/lib/seo/site';
 import { getPublicSeeds } from '@/features/library/public-api';
@@ -11,7 +11,7 @@ export const revalidate = 3600;
 
 async function blogEntries(): Promise<SitemapEntry[]> {
   try {
-    const res = await fetch(`${apiBase()}/v1/public/blog/sitemap`, { next: { tags: ['sitemap'], revalidate: 86_400 } });
+    const res = await fetch(`${apiBase()}/v1/public/blog/sitemap`, { signal: publicFetchTimeout(), next: { tags: ['sitemap'], revalidate: 86_400 } });
     if (!res.ok) return [];
     return z.object({ data: z.array(sitemapEntrySchema) }).parse(await res.json()).data;
   } catch {
@@ -29,5 +29,6 @@ async function seedEntries(): Promise<MetadataRoute.Sitemap> {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  return [...buildSitemap(await blogEntries()), ...(await seedEntries())];
+  const [blog, seeds] = await Promise.all([blogEntries(), seedEntries()]);
+  return [...buildSitemap(blog), ...seeds];
 }

@@ -106,6 +106,33 @@ describe('RSS (F27)', () => {
   });
 });
 
+describe('sitemap route when the API never answers', () => {
+  const realTimeout = AbortSignal.timeout.bind(AbortSignal);
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('returns only the static pages before the build gives up', async () => {
+    vi.spyOn(AbortSignal, 'timeout').mockImplementation(() => realTimeout(30));
+    vi.stubGlobal('fetch', (_url: unknown, init?: RequestInit) => new Promise((_resolve, reject) => {
+      const signal = init?.signal;
+      if (!signal) return;
+      const fail = () => reject(Object.assign(new Error('The operation was aborted due to timeout'), { name: 'TimeoutError' }));
+      if (signal.aborted) fail();
+      else signal.addEventListener('abort', fail, { once: true });
+    }));
+    const { default: sitemap } = await import('@/app/sitemap');
+    const urls = (await sitemap()).map((item) => item.url);
+    expect(urls).toEqual([
+      'http://localhost:3000',
+      'http://localhost:3000/blog',
+      'http://localhost:3000/termos-de-uso',
+      'http://localhost:3000/politica-de-privacidade',
+    ]);
+  }, 1_000);
+});
+
 describe('POST /api/revalidate (F27)', () => {
   const secret = 'x'.repeat(40);
   afterEach(() => {

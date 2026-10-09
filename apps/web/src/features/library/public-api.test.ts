@@ -8,6 +8,7 @@ import { loadPublicSeeds } from './public-api';
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
+  vi.restoreAllMocks();
   vi.clearAllMocks();
 });
 
@@ -17,6 +18,21 @@ describe('loadPublicSeeds', () => {
     await expect(loadPublicSeeds()).resolves.toEqual([{ slug: 'sepse' }]);
     expect(noStore).not.toHaveBeenCalled();
   });
+
+  test('during next build, a hung API becomes an empty uncached list', async () => {
+    vi.stubEnv('NEXT_PHASE', 'phase-production-build');
+    const realTimeout = AbortSignal.timeout.bind(AbortSignal);
+    vi.spyOn(AbortSignal, 'timeout').mockImplementation(() => realTimeout(20));
+    vi.stubGlobal('fetch', (_url: unknown, init?: RequestInit) => new Promise((_resolve, reject) => {
+      const fail = () => reject(new Error('timeout'));
+      const signal = init?.signal;
+      if (!signal) return;
+      if (signal.aborted) fail();
+      else signal.addEventListener('abort', fail, { once: true });
+    }));
+    await expect(loadPublicSeeds()).resolves.toEqual([]);
+    expect(noStore).toHaveBeenCalledOnce();
+  }, 1_000);
 
   test('during next build, an API failure becomes an empty uncached list', async () => {
     vi.stubEnv('NEXT_PHASE', 'phase-production-build');
