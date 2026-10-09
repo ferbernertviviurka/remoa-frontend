@@ -50,7 +50,8 @@ describe('Rail Calendário (F25 FR-1)', () => {
     pathname = '/app/calendario';
     const { rerender } = render(<Rail />);
     const links = screen.getAllByRole('link');
-    expect(links).toHaveLength(9); // Progresso is still on the rail (Q-107)
+    expect(links).toHaveLength(8);
+    expect(screen.queryByRole('link', { name: 'Progresso' })).toBeNull();
     expect(links[3]).toHaveAccessibleName('Calendário');
     expect(links[3]).toHaveAttribute('aria-current', 'page');
     expect(screen.queryByText('Há compromisso nas próximas 24 horas')).toBeNull();

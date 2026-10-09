@@ -64,7 +64,8 @@ test.describe('responsivo 390x844', () => {
     await expect(page.locator('nav[aria-label="Navegação inferior"]')).toHaveCount(0);
     await page.getByRole('button', { name: 'Abrir menu' }).click();
     const nav = page.getByRole('dialog').getByRole('navigation');
-    for (const n of ['Hoje', 'Mapas', 'Revisar', 'Enamed', 'Progresso', 'Loja', 'Conta']) await expect(nav.getByRole('link', { name: new RegExp(n) })).toBeVisible();
+    for (const n of ['Hoje', 'Mapas', 'Revisar', 'Enamed', 'Loja', 'Conta']) await expect(nav.getByRole('link', { name: new RegExp(n) })).toBeVisible();
+    await expect(nav.getByRole('link', { name: 'Progresso' })).toHaveCount(0);
     await page.keyboard.press('Escape');
     await expect(page.locator('header').getByRole('link', { name: 'Remoa, ir para Hoje' })).toBeVisible();
     await expect(async () => { // hub cached 60 s on the API (a fetch before seedMock cached 0): reload until the badge shows

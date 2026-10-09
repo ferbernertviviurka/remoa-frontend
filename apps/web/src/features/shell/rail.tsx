@@ -13,7 +13,6 @@ export const items: { href: string; icon: IconName; label: StringKey }[] = [
   { href: '/app/revisar', icon: 'bolt', label: 'rail.review' },
   { href: '/app/calendario', icon: 'calendar', label: 'calendar.navLabel' },
   { href: '/app/cobertura', icon: 'bars', label: 'rail.enamed' },
-  { href: '/app/progresso', icon: 'list', label: 'shell.nav.progress' },
   { href: '/app/banco-de-questoes', icon: 'list', label: 'questions.nav' },
   { href: '/app/provas', icon: 'clock', label: 'questions.proofsNav' },
   { href: '/app/loja', icon: 'store', label: 'rail.store' },

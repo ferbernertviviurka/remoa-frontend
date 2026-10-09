@@ -38,10 +38,11 @@ test('mapa no celular: tela cheia, cabeçalho, zoom, pan, vista salva, lista, as
     if (box && (await b.isVisible())) expect(Math.min(box.width, box.height), (await b.getAttribute('aria-label')) ?? '').toBeGreaterThanOrEqual(44);
   }
 
-  // zoom buttons: 25% steps
+  // zoom buttons: 25% steps; wait for each step so a tap mid-animation is not read as the settled value
   await page.getByRole('button', { name: 'Aproximar' }).click();
   await expect(zoomText(page)).toContainText('125%');
   await page.getByRole('button', { name: 'Afastar' }).click();
+  await expect(zoomText(page)).toContainText('100%');
   await page.getByRole('button', { name: 'Afastar' }).click();
   await expect(zoomText(page)).toContainText('75%');
 

@@ -54,13 +54,13 @@ test('sem navegação global, texto >= 12 px e zoom semântico (100%, 80%, < 80%
   await expect(zoom(page)).toContainText('100%');
 });
 
-test('zoom 40-180%, duplo toque, pinça (ctrl+roda) e botões; arrastar não seleciona', async ({ page, request, browserName }) => {
+test('zoom 10-300% em passos de 25, duplo toque, pinça (ctrl+roda) e botões; arrastar não seleciona', async ({ page, request, browserName }) => {
   test.setTimeout(150_000);
   await open(page, request);
   for (let i = 0; i < 6; i++) await page.getByRole('button', { name: 'Afastar' }).click();
-  await expect(zoom(page)).toContainText('40%');
+  await expect(zoom(page)).toContainText('10%');
   for (let i = 0; i < 8; i++) await page.getByRole('button', { name: 'Aproximar' }).click();
-  await expect(zoom(page)).toContainText('180%');
+  await expect(zoom(page)).toContainText('200%');
   await page.getByRole('button', { name: 'Ajustar à tela' }).click();
   await page.waitForTimeout(700);
   const z0 = await zoom(page).innerText();

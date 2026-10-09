@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import type {QuestionAdminCatalogItem,QuestionAdminCatalogQuery,QuestionSource} from '@remoa/contracts';
-import {Alert,Button,Input,Select,Tag} from '@remoa/ui';
+import {Alert,Button,Empty,Input,Select,SkeletonBlock,SkeletonRegion,Tag} from '@remoa/ui';
 import {t} from '@remoa/strings';
 import {actionLink,panel} from '@/features/questions/shared';
 import {listQuestionCatalog} from './catalog-api';
@@ -41,7 +41,7 @@ export function QuestionCatalogBrowser({admin,enabled=true,initialStatus}:{admin
    <div className="grid min-w-0 gap-4 md:grid-cols-2"><Select label={tq('questionsAdmin.catalogStatus')} value={status} onValueChange={setStatus} options={[{value:'all',label:tq('questionsAdmin.catalogAllStatuses')},...statuses.map(value=>({value,label:tq(`questionsAdmin.catalogStatuses.${value}`)}))]}/><Select label={tq('questionsAdmin.catalogVersions')} value={versions} onValueChange={value=>setVersions(value as typeof versions)} options={(['latest','all'] as const).map(value=>({value,label:tq(`questionsAdmin.versionScopes.${value}`)}))}/><Select label={tq('questionsAdmin.catalogType')} value={type} onValueChange={setType} options={[{value:'all',label:tq('questionsAdmin.catalogAllTypes')},{value:'objective',label:tq('questionsAdmin.catalogTypes.objective')},{value:'discursive',label:tq('questionsAdmin.catalogTypes.discursive')}]}/>{admin?<Select label={tq('questionsAdmin.source')} value={sourceId} onValueChange={setSourceId} options={[{value:'all',label:tq('questionsAdmin.catalogAllSources')},...sources.map(source=>({value:source.id,label:source.name}))]}/>:null}</div>
    <p className="text-sm text-muted">{tq(versions==='latest'?'questionsAdmin.catalogLatestHelp':'questionsAdmin.catalogAllHelp')}</p>
    {sourceError?<Alert tone="watch" role="alert" title={sourceError}><Button variant="secondary" onClick={()=>setSourceRetry(value=>value+1)}>{tq('questionsAdmin.catalogRetrySources')}</Button></Alert>:null}
-   {loading?<p role="status">{t('common.loading')}</p>:items.length===0&&!error?<p>{tq('questionsAdmin.catalogEmpty')}</p>:items.map(item=><article key={item.id} className={`${panel} min-w-0 space-y-3`}>
+   {loading?<SkeletonRegion label={t('common.loading')}><div className="flex flex-col gap-4"><SkeletonBlock height={120} radius={24} /><SkeletonBlock height={120} radius={24} /></div></SkeletonRegion>:items.length===0&&!error?<Empty title={tq('questionsAdmin.catalogEmpty')} />:items.map(item=><article key={item.id} className={`${panel} min-w-0 space-y-3`}>
     <div className="flex flex-wrap gap-2"><Tag>{tq('questionsAdmin.publicVersion',{n:item.version})}</Tag><Tag tone={item.catalogStatus==='published'?'steady':'unknown'}>{tq(`questionsAdmin.catalogStatuses.${item.catalogStatus}`)}</Tag><Tag tone="unknown">{tq(`questionsAdmin.catalogAvailability.${item.availability}`)}</Tag></div>
     <p className="whitespace-pre-wrap break-words">{item.stemPreview}</p><p className="break-words text-sm text-muted">{item.sourceLabel??tq('questionsAdmin.catalogUnknownSource')}</p><p className="text-sm text-muted">{tq('questionsAdmin.rights')}: {tq(`questionsAdmin.rightsLabels.${item.rightsStatus}`)}</p>
     <Link className={actionLink} href={`/app/editorial/questoes/${item.id}`}>{tq('questionsAdmin.editorialDetail')}</Link>

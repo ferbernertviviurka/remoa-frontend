@@ -43,7 +43,7 @@ test.describe('desktop rail', () => {
     await accountUser(page, request);
     await page.goto('/app/hoje');
     const rail = page.getByRole('navigation', { name: 'Principal' });
-    for (const href of ['/app/mapas', '/app/revisar', '/app/cobertura', '/app/progresso', '/app/loja', '/app/hoje']) {
+    for (const href of ['/app/mapas', '/app/revisar', '/app/cobertura', '/app/loja', '/app/hoje']) {
       const r = await clickAndProbe(page, rail.locator(`a[href="${href}"]`), href);
       expect.soft(r.content, href).toBeGreaterThan(0);
       expect.soft(r.active, href).not.toBeNull();

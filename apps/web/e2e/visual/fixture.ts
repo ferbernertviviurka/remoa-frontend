@@ -21,6 +21,12 @@ export async function signUpAndLogin(page: Page, request: APIRequestContext) {
   await request.post(`${API}/v1/onboarding/complete`, { headers: { authorization: `Bearer ${token}` } }).catch(() => undefined); // F12: skip the onboarding redirect
   await request.patch(`${API}/v1/account/profile`, { headers: { authorization: `Bearer ${token}` }, data: { name: 'Aluna Teste', phone: '11912345678', userType: 'aluno' } }); // G20: name, phone and userType are required before /app
   await expect(async () => { // retried: a submit before hydration is a native GET
+    // A slow Hoje compile can still be navigating when this block retries; opening /entrar then aborts that navigation.
+    if (/\/app\/(hoje|mapas)/.test(page.url())) {
+      await page.goto('/app/mapas');
+      await expect(page).toHaveURL(/\/app\/mapas/, { timeout: 15_000 });
+      return;
+    }
     await page.goto('/entrar');
     await formReady(page);
     await page.getByLabel('E-mail').fill(email);
