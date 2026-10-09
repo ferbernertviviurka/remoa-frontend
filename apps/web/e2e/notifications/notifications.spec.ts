@@ -16,6 +16,7 @@ async function seed(userId: string, n: number) {
 const idOf = (email: string) => psql(`select id from auth.users where email='${email}'`);
 
 test('bell: badge, popover, mark read, open the destination; page: remove and preferences', async ({ page }) => {
+  test.setTimeout(180_000); // signup plus the 70 s badge poll must fit; the default 90 s cuts the poll short
   const email = `e2e-notif-${rnd()}@remoa.test`;
   await signUpViaForm(page, email);
   await seed(idOf(email), 3);

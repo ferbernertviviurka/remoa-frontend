@@ -75,11 +75,11 @@ test('/mapas-prontos público: aprovado com tag Top 10 e amostra de 10 cards; se
   mk(`rascunho-${stamp}`, `Rascunho ${stamp}`, 'seed_draft');
   for (let n = 1; n <= 12; n++) psql(`insert into cards (board_id, type, title, back, status, "order", path_order) values ('${ok}', 'concept', 'Amostra ${n}', 'Verso', 'approved', ${n}, ${n})`);
 
-  // ISR (revalidate 1h): the rows went in by SQL, so drop the cached list the way the API's invalidate() does (needs REVALIDATE_SECRET, same as the web server)
-  if (process.env.REVALIDATE_SECRET) {
-    const r = await request.post('/api/revalidate', { headers: { authorization: `Bearer ${process.env.REVALIDATE_SECRET}` }, data: { tags: ['landing'], paths: ['/mapas-prontos'] } });
-    expect(r.status()).toBe(200);
-  }
+  // ISR (revalidate 1h): the rows went in by SQL, so drop the cached list the way the API's invalidate() does.
+  const secret = process.env.REVALIDATE_SECRET;
+  expect(secret, 'REVALIDATE_SECRET').toBeTruthy();
+  const r = await request.post('/api/revalidate', { headers: { authorization: `Bearer ${secret}` }, data: { tags: ['landing'], paths: ['/mapas-prontos'] } });
+  expect(r.status()).toBe(200);
   const anon = await (await browser.newContext()).newPage();
   await anon.goto('/mapas-prontos');
   const item = anon.getByRole('listitem').filter({ hasText: `Pronto ${stamp}` });

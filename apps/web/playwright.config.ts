@@ -16,6 +16,8 @@ const phone = ['**/mobile-review.spec.ts', '**/pwa.spec.ts', '**/map-mobile/*.sp
 
 export default defineConfig({
   testDir: 'e2e',
+  // Unit files (`*.test.ts`) live next to fixtures under e2e/. Playwright's default also matches them and aborts the run when Vitest's expect loads outside Vitest.
+  testMatch: '**/*.spec.ts',
   // 5 workers share one `next dev`: cold route compiles under load made boards/map specs hit the default 30s (flake, not a product bug)
   timeout: 90_000,
   // next dev compiles each route on first hit; the default 5s flakes on a cold server (CI)
