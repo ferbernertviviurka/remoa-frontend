@@ -177,4 +177,37 @@ export const landingExtras = {
     kinds: ['Prova', 'Trabalho', 'Data importante', 'Plantão', 'Pessoal'],
     kindsNote: 'Veja em mês, semana, agenda ou galeria, e anexe uma imagem ao compromisso.',
   },
+  bank: {
+    eyebrow: 'Banco de questões',
+    title: 'Pratique por assunto, no modo estudo ou em simulado.',
+    lead: 'Filtre o acervo, responda no seu ritmo e volte só ao que errou.',
+    playerLabel: 'Animação em três passos: filtrar questões por assunto, responder no modo estudo e rever o caderno de erros.',
+    preview: 'Prévia',
+    windowTitle: 'Remoa · Banco de questões',
+    steps: [
+      { title: 'Filtre por assunto', text: 'Escolha a área e o tema e monte o treino com o que quer praticar.' },
+      { title: 'Estudo ou simulado', text: 'No estudo a correção vem na hora. No simulado, só no fim.' },
+      { title: 'Caderno de erros', text: 'O que você errou fica separado para revisar de novo.' },
+    ],
+    play: {
+      compose: 'Monte o treino',
+      composeText: 'Os filtros escolhidos entram na próxima sessão.',
+      subjects: ['Clínica Médica', 'Sepse', 'Estudo'],
+      stem: 'Adulto com foco urinário provável e disfunção orgânica, com diagnóstico de sepse. Qual é a conduta quanto ao antimicrobiano?',
+      options: [
+        { letter: 'A', text: 'Aguardar o resultado das culturas' },
+        { letter: 'B', text: 'Iniciar imediatamente, idealmente em até 1 hora' },
+        { letter: 'C', text: 'Iniciar após 6 horas de observação' },
+        { letter: 'D', text: 'Iniciar só se houver choque' },
+      ],
+      correct: 'Você acertou',
+      notebook: 'Caderno de erros',
+      score: '3 de 4',
+      rows: [
+        { subject: 'Sepse', note: 'Para revisar' },
+        { subject: 'Choque séptico', note: 'Para revisar' },
+        { subject: 'Triagem', note: 'Para revisar' },
+      ],
+    },
+  },
 } as const;

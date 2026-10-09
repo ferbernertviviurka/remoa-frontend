@@ -12,11 +12,12 @@ import type { HeaderLabelKey } from './header-labels';
 
 const ANCHORS = [
   ['como-funciona', 'landing.nav.anchors.howWorks'],
+  ['banco', 'landing.nav.anchors.bank'],
   ['planos', 'landing.nav.anchors.plans'],
   ['faq', 'landing.nav.anchors.faq'],
 ] as const;
 /** Sections grouped under the "Funcionalidades" mega menu; the trigger lights up while one of them is in view. */
-const FEATURE_SECTIONS = ['recursos', 'ia', 'enamed', 'calendario'];
+const FEATURE_SECTIONS = ['recursos', 'banco', 'ia', 'enamed', 'calendario'];
 const SPY = ['como-funciona', ...FEATURE_SECTIONS, 'planos', 'faq'];
 const MEGA = [
   ['map', 'maps', '/#recurso-map'],
@@ -28,6 +29,7 @@ const MEGA = [
   ['pdf', 'upload', '/#ia'],
   ['questions', 'sparkle', '/#ia'],
   ['summary', 'list', '/#ia'],
+  ['bank', 'list', '/#banco'],
   ['ready', 'book', '/mapas-prontos'],
   ['calendar', 'calendar', '/#calendario'],
 ] as const;

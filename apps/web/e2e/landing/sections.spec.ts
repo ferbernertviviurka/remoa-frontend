@@ -12,12 +12,12 @@ test.describe('desktop', () => {
     await gotoLanding(page, URL);
     await page.waitForLoadState('networkidle'); // keys before hydration are lost
     const tabs = page.locator('#recursos').getByRole('tab');
-    await expect(tabs).toHaveCount(6);
+    await expect(tabs).toHaveCount(7);
     await tabs.first().focus();
     await page.keyboard.press('ArrowDown');
     await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true');
     await page.keyboard.press('End');
-    await expect(tabs.nth(5)).toHaveAttribute('aria-selected', 'true');
+    await expect(tabs.nth(6)).toHaveAttribute('aria-selected', 'true');
     await page.keyboard.press('Home');
     await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
     const sent = await page.evaluate(() => window.__remoaEvents?.map((e) => e.event));

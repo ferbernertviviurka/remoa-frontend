@@ -176,6 +176,13 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart, ch
                 </span>
               </Link>
             ))}
+            <Link href="/app/banco-de-questoes" className="lift flex items-center gap-3.5 rounded-[18px] bg-canvas p-3 text-ink no-underline">
+              <span aria-hidden="true" className="flex size-11 items-center justify-center rounded-[14px] bg-primary-tint text-primary-deep"><Icon name="list" size={22} /></span>
+              <span className="flex flex-col leading-[1.3]">
+                <span className="font-bold">{t('questions.title')}</span>
+                <span className="text-[13px] text-muted">{t('questions.subtitle')}</span>
+              </span>
+            </Link>
             <Link href="/app/indicar?de=home" className="lift flex items-center gap-3.5 rounded-[18px] bg-canvas p-3 text-ink no-underline">
               <span aria-hidden="true" className="flex size-11 items-center justify-center rounded-[14px] bg-primary-tint text-primary-deep"><Icon name="gift" size={22} /></span>
               <span className="flex flex-col leading-[1.3]">

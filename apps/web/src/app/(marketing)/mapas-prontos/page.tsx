@@ -1,6 +1,6 @@
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
-import { getPublicSeeds } from '@/features/library/public-api';
+import { loadPublicSeeds } from '@/features/library/public-api';
 import { PublicSeedList } from '@/features/library/public-seeds';
 import { siteUrl } from '@/lib/seo/site';
 
@@ -14,5 +14,5 @@ export const metadata = {
 };
 
 export default async function Page() {
-  return <PublicSeedList seeds={await getPublicSeeds()} />;
+  return <PublicSeedList seeds={await loadPublicSeeds()} />;
 }

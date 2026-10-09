@@ -55,16 +55,22 @@ describe('Banco de questões', () => {
     expect(bankCalls()[0]!.path).toBe('/v1/challenge-ai/bank');
   });
 
+  const pick = async (name: string, option: string) => {
+    fireEvent.keyDown(screen.getByRole('combobox', { name }), { key: 'Enter' });
+    fireEvent.keyDown(await screen.findByRole('option', { name: option }), { key: 'Enter' });
+  };
+
   it('filtros viram parâmetros da consulta', async () => {
+    Element.prototype.scrollIntoView ??= () => undefined;
     render(<BankScreen />);
     await screen.findByRole('article', { name: 'Enunciado da questão 1' });
-    fireEvent.click(screen.getByRole('button', { name: 'Difícil' }));
+    await pick('Dificuldade', 'Difícil');
     await waitFor(() => expect(bankCalls().at(-1)!.path).toBe('/v1/challenge-ai/bank?difficulty=hard'));
-    fireEvent.click(screen.getByRole('button', { name: 'Discursiva' }));
+    await pick('Tipo', 'Discursiva');
     await waitFor(() => expect(bankCalls().at(-1)!.path).toBe('/v1/challenge-ai/bank?difficulty=hard&type=discursive'));
-    fireEvent.click(screen.getByRole('button', { name: 'Rascunho' }));
+    await pick('Status', 'Rascunho');
     await waitFor(() => expect(bankCalls().at(-1)!.path).toBe('/v1/challenge-ai/bank?difficulty=hard&type=discursive&status=draft'));
-    expect(screen.getByRole('button', { name: 'Difícil' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('combobox', { name: 'Dificuldade' })).toHaveTextContent('Difícil');
   });
 
   it('filtro de mapa usa o id do mapa', async () => {
@@ -83,7 +89,8 @@ describe('Banco de questões', () => {
     await screen.findByRole('article', { name: 'Enunciado da questão 1' });
     fireEvent.change(screen.getByRole('searchbox', { name: 'Buscar no enunciado' }), { target: { value: 'sepse' } });
     await waitFor(() => expect(bankCalls().at(-1)!.path).toBe('/v1/challenge-ai/bank?q=sepse'));
-    fireEvent.click(screen.getByRole('button', { name: 'IA' }));
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Origem' }), { key: 'Enter' });
+    fireEvent.keyDown(await screen.findByRole('option', { name: 'IA' }), { key: 'Enter' });
     await waitFor(() => expect(bankCalls().at(-1)!.path).toBe('/v1/challenge-ai/bank?source=ai&q=sepse'));
     fireEvent.keyDown(screen.getByRole('combobox', { name: 'Área' }), { key: 'Enter' });
     fireEvent.keyDown(await screen.findByRole('option', { name: 'Clínica Médica' }), { key: 'Enter' });

@@ -9,8 +9,8 @@ import { RevealFallback } from './use-reveal-fallback';
 import '../shell/shell.css';
 
 /** ids match the `feature_tab_selected` enum in contracts. */
-export const FEATURE_IDS = ['map', 'cards', 'challenge', 'grading', 'fsrs', 'enamed'] as const;
-const FILES = ['mapa', 'cards', 'desafio', 'correcao', 'fsrs', 'enamed'];
+export const FEATURE_IDS = ['map', 'cards', 'challenge', 'grading', 'fsrs', 'enamed', 'bank'] as const;
+const FILES = ['mapa', 'cards', 'desafio', 'correcao', 'fsrs', 'enamed', 'questoes'];
 const AUTO_MS = 4000;
 
 /**

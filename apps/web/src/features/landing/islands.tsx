@@ -38,6 +38,7 @@ export function island<P extends object>(load: () => Promise<ComponentType<P>>, 
 }
 
 export const FeaturesIsland = island(() => import('./sections/features-section').then((m) => m.FeaturesSection));
+export const BankIsland = island(() => import('./bank/bank-section').then((m) => m.BankSection));
 export const IaIsland = island(() => import('./ia/ia-section').then((m) => m.IaSection));
 export const EnamedIsland = island(() => import('./enamed/enamed-section').then((m) => m.EnamedSection));
 export const CalendarIsland = island(() => import('./calendar/calendar-section').then((m) => m.CalendarSection));

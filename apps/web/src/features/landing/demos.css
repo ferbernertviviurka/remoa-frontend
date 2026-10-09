@@ -1,9 +1,9 @@
 /* G24 landing demos. Animated properties: transform, opacity, clip-path only. */
-.iaDemo, .caDemo { height: 540px; }
-@media (min-width: 768px) { .iaDemo, .caDemo { height: 640px; } }
+.iaDemo, .caDemo, .bqDemo { height: 540px; }
+@media (min-width: 768px) { .iaDemo, .caDemo, .bqDemo { height: 640px; } }
 .lp-ia .k { animation-duration: 20s; animation-timing-function: linear; animation-iteration-count: infinite; }
-.lp-cal .k { animation-duration: 15s; animation-timing-function: linear; animation-iteration-count: infinite; }
-.lp-ia.is-paused .k, .lp-cal.is-paused .k, .lp-ia.is-paused .iaDots { animation-play-state: paused; }
+.lp-cal .k, .lp-bank .k { animation-duration: 15s; animation-timing-function: linear; animation-iteration-count: infinite; }
+.lp-ia.is-paused .k, .lp-cal.is-paused .k, .lp-bank.is-paused .k, .lp-ia.is-paused .iaDots { animation-play-state: paused; }
 .stepGlow, .toggleFill { opacity: 0; }
 .iaDots { animation-name: iaDots; animation-duration: .9s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
 .iaDots.d1 { animation-delay: .15s; }
@@ -166,9 +166,9 @@
 .calK30{animation-name:calK30}
 .calProg{animation-name:calProg}
 @media (prefers-reduced-motion: reduce) {
-  .lp-ia .k, .lp-cal .k, .iaDemo .k, .caDemo .k, .iaDots { animation: none !important; }
-  .iaDemo .ia-sc, .caDemo .ca-sc { display: none !important; }
-  .iaDemo .ia-sc3, .caDemo .ca-sc2 { display: flex !important; }
-  .lp-ia .iaOn3, .lp-cal .calOn2, .caDemo .toggleFill { opacity: 1; }
+  .lp-ia .k, .lp-cal .k, .lp-bank .k, .iaDemo .k, .caDemo .k, .bqDemo .k, .iaDots { animation: none !important; }
+  .iaDemo .ia-sc, .caDemo .ca-sc, .bqDemo .bq-sc { display: none !important; }
+  .iaDemo .ia-sc3, .caDemo .ca-sc2, .bqDemo .bq-sc2 { display: flex !important; }
+  .lp-ia .iaOn3, .lp-cal .calOn2, .lp-bank .calOn2, .caDemo .toggleFill { opacity: 1; }
   .caDemo .knob { transform: translateX(22px); }
 }
