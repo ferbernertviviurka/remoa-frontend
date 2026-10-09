@@ -16,6 +16,7 @@ export type PostResult = { kind: 'post'; post: BlogPublicPost } | { kind: 'redir
 /**
  * null only when the API answered 404 (cacheable, FR-15). Network, timeout, 5xx or an invalid body THROW: Next keeps the last good
  * ISR page and never stores the failure (D-968); with no previous version the error boundary shows, not a cached 404.
+ * During `next build` the same failure returns null and calls `noStore`, so a hung API cannot fail the deploy (D-1677).
  */
 async function get<T>(path: string, schema: z.ZodType<T, z.ZodTypeDef, unknown>, init: RequestInit & { next?: { tags?: string[]; revalidate?: number } }): Promise<T | null> {
   try {
