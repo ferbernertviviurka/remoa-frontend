@@ -1,4 +1,4 @@
-import { apiBase } from '@/lib/api';
+import { apiBase, publicFetchTimeout } from '@/lib/api/base';
 import { noStore } from '@/lib/cache';
 import { publicPriceBookSchema, type PublicPriceBook } from '@remoa/contracts';
 
@@ -11,7 +11,7 @@ export const pricebookPath = (variant: '29' | '49' | null) => `/v1/public/priceb
 /** Server-side, cached 1 h (FR-1). null on any failure: the plans section renders its "unavailable" state, never cached (an API outage must not stick for an hour). */
 export async function loadPublicPriceBook(variant: '29' | '49' | null): Promise<LandingPriceBook | null> {
   try {
-    const res = await fetch(`${apiBase()}${pricebookPath(variant)}`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${apiBase()}${pricebookPath(variant)}`, { signal: publicFetchTimeout(), next: { revalidate: 3600 } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const body = (await res.json()) as { ok?: boolean; data?: unknown };
     return landingPriceBookSchema.parse(body.data);

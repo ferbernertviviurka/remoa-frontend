@@ -2,13 +2,13 @@
 import { z } from 'zod';
 import { blogListItemSchema, type BlogListItem } from '@remoa/contracts';
 import { t } from '@remoa/strings/full';
-import { apiBase } from '@/lib/api/base';
+import { apiBase, publicFetchTimeout } from '@/lib/api/base';
 import { buildRss } from '@/lib/seo/rss';
 import { siteUrl } from '@/lib/seo/site';
 
 async function feedItems(): Promise<BlogListItem[]> {
   try {
-    const res = await fetch(`${apiBase()}/v1/public/blog/feed`, { next: { tags: ['blog', 'feed'], revalidate: 86_400 } });
+    const res = await fetch(`${apiBase()}/v1/public/blog/feed`, { signal: publicFetchTimeout(), next: { tags: ['blog', 'feed'], revalidate: 86_400 } });
     if (!res.ok) return [];
     return z.object({ data: z.array(blogListItemSchema) }).parse(await res.json()).data.slice(0, 20);
   } catch {

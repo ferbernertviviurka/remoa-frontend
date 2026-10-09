@@ -1,13 +1,13 @@
 // /llms.txt (llmstxt.org): what Remoa is, plus links to the public pages and the newest posts. Cached by the `blog`/`feed` tags, like /feed.xml.
 import { z } from 'zod';
 import { blogListItemSchema, type BlogListItem } from '@remoa/contracts';
-import { apiBase } from '@/lib/api/base';
+import { apiBase, publicFetchTimeout } from '@/lib/api/base';
 import { buildLlmsTxt } from '@/lib/seo/llms';
 import { siteUrl } from '@/lib/seo/site';
 
 async function posts(): Promise<BlogListItem[]> {
   try {
-    const res = await fetch(`${apiBase()}/v1/public/blog/feed`, { next: { tags: ['blog', 'feed'], revalidate: 86_400 } });
+    const res = await fetch(`${apiBase()}/v1/public/blog/feed`, { signal: publicFetchTimeout(), next: { tags: ['blog', 'feed'], revalidate: 86_400 } });
     if (!res.ok) return [];
     return z.object({ data: z.array(blogListItemSchema) }).parse(await res.json()).data;
   } catch {
