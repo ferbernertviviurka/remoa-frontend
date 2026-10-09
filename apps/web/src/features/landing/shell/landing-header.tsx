@@ -28,6 +28,7 @@ const MEGA = [
   ['pdf', 'upload', '/#ia'],
   ['questions', 'sparkle', '/#ia'],
   ['summary', 'list', '/#ia'],
+  ['bank', 'help', '/#recurso-bank'],
   ['ready', 'book', '/mapas-prontos'],
   ['calendar', 'calendar', '/#calendario'],
 ] as const;

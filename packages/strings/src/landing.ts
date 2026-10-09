@@ -39,6 +39,7 @@ export const landing = {
       pdf: { title: 'PDF vira cards', text: 'A IA cria cards da sua aula' },
       questions: { title: 'Perguntas por IA', text: 'Objetivas e discursivas' },
       summary: { title: 'Resumo do mapa', text: 'Cada ponto cita o card' },
+      bank: { title: 'Banco de questões', text: 'Provas por assunto, no seu ritmo' },
       ready: { title: 'Mapas prontos', text: 'Os 10 temas que mais caem' },
       calendar: { title: 'Calendário', text: 'Provas e prazos com aviso' },
     },
@@ -155,7 +156,7 @@ export const landing = {
     ],
   },
 
-  // Feature explorer section (6 resources tabs) — exact copy from mock #recursos
+  // Feature explorer section — exact copy from mock #recursos, plus the question bank
   explorer: {
     title: 'Tudo o que o seu estudo para a residência precisa, no mesmo mapa.',
     lead: 'Escolha um recurso e veja como ele aparece dentro da plataforma.',
@@ -220,6 +221,15 @@ export const landing = {
           'Cobertura de conteúdo não é peso de prova',
         ],
       },
+      {
+        title: 'Banco de questões',
+        description: 'Pratique por assunto, no modo estudo ou em simulado. A correção mostra o que acertou e o que revisar.',
+        benefits: [
+          'Filtre por assunto e monte o treino',
+          'Estudo com correção na hora, ou simulado só no fim',
+          'Caderno de erros com o que você errou',
+        ],
+      },
     ],
     tablistAria: 'Recursos',
   },
@@ -233,6 +243,7 @@ export const landing = {
     gradingApproved: 'A correção com fonte: resposta, veredito parcial e rubrica revisada por médico',
     fsrs: 'A curva de lembrança estimada com revisões e o mapa de calor por estado',
     enamed: 'A cobertura da matriz do Enamed por grande área',
+    bank: 'O banco de questões, com uma questão e as alternativas',
   },
 
   // Grading section — default safe, approved variant with medical claims
@@ -355,6 +366,7 @@ export const landing = {
       { feature: 'Oclusão de imagem', remoa: 'Sim', anki: 'Sim', notion: 'Não nativo' },
       { feature: 'Cobertura por tema do Enamed', remoa: 'Sim', anki: 'Não nativo', notion: 'Não nativo' },
       { feature: 'Importa baralho do Anki (.apkg)', remoa: 'Sim', anki: 'Formato próprio', notion: 'Não nativo' },
+      { feature: 'Banco de questões', remoa: 'Sim', anki: 'Não nativo', notion: 'Não nativo' },
     ],
   },
 

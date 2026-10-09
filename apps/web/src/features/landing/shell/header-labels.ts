@@ -5,7 +5,7 @@ const KEYS = [
   'landing.nav.anchors.ia', 'landing.nav.anchors.enamed', 'landing.nav.anchors.calendar',
   'landing.nav.anchors.plans', 'landing.nav.anchors.faq', 'landing.nav.menu.aria', 'landing.nav.navLabel',
   'landing.nav.openApp', 'landing.nav.account', 'landing.nav.signIn', 'landing.nav.createMap', 'landing.nav.mega.label',
-  ...(['map', 'cards', 'challenge', 'grading', 'fsrs', 'enamed', 'pdf', 'questions', 'summary', 'ready', 'calendar'] as const)
+  ...(['map', 'cards', 'challenge', 'grading', 'fsrs', 'enamed', 'pdf', 'questions', 'summary', 'bank', 'ready', 'calendar'] as const)
     .flatMap((k) => [`landing.nav.mega.${k}.title`, `landing.nav.mega.${k}.text`] as const),
 ] as const;
 export type HeaderLabelKey = (typeof KEYS)[number];
