@@ -13,7 +13,7 @@ export const questions = {
   typeLabel: { objective: 'Objetiva', discursive: 'Discursiva' }, reviewCards: 'Adicionar cards à revisão', reviewAdded: '{n} cards adicionados à revisão',
      eyebrow: 'Seu aprendizado, em prática', 
   create: 'Criar treino', explore: 'Acervo Remoa', mine: 'Minhas questões', mineAi: 'Minhas questões IA', errors: 'Caderno de erros', favorites: 'Favoritas', doubts: 'Com dúvida', sessions: 'Meus simulados',
-  search: 'Buscar questão ou assunto', searchPlaceholder: 'Buscar no acervo', all: 'Todas', origin: 'Origem', area: 'Área', topic: 'Assunto', difficulty: 'Dificuldade', state: 'Situação', year: 'Ano', map: 'Mapa', institution: 'Instituição', type: 'Tipo',
+  search: 'Buscar questão ou assunto', searchPlaceholder: 'Buscar no acervo', filters: 'Filtros', all: 'Todas', origin: 'Origem', area: 'Área', topic: 'Assunto', difficulty: 'Dificuldade', state: 'Situação', year: 'Ano', map: 'Mapa', institution: 'Instituição', type: 'Tipo',
   source: { official_exam: 'Prova oficial', remoa_authored: 'Autoral Remoa', ai_generated: 'Gerada por IA', user_authored: 'Criada pelo aluno' },
   visibility: { private: 'Privada', public: 'Pública' }, difficultyLabel: { easy: 'Fácil', medium: 'Intermediária', hard: 'Difícil' }, states: { unseen: 'Inéditas', answered: 'Respondidas', wrong: 'Erradas', favorite: 'Favoritas', doubtful: 'Com dúvida' },
   reviewed: 'Revisada', unreviewed: 'Sem revisão editorial', annulled: 'Anulada', unavailable: 'Indisponível', obsolete: 'Existe uma versão mais recente',

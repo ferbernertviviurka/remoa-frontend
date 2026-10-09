@@ -4,10 +4,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { questionBankItemPublicSchema, enamedTopicOptionSchema, questionDifficulties, questionSources, questionStatuses, questionTypes, type BoardSummary, type QuestionBankItemPublic } from '@remoa/contracts';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
-import { Alert, Button, Card, Empty, FilterChip, Input, Select, SkeletonBlock, SkeletonRegion, Tag, Textarea } from '@remoa/ui';
+import { Alert, Button, Card, Empty, Input, Select, SkeletonBlock, SkeletonRegion, Tag, Textarea } from '@remoa/ui';
 import { api } from '@/lib/api';
 
-const t = withStrings({ boards: more.boards, inspector: more.inspector, map: more.map });
+const t = withStrings({ boards: more.boards, inspector: more.inspector, map: more.map, questions: more.questions });
 
 type Difficulty = (typeof questionDifficulties)[number];
 type QType = (typeof questionTypes)[number];
@@ -141,48 +141,35 @@ export function BankScreen() {
   };
 
   const filtered = (Object.keys(NO_FILTERS) as (keyof Filters)[]).some((k) => filters[k] !== NO_FILTERS[k]);
-  const namedOptions = (rows: Named[]) => [{ value: ALL, label: t('boards.statusAll') }, ...rows.map((r) => ({ value: r.id, label: r.name }))];
+  const namedOptions = (rows: Named[]) => [{ value: ALL, label: t('questions.all') }, ...rows.map((r) => ({ value: r.id, label: r.name }))];
+  const choice = <T extends string>(label: string, value: T | 'all', values: readonly T[], name: (item: T) => string, onValueChange: (next: T | 'all') => void) => (
+    <Select label={label} value={value} onValueChange={(next) => onValueChange(next as T | 'all')} options={[{ value: ALL, label: t('questions.all') }, ...values.map((item) => ({ value: item, label: name(item) }))]} />
+  );
 
   return (
-    <div className="mx-auto flex w-full max-w-[1000px] flex-col gap-6 md:px-6 md:py-2">
+    <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 py-2 md:px-6">
       <header>
-        <h1 className="m-0 font-display text-[44px] font-extrabold leading-none tracking-[-0.03em]">{t('challengeAi.bankTitle')}</h1>
+        <p className="mb-3 text-xs font-bold uppercase tracking-[.12em] text-muted">{t('questions.eyebrow')}</p>
+        <h1 className="m-0 font-display text-[34px] font-extrabold leading-[1.1] tracking-[-0.03em] outline-none md:text-[44px]">{t('questions.title')}</h1>
+        <p className="mt-3 text-muted">{t('questions.subtitle')}</p>
       </header>
 
-      <section aria-label={t('challengeAi.bankTitle')} className="flex flex-wrap items-end gap-x-6 gap-y-4">
+      <section aria-label={t('questions.filters')} className="rounded-[26px] border border-border bg-surface p-5 md:p-6">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Input variant="search" label={t('challengeAi.search')} value={filters.q} onChange={(e) => set('q', e.target.value)} />
         <Select
           label={t('library.columns.map')}
           value={filters.board}
           onValueChange={(v) => set('board', v)}
-          options={[{ value: ALL, label: t('boards.statusAll') }, ...boards.map((b) => ({ value: b.id, label: b.title }))]}
+          options={[{ value: ALL, label: t('questions.all') }, ...boards.map((b) => ({ value: b.id, label: b.title }))]}
         />
         <Select label={t('challengeAi.filterArea')} value={filters.area} onValueChange={(v) => set('area', v)} options={namedOptions(areas)} />
         <Select label={t('challengeAi.filterDomain')} value={filters.domain} onValueChange={(v) => set('domain', v)} options={namedOptions(domains)} />
         <Select label={t('challengeAi.filterTopic')} value={filters.topic} onValueChange={(v) => set('topic', v)} options={namedOptions(topicOptions)} />
-        <div role="group" aria-label={t('challengeAi.origin')} className="flex flex-wrap gap-2">
-          <FilterChip pressed={filters.source === ALL} onClick={() => set('source', ALL)}>{t('boards.statusAll')}</FilterChip>
-          {questionSources.map((s) => (
-            <FilterChip key={s} pressed={filters.source === s} onClick={() => set('source', s)}>{t(`challengeAi.source.${s}`)}</FilterChip>
-          ))}
-        </div>
-        <div role="group" aria-label={`${t('challengeAi.difficulty.easy')} / ${t('challengeAi.difficulty.medium')} / ${t('challengeAi.difficulty.hard')}`} className="flex flex-wrap gap-2">
-          <FilterChip pressed={filters.difficulty === ALL} onClick={() => set('difficulty', ALL)}>{t('boards.statusAll')}</FilterChip>
-          {questionDifficulties.map((d) => (
-            <FilterChip key={d} pressed={filters.difficulty === d} onClick={() => set('difficulty', d)}>{t(`challengeAi.difficulty.${d}`)}</FilterChip>
-          ))}
-        </div>
-        <div role="group" aria-label={t('map.inspector.type')} className="flex flex-wrap gap-2">
-          <FilterChip pressed={filters.type === ALL} onClick={() => set('type', ALL)}>{t('boards.statusAll')}</FilterChip>
-          {questionTypes.map((k) => (
-            <FilterChip key={k} pressed={filters.type === k} onClick={() => set('type', k)}>{t(`challengeAi.type.${k}`)}</FilterChip>
-          ))}
-        </div>
-        <div role="group" aria-label={t('inspector.statusLabel')} className="flex flex-wrap gap-2">
-          <FilterChip pressed={filters.status === ALL} onClick={() => set('status', ALL)}>{t('boards.statusAll')}</FilterChip>
-          {questionStatuses.map((s) => (
-            <FilterChip key={s} pressed={filters.status === s} onClick={() => set('status', s)}>{statusLabel(s)}</FilterChip>
-          ))}
+        {choice(t('challengeAi.origin'), filters.source, questionSources, (s) => t(`challengeAi.source.${s}`), (next) => set('source', next))}
+        {choice(t('questions.difficulty'), filters.difficulty, questionDifficulties, (d) => t(`challengeAi.difficulty.${d}`), (next) => set('difficulty', next))}
+        {choice(t('questions.type'), filters.type, questionTypes, (k) => t(`challengeAi.type.${k}`), (next) => set('type', next))}
+        {choice(t('inspector.statusLabel'), filters.status, questionStatuses, statusLabel, (next) => set('status', next))}
         </div>
       </section>
 
