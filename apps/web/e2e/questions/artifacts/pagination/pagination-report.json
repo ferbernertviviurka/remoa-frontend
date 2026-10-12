@@ -1,0 +1,145 @@
+{
+  "kind": "production components in Vite harness, synthetic HTTP via page.route; no Next SSR/backend/DB",
+  "checks": [
+    {
+      "name": "imports: 65 rows load 25/25/15, keyboard-only, focus lands on first new row, no duplicates",
+      "viewport": "desktop",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 1440
+    },
+    {
+      "name": "imports: search resets the cursor and returns only matches",
+      "viewport": "desktop",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 1440
+    },
+    {
+      "name": "imports: filter change after page 2 refetches without cursor",
+      "viewport": "desktop",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 1440
+    },
+    {
+      "name": "imports: stale slow search never replaces the current one",
+      "viewport": "desktop",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 1440
+    },
+    {
+      "name": "imports: page-2 failure keeps loaded rows, shows alert, keyboard retry restores focus on the new row",
+      "viewport": "desktop",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 1440
+    },
+    {
+      "name": "imports: first-page 503 is an error with retry, never empty or legacy listing",
+      "viewport": "desktop",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 1440
+    },
+    {
+      "name": "imports: flag off never calls the paginated route",
+      "viewport": "desktop",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 1440
+    },
+    {
+      "name": "sessions: 45 load 20/20/5 including the old active one (server state), keyboard-only",
+      "viewport": "desktop",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 1440
+    },
+    {
+      "name": "sessions: status filter resets the cursor; page-2 503 keeps rows with retry; first-page 503 is an error",
+      "viewport": "desktop",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 1440
+    },
+    {
+      "name": "sessions: flag off never calls the history route",
+      "viewport": "desktop",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 1440
+    },
+    {
+      "name": "imports: 65 rows load 25/25/15, keyboard-only, focus lands on first new row, no duplicates",
+      "viewport": "mobile",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 390
+    },
+    {
+      "name": "imports: search resets the cursor and returns only matches",
+      "viewport": "mobile",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 390
+    },
+    {
+      "name": "imports: filter change after page 2 refetches without cursor",
+      "viewport": "mobile",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 390
+    },
+    {
+      "name": "imports: stale slow search never replaces the current one",
+      "viewport": "mobile",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 390
+    },
+    {
+      "name": "imports: page-2 failure keeps loaded rows, shows alert, keyboard retry restores focus on the new row",
+      "viewport": "mobile",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 390
+    },
+    {
+      "name": "imports: first-page 503 is an error with retry, never empty or legacy listing",
+      "viewport": "mobile",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 390
+    },
+    {
+      "name": "imports: flag off never calls the paginated route",
+      "viewport": "mobile",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 390
+    },
+    {
+      "name": "sessions: 45 load 20/20/5 including the old active one (server state), keyboard-only",
+      "viewport": "mobile",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 390
+    },
+    {
+      "name": "sessions: status filter resets the cursor; page-2 503 keeps rows with retry; first-page 503 is an error",
+      "viewport": "mobile",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 390
+    },
+    {
+      "name": "sessions: flag off never calls the history route",
+      "viewport": "mobile",
+      "passed": true,
+      "axe": 0,
+      "scrollWidth": 390
+    }
+  ]
+}
