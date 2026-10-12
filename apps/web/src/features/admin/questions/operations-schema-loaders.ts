@@ -1,6 +1,6 @@
 /** Lazy exact shared D-1804/D-1805 validators. */
 export {
- questionHashPrepareInputSchema,questionHashPrepareResultSchema,
+ questionHashPrepareInputSchema,questionHashPrepareResultSchema,questionInstitutionalApproveInputSchema,questionInstitutionalApproveResultSchema,
  questionAdminOutboxQuerySchema,questionAdminOutboxPageSchema,
  questionOutboxRecoverInputSchema,questionOutboxRecoverResultSchema,
  questionGenerationMetricsQuerySchema,questionGenerationMetricsSchema,

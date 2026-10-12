@@ -1,4 +1,5 @@
 'use client';
+import {isInstitutional,ValidationSeal} from './validation-seal';
 import {useEffect,useRef,useState} from 'react';
 import {t} from './labels';
 import {Alert,Button} from '@remoa/ui';
@@ -21,7 +22,7 @@ export function RecalculationPanel({sessionId,items=[]}:{sessionId:string;items?
     {snapshot?.originalNumber?<p className="text-sm text-muted">{t('questions.originalNumber',{n:snapshot.originalNumber})}</p>:null}
     {snapshot?<p className="whitespace-pre-wrap break-words">{snapshot.question.stem}</p>:null}
     <p className="font-bold">{t(`questions.recalculationOutcomes.${item.outcome}`)}</p><p className="text-sm">{t(`questions.recalculationReasons.${item.reasonCode}`)}</p><p className="text-xs text-muted">{t('questions.recalculationVersions',{original:item.originalQuestionVersion,current:item.comparedQuestionVersion??t('questions.recalculationNoVersion')})}</p>
-    {item.reference?<><p>{t('questions.correctKey',{key:item.reference.correctKey??'—'})}</p><p className="whitespace-pre-wrap break-words">{item.reference.explanation??t('questions.noExplanation')}</p><p className="text-xs text-muted">{t(item.reference.reviewed?'questions.reviewed':'questions.unreviewed')}{item.reference.reviewerName?` · ${item.reference.reviewerName}`:''}{item.reference.reviewerCrm?` · ${item.reference.reviewerCrm}`:''}{item.reference.referenceDate?` · ${item.reference.referenceDate}`:''}</p></>:null}
+    {item.reference?<><p>{t('questions.correctKey',{key:item.reference.correctKey??'—'})}</p><p className="whitespace-pre-wrap break-words">{item.reference.explanation??t('questions.noExplanation')}</p>{isInstitutional(item.reference.validation)?<p><ValidationSeal/>{item.reference.referenceDate?<span className="text-xs text-muted"> · {item.reference.referenceDate}</span>:null}</p>:<p className="text-xs text-muted">{t(item.reference.reviewed?'questions.reviewed':'questions.unreviewed')}{item.reference.reviewerName?` · ${item.reference.reviewerName}`:''}{item.reference.reviewerCrm?` · ${item.reference.reviewerCrm}`:''}{item.reference.referenceDate?` · ${item.reference.referenceDate}`:''}</p>}</>:null}
    </li>;})}</ul>
   </>:null}
  </section>;
