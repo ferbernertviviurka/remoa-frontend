@@ -1,0 +1,31 @@
+/** F33/G26 audited operations (D-1804 hash preparation, D-1805 generation outbox recovery). */
+export const questionsAdminOps = {
+  hashFilter: 'Hash do conteúdo', hashAll: 'Todos', hashMissing: 'Hash pendente', hashPresent: 'Hash preparado',
+  hashSelect: 'Selecionar para preparação: {n}', hashSelected: '{n} selecionadas (máximo 500)', hashLimit: 'Limite de 500 questões atingido.',
+  hashClear: 'Limpar seleção', hashPrepare: 'Preparar para edição', hashSelectionHelp: 'Marque as questões das páginas já carregadas. Só rascunhos institucionais sem hash entram.',
+  hashTitle: 'Preparar para edição', hashDescription: 'Calcula e grava apenas o hash do conteúdo atual de {n} rascunhos institucionais, para que possam ser editados.',
+  hashNotApproval: 'Isto não aprova, não revisa, não altera direitos nem publica. Fonte, direitos, revisão médica e publicação seguem seus próprios passos.',
+  hashSource: 'Vincular fonte (opcional)', hashNoSource: 'Não vincular fonte', hashSourceHelp: 'A fonte só é vinculada onde a questão ainda não tem uma. Os direitos da fonte não são alterados nem usados como autorização.',
+  hashConfirm: 'Preparar {n} questões', hashRetry: 'Tentar de novo com o mesmo pedido', hashRetryHelp: 'O pedido é reenviado com a mesma chave: nada é gravado duas vezes.',
+  hashNetwork: 'Não foi possível concluir o pedido. Ele pode ter sido aplicado; tente de novo com o mesmo pedido.',
+  hashResultTitle: 'Resultado por questão', hashReplayed: 'Este pedido já tinha sido processado; mostramos o resultado guardado.', hashDone: 'Concluir',
+  hashOutcomes: {
+    prepared: 'Preparada: hash gravado.', already_prepared: 'Já estava preparada: nada a gravar.', conflict: 'Mudou desde a leitura: recarregue o catálogo e tente de novo.',
+    source_mismatch: 'Já tem outra fonte vinculada: nada foi alterado.', not_eligible: 'Não elegível: só rascunhos institucionais não publicados.', not_found: 'Questão não encontrada.',
+  },
+  opsTab: 'Geração', opsTitle: 'Operação da geração de questões', opsDescription: 'Acompanhe a fila de recibos e promoções, a vazão e o custo. Só metadados, sem conteúdo.',
+  opsMetrics: 'Fila e vazão', opsWindow: 'Janela de métricas', opsWindowHours: 'Últimas {n} h', opsTargets: { 'question-receipt': 'Recibo da questão', 'question-promotion': 'Promoção da questão' },
+  opsBacklog: 'Pendentes {pending} · em andamento {leased} · esgotados {exhausted}', opsOldest: 'Pendente mais antigo: {date}', opsNoOldest: 'Nenhum pendente.', opsThroughput: 'Entregues {delivered} · recuperados {recovered}',
+  opsCost: 'Custo das execuções', opsCostKnown: 'Custo conhecido: {value} em {n} execuções', opsCostUnknown: 'Custo desconhecido: {n} execuções. Não significa que foram gratuitas.', opsCostRuns: '{n} execuções na janela',
+  opsListTitle: 'Itens da fila', opsState: 'Estado', opsTarget: 'Etapa', opsAllTargets: 'Todas as etapas', opsOwner: 'Identificador do dono (opcional)', opsOwnerInvalid: 'Use um identificador válido.',
+  opsStates: { pending: 'Pendente', leased: 'Em andamento', exhausted: 'Esgotado', delivered: 'Entregue' },
+  opsEmpty: 'Nenhum item nesta lista.', opsMore: 'Carregar mais itens', opsAttempts: 'Tentativas {attempts} de {limit}', opsError: 'Erro: {code}', opsSelect: 'Selecionar item {id} para recuperação', opsSelected: '{n} selecionados (máximo 50)',
+  opsRecover: 'Recuperar selecionados', opsRecoverTitle: 'Recuperar itens esgotados', opsRecoverDescription: 'Concede tentativas extras a {n} itens. Nada é cobrado nem chamado agora: o conteúdo já gravado é só revalidado.',
+  opsExtra: 'Tentativas extras', opsExtraOption: '{n} tentativas extras', opsRecoverConfirm: 'Conceder tentativas', opsRecoverRetry: 'Tentar de novo com o mesmo pedido',
+  opsRecoverNetwork: 'Não foi possível concluir o pedido. Ele pode ter sido aplicado; tente de novo com o mesmo pedido.', opsRecoverReplayed: 'Este pedido já tinha sido processado; mostramos o resultado guardado.',
+  opsRecoverOutcomes: {
+    granted: 'Concedidas {n} tentativas (limite agora {limit}).', not_exhausted: 'Ainda não esgotou as tentativas.', limit_reached: 'Já atingiu o limite máximo de tentativas.', leased: 'Está em andamento agora; tente depois.',
+    delivered: 'Já foi entregue.', durable_content_missing: 'O conteúdo gravado não foi encontrado: não é possível recuperar.', replay_metadata_invalid: 'Os metadados do conteúdo gravado não conferem: não é possível recuperar.',
+    conflict: 'Mudou desde a leitura: recarregue a lista e tente de novo.', not_found: 'Item não encontrado.',
+  },
+} as const;

@@ -9,19 +9,20 @@ import {listImports,listSources} from './api';
 import {listImportPage} from './imports-api';
 import {adminQuestionError,tq} from './labels';
 const states=['queued','validating','extracting','ocr','segmenting','matching','review','completed','failed','cancelled','budget_paused'] as const;
-export function ImportsBrowser({enabled,compact=false}:{enabled:boolean;compact?:boolean}){
+export function ImportsBrowser({enabled,compact=false,pending=false}:{enabled:boolean;compact?:boolean;pending?:boolean}){
  const[search,setSearch]=useState('');const[debounced,setDebounced]=useState('');const[status,setStatus]=useState('all');const[sourceId,setSourceId]=useState('all');const[sources,setSources]=useState<QuestionSource[]>([]);const[sourceError,setSourceError]=useState<string|null>(null);const[sourceRetry,setSourceRetry]=useState(0);
  const[items,setItems]=useState<QuestionImportProgress[]>([]);const[cursor,setCursor]=useState<string|null>(null);const[loading,setLoading]=useState(true);const[more,setMore]=useState(false);const[error,setError]=useState<string|null>(null);const[retry,setRetry]=useState(0);
  const generation=useRef(0),abortRef=useRef<AbortController|null>(null),busy=useRef(false),region=useRef<HTMLElement|null>(null),moreButton=useRef<HTMLButtonElement|null>(null),pendingFocus=useRef<string|null>(null);
  useEffect(()=>{const timeout=setTimeout(()=>setDebounced(search.trim()),250);return()=>clearTimeout(timeout);},[search]);
  useEffect(()=>{if(!enabled||compact){setSources([]);setSourceError(null);return;}let active=true;setSourceError(null);void listSources().then(value=>{if(active)setSources(value.items);}).catch(reason=>{if(active)setSourceError(adminQuestionError(reason));});return()=>{active=false;};},[enabled,compact,sourceRetry]);
  const query:Partial<QuestionImportPageQuery>={limit:compact?5:25,...(debounced&&!compact?{search:debounced}:{}),...(status!=='all'&&!compact?{status:status as QuestionImportPageQuery['status']}:{}),...(sourceId!=='all'&&!compact?{sourceId}:{})};
- const queryRef=useRef(query);queryRef.current=query;const signature=JSON.stringify({enabled,compact,...query});
+ const queryRef=useRef(query);queryRef.current=query;const signature=JSON.stringify({enabled,compact,pending,...query});
  useEffect(()=>{abortRef.current?.abort();const current=++generation.current;const abort=new AbortController();abortRef.current=abort;busy.current=true;pendingFocus.current=null;setItems([]);setCursor(null);setError(null);setLoading(true);setMore(false);
+  if(pending)return()=>{generation.current=current+1;};/* flags still loading: no legacy GET */
   const read=enabled?listImportPage(queryRef.current,abort.signal).then(value=>({items:compact?value.items.slice(0,5):value.items,nextCursor:value.nextCursor})):listImports().then(value=>({items:value.items.slice(0,compact?5:50),nextCursor:null}));
   void read.then(value=>{if(current!==generation.current||abort.signal.aborted)return;setItems(value.items);setCursor(value.nextCursor);}).catch(reason=>{if(current===generation.current&&!abort.signal.aborted)setError(adminQuestionError(reason));}).finally(()=>{if(current===generation.current&&!abort.signal.aborted){busy.current=false;setLoading(false);}});
   return()=>{abortRef.current?.abort();generation.current=current+1;};
- },[signature,retry,enabled,compact]);
+ },[signature,retry,enabled,compact,pending]);
  useLayoutEffect(()=>{const target=pendingFocus.current;if(!target||more)return;pendingFocus.current=null;if(document.activeElement!==document.body&&document.activeElement!==moreButton.current)return;if(target==='retry'){region.current?.querySelector<HTMLButtonElement>('[data-import-retry]')?.focus();return;}region.current?.querySelector<HTMLAnchorElement>(`[data-import-id="${target}"] a`)?.focus();},[items,more,error]);
  const loadMore=async()=>{if(!enabled||compact||!cursor||busy.current)return;const current=generation.current,abort=new AbortController();abortRef.current=abort;busy.current=true;const keyboard=document.activeElement===moreButton.current||Boolean(document.activeElement?.matches('[data-import-retry]'));setMore(true);setError(null);
   try{const value=await listImportPage({...queryRef.current,cursor},abort.signal);if(current!==generation.current||abort.signal.aborted)return;if(keyboard)pendingFocus.current=value.items.find(item=>!items.some(existing=>existing.id===item.id))?.id??value.items[0]?.id??null;setItems(previous=>[...new Map([...previous,...value.items].map(item=>[item.id,item])).values()]);setCursor(value.nextCursor);}
