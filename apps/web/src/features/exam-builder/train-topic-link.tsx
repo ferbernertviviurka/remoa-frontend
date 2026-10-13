@@ -1,13 +1,13 @@
 'use client';
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
-import {api} from '@/lib/api';
+import {readSharedQuestionFeatureFlags} from '@/features/questions/flags';
 import {t} from './labels';
 
 /** True only once the API says the bankStudent flag is open, so a closed flag never shows an entry to a 404. */
 export function useBankStudentOpen(){
   const [open,setOpen]=useState(false);
-  useEffect(()=>{let live=true;api<{bankStudent?:boolean}>('/v1/question-features').then(r=>live&&r.ok&&setOpen(r.data.bankStudent===true)).catch(()=>undefined);return()=>{live=false;};},[]);
+  useEffect(()=>{let live=true;readSharedQuestionFeatureFlags().then(f=>live&&setOpen(f.bankStudent&&f.catalog));return()=>{live=false;};},[]);
   return open;
 }
 

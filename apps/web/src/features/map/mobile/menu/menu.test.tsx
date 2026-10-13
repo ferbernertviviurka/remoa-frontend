@@ -3,6 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { MOBILE_MAP_PREFS_KEY, type BoardGraph } from '@remoa/contracts';
 import { retrievabilityFixture, sepseBoard, sepseCards, sepseEdges } from '@remoa/contracts/mocks';
 import { ToastProvider } from '@remoa/ui';
+import { resetSharedQuestionFeatureFlags } from '@/features/questions/flags';
 import { ChallengeProvider } from '@/features/challenge/provider';
 
 const api = vi.fn();
@@ -31,6 +32,7 @@ const graph: BoardGraph = { board: sepseBoard, cards: sepseCards, edges: sepseEd
 const prefs = () => JSON.parse(window.localStorage.getItem(MOBILE_MAP_PREFS_KEY) ?? '{}') as Record<string, unknown>;
 
 beforeEach(() => {
+  resetSharedQuestionFeatureFlags();
   window.localStorage.clear();
   api.mockImplementation(async (path: string) => {
     if (path.startsWith('/v1/review/retrievability')) return { ok: true, data: retrievabilityFixture };
@@ -188,7 +190,7 @@ describe('Treinar este assunto (F34 FR-37, phone)', () => {
   it('is absent while the flag is closed', async () => {
     mountWith(false);
     const aside = await openAside();
-    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/question-features'));
+    await waitFor(() => expect(api.mock.calls.some((c: unknown[]) => c[0] === '/v1/question-features')).toBe(true));
     expect(within(aside).queryByRole('button', { name: 'Treinar este assunto' })).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState, type ComponentType, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ComponentType, type ReactNode } from 'react';
 import { focusRing } from '../button-styles';
 import { Icon, type IconName } from '../icons';
 import { Logo } from '../logo';
@@ -45,8 +45,19 @@ export function AdminSidebar({ brandLabel, badge, items, activeId, account, back
   const As: LinkLike = as ?? 'a';
   const [open, setOpen] = useState(false);
   const panelId = useId();
+  const navRef = useRef<HTMLElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  // Mobile menu: Esc (focus back to the button) and a tap outside the bar close it.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); buttonRef.current?.focus(); } };
+    const onDown = (e: PointerEvent) => { if (!navRef.current?.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onDown);
+    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('pointerdown', onDown); };
+  }, [open]);
   return (
-    <nav aria-label={rest['aria-label']} className="sticky top-0 z-40 box-border flex max-h-dvh w-full shrink-0 flex-col gap-1.5 overflow-y-auto bg-admin-nav px-3 py-2 text-on-dark-muted lg:h-dvh lg:w-[264px] lg:self-start lg:px-4 lg:py-[22px]">
+    <nav ref={navRef} aria-label={rest['aria-label']} className="sticky top-0 z-40 box-border flex w-full shrink-0 flex-col gap-1.5 bg-admin-nav px-3 py-2 text-on-dark-muted lg:h-dvh lg:w-[264px] lg:self-start lg:overflow-y-auto lg:px-4 lg:py-[22px]">
       <div className="flex items-center gap-2.5 px-1 lg:px-2.5 lg:pb-[18px]">
         {/* G14 (D-587): the logo goes back to the app (Hoje), like the wordmark everywhere else when signed in. */}
         <As href={backHref} className={`flex min-h-11 items-center rounded-[10px] ${focusRing}`}>
@@ -54,12 +65,13 @@ export function AdminSidebar({ brandLabel, badge, items, activeId, account, back
         </As>
         <span className="ml-auto rounded-pill bg-review px-2.5 py-[3px] text-[11px] font-extrabold tracking-[0.08em] text-white">{badge}</span>
         {menuLabels ? (
-          <button type="button" aria-expanded={open} aria-controls={panelId} aria-label={open ? menuLabels.close : menuLabels.open} onClick={() => setOpen((o) => !o)} className={`flex size-11 cursor-pointer items-center justify-center rounded-[12px] border border-white/20 bg-transparent text-white hover:bg-white/10 lg:hidden ${focusRing}`}>
+          <button ref={buttonRef} type="button" aria-expanded={open} aria-controls={panelId} aria-label={open ? menuLabels.close : menuLabels.open} onClick={() => setOpen((o) => !o)} className={`flex size-11 cursor-pointer items-center justify-center rounded-[12px] border border-white/20 bg-transparent text-white hover:bg-white/10 lg:hidden ${focusRing}`}>
             <Icon name={open ? 'close' : 'menu'} size={22} />
           </button>
         ) : null}
       </div>
-      <div id={panelId} className={`${open || !menuLabels ? 'flex' : 'hidden'} grow flex-col gap-1.5 pb-2 lg:flex lg:pb-0`} onClick={(e) => { if ((e.target as HTMLElement).closest('a')) setOpen(false); }}>
+      {open && menuLabels ? <div aria-hidden="true" onClick={() => setOpen(false)} className="fixed inset-x-0 bottom-0 top-[60px] bg-black/50 lg:hidden" /> : null}
+      <div id={panelId} className={`${open || !menuLabels ? 'flex' : 'hidden'} grow flex-col gap-1.5 bg-admin-nav pb-2 ${menuLabels ? 'max-lg:absolute max-lg:inset-x-0 max-lg:top-full max-lg:max-h-[calc(100dvh-108px)] max-lg:overflow-y-auto max-lg:px-3 max-lg:shadow-lg' : ''} lg:flex lg:pb-0`} onClick={(e) => { if ((e.target as HTMLElement).closest('a')) setOpen(false); }}>
       {items.map((it) => {
         const on = it.id === activeId;
         return (

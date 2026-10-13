@@ -41,8 +41,9 @@ export const home = {
   weekBarLabel: '{dia}: {done} feitos, {planned} previstos',
   loadError: 'Não foi possível carregar o resumo de hoje.',
   libraryBanner: {
-    title: 'Mapas prontos atualizados na biblioteca',
-    body: 'Trilhas validadas pela Remoa, com fontes oficiais em cada card. Use uma cópia sua e ela entra na cobertura da matriz do Enamed.',
+    eyebrow: 'Biblioteca',
+    title: 'Mapas prontos, atualizados na biblioteca',
+    body: 'Trilhas validadas pela Remoa, com fonte oficial em cada card. Ao usar um mapa, você ganha uma cópia sua, e ela entra na cobertura da matriz do Enamed.',
     cta: 'Abrir biblioteca de mapas',
   },
   slider: {
