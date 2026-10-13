@@ -87,7 +87,7 @@
   "id": "BD-14iD",
   "name": "UI outcome of the loser tab",
   "pass": true,
-  "detail": "[\"http://127.0.0.1:4362/app/banco-de-questoes/prova\",\"http://127.0.0.1:4362/app/simulados/39df66a8-b5b8-4fd4-be40-4fd40769c5f1\"] redirected"
+  "detail": "[\"http://127.0.0.1:4362/app/banco-de-questoes/prova\",\"http://127.0.0.1:4362/app/simulados/8f2dddc2-af71-4791-89dd-88c76e336450\"] redirected"
  },
  {
   "id": "BD-14D",
@@ -129,7 +129,7 @@
   "id": "BD-18sD",
   "name": "session screen text",
   "pass": true,
-  "detail": "SEU APRENDIZADO, EM PRÁTICA |  | Treino por assunto |  | Questão 1 de 4 |  | Sem prazo | Salvar e sair | Salvar e sair | Prova oficial | Pública | Difícil | Revisada · Revisora Sintética |  | Fonte: Fonte sintética QA |  | Marcar dúvida | Marcar dúvida | Quest"
+  "detail": "SEU APRENDIZADO, EM PRÁTICA |  | Treino por assunto |  | Questão 1 de 4 |  | Sem prazo | Salvar e sair | Salvar e sair | Prova oficial | Pública | Intermediária | Revisada · Revisora Sintética |  | Fonte: Fonte sintética QA |  | 1 ocorrência em prova | Marcar "
  },
  {
   "id": "BD-18D",
@@ -213,7 +213,7 @@
   "id": "BD-14iM",
   "name": "UI outcome of the loser tab",
   "pass": true,
-  "detail": "[\"http://127.0.0.1:4362/app/banco-de-questoes/prova\",\"http://127.0.0.1:4362/app/simulados/6b73563a-bb22-4aa7-87be-97eda821ec6c\"] redirected"
+  "detail": "[\"http://127.0.0.1:4362/app/banco-de-questoes/prova\",\"http://127.0.0.1:4362/app/simulados/68eaf71c-3ea1-4cb7-be28-6a8a0ac2e7c2\"] redirected"
  },
  {
   "id": "BD-14M",
@@ -255,7 +255,7 @@
   "id": "BD-18sM",
   "name": "session screen text",
   "pass": true,
-  "detail": "SEU APRENDIZADO, EM PRÁTICA |  | Treino por assunto |  | Questão 1 de 4 |  | Sem prazo | Salvar e sair | Salvar e sair | Prova oficial | Pública | Fácil | Revisada · Revisora Sintética |  | Fonte: Fonte sintética QA |  | Marcar dúvida | Marcar dúvida | Questão"
+  "detail": "SEU APRENDIZADO, EM PRÁTICA |  | Treino por assunto |  | Questão 1 de 4 |  | Sem prazo | Salvar e sair | Salvar e sair | Prova oficial | Pública | Fácil | Revisada · Revisora Sintética |  | Fonte: Fonte sintética QA |  | Marcar dúvida | Marcar dúvida | Enuncia"
  },
  {
   "id": "BD-18M",
