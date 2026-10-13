@@ -36,3 +36,5 @@ export { mapLibrary } from './ns-parts/library';
 export { questions } from './questions';
 
 export { questionsAdmin } from './questions-admin';
+
+export { examBuilder } from './exam-builder';

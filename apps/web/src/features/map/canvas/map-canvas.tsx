@@ -46,6 +46,7 @@ import { challengeZoom } from './challenge-camera';
 import { useKeyboardInset } from './use-keyboard-inset';
 import { useInertOutside } from './use-inert-outside';
 import { cameraMove } from '../mobile/canvas/view';
+import { TrainTopicLink } from '@/features/exam-builder/train-topic-link';
 
 const t = withStrings({ canvas: more.canvas, map: more.map, mapMobile: more.mapMobile });
 
@@ -919,6 +920,11 @@ function Canvas({ data }: { data: BoardGraph }) {
           <LayerSwitch label={t('editor.layers')} options={layerOptions} value={layer} onChange={changeLayer} />
           {layer === 'recall' && mode === 'explore' ? <Legend labels={legendLabels} aria-label={t('canvas.legend')} /> : null}
         </div>
+        {matrixItemId && mode === 'explore' ? (
+          <div className="absolute right-5 top-5 z-10 hidden lg:block">
+            <TrainTopicLink kind="topic" href={`/app/banco-de-questoes/prova?matrixItemIds=${matrixItemId}`} />
+          </div>
+        ) : null}
         {!matrixItemId && mode === 'explore' ? (
           // F07 one-click link, top right where the panel opens (the panel covers it while a card is selected)
           <div className="absolute right-5 top-5 z-10 hidden lg:block">
