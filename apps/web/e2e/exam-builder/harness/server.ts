@@ -15,6 +15,9 @@ export async function apiMiddleware(req:IncomingMessage,res:ServerResponse,next:
   if(p==='/__test/log')return send(res,200,state.log);
   if(!p.startsWith('/v1/'))return next();
   const b=req.method==='POST'?await read(req):{};state.log.push(`${req.method} ${p}${req.headers['idempotency-key']?` key=${req.headers['idempotency-key']}`:''}`);
+  if(p==='/v1/boards')return send(res,200,[{id:ID(920),title:'Mapa sintético'}]);
+  if(p==='/v1/exam-builder/generate')return send(res,200,{questionIds:[ID(71),ID(72)],requested:b.count,reused:1,generated:1,shortfall:0,stoppedBy:null});
+  if(p==='/v1/challenge-ai/taxonomy'&&url.searchParams.get('kind')==='topic')return send(res,200,[{id:ID(910),name:'Matéria sintética'}]);
   if(p==='/v1/challenge-ai/taxonomy')return send(res,200,[{id:A,name:'Área sintética A'},{id:B,name:'Área sintética B'}]);
   if(p==='/v1/exam-templates'&&req.method==='GET')return send(res,200,{items:state.templates,limit:3});
   if(p==='/v1/exam-templates'){const t={id:ID(800+state.templates.length),name:b.name,params:b.params,createdAt:now(),updatedAt:now()};state.templates.unshift(t);return send(res,200,t);}

@@ -1,13 +1,18 @@
 import {z} from 'zod';
 import {
-  examAvailabilitySchema,examPreviewSchema,examRevalidateResultSchema,examSwapResultSchema,examTemplateListSchema,examTemplateSchema,questionSessionPublicSchema,
-  type ExamBuilderFilter,type ExamBuilderParams,type ExamPreview,type ExamPreviewItem,type ExamRevalidateResult,type QuestionSessionConfig,
+  examAvailabilitySchema,examGenerateResultSchema,examPreviewSchema,examRevalidateResultSchema,examSwapResultSchema,examTemplateListSchema,examTemplateSchema,questionSessionPublicSchema,
+  type ExamBuilderFilter,type ExamGenerateInput,type ExamBuilderParams,type ExamPreview,type ExamPreviewItem,type ExamRevalidateResult,type QuestionSessionConfig,
 } from '@remoa/contracts';
 import {request,QuestionsApiError} from '../questions/request';
 
 const post=(body:unknown,headers?:Record<string,string>):RequestInit=>({method:'POST',body:JSON.stringify(body),...(headers?{headers}:{})});
 /** Areas with names come from the existing taxonomy route (same as the bank filters). */
 export const listAreas=()=>request('/v1/challenge-ai/taxonomy?kind=area',z.array(z.object({id:z.string(),name:z.string()}).passthrough()));
+export const listTopics=()=>request('/v1/challenge-ai/taxonomy?kind=topic',z.array(z.object({id:z.string(),name:z.string()}).passthrough()));
+/** The student's maps (same route as the bank filters). */
+export const listBoards=()=>request('/v1/boards',z.array(z.object({id:z.string(),title:z.string()}).passthrough()));
+/** D-1846: reuses the map's saved AI questions, then generates; spends the daily AI quota. Only ever called from an explicit button. */
+export const generateExamQuestions=(input:ExamGenerateInput)=>request('/v1/exam-builder/generate',examGenerateResultSchema,post(input));
 /** Body = the filter part of the params (areaIds [] = every area), never a draw (FR-24). */
 export const getAvailability=(filter:ExamBuilderFilter,signal?:AbortSignal)=>request('/v1/exam-builder/availability',examAvailabilitySchema,{...post(filter),signal});
 export const getPreview=(params:ExamBuilderParams,pinnedIds:string[],excludedIds:string[],seed?:string,signal?:AbortSignal):Promise<ExamPreview>=>

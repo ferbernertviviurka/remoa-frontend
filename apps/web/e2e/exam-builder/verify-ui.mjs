@@ -18,6 +18,8 @@ const scan=async(page,name,width)=>{await page.addScriptTag({path:axe});
   for(const width of [1440,390]){
     const ctx=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce',hasTouch:width<500});const page=await ctx.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
     await page.request.get(base+'/__test/reset');await page.goto(base+'/');
+    await expect(page.getByRole('heading',{level:2,name:'De onde vêm as questões?'})).toBeVisible();await scan(page,'origem',width);
+    for(let i=0;i<3;i++)await page.getByRole('button',{name:'Continuar'}).click();
     await expect(page.getByRole('heading',{level:1,name:'Criador de prova'})).toBeVisible();
     await expect(page.getByText('Enunciado sintético 1,')).toBeVisible();await expect(page.getByText('Encontramos 40 questões disponíveis')).toBeVisible();
     await page.screenshot({path:path.join(out,`criador-${width}.png`),fullPage:true});await scan(page,'builder',width);
@@ -41,7 +43,7 @@ const scan=async(page,name,width)=>{await page.addScriptTag({path:axe});
     const log=(await (await page.request.get(base+'/__test/log')).json()).data;
     ok(`POST question-sessions carried Idempotency-Key ${width}`,log.filter(l=>l.startsWith('POST /v1/question-sessions')&&l.includes('key=')).length===2);
     // active session
-    await page.request.get(base+'/__test/mode?v=active');await page.goto(base+'/');await expect(page.getByText('Enunciado sintético 1,')).toBeVisible();
+    await page.request.get(base+'/__test/mode?v=active');await page.goto(base+'/');for(let i=0;i<3;i++)await page.getByRole('button',{name:'Continuar'}).click();await expect(page.getByText('Enunciado sintético 1,')).toBeVisible();
     await page.getByRole('button',{name:'Começar prova'}).first().click();await page.getByRole('dialog').getByRole('button',{name:'Começar prova'}).click();
     await expect(page.getByRole('link',{name:'Retomar prova'})).toHaveAttribute('href',/\/app\/simulados\/00000000-0000-4000-8000-000000000333/);
     ok(`no JS exceptions ${width}`,errors.length===0,{errors});await ctx.close();
