@@ -44,8 +44,8 @@
  {
   "id": "BD-08D",
   "name": "axe+overflow preview-actions (desktop)",
-  "pass": false,
-  "detail": "{\"axe\":[],\"overflow\":false,\"errors\":[\"console:Invalid prop `value` of value `40` supplied to `Progress`. The `value` prop must be:\\n  - a positive number\\n  - less than the value passed to `max` (or 100 if no `max` prop is set)\\n  - `null` or `undefined` if the progress is indeterminate.\\n\\nDefaulting to `null`.\",\"console:Invalid prop `value` of value `40` supplied to `Progress`. The `value` prop must be:\\n  - a positive number\\n  - less than the value passed to `max` (or 100 if no `max` prop is set)\\n  - `null` or `undefined` if the progress is indeterminate.\\n\\nDefaulting to `null`.\"]}"
+  "pass": true,
+  "detail": ""
  },
  {
   "id": "BD-09D",
@@ -56,8 +56,8 @@
  {
   "id": "BD-10D",
   "name": "axe+overflow zero (desktop)",
-  "pass": false,
-  "detail": "{\"axe\":[],\"overflow\":false,\"errors\":[\"console:Invalid prop `value` of value `40` supplied to `Progress`. The `value` prop must be:\\n  - a positive number\\n  - less than the value passed to `max` (or 100 if no `max` prop is set)\\n  - `null` or `undefined` if the progress is indeterminate.\\n\\nDefaulting to `null`.\",\"console:Invalid prop `value` of value `40` supplied to `Progress`. The `value` prop must be:\\n  - a positive number\\n  - less than the value passed to `max` (or 100 if no `max` prop is set)\\n  - `null` or `undefined` if the progress is indeterminate.\\n\\nDefaulting to `null`.\"]}"
+  "pass": true,
+  "detail": ""
  },
  {
   "id": "BD-11D",
@@ -78,18 +78,6 @@
   "detail": ""
  },
  {
-  "id": "ERRD",
-  "name": "js/console error (c)",
-  "pass": false,
-  "detail": "console:Invalid prop `value` of value `40` supplied to `Progress`. The `value` prop must be:\n  - a positive number\n  - less than the value passed to `max` (or 100 if no `max` prop is set)\n  - `null` or `undefined` if the progress is indeterminate.\n\nDefaulting to `null`."
- },
- {
-  "id": "ERRD",
-  "name": "js/console error (c)",
-  "pass": false,
-  "detail": "console:Invalid prop `value` of value `40` supplied to `Progress`. The `value` prop must be:\n  - a positive number\n  - less than the value passed to `max` (or 100 if no `max` prop is set)\n  - `null` or `undefined` if the progress is indeterminate.\n\nDefaulting to `null`."
- },
- {
   "id": "BD-14aD",
   "name": "axe+overflow confirm-dialog (desktop)",
   "pass": true,
@@ -99,7 +87,7 @@
   "id": "BD-14iD",
   "name": "UI outcome of the loser tab",
   "pass": true,
-  "detail": "[\"http://127.0.0.1:4362/app/banco-de-questoes/prova\",\"http://127.0.0.1:4362/app/simulados/f6bb18de-6515-4a94-9e2e-30f8b70f814f\"] redirected"
+  "detail": "[\"http://127.0.0.1:4362/app/banco-de-questoes/prova\",\"http://127.0.0.1:4362/app/simulados/39df66a8-b5b8-4fd4-be40-4fd40769c5f1\"] redirected"
  },
  {
   "id": "BD-14D",
@@ -194,8 +182,8 @@
  {
   "id": "BD-08M",
   "name": "axe+overflow preview-actions (mobile)",
-  "pass": false,
-  "detail": "{\"axe\":[],\"overflow\":false,\"errors\":[\"console:Invalid prop `value` of value `40` supplied to `Progress`. The `value` prop must be:\\n  - a positive number\\n  - less than the value passed to `max` (or 100 if no `max` prop is set)\\n  - `null` or `undefined` if the progress is indeterminate.\\n\\nDefaulting to `null`.\",\"console:Invalid prop `value` of value `40` supplied to `Progress`. The `value` prop must be:\\n  - a positive number\\n  - less than the value passed to `max` (or 100 if no `max` prop is set)\\n  - `null` or `undefined` if the progress is indeterminate.\\n\\nDefaulting to `null`.\"]}"
+  "pass": true,
+  "detail": ""
  },
  {
   "id": "BD-09M",
@@ -206,26 +194,14 @@
  {
   "id": "BD-10M",
   "name": "axe+overflow zero (mobile)",
-  "pass": false,
-  "detail": "{\"axe\":[],\"overflow\":false,\"errors\":[\"console:Invalid prop `value` of value `40` supplied to `Progress`. The `value` prop must be:\\n  - a positive number\\n  - less than the value passed to `max` (or 100 if no `max` prop is set)\\n  - `null` or `undefined` if the progress is indeterminate.\\n\\nDefaulting to `null`.\",\"console:Invalid prop `value` of value `40` supplied to `Progress`. The `value` prop must be:\\n  - a positive number\\n  - less than the value passed to `max` (or 100 if no `max` prop is set)\\n  - `null` or `undefined` if the progress is indeterminate.\\n\\nDefaulting to `null`.\"]}"
+  "pass": true,
+  "detail": ""
  },
  {
   "id": "BD-11M",
   "name": "Treino rápido: 10 unseen (mobile)",
   "pass": true,
   "detail": ""
- },
- {
-  "id": "ERRM",
-  "name": "js/console error (c)",
-  "pass": false,
-  "detail": "console:Invalid prop `value` of value `40` supplied to `Progress`. The `value` prop must be:\n  - a positive number\n  - less than the value passed to `max` (or 100 if no `max` prop is set)\n  - `null` or `undefined` if the progress is indeterminate.\n\nDefaulting to `null`."
- },
- {
-  "id": "ERRM",
-  "name": "js/console error (c)",
-  "pass": false,
-  "detail": "console:Invalid prop `value` of value `40` supplied to `Progress`. The `value` prop must be:\n  - a positive number\n  - less than the value passed to `max` (or 100 if no `max` prop is set)\n  - `null` or `undefined` if the progress is indeterminate.\n\nDefaulting to `null`."
  },
  {
   "id": "BD-14aM",
@@ -237,7 +213,7 @@
   "id": "BD-14iM",
   "name": "UI outcome of the loser tab",
   "pass": true,
-  "detail": "[\"http://127.0.0.1:4362/app/banco-de-questoes/prova\",\"http://127.0.0.1:4362/app/simulados/f2f6f916-65e6-4c96-a861-fc4675ca1326\"] redirected"
+  "detail": "[\"http://127.0.0.1:4362/app/banco-de-questoes/prova\",\"http://127.0.0.1:4362/app/simulados/6b73563a-bb22-4aa7-87be-97eda821ec6c\"] redirected"
  },
  {
   "id": "BD-14M",
@@ -279,7 +255,7 @@
   "id": "BD-18sM",
   "name": "session screen text",
   "pass": true,
-  "detail": "SEU APRENDIZADO, EM PRÁTICA |  | Treino por assunto |  | Questão 1 de 4 |  | Sem prazo | Salvar e sair | Salvar e sair | Prova oficial | Pública | Intermediária | Revisada · Revisora Sintética |  | Fonte: Fonte sintética QA |  | Marcar dúvida | Marcar dúvida |"
+  "detail": "SEU APRENDIZADO, EM PRÁTICA |  | Treino por assunto |  | Questão 1 de 4 |  | Sem prazo | Salvar e sair | Salvar e sair | Prova oficial | Pública | Fácil | Revisada · Revisora Sintética |  | Fonte: Fonte sintética QA |  | Marcar dúvida | Marcar dúvida | Questão"
  },
  {
   "id": "BD-18M",

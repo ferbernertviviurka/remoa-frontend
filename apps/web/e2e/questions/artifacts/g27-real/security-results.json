@@ -3,7 +3,7 @@
   "id": "SEC-01kD",
   "name": "scanned endpoints",
   "pass": true,
-  "detail": "GET /v1/question-features; GET /v1/questions/facets; GET /v1/questions; GET /v1/questions/:id/attempt; GET /v1/challenge-ai/taxonomy; GET /v1/exam-templates; POST /v1/exam-builder/availability; POST /v1/exam-builder/preview"
+  "detail": "GET /v1/question-features; GET /v1/questions/facets; GET /v1/questions; GET /v1/questions/:id/attempt; GET /v1/exam-templates; GET /v1/challenge-ai/taxonomy; POST /v1/exam-builder/availability; POST /v1/exam-builder/preview"
  },
  {
   "id": "SEC-01D",
@@ -15,7 +15,7 @@
   "id": "SEC-01kM",
   "name": "scanned endpoints",
   "pass": true,
-  "detail": "GET /v1/question-features; GET /v1/questions/facets; GET /v1/questions; GET /v1/questions/:id/attempt; GET /v1/challenge-ai/taxonomy; GET /v1/exam-templates; POST /v1/exam-builder/availability; POST /v1/exam-builder/preview"
+  "detail": "GET /v1/question-features; GET /v1/questions/facets; GET /v1/questions; GET /v1/questions/:id/attempt; GET /v1/exam-templates; GET /v1/challenge-ai/taxonomy; POST /v1/exam-builder/availability; POST /v1/exam-builder/preview"
  },
  {
   "id": "SEC-01M",
@@ -27,7 +27,7 @@
   "id": "SEC-02s",
   "name": "session for student (kept for RLS test)",
   "pass": true,
-  "detail": "8c1bea88-e50e-4041-a14e-45d21a8f18e7"
+  "detail": "a79e6154-65f5-4eb7-8c4d-2e6438c58f0c"
  },
  {
   "id": "SEC-02",
@@ -75,7 +75,7 @@
   "id": "FLG-01k",
   "name": "calls with flag off",
   "pass": true,
-  "detail": "GET /v1/question-features; GET /v1/challenge-ai/taxonomy; GET /v1/question-institutions; GET /v1/boards; GET /v1/exams; GET /v1/question-sessions; GET /v1/questions"
+  "detail": "GET /v1/question-features; GET /v1/exams; GET /v1/boards; GET /v1/question-institutions; GET /v1/challenge-ai/taxonomy; GET /v1/questions; GET /v1/question-sessions"
  },
  {
   "id": "FLG-01",

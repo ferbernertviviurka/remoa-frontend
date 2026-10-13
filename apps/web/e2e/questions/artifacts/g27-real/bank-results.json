@@ -134,8 +134,8 @@
  {
   "id": "BK-20aD",
   "name": "axe+overflow selection-bar (desktop)",
-  "pass": false,
-  "detail": "{\"axe\":[\"color-contrastx2 span[torph-id=\\\"Limpar\\\"]\"],\"overflow\":false,\"errors\":[]}"
+  "pass": true,
+  "detail": ""
  },
  {
   "id": "BK-20D",
@@ -296,8 +296,8 @@
  {
   "id": "BK-20aM",
   "name": "axe+overflow selection-bar (mobile)",
-  "pass": false,
-  "detail": "{\"axe\":[\"color-contrastx2 span[torph-id=\\\"Limpar\\\"]\"],\"overflow\":false,\"errors\":[]}"
+  "pass": true,
+  "detail": ""
  },
  {
   "id": "BK-20M",
