@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { Rail } from './rail';
 
-vi.mock('@/features/questions/flags',()=>({useQuestionFeatureFlags:()=>({import:true,catalog:true,sessions:true}),questionDestinationEnabled:()=>true}));
+vi.mock('@/features/questions/flags',()=>({useQuestionFeatureFlags:()=>({import:true,catalog:true,sessions:true,bankStudent:false}),questionDestinationEnabled:()=>true}));
 const push = vi.fn();
 let pathname = '/';
 let search = new URLSearchParams();
