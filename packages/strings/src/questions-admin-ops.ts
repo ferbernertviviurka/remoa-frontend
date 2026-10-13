@@ -1,14 +1,14 @@
 /** F33/G26 audited operations (D-1804 hash preparation, D-1805 generation outbox recovery). */
 export const questionsAdminOps = {
   hashFilter: 'Hash do conteúdo', hashAll: 'Todos', hashMissing: 'Hash pendente', hashPresent: 'Hash preparado',
-  hashSelect: 'Selecionar para preparação: {n}', hashSelected: '{n} selecionadas (máximo 500)', hashLimit: 'Limite de 500 questões atingido.',
-  hashClear: 'Limpar seleção', hashPrepare: 'Preparar para edição', hashSelectionHelp: 'Marque as questões das páginas já carregadas. Só rascunhos institucionais sem hash entram.',
+  hashSelect: 'Selecionar para preparação: {n}', hashSelected: '{n} selecionadas',
+  hashClear: 'Limpar seleção', hashPrepare: 'Preparar para edição', hashSelectionHelp: 'Marque questões das páginas carregadas ou selecione todas do filtro. Só rascunhos institucionais sem hash entram.',
   hashTitle: 'Preparar para edição', hashDescription: 'Calcula e grava apenas o hash do conteúdo atual de {n} rascunhos institucionais, para que possam ser editados.',
   hashNotApproval: 'Isto não aprova, não revisa, não altera direitos nem publica. Fonte, direitos, revisão médica e publicação seguem seus próprios passos.',
   hashSource: 'Vincular fonte (opcional)', hashNoSource: 'Não vincular fonte', hashSourceHelp: 'A fonte só é vinculada onde a questão ainda não tem uma. Os direitos da fonte não são alterados nem usados como autorização.',
   hashConfirm: 'Preparar {n} questões', hashRetry: 'Tentar de novo com o mesmo pedido', hashRetryHelp: 'O pedido é reenviado com a mesma chave: nada é gravado duas vezes.',
   hashNetwork: 'Não foi possível concluir o pedido. Ele pode ter sido aplicado; tente de novo com o mesmo pedido.',
-  hashResultTitle: 'Resultado por questão', hashReplayed: 'Este pedido já tinha sido processado; mostramos o resultado guardado.', hashDone: 'Concluir',
+  hashResultTitle: 'Resultado', hashSummary: '{ok} preparadas, {failed} com pendência (listadas abaixo, até 100).', batchProgress: 'Lote {done} de {total} concluído. Mantenha esta janela aberta até o fim.', hashReplayed: 'Este pedido já tinha sido processado; mostramos o resultado guardado.', hashDone: 'Concluir',
   hashOutcomes: {
     prepared: 'Preparada: hash gravado.', already_prepared: 'Já estava preparada: nada a gravar.', conflict: 'Mudou desde a leitura: recarregue o catálogo e tente de novo.',
     source_mismatch: 'Já tem outra fonte vinculada: nada foi alterado.', not_eligible: 'Não elegível: só rascunhos institucionais não publicados.', not_found: 'Questão não encontrada.',
@@ -20,7 +20,7 @@ export const questionsAdminOps = {
   instAccept: 'Entendo que gabarito, integridade e taxonomia não foram conferidos separadamente e que a questão ficará pública com o selo Validado pela Remoa',
   instConfirm: 'Validar e publicar {n} questões', instRetry: 'Tentar de novo com o mesmo pedido', instRetryHelp: 'O pedido é reenviado com a mesma chave: nada é publicado duas vezes.',
   instNetwork: 'Não foi possível concluir o pedido. Ele pode ter sido aplicado; tente de novo com o mesmo pedido.',
-  instResultTitle: 'Resultado por questão', instReplayed: 'Este pedido já tinha sido processado; mostramos o resultado guardado.', instDone: 'Concluir',
+  instResultTitle: 'Resultado', instReplayed: 'Este pedido já tinha sido processado; mostramos o resultado guardado.', instDone: 'Concluir',
   instSummary: '{published} publicadas, {already} já publicadas, {failed} com pendência.', instHashHint: 'Pendência "hash ausente": rode "Preparar para edição" nessas questões e tente de novo.',
   instOutcomes: {
     published: 'Publicada com o selo Validado pela Remoa.', already_published: 'Já estava publicada: nada alterado.', not_eligible: 'Não elegível: só questões autorais da Remoa, públicas e ativas.',
@@ -28,7 +28,7 @@ export const questionsAdminOps = {
     hash_missing: 'Hash ausente: rode "Preparar para edição" primeiro.', taxonomy_missing: 'Sem área e tema do Enamed consistentes: não publicada.',
     explanation_missing: 'Sem explicação: não publicada.', source_mismatch: 'Já tem outra fonte vinculada: nada foi alterado.', not_found: 'Questão não encontrada.',
   },
-  instSelectPage: 'Selecionar esta página (até 500)', instSelectPageNext: 'Selecionar página e carregar a próxima', instSelectHelp: 'Para lotes grandes: valide 500, conclua e a lista recarrega com as próximas.',
+  instSelectPage: 'Selecionar esta página (até 500)', instSelectPageNext: 'Selecionar todas do filtro', instSelectHelp: 'Selecionar todas percorre o filtro inteiro (pode levar alguns segundos). O envio é feito em lotes de 500, um após o outro; se um lote falhar, tente de novo e o envio continua de onde parou.',
   opsTab: 'Geração', opsTitle: 'Operação da geração de questões', opsDescription: 'Acompanhe a fila de recibos e promoções, a vazão e o custo. Só metadados, sem conteúdo.',
   opsMetrics: 'Fila e vazão', opsWindow: 'Janela de métricas', opsWindowHours: 'Últimas {n} h', opsTargets: { 'question-receipt': 'Recibo da questão', 'question-promotion': 'Promoção da questão' },
   opsBacklog: 'Pendentes {pending} · em andamento {leased} · esgotados {exhausted}', opsOldest: 'Pendente mais antigo: {date}', opsNoOldest: 'Nenhum pendente.', opsThroughput: 'Entregues {delivered} · recuperados {recovered}',
@@ -43,5 +43,17 @@ export const questionsAdminOps = {
     granted: 'Concedidas {n} tentativas (limite agora {limit}).', not_exhausted: 'Ainda não esgotou as tentativas.', limit_reached: 'Já atingiu o limite máximo de tentativas.', leased: 'Está em andamento agora; tente depois.',
     delivered: 'Já foi entregue.', durable_content_missing: 'O conteúdo gravado não foi encontrado: não é possível recuperar.', replay_metadata_invalid: 'Os metadados do conteúdo gravado não conferem: não é possível recuperar.',
     conflict: 'Mudou desde a leitura: recarregue a lista e tente de novo.', not_found: 'Item não encontrado.',
+  },
+  // D-1840: batch accept of import candidates.
+  acceptTitle: 'Aceitar em lote', acceptHelp: 'Marque as candidatas pendentes. Cada uma segue para revisão médica como rascunho; nada é publicado.',
+  acceptSelect: 'Selecionar {label}', acceptSelectAll: 'Selecionar todas ({n})', acceptClear: 'Limpar seleção', acceptSelected: '{n} selecionadas',
+  acceptAction: 'Aceitar selecionadas', acceptEmpty: 'Nenhuma candidata pendente.',
+  acceptDescription: 'Aceita {n} candidatas como estão salvas, com um único motivo. Candidatas sem gabarito, classificação ou descrição de figura são recusadas e listadas.',
+  acceptConfirmChecks: 'Conferi enunciado, alternativas, numeração, origem, gabarito definitivo e figuras de todas as selecionadas no documento original.',
+  acceptConfirm: 'Aceitar {n} candidatas', acceptResultTitle: 'Resultado por candidata', acceptSummary: '{accepted} aceitas, {failed} não aceitas.', acceptDone: 'Concluir',
+  acceptOutcomes: {
+    accepted: 'Aceita para revisão médica.', already_accepted: 'Já estava aceita.', not_found: 'Candidata não encontrada.', not_pending: 'Não está pendente (rejeitada ou duplicata).',
+    conflict: 'Mudou desde a leitura: recarregue e tente de novo.', has_issues: 'Precisa de atenção: abra a candidata e confira.', taxonomy_missing: 'Sem área ou assunto: classifique antes de aceitar.',
+    answer_key_missing: 'Sem gabarito válido entre as alternativas.', needs_images: 'Figura sem descrição acessível: abra a candidata.', invalid: 'Dados incompletos: abra a candidata e confira.',
   },
 } as const;
