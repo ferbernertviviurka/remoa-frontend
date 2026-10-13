@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useOptimistic, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { AdminOverview, AdminUserRef, OverviewPeriod } from '@remoa/contracts';
@@ -11,6 +11,7 @@ import {
 } from '@remoa/ui';
 import { exportAdminCsv } from '../shared/actions';
 import { When } from '../shared/when';
+import { parsePeriod } from './period';
 import { formatBRL, formatCount, formatDelta, formatPct, formatTime } from '../shared/format';
 
 const REFRESH_MS = 60_000;
@@ -31,6 +32,8 @@ const viewAll = (href: string, label: string) => (
 export function OverviewView({ data, period }: { data: AdminOverview; period: OverviewPeriod }) {
   const router = useRouter();
   const [, start] = useTransition();
+  // The period comes from the URL (server render); without this the marker only moved after the API answered, so the click looked dead.
+  const [shown, setShown] = useOptimistic(period);
   const [exporting, setExporting] = useState(false);
 
   // FR-13: numbers refresh every 60 s (pauses while the tab is hidden).
@@ -70,8 +73,8 @@ export function OverviewView({ data, period }: { data: AdminOverview; period: Ov
             { value: '30', label: t('admin.overview.period.days30') },
             { value: '90', label: t('admin.overview.period.days90') },
           ]}
-          value={String(period)}
-          onValueChange={(v) => start(() => router.replace(`/admin?period=${v}`, { scroll: false }))}
+          value={String(shown)}
+          onValueChange={(v) => start(() => { setShown(parsePeriod(v)); router.replace(`/admin?period=${v}`, { scroll: false }); })}
         />
         <Button variant="secondary" onClick={() => setExporting(true)} title={t('admin.overview.export.tooltip')}>
           <Icon name="download" size={18} />

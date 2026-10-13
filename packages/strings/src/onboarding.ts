@@ -37,6 +37,7 @@ export const onboarding = {
     install: 'Instalar no celular',
     count: '{current} de {target}',
     done: 'Feito',
+    dismiss: 'Fechar o Comece por aqui',
     installHint: 'Abra o menu do navegador e escolha Instalar ou Adicionar à tela inicial.',
   },
 } as const;
