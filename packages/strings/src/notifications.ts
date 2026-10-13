@@ -47,6 +47,9 @@ export const notifications = {
     waitlistBody: 'Avisamos por e-mail quando ela abrir.',
     trialD3Title: 'Seu teste do Pro termina em 3 dias',
     trialD0Title: 'Seu teste do Pro termina hoje',
+    questionReportTitle: 'Seu relato sobre uma questão foi analisado',
+    questionReportResolvedBody: 'Obrigado por ajudar a melhorar o banco de questões.',
+    questionReportDismissedBody: 'Revisamos o ponto e a questão segue como está. Obrigado por avisar.',
     trialBody: 'Depois, sua conta volta para o Grátis sem perder nada. Assine para seguir sem limites.',
   },
   when: {
