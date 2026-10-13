@@ -1,4 +1,4 @@
-import {meta,sql,call,post,check,assert,rec,results,FORBIDDEN,ctxFor,pageFor,axeOverflow,browser,WEB,API,stems} from './g27-lib.mjs';
+import {meta,sql,call,check,assert,rec,results,FORBIDDEN,ctxFor,pageFor,axeOverflow,browser,WEB,stems} from './g27-lib.mjs';
 import fs from 'node:fs';
 const cards=p=>p.getByRole('checkbox',{name:'Selecionar para a prova'});
 const open=async(p,extra='')=>{await p.goto(WEB+'/app/banco-de-questoes?flags=live'+extra);await p.getByText(/\d+ questões?$/).first().waitFor({timeout:15000});};
@@ -42,7 +42,7 @@ for(const vp of ['desktop','mobile']){
   const wrongKey=ck==='A'?'B':'A';const b=ctx.net.length;await dlg.getByText(`Alternativa sintética ${wrongKey}`).first().click();await dlg.getByRole('button',{name:'Responder'}).click();await dlg.getByText(`Gabarito: alternativa ${ck}`).waitFor({timeout:8000});
   const t=await dlg.innerText();assert(/Você errou/.test(t),'verdict wrong: '+t.slice(0,200));assert(t.includes(explanation),'explanation missing');
   const ans=ctx.net.slice(b).find(n=>n.method==='POST'&&/\/answer$/.test(n.path));assert(ans&&ans.status===200,'answer req');assert(ans.body&&!/correct/i.test(ans.body),'client sent key? '+ans.body);
-  const [{n}]=await sql(`select count(*)::int n from attempts a where a.user_id=$1`,[meta.actors.student.id]).catch(()=>[{n:-1}]);
+  await sql(`select count(*)::int n from attempts a where a.user_id=$1`,[meta.actors.student.id]).catch(()=>[{n:-1}]);
   const att=await call('student',`/questions/${id}/attempt`);assert(att.status===200&&/wrong|incorrect|errou/i.test(att.text),'attempt not persisted '+att.text.slice(0,200));
   await dlg.getByRole('button',{name:'Refazer'}).click();assert(!/Gabarito:/.test(await dlg.innerText()),'result still shown after Refazer');
   await dlg.getByText(`Alternativa sintética ${ck}`).first().click();await dlg.getByRole('button',{name:'Responder'}).click();await dlg.getByText('Você acertou').waitFor();});
@@ -52,9 +52,9 @@ for(const vp of ['desktop','mobile']){
  await check('BK-18'+V,`Escape closes dialogs, focus returns to opener (${vp})`,async()=>{for(let i=0;i<3&&await page.getByRole('dialog').count();i++){await page.keyboard.press('Escape');await page.waitForTimeout(300);}assert(await page.getByRole('dialog').count()===0,'dialog stuck');const f=await page.evaluate(()=>document.activeElement?.getAttribute('aria-label')||document.activeElement?.textContent?.slice(0,30));assert(f&&/Ver questão/.test(f),'focus '+f);});
  await check('BK-19'+V,`keyboard only: Tab reaches card controls, Enter opens drawer (${vp})`,async()=>{await open(page);let hit=false;for(let i=0;i<60;i++){await page.keyboard.press('Tab');const l=await page.evaluate(()=>document.activeElement?.getAttribute('aria-label')||document.activeElement?.textContent||'');if(/Ver questão/.test(l)){hit=true;break;}}assert(hit,'never focused Ver questão');await page.keyboard.press('Enter');await page.getByRole('dialog').waitFor();await page.keyboard.press('Escape');});
  await check('BK-20'+V,`selection bar + Criar prova com estas -> /prova with pinned (${vp})`,async()=>{await open(page);const c=cards(page);for(const i of [0,1,2])await c.nth(i).check();await page.getByText('3 questões selecionadas').waitFor();
-  const sel=await Promise.all([0,1,2].map(i=>page.locator('article,li').filter({has:c.nth(i)}).first().innerText().catch(()=>'')));await a11y('BK-20a','selection-bar');
+  await Promise.all([0,1,2].map(i=>page.locator('article,li').filter({has:c.nth(i)}).first().innerText().catch(()=>'')));await a11y('BK-20a','selection-bar');
   await page.getByRole('button',{name:'Criar prova com estas'}).click();await page.waitForURL(/banco-de-questoes\/prova\?.*ids=/);const ids=new URL(page.url()).searchParams.get('ids').split(',');assert(ids.length===3,'ids '+ids.length);
-  await page.getByText(/Questão 1/).first().waitFor({timeout:10000});const t=await stems(page);assert(ids.every(()=>true),'');const pinned=await page.getByRole('button',{name:/Fixada|Desafixar/}).count();assert(pinned>=3,'pinned count '+pinned);});
+  await page.getByText(/Questão 1/).first().waitFor({timeout:10000});await stems(page);assert(ids.every(()=>true),'');const pinned=await page.getByRole('button',{name:/Fixada|Desafixar/}).count();assert(pinned>=3,'pinned count '+pinned);});
  await check('BK-21'+V,`Minhas perguntas (IA): own AI only, marked, none from B (${vp})`,async()=>{await open(page);await page.getByRole('tab',{name:'Minhas perguntas (IA)'}).or(page.getByRole('button',{name:'Minhas perguntas (IA)'})).first().click();await page.waitForFunction(()=>/^2 questões$/m.test(document.body.innerText),null,{timeout:8000});const t=await stems(page);assert(/Gerada por IA/.test(t),'no AI mark');assert(!t.includes('aluno B'),'B leak');assert(!/Validado pela Remoa|Revisada por médico/.test(t),'AI with seal');});
  await a11y('BK-22','ai-tab');
  await check('BK-23'+V,`AI tab never leaks into catalog and catalog tab has none of A/B AI (${vp})`,async()=>{await page.getByRole('tab',{name:'Catálogo Remoa'}).or(page.getByRole('button',{name:'Catálogo Remoa'})).first().click();await page.waitForFunction(()=>/^60 questões$/m.test(document.body.innerText));assert(!/Gerada por IA|Pergunta privada/.test(await stems(page)),'AI in catalog');});
