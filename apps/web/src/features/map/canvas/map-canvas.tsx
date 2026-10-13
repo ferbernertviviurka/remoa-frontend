@@ -46,7 +46,7 @@ import { challengeZoom } from './challenge-camera';
 import { useKeyboardInset } from './use-keyboard-inset';
 import { useInertOutside } from './use-inert-outside';
 import { cameraMove } from '../mobile/canvas/view';
-import { TrainTopicLink } from '@/features/exam-builder/train-topic-link';
+import { TrainTopicLink, trainTopicHref } from '@/features/exam-builder/train-topic-link';
 
 const t = withStrings({ canvas: more.canvas, map: more.map, mapMobile: more.mapMobile });
 
@@ -922,7 +922,7 @@ function Canvas({ data }: { data: BoardGraph }) {
         </div>
         {matrixItemId && mode === 'explore' ? (
           <div className="absolute right-5 top-5 z-10 hidden lg:block">
-            <TrainTopicLink kind="topic" href={`/app/banco-de-questoes/prova?matrixItemIds=${matrixItemId}`} />
+            <TrainTopicLink kind="topic" href={trainTopicHref(matrixItemId)} />
           </div>
         ) : null}
         {!matrixItemId && mode === 'explore' ? (

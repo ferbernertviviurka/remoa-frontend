@@ -14,10 +14,11 @@ import { ShareDialog } from '@/features/map/share/share-dialog';
 import { useEntitlements } from '@/features/shell/entitlements';
 import { openSupport } from '@/features/support';
 import { api } from '@/lib/api';
+import { trainTopicHref, useBankStudentOpen } from '@/features/exam-builder/train-topic-link';
 import { MapThumb } from './map-preview';
 import { summarize } from './priority';
 
-const t = withStrings({ boards: more.boards, boardsAccess: more.boardsAccess, mapMobile: more.mapMobile });
+const t = withStrings({ boards: more.boards, boardsAccess: more.boardsAccess, mapMobile: more.mapMobile, examBuilder: more.examBuilder });
 type StringKey = Parameters<typeof t>[0];
 
 type Props = {
@@ -43,6 +44,7 @@ type Modal = 'archive' | 'delete' | null;
 
 export function MobileMapMenu({ open, onOpenChange, board, cards, nodes, edgeCount, heat, prefs, onPrefs, dueCount, onReview, onFit, onCreate, onChallenge }: Props) {
   const router = useRouter();
+  const bankOpen = useBankStudentOpen();
   const { toast } = useToast();
   const paywall = usePaywall();
   const { entitlements: ent } = useEntitlements();
@@ -174,6 +176,7 @@ export function MobileMapMenu({ open, onOpenChange, board, cards, nodes, edgeCou
         ]}
       >
         <NavRow icon="sparkle" label={t('challengeAi.open')} description={t('challengeAi.modalTitle')} onClick={then(onChallenge)} />
+        {bankOpen && board.matrixItemId ? <NavRow icon="target" label={t('examBuilder.trainTopic')} onClick={then(() => router.push(trainTopicHref(board.matrixItemId!)))} /> : null}
         <NavRow icon="list" label={t('mapMobile.asideContent.listMode')} description={t('mapMobile.asideContent.listModeBody')} onClick={then(() => onPrefs((p) => ({ ...p, view: 'list' })))} />
         <ToggleRow icon="target" label={t('mapMobile.asideContent.heatmap')} description={t('mapMobile.asideContent.heatmapBody')} checked={prefs.heat} onCheckedChange={(v) => onPrefs((p) => ({ ...p, heat: v }))} />
         <ToggleRow icon="link" label={t('mapMobile.asideContent.labels')} description={t('mapMobile.asideContent.labelsBody')} checked={prefs.labels} onCheckedChange={(v) => onPrefs((p) => ({ ...p, labels: v }))} />

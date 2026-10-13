@@ -163,3 +163,32 @@ describe('list mode (F23 FR-17)', () => {
     expect(await screen.findByRole('region', { name: 'Mapa visual' })).toBeTruthy();
   });
 });
+
+describe('Treinar este assunto (F34 FR-37, phone)', () => {
+  const matrixItemId = '22222222-2222-4222-8222-222222222222';
+  const mountWith = (bankStudent: boolean) => {
+    const base = api.getMockImplementation()!;
+    api.mockImplementation(async (path: string, ...rest: unknown[]) => (path === '/v1/question-features' ? { ok: true, data: { import: false, catalog: true, sessions: true, bankStudent } } : base(path, ...rest)));
+    return render(
+      <ToastProvider closeLabel="x" viewportLabel="y">
+        <ChallengeProvider>
+          <MobileMap graph={{ ...graph, board: { ...sepseBoard, matrixItemId } }} />
+        </ChallengeProvider>
+      </ToastProvider>,
+    );
+  };
+
+  it('opens the exam builder with the map subject when the student bank is on', async () => {
+    mountWith(true);
+    const aside = await openAside();
+    fireEvent.click(await within(aside).findByRole('button', { name: 'Treinar este assunto' }));
+    expect(push).toHaveBeenCalledWith(`/app/banco-de-questoes/prova?matrixItemIds=${matrixItemId}`);
+  });
+
+  it('is absent while the flag is closed', async () => {
+    mountWith(false);
+    const aside = await openAside();
+    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/question-features'));
+    expect(within(aside).queryByRole('button', { name: 'Treinar este assunto' })).toBeNull();
+  });
+});
