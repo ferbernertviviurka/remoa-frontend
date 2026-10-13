@@ -1,8 +1,10 @@
 'use client';
 import { useEffect, useId, useState, type KeyboardEvent } from 'react';
-import { Alert, Button, Dialog, Input, Select } from '@remoa/ui';
-import type { BoardSummary, ExamPaperPublic, QuestionListQuery } from '@remoa/contracts';
+import { Alert, Button, Checkbox, Dialog, Input, Select } from '@remoa/ui';
+import type { BoardSummary, ExamPaperPublic, QuestionFacets, QuestionListQuery } from '@remoa/contracts';
 import { t } from './labels';
+import { listQuestionFacets } from './api';
+import { t as bt } from './bank-t';
 
 type Filters = Partial<QuestionListQuery>;
 type Named = { id: string; name: string };
@@ -203,5 +205,116 @@ export function QuestionFilterBar({
         <div className="mt-4 flex justify-end"><Button variant="quiet" onClick={clear}>{t('questions.clear')}</Button></div>
       </Dialog>
     </>
+  );
+}
+
+/* ---- F34 student bank filters (flag bankStudent): multivalue, facet counts, ARIA topic combobox ---- */
+
+type Difficulty = 'easy' | 'medium' | 'hard';
+export type BankFilters = { search: string; topicIds: string[]; institutions: string[]; years: number[]; difficulties: Difficulty[]; origin: '' | 'official_exam' | 'remoa_authored'; state: '' | 'unseen' | 'answered' | 'wrong' | 'favorite'; sort: '' | 'difficulty' | 'topic' };
+export const emptyBankFilters: BankFilters = { search: '', topicIds: [], institutions: [], years: [], difficulties: [], origin: '', state: '', sort: '' };
+export const bankFilterCount = (f: BankFilters) => f.topicIds.length + f.institutions.length + f.years.length + f.difficulties.length + (f.origin ? 1 : 0) + (f.state ? 1 : 0) + (f.search.trim() ? 1 : 0);
+export type BankTab = 'catalog' | 'ai';
+/** Query shared by list and facets (no cursor). The tab decides scope/origin (D-1823); the origin filter only exists in the catalog. */
+export const bankQuery = (tab: BankTab, f: BankFilters): Partial<QuestionListQuery> => ({
+  scope: tab === 'catalog' ? 'catalog' : 'mine',
+  origin: tab === 'ai' ? 'ai_generated' : f.origin || undefined,
+  search: f.search.trim() || undefined,
+  topicIds: f.topicIds.length ? f.topicIds : undefined, institutions: f.institutions.length ? f.institutions : undefined,
+  years: f.years.length ? f.years : undefined, difficulties: f.difficulties.length ? f.difficulties : undefined,
+  state: f.state || undefined, sort: f.sort || undefined,
+});
+const toggle = <T,>(list: T[], value: T) => (list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
+
+function TopicCombobox({ tab, filters, onPick }: { tab: BankTab; filters: BankFilters; onPick: (topic: { id: string; name: string }) => void }) {
+  const listId = useId();
+  const [text, setText] = useState('');
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const [state, setState] = useState<{ status: 'idle' | 'loading' | 'ready' | 'error'; topics: { id: string; name: string; count: number }[] }>({ status: 'idle', topics: [] });
+  const query = text.trim();
+  useEffect(() => {
+    if (!query) { setState({ status: 'idle', topics: [] }); return; }
+    const controller = new AbortController();
+    setState((old) => ({ ...old, status: 'loading' }));
+    const timer = setTimeout(() => {
+      void listQuestionFacets({ ...bankQuery(tab, filters), groups: ['topic'], topicQuery: query }, controller.signal)
+        .then((facets) => { if (!controller.signal.aborted) setState({ status: 'ready', topics: facets.topics ?? [] }); })
+        .catch(() => { if (!controller.signal.aborted) setState({ status: 'error', topics: [] }); });
+    }, 200);
+    return () => { clearTimeout(timer); controller.abort(); };
+    // filters other than the text change the counts, so they re-run the search too.
+  }, [query, tab, filters]);
+  const shown = state.topics.filter((topic) => !filters.topicIds.includes(topic.id));
+  const visible = open && query !== '' && state.status !== 'idle';
+  const pick = (topic: { id: string; name: string }) => { onPick(topic); setText(''); setOpen(false); setActive(0); };
+  const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (!visible) { if (event.key === 'ArrowDown') setOpen(true); return; }
+    if (event.key === 'ArrowDown') { event.preventDefault(); setActive((i) => (shown.length ? (i + 1) % shown.length : 0)); }
+    if (event.key === 'ArrowUp') { event.preventDefault(); setActive((i) => (shown.length ? (i <= 0 ? shown.length - 1 : i - 1) : 0)); }
+    if (event.key === 'Enter' && shown[active]) { event.preventDefault(); pick(shown[active]); }
+    if (event.key === 'Escape') { event.preventDefault(); setOpen(false); }
+  };
+  return (
+    <div className="min-w-0" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false); }}>
+      <Input label={bt('questionsBank.topic')} placeholder={bt('questionsBank.topicPlaceholder')} value={text} autoComplete="off" role="combobox" aria-expanded={visible} aria-controls={listId} aria-autocomplete="list"
+        aria-activedescendant={visible && shown[active] ? `${listId}-${shown[active].id}` : undefined}
+        onFocus={() => setOpen(true)} onChange={(event) => { setText(event.target.value); setOpen(true); setActive(0); }} onKeyDown={onKeyDown} />
+      <ul id={listId} role="listbox" aria-label={bt('questionsBank.topic')} hidden={!visible} className="mt-1 max-h-56 overflow-auto rounded-[14px] border border-border bg-surface p-1">
+        {state.status === 'ready' ? shown.map((topic, index) => (
+          <li key={topic.id}><Button id={`${listId}-${topic.id}`} type="button" role="option" aria-selected={index === active} variant={index === active ? 'secondary' : 'quiet'} align="start"
+            onMouseDown={(event) => event.preventDefault()} onMouseEnter={() => setActive(index)} onClick={() => pick(topic)}>{bt('questionsBank.topicOption', { name: topic.name, n: topic.count })}</Button></li>
+        )) : null}
+      </ul>
+      {visible && state.status === 'loading' ? <p role="status" className="px-3 py-2 text-sm text-muted">{bt('questionsBank.topicLoading')}</p> : null}
+      {visible && state.status === 'ready' && shown.length === 0 ? <p role="status" className="px-3 py-2 text-sm text-muted">{bt('questionsBank.topicNone')}</p> : null}
+      {visible && state.status === 'error' ? <p role="alert" className="px-3 py-2 text-sm text-muted">{bt('questionsBank.topicError')}</p> : null}
+    </div>
+  );
+}
+
+function FacetGroup<V extends string | number>({ legend, options, selected, onToggle }: { legend: string; options: { value: V; label: string; count: number }[]; selected: V[]; onToggle: (value: V) => void }) {
+  return (
+    <fieldset className="min-w-0 space-y-1"><legend className="mb-1 text-sm font-semibold">{legend}</legend>
+      <div className="max-h-48 overflow-auto">{options.map((o) => <Checkbox key={String(o.value)} checked={selected.includes(o.value)} onCheckedChange={() => onToggle(o.value)} label={bt('questionsBank.facetOption', { name: o.label, n: o.count })} />)}</div>
+    </fieldset>
+  );
+}
+
+export function BankFilterBar({ tab, filters, onChange, onClear, facets, facetsError, onFacetsRetry, topicNames }: {
+  tab: BankTab; filters: BankFilters; onChange: (next: BankFilters) => void; onClear: () => void; facets: QuestionFacets | null; facetsError: boolean; onFacetsRetry: () => void; topicNames: Record<string, string>;
+}) {
+  const [search, setSearch] = useState(filters.search);
+  useEffect(() => { setSearch(filters.search); }, [filters.search]);
+  useEffect(() => { const timer = setTimeout(() => { if (search !== filters.search) onChange({ ...filters, search }); }, 300); return () => clearTimeout(timer); }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
+  const n = bankFilterCount(filters);
+  const set = (patch: Partial<BankFilters>) => onChange({ ...filters, ...patch });
+  const fieldName = (kind: Difficulty) => t(`questions.difficultyLabel.${kind}`);
+  return (
+    <div className="mb-5 flex flex-col gap-4" role="group" aria-label={bt('questionsBank.filtersGroup')}>
+      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px] md:items-end">
+        <Input label={bt('questionsBank.search')} variant="search" placeholder={bt('questionsBank.searchPlaceholder')} value={search} onChange={(event) => setSearch(event.target.value)} />
+        <Select label={bt('questionsBank.sort')} value={filters.sort || 'recent'} onValueChange={(v) => set({ sort: v === 'recent' ? '' : (v as BankFilters['sort']) })}
+          options={[{ value: 'recent', label: bt('questionsBank.sortRecent') }, { value: 'difficulty', label: bt('questionsBank.sortDifficulty') }, { value: 'topic', label: bt('questionsBank.sortTopic') }]} />
+      </div>
+      <div className="grid gap-3 md:grid-cols-3">
+        <TopicCombobox tab={tab} filters={filters} onPick={(topic) => { topicNames[topic.id] = topic.name; set({ topicIds: toggle(filters.topicIds, topic.id) }); }} />
+        {tab === 'catalog' ? <Select label={bt('questionsBank.origin')} value={filters.origin || 'all'} onValueChange={(v) => set({ origin: v === 'all' ? '' : (v as BankFilters['origin']) })}
+          options={[{ value: 'all', label: bt('questionsBank.originAll') }, { value: 'official_exam', label: bt('questionsBank.originOfficial') }, { value: 'remoa_authored', label: bt('questionsBank.originRemoa') }]} /> : <div />}
+        <Select label={bt('questionsBank.progress')} value={filters.state || 'all'} onValueChange={(v) => set({ state: v === 'all' ? '' : (v as BankFilters['state']) })}
+          options={[{ value: 'all', label: bt('questionsBank.progressAll') }, { value: 'unseen', label: bt('questionsBank.progressUnseen') }, { value: 'answered', label: bt('questionsBank.progressAnswered') }, { value: 'wrong', label: bt('questionsBank.progressWrong') }, { value: 'favorite', label: bt('questionsBank.progressFavorite') }]} />
+      </div>
+      {filters.topicIds.length ? <ul aria-label={bt('questionsBank.topicSelected')} className="flex flex-wrap gap-2">{filters.topicIds.map((id) => {
+        const name = topicNames[id] ?? bt('questionsBank.topicUnknown');
+        return <li key={id}><Button variant="secondary" aria-label={bt('questionsBank.topicRemove', { name })} onClick={() => set({ topicIds: filters.topicIds.filter((v) => v !== id) })}>{name} ×</Button></li>;
+      })}</ul> : null}
+      {facets ? <div className="grid gap-4 md:grid-cols-3">
+        {facets.institutions?.length ? <FacetGroup legend={bt('questionsBank.institution')} options={facets.institutions.map((i) => ({ value: i.name, label: i.name, count: i.count }))} selected={filters.institutions} onToggle={(v) => set({ institutions: toggle(filters.institutions, v) })} /> : null}
+        {facets.years?.length ? <FacetGroup legend={bt('questionsBank.year')} options={facets.years.map((y) => ({ value: y.year, label: String(y.year), count: y.count }))} selected={filters.years} onToggle={(v) => set({ years: toggle(filters.years, v) })} /> : null}
+        {facets.difficulties?.length ? <FacetGroup legend={bt('questionsBank.difficulty')} options={facets.difficulties.map((d) => ({ value: d.value, label: fieldName(d.value), count: d.count }))} selected={filters.difficulties} onToggle={(v) => set({ difficulties: toggle(filters.difficulties, v) })} /> : null}
+      </div> : null}
+      {facetsError ? <Alert tone="review" title={bt('questionsBank.facetsError')}><Button variant="quiet" onClick={onFacetsRetry}>{t('common.retry')}</Button></Alert> : null}
+      {n > 0 ? <div><Button variant="quiet" onClick={onClear}>{bt('questionsBank.clearFilters', { n })}</Button></div> : null}
+    </div>
   );
 }

@@ -10,12 +10,17 @@ import { actionLink, ConfigDialog, MapLink, PageTitle, panel, PersonalDialog, Qu
 import { QuestionFilterBar } from './questions-filters';
 import { QuestionsSkeleton } from './questions-skeleton';
 import { GenerateExamDialog } from './generate-exam-dialog';
+import { BankStudent } from './bank-student';
 
 type Tab = 'all' | 'catalog' | 'mine' | 'ai' | 'wrong' | 'favorite' | 'doubtful';
 type Filters = Partial<QuestionListQuery>;
 const tabKeys = { all: 'questions.all', catalog: 'questions.explore', mine: 'questions.mine', ai: 'questions.mineAi', wrong: 'questions.errors', favorite: 'questions.favorites', doubtful: 'questions.doubts' } as const;
 const base = (tab: Tab): Filters => ({ scope: tab === 'catalog' ? 'catalog' : tab === 'mine' || tab === 'ai' ? 'mine' : 'all', ...(tab === 'ai' ? { origin: 'ai_generated' as const } : {}), ...(['wrong','favorite','doubtful'].includes(tab) ? { state: tab as 'wrong' | 'favorite' | 'doubtful' } : {}), limit: 25 });
-export function QuestionsHub({ initialState,sessionsEnabled=true }: { initialState?: string;sessionsEnabled?:boolean } = {}) {
+/** Flag bankStudent (D-1821): the new bank; off = the legacy hub below, untouched and with zero calls to the new routes. */
+export function QuestionsHub({ bankStudent=false, ...props }: { initialState?: string;sessionsEnabled?:boolean;bankStudent?:boolean } = {}) {
+  return bankStudent?<BankStudent />:<LegacyQuestionsHub {...props} />;
+}
+function LegacyQuestionsHub({ initialState,sessionsEnabled=true }: { initialState?: string;sessionsEnabled?:boolean } = {}) {
   const [tab, setTab] = useState<Tab>(initialState==='wrong'?'wrong':'all'); const [filters, setFilters] = useState<Filters>({});const[institution,setInstitution]=useState('');const[institutions,setInstitutions]=useState<Awaited<ReturnType<typeof listQuestionInstitutions>>>({items:[],truncated:false});const[institutionError,setInstitutionError]=useState(false);const[institutionReload,setInstitutionReload]=useState(0); const [search, setSearch] = useState(''); const [items, setItems] = useState<QuestionPublic[]>([]); const [total, setTotal] = useState(0); const [cursor, setCursor] = useState<string | null>(null); const [loading, setLoading] = useState(true); const [loadingMore, setLoadingMore] = useState(false); const [error, setError] = useState<string | null>(null);
   const [sessions, setSessions] = useState<QuestionSessionSummaryPublic[]>([]); const [recentError, setRecentError] = useState(false); const [exams, setExams] = useState<ExamPaperPublic[]>([]); const [areas, setAreas] = useState<{id:string;name:string}[]>([]); const [topics, setTopics] = useState<{id:string;name:string}[]>([]); const [boards, setBoards] = useState<BoardSummary[]>([]);
   const [config, setConfig] = useState<true | QuestionPublic | null>(null); const [generate, setGenerate] = useState(false); const [personal, setPersonal] = useState<QuestionPublic | null>(null); const [report, setReport] = useState<QuestionPublic | null>(null); const generation = useRef(0); const personalFocus=useRef<string|null>(null);

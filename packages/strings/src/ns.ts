@@ -34,6 +34,7 @@ export { review } from './ns-parts/review';
 export { mapLibrary } from './ns-parts/library';
 
 export { questions } from './questions';
+export { questionsBank } from './questions-bank';
 
 export { questionsAdmin } from './questions-admin';
 

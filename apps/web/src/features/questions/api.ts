@@ -19,9 +19,9 @@ export async function catalogRequest<T>(path: string, schema: (contracts: Contra
 }
 export type QuestionUserState = z.infer<Contracts['questionUserStateSchema']>;
 export const emptyUserState: QuestionUserState = { favorite: false, doubtful: false, annotation: '' };
-export const queryString = (filters: Partial<QuestionListQuery>) => {
+export const queryString = (filters: Partial<QuestionListQuery> & { groups?: string; topicQuery?: string }) => {
   const query = new URLSearchParams();
-  Object.entries(filters).forEach(([key, value]) => { if (value !== undefined && value !== '' && value !== 'all') query.set(key, String(value)); });
+  Object.entries(filters).forEach(([key, value]) => { if (Array.isArray(value)) value.forEach(v => query.append(key, String(v))); else if (value !== undefined && value !== '' && value !== 'all') query.set(key, String(value)); });
   return query.toString();
 };
 export const listQuestions = (filters: Partial<QuestionListQuery>, signal?: AbortSignal) => catalogRequest(`/v1/questions?${queryString(filters)}`, c => c.questionListResultSchema, { signal });
@@ -48,3 +48,9 @@ export const listQuestionInstitutions=()=>catalogRequest('/v1/question-instituti
 export const getSessionRecalculation=(id:string)=>catalogRequest(`/v1/question-sessions/${id}/recalculation`,c => c.questionSessionRecalculationSchema);
 
 export const listQuestionTaxonomy = async (kind: 'area' | 'topic') => { const [c, {z}] = await Promise.all([loadContracts(), import('zod')]); return request(`/v1/challenge-ai/taxonomy?kind=${kind}`, z.array(c.enamedTopicOptionSchema)); };
+
+/** F34 student bank (flag bankStudent). Lists never carry a key; the answer response is the only source of the reference (D-1822). */
+const loadBank=()=>import('./bank-schema-loaders');
+export const listQuestionFacets=async(filters:Partial<QuestionListQuery>&{groups?:string[];topicQuery?:string},signal?:AbortSignal)=>{const c=await loadBank();return request(`/v1/questions/facets?${queryString({...filters,groups:filters.groups?.join(',')})}`,c.questionFacetsSchema,{signal});};
+export const answerQuestion=async(id:string,input:{selectedKey:string;mutationId:string;elapsedMs:number})=>{const c=await loadBank();return request(`/v1/questions/${encodeURIComponent(id)}/answer`,c.questionDrawerAttemptSchema,{method:'POST',body:JSON.stringify(input)});};
+export const getLastAttempt=async(id:string,signal?:AbortSignal)=>{const c=await loadBank();return request(`/v1/questions/${encodeURIComponent(id)}/attempt`,c.questionLastAttemptSchema,{signal});};

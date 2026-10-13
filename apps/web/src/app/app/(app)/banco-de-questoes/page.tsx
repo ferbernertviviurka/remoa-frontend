@@ -11,5 +11,5 @@ export function generateMetadata(): Metadata {
 // The (app) layout already requires a session (AppShell); API calls carry the user's token.
 export default async function Page({ searchParams }: { searchParams: Promise<{ state?: string }> }) {
   const { state } = await searchParams;
-  const flags=await getQuestionFeatureFlags();return flags.catalog?<QuestionsHub initialState={state} sessionsEnabled={flags.sessions}/>:<LegacyQuestionBank/>;
+  const flags=await getQuestionFeatureFlags();return flags.bankStudent?<QuestionsHub bankStudent/>:flags.catalog?<QuestionsHub initialState={state} sessionsEnabled={flags.sessions}/>:<LegacyQuestionBank/>;
 }
