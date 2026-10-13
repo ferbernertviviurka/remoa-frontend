@@ -183,7 +183,7 @@ export function BuilderScreen({init}:{init:BuilderInit}){
           {avState==='error'?<Alert tone="review" role="alert" title={t('examBuilder.availabilityError')}/>:null}
           {alloc?<ul aria-label={t('examBuilder.composition')} className="m-0 flex list-none flex-col gap-3 p-0">{alloc.rows.map(r=><li key={r.areaId??'none'} className="flex flex-col gap-1">
             <span className="text-sm">{t('examBuilder.compositionRow',{area:areaName(r.areaId),allocated:r.allocated,available:r.available})}</span>
-            <Progress size="sm" aria-label={areaName(r.areaId)} value={r.allocated} max={Math.max(r.target,1)}/></li>)}</ul>:null}
+            <Progress size="sm" aria-label={areaName(r.areaId)} value={r.allocated} max={Math.max(r.target,r.allocated,1)}/></li>)}</ul>:null}
           {alloc&&alloc.shortfall>0&&countOk?<Alert tone="watch" role="alert" title={t('examBuilder.shortfallTitle',{allocated:alloc.allocated,requested:alloc.requested})}>
             <ul className="m-0 list-disc pl-5">{alloc.rows.filter(r=>r.allocated<r.target).map(r=><li key={r.areaId??'none'}>{t('examBuilder.shortfallArea',{area:areaName(r.areaId),allocated:r.allocated,target:r.target})}</li>)}</ul>
             <div className="flex flex-wrap gap-2">
