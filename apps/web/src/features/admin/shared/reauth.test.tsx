@@ -5,7 +5,7 @@ import { errorCode, isReauth, sessionExpired } from './reauth';
 const me = vi.fn();
 vi.mock('./api', () => ({ requireAdmin: () => me() }));
 vi.mock('./admin-nav', () => ({ AdminNav: () => <nav /> }));
-vi.mock('./session-expired', () => ({ SessionExpired: () => <p>expirou</p> }));
+vi.mock('./session-expired', () => ({ SessionExpired: () => <p>expirou</p>, ReauthPrompt: () => null }));
 vi.mock('next/navigation', () => ({ notFound: () => { throw new Error('NF'); } }));
 const { unwrap } = await import('../list-kit/server');
 const { default: AdminLayout } = await import('@/app/admin/layout');

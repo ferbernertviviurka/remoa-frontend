@@ -811,6 +811,8 @@ export const admin = {
     confirm: 'Confirmar',
     wrongPassword: 'Senha incorreta. Tente de novo.',
     otherMethod: 'Entrei com Google ou link por e-mail',
+    recentConfirmDesc: 'Ações sensíveis exigem um login feito nos últimos 30 minutos. Confirme sua senha e repita a ação.',
+    close: 'Fechar',
   },
 
   // FR-21: Segurança

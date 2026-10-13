@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { t } from '@remoa/strings/admin';
 import { Button, Icon, ReasonDialog } from '@remoa/ui';
 import { exportAdminCsv } from '../shared/actions';
+import { notifyReauth } from '@/lib/api';
 import { downloadCsv } from './download';
 
 /** "Exportar CSV" button + reason dialog: sends the filters in the URL (`keys`) to POST /v1/admin/export (FR-21). */
@@ -32,7 +33,7 @@ export function ExportCsv({ resource, keys, file, label }: { resource: 'users' |
         onConfirm={async (reason) => {
           const filters = Object.fromEntries(keys.flatMap((k) => (sp.get(k) ? [[k, sp.get(k)!]] : [])));
           const r = await exportAdminCsv({ reason, resource, filters });
-          if (!r.ok) throw new Error(r.error.code);
+          if (!r.ok) { notifyReauth(r.error); throw new Error(r.error.code); }
           downloadCsv(r.data.csv, file);
           return { auditId: r.auditId };
         }}

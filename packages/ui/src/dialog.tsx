@@ -24,6 +24,8 @@ export type DialogProps = {
   srOnlyHeader?: boolean;
   /** Ações fixas embaixo, fora da rolagem (só `md`); o título também fica fixo e só o conteúdo rola. */
   footer?: ReactNode;
+  /** Acima de outro diálogo já aberto (ex.: o pedido de senha do admin por cima do diálogo de motivo, z-60). */
+  onTop?: boolean;
 };
 
 const sizes = {
@@ -36,13 +38,13 @@ const sizes = {
   tour: 'remoa-dialog left-1/2 top-1/2 max-h-[96vh] w-[min(94vw,720px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto outline-none',
 };
 
-export function Dialog({ title, description, closeLabel, trigger, children, size = 'md', icon, srOnlyHeader, footer, ...root }: DialogProps) {
+export function Dialog({ title, description, closeLabel, trigger, children, size = 'md', icon, srOnlyHeader, footer, onTop, ...root }: DialogProps) {
   return (
     <RD.Root {...root}>
       {trigger ? <RD.Trigger asChild>{trigger}</RD.Trigger> : null}
       <RD.Portal>
-        <RD.Overlay className={`remoa-overlay fixed inset-0 z-50 ${size === 'lg' || size === 'xl' || size === 'bare' || size === 'form' || size === 'tour' ? 'bg-[rgba(26,21,51,.6)]' : 'bg-navy/55 backdrop-blur-[3px]'}`} />
-        <RD.Content className={`fixed z-50 ${sizes[size]} ${(size === 'bare' || size === 'form' || size === 'tour') ? 'text-text' : 'border border-border bg-surface text-text shadow-lift'}`}>
+        <RD.Overlay className={`remoa-overlay fixed inset-0 ${onTop ? 'z-[70]' : 'z-50'} ${size === 'lg' || size === 'xl' || size === 'bare' || size === 'form' || size === 'tour' ? 'bg-[rgba(26,21,51,.6)]' : 'bg-navy/55 backdrop-blur-[3px]'}`} />
+        <RD.Content className={`fixed ${onTop ? 'z-[70]' : 'z-50'} ${sizes[size]} ${(size === 'bare' || size === 'form' || size === 'tour') ? 'text-text' : 'border border-border bg-surface text-text shadow-lift'}`}>
           {icon ? <span className="mb-3.5 flex size-[52px] items-center justify-center rounded-[16px] bg-review-bg text-review-text">{icon}</span> : null}
           <RD.Title className={srOnlyHeader ? 'sr-only' : size === 'lg' || size === 'xl' ? 'pr-10 font-display text-[26px] font-extrabold tracking-[-0.025em]' : 'pr-10 font-display text-lg font-bold'}>{title}</RD.Title>
           {description ? (

@@ -7,6 +7,7 @@ import { formatTicketNumber, type AdminTicketDetail, type AdminTicketMessage, ty
 import { t } from '@remoa/strings/admin';
 import { AdminHeader, AdminSearch, Button, Icon, StatusPill, Switch, Textarea, Thread, type StatusTone, type ThreadMessage } from '@remoa/ui';
 import { runAdminAction } from '../shared/actions';
+import { notifyReauth } from '@/lib/api';
 import { When } from '../shared/when';
 
 const tone: Record<SupportTicketStatus, StatusTone> = { open: 'warn', in_review: 'info', answered: 'ok', resolved: 'muted' };
@@ -141,7 +142,7 @@ function Conversation({ ticket }: { ticket: AdminTicketDetail }) {
       ? await runAdminAction(`/tickets/${ticket.id}/messages`, { reason, body: body.trim(), internal })
       : await runAdminAction(`/tickets/${ticket.id}/${kind}`, { reason });
     setBusy(null);
-    if (!r.ok) return setError(t('admin.support.reply.error'));
+    if (!r.ok) { notifyReauth(r.error); return setError(t('admin.support.reply.error')); }
     if (kind === 'send') { setBody(''); setDone(t(internal ? 'admin.support.reply.successNote' : 'admin.support.reply.successTicket')); }
     router.refresh();
   }

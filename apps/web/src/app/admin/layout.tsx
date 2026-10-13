@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { AdminNav } from '@/features/admin/shared/admin-nav';
-import { SessionExpired } from '@/features/admin/shared/session-expired';
+import { ReauthPrompt, SessionExpired } from '@/features/admin/shared/session-expired';
 import { sessionExpired } from '@/features/admin/shared/reauth';
 import { requireAdmin } from '@/features/admin/shared/api';
 
@@ -11,6 +11,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     <div className="flex min-h-dvh flex-col bg-canvas text-text lg:flex-row">
       <AdminNav openTickets={me.openTickets} name={me.name} email={me.email} />
       <main className="flex min-w-0 flex-1 flex-col">{sessionExpired(me.authenticatedAt) ? <SessionExpired /> : children}</main>
+      <ReauthPrompt />
     </div>
   );
 }
