@@ -123,7 +123,7 @@ export function DataTable<T>({ caption, columns, rows, rowKey, status = 'ready',
       </div>
       {status === 'loading' && loadingLabel ? <p role="status" className="sr-only">{loadingLabel}</p> : null}
       {pagination ? (
-        <nav aria-label={pagination.navLabel} className="flex items-center justify-between gap-3 border-t border-divider px-5 py-3">
+        <nav aria-label={pagination.navLabel} className="flex flex-wrap items-center justify-between gap-3 border-t border-divider px-5 py-3">
           <span aria-live="polite" className="text-[13.5px] text-muted">{pagination.summary}</span>
           <span className="flex gap-2">
             <Button variant="secondary" size="sm" disabled={pagination.page <= 1} onClick={() => pagination.onPageChange(pagination.page - 1)}>{pagination.prevLabel}</Button>

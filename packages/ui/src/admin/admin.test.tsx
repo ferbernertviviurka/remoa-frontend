@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AdminSidebar, AdminHeader, AdminSearch, PeriodSegmented, StatCard, BarChart, AdminSection, AttentionItem, SummaryChip, FilterGroup, DataTable, PersonCell, Drawer, DrawerFacts, DrawerTimeline, DrawerAuditTrail, DrawerActions, ReasonDialog, StatusPill, type DataColumn } from '../index';
 import { violations } from '../test-utils';
@@ -13,7 +13,7 @@ describe('AdminSidebar', () => {
   it('é uma nav nomeada; item ativo com aria-current; contador legível; Voltar ao app', async () => {
     const { container } = render(<AdminSidebar aria-label="Administração" brandLabel="remoa" badge="ADMIN" items={items} activeId="overview" account={{ initial: 'V', name: 'Você', email: 'admin@admin.com' }} backLabel="Voltar ao app" backHref="/" />);
     const nav = screen.getByRole('navigation', { name: 'Administração' });
-    expect(nav).toHaveClass('w-[264px]');
+    expect(nav).toHaveClass('lg:w-[264px]', 'w-full');
     expect(screen.getByRole('link', { name: 'Visão geral' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: /Suporte/ })).not.toHaveAttribute('aria-current');
     expect(screen.getByText('9 chamados abertos')).toHaveClass('sr-only');
@@ -21,6 +21,18 @@ describe('AdminSidebar', () => {
     expect(screen.getByRole('link', { name: 'Voltar ao app' })).toHaveAttribute('href', '/');
     expect(screen.getByRole('link', { name: 'remoa' })).toHaveAttribute('href', '/'); // G14: the logo goes back to the app too
     expect(await violations(container)).toEqual([]);
+  });
+  it('abaixo de 1024 px: botão de menu (aria-expanded) mostra e esconde os itens; clicar num item fecha', () => {
+    render(<AdminSidebar aria-label="Administração" brandLabel="remoa" badge="ADMIN" items={items} activeId="overview" account={{ initial: 'V', name: 'Você', email: 'admin@admin.com' }} backLabel="Voltar ao app" backHref="/" menuLabels={{ open: 'Abrir menu', close: 'Fechar menu' }} />);
+    const toggle = screen.getByRole('button', { name: 'Abrir menu' });
+    const panel = document.getElementById(toggle.getAttribute('aria-controls')!)!;
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(panel).toHaveClass('hidden', 'lg:flex');
+    fireEvent.click(toggle);
+    expect(screen.getByRole('button', { name: 'Fechar menu' })).toHaveAttribute('aria-expanded', 'true');
+    expect(panel).not.toHaveClass('hidden');
+    fireEvent.click(screen.getByRole('link', { name: /Suporte/ }));
+    expect(panel).toHaveClass('hidden');
   });
 });
 

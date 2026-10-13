@@ -4,11 +4,11 @@ import { MainSlot, NavPendingProvider } from './nav-pending';
 import { Rail, items } from './rail';
 import { MobileMenu } from './mobile-menu';
 
-const questionFlags=vi.hoisted(()=>({import:true,catalog:true,sessions:true,bankStudent:false}));
+const questionFlags=vi.hoisted(()=>({import:true,catalog:true,sessions:true,bankStudent:true}));
 vi.mock('@/features/questions/flags',async original=>({...await original<typeof import('@/features/questions/flags')>(),useQuestionFeatureFlags:()=>questionFlags}));
 let pathname = '/';
 vi.mock('next/navigation', () => ({ usePathname: () => pathname, useRouter: () => ({ push: vi.fn() }), useSearchParams: () => new URLSearchParams() }));
-afterEach(()=>{cleanup();questionFlags.catalog=true;});
+afterEach(()=>{cleanup();questionFlags.catalog=true;questionFlags.bankStudent=true;});
 
 const app = () => (
   <NavPendingProvider>
@@ -18,7 +18,7 @@ const app = () => (
 );
 
 describe('MainSlot', () => {
-  it('the rail hides Questões and Provas while the rest of the navigation stays',()=>{questionFlags.catalog=true;render(app());expect(screen.queryByRole('link',{name:'Questões'})).toBeNull();expect(screen.queryByRole('link',{name:'Provas'})).toBeNull();expect(screen.getByRole('link',{name:'Mapas'})).toBeInTheDocument();});
+  it('D-1838: the rail hides Questões and Provas for accounts outside the student bank while the rest of the navigation stays',()=>{questionFlags.bankStudent=false;render(app());expect(screen.queryByRole('link',{name:'Questões'})).toBeNull();expect(screen.queryByRole('link',{name:'Provas'})).toBeNull();expect(screen.getByRole('link',{name:'Mapas'})).toBeInTheDocument();});
   it('rail click shows the destination skeleton instead of the stale page; the route change shows the real page', () => {
     pathname = '/';
     const { rerender } = render(app());

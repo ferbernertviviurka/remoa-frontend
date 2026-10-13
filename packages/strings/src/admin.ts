@@ -8,6 +8,8 @@ export const admin = {
     ariaLabel: 'Painel de administração',
     backToApp: 'Voltar ao app',
     signOut: 'Sair',
+    openMenu: 'Abrir menu do painel',
+    closeMenu: 'Fechar menu do painel',
   },
 
   // Falha transitória (429/5xx/rede): error boundary do painel

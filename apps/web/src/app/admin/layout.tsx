@@ -8,7 +8,7 @@ import { requireAdmin } from '@/features/admin/shared/api';
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const me = await requireAdmin();
   return (
-    <div className="flex min-h-dvh bg-canvas text-text">
+    <div className="flex min-h-dvh flex-col bg-canvas text-text lg:flex-row">
       <AdminNav openTickets={me.openTickets} name={me.name} email={me.email} />
       <main className="flex min-w-0 flex-1 flex-col">{sessionExpired(me.authenticatedAt) ? <SessionExpired /> : children}</main>
     </div>

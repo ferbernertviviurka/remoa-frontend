@@ -191,7 +191,7 @@ function Conversation({ ticket }: { ticket: AdminTicketDetail }) {
         <div role="status" className="min-h-0 text-[13px] font-semibold text-primary-deep">{done}</div>
         {error ? <p role="alert" className="m-0 text-[13px] font-semibold text-review-text">{error}</p> : null}
         <div className="flex flex-wrap items-center justify-between gap-2.5">
-          <span className="flex gap-2">
+          <span className="flex flex-wrap gap-2">
             <Button type="button" variant="secondary" disabled={!!busy} loading={busy === 'assign'} onClick={() => void run('assign')}>{t('admin.support.actions.assignToMe')}</Button>
             <Button type="button" variant="secondary" icon={<Icon name="check" size={18} />} disabled={!!busy || closed} loading={busy === 'resolve'} onClick={() => void run('resolve')}>{t('admin.support.actions.markResolved')}</Button>
           </span>
