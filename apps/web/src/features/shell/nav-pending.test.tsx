@@ -4,7 +4,7 @@ import { MainSlot, NavPendingProvider } from './nav-pending';
 import { Rail, items } from './rail';
 import { MobileMenu } from './mobile-menu';
 
-const questionFlags=vi.hoisted(()=>({import:true,catalog:true,sessions:true}));
+const questionFlags=vi.hoisted(()=>({import:true,catalog:true,sessions:true,bankStudent:false}));
 vi.mock('@/features/questions/flags',async original=>({...await original<typeof import('@/features/questions/flags')>(),useQuestionFeatureFlags:()=>questionFlags}));
 let pathname = '/';
 vi.mock('next/navigation', () => ({ usePathname: () => pathname, useRouter: () => ({ push: vi.fn() }), useSearchParams: () => new URLSearchParams() }));

@@ -1,0 +1,326 @@
+[
+ {
+  "id": "BK-01D",
+  "name": "catalog loads: server count = SQL eligible, 25 per page (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-02D",
+  "name": "axe+overflow list (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-03D",
+  "name": "seals: medical_review + remoa_institutional, no CRM (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-04D",
+  "name": "Carregar mais 25/25/10 with cursor, no duplicates (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-05D",
+  "name": "filters (search, difficulty) match SQL and Limpar filtros resets cursor (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-06D",
+  "name": "axe+overflow filtered-cleared (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-07D",
+  "name": "empty-filter state (not legacy, not empty catalog) (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-08D",
+  "name": "axe+overflow empty-filter (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-09D",
+  "name": "stale response ignored (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-10fD",
+  "name": "focus after retry",
+  "pass": true,
+  "detail": "{\"tag\":\"BUTTON\",\"label\":\"Ver questãoVer questão\",\"inMain\":true}"
+ },
+ {
+  "id": "BK-10D",
+  "name": "load-more error keeps list; retry keeps records and focus (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-11aD",
+  "name": "axe+overflow list-error (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-11D",
+  "name": "initial list error is an error, not empty/legacy; retry recovers (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-12D",
+  "name": "drawer: no key/comment before answer (DOM, storage) (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-13D",
+  "name": "axe+overflow drawer-open (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-14D",
+  "name": "drawer: answer -> server verdict/gabarito; matches SQL; attempt persisted; Refazer (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-15D",
+  "name": "axe+overflow drawer-result (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-16sD",
+  "name": "report dialog text",
+  "pass": true,
+  "detail": "Reportar problema nesta versão |  | O relato vai para revisão editorial e não altera o gabarito. |  | Tipo do problema | Enunciado | ▾ | Descrição |  | Descreva o problema com pelo menos 8 caracteres."
+ },
+ {
+  "id": "BK-16D",
+  "name": "drawer: Reportar erro opens report flow (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-17D",
+  "name": "axe+overflow report (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-18D",
+  "name": "Escape closes dialogs, focus returns to opener (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-19D",
+  "name": "keyboard only: Tab reaches card controls, Enter opens drawer (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-20aD",
+  "name": "axe+overflow selection-bar (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-20D",
+  "name": "selection bar + Criar prova com estas -> /prova with pinned (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-21D",
+  "name": "Minhas perguntas (IA): own AI only, marked, none from B (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-22D",
+  "name": "axe+overflow ai-tab (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-23D",
+  "name": "AI tab never leaks into catalog and catalog tab has none of A/B AI (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-01M",
+  "name": "catalog loads: server count = SQL eligible, 25 per page (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-02M",
+  "name": "axe+overflow list (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-03M",
+  "name": "seals: medical_review + remoa_institutional, no CRM (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-04M",
+  "name": "Carregar mais 25/25/10 with cursor, no duplicates (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-05M",
+  "name": "filters (search, difficulty) match SQL and Limpar filtros resets cursor (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-06M",
+  "name": "axe+overflow filtered-cleared (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-07M",
+  "name": "empty-filter state (not legacy, not empty catalog) (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-08M",
+  "name": "axe+overflow empty-filter (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-09M",
+  "name": "stale response ignored (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-10fM",
+  "name": "focus after retry",
+  "pass": true,
+  "detail": "{\"tag\":\"BUTTON\",\"label\":\"Ver questãoVer questão\",\"inMain\":true}"
+ },
+ {
+  "id": "BK-10M",
+  "name": "load-more error keeps list; retry keeps records and focus (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-11aM",
+  "name": "axe+overflow list-error (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-11M",
+  "name": "initial list error is an error, not empty/legacy; retry recovers (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-12M",
+  "name": "drawer: no key/comment before answer (DOM, storage) (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-13M",
+  "name": "axe+overflow drawer-open (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-14M",
+  "name": "drawer: answer -> server verdict/gabarito; matches SQL; attempt persisted; Refazer (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-15M",
+  "name": "axe+overflow drawer-result (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-16sM",
+  "name": "report dialog text",
+  "pass": true,
+  "detail": "Reportar problema nesta versão |  | O relato vai para revisão editorial e não altera o gabarito. |  | Tipo do problema | Enunciado | ▾ | Descrição |  | Descreva o problema com pelo menos 8 caracteres."
+ },
+ {
+  "id": "BK-16M",
+  "name": "drawer: Reportar erro opens report flow (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-17M",
+  "name": "axe+overflow report (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-18M",
+  "name": "Escape closes dialogs, focus returns to opener (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-19M",
+  "name": "keyboard only: Tab reaches card controls, Enter opens drawer (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-20aM",
+  "name": "axe+overflow selection-bar (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-20M",
+  "name": "selection bar + Criar prova com estas -> /prova with pinned (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-21M",
+  "name": "Minhas perguntas (IA): own AI only, marked, none from B (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-22M",
+  "name": "axe+overflow ai-tab (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BK-23M",
+  "name": "AI tab never leaks into catalog and catalog tab has none of A/B AI (mobile)",
+  "pass": true,
+  "detail": ""
+ }
+]

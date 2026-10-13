@@ -1,0 +1,266 @@
+[
+ {
+  "id": "BD-01D",
+  "name": "builder loads; availability count = SQL; presets (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-02D",
+  "name": "axe+overflow default (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-03D",
+  "name": "ENAMED preset: 100 asked, 60 available -> shortfall warning, never auto-fills (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-04D",
+  "name": "axe+overflow shortfall (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-05D",
+  "name": "shortfall: Aceitar 60 removes warning, count=60 (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-06D",
+  "name": "distribution balanced vs proportional with 30 (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-07D",
+  "name": "Trocar/Remover/Fixar/Sortear de novo (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-08D",
+  "name": "axe+overflow preview-actions (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-09D",
+  "name": "Mistakes preset on fresh user: 0 available, Começar disabled with hint (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-10D",
+  "name": "axe+overflow zero (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-11D",
+  "name": "Treino rápido: 10 unseen (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-12",
+  "name": "Salvar como modelo x3 then plan limit (free=3); RLS: other user sees none",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-13",
+  "name": "Marcar no Calendário creates the event",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-14aD",
+  "name": "axe+overflow confirm-dialog (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-14iD",
+  "name": "UI outcome of the loser tab",
+  "pass": true,
+  "detail": "[\"http://127.0.0.1:4362/app/banco-de-questoes/prova\",\"http://127.0.0.1:4362/app/simulados/8f2dddc2-af71-4791-89dd-88c76e336450\"] redirected"
+ },
+ {
+  "id": "BD-14D",
+  "name": "two tabs + double click -> exactly one active builder session (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-15D",
+  "name": "old active session -> Retomar prova goes to the same session (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-16nD",
+  "name": "NOTE withdrawn item content is redacted on read (\"Questão indisponível.\") although snapshot rows/ids/order/version are unchanged (existing G26 gate)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-16D",
+  "name": "snapshot unchanged after edit/unpublish (API + UI) (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-17nD",
+  "name": "session item count after accept",
+  "pass": true,
+  "detail": "4"
+ },
+ {
+  "id": "BD-17D",
+  "name": "withdraw a previewed question -> Começar revalidates (409 exam_changed) -> accept -> start (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-18sD",
+  "name": "session screen text",
+  "pass": true,
+  "detail": "SEU APRENDIZADO, EM PRÁTICA |  | Treino por assunto |  | Questão 1 de 4 |  | Sem prazo | Salvar e sair | Salvar e sair | Prova oficial | Pública | Intermediária | Revisada · Revisora Sintética |  | Fonte: Fonte sintética QA |  | 1 ocorrência em prova | Marcar "
+ },
+ {
+  "id": "BD-18D",
+  "name": "execution + result via G26 flow (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-01M",
+  "name": "builder loads; availability count = SQL; presets (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-02M",
+  "name": "axe+overflow default (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-03M",
+  "name": "ENAMED preset: 100 asked, 60 available -> shortfall warning, never auto-fills (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-04M",
+  "name": "axe+overflow shortfall (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-05M",
+  "name": "shortfall: Aceitar 60 removes warning, count=60 (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-06M",
+  "name": "distribution balanced vs proportional with 30 (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-07M",
+  "name": "Trocar/Remover/Fixar/Sortear de novo (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-08M",
+  "name": "axe+overflow preview-actions (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-09M",
+  "name": "Mistakes preset on fresh user: 0 available, Começar disabled with hint (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-10M",
+  "name": "axe+overflow zero (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-11M",
+  "name": "Treino rápido: 10 unseen (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-14aM",
+  "name": "axe+overflow confirm-dialog (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-14iM",
+  "name": "UI outcome of the loser tab",
+  "pass": true,
+  "detail": "[\"http://127.0.0.1:4362/app/banco-de-questoes/prova\",\"http://127.0.0.1:4362/app/simulados/68eaf71c-3ea1-4cb7-be28-6a8a0ac2e7c2\"] redirected"
+ },
+ {
+  "id": "BD-14M",
+  "name": "two tabs + double click -> exactly one active builder session (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-15M",
+  "name": "old active session -> Retomar prova goes to the same session (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-16nM",
+  "name": "NOTE withdrawn item content is redacted on read (\"Questão indisponível.\") although snapshot rows/ids/order/version are unchanged (existing G26 gate)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-16M",
+  "name": "snapshot unchanged after edit/unpublish (API + UI) (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-17nM",
+  "name": "session item count after accept",
+  "pass": true,
+  "detail": "4"
+ },
+ {
+  "id": "BD-17M",
+  "name": "withdraw a previewed question -> Começar revalidates (409 exam_changed) -> accept -> start (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-18sM",
+  "name": "session screen text",
+  "pass": true,
+  "detail": "SEU APRENDIZADO, EM PRÁTICA |  | Treino por assunto |  | Questão 1 de 4 |  | Sem prazo | Salvar e sair | Salvar e sair | Prova oficial | Pública | Fácil | Revisada · Revisora Sintética |  | Fonte: Fonte sintética QA |  | Marcar dúvida | Marcar dúvida | Enuncia"
+ },
+ {
+  "id": "BD-18M",
+  "name": "execution + result via G26 flow (mobile)",
+  "pass": true,
+  "detail": ""
+ }
+]

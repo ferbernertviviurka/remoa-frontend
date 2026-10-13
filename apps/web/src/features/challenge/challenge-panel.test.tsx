@@ -191,7 +191,8 @@ describe('ChallengePanel', () => {
     await user.click(reveal());
     await screen.findByText(/correções por IA de hoje acabaram/);
     expect(screen.getByRole('link', { name: 'Ver planos' })).toHaveAttribute('href', '/app/planos?de=ai_quota');
-    expect(track).toHaveBeenCalledWith('paywall_viewed', { reason: 'ai_quota' });
+    // the event fires from a passive effect, which may flush after findByText resolves (under load)
+    await waitFor(() => expect(track).toHaveBeenCalledWith('paywall_viewed', { reason: 'ai_quota' }));
   });
 
   it('AI result: warning, escaped feedback, flag button, fallback notice (G22)', async () => {

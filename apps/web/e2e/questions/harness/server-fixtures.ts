@@ -34,7 +34,7 @@ if(path===`/v1/admin/questions/imports/${ID(4)}/parser-warnings`&&req.method==='
 if(recoveryDetail&&recoveryRoute(path,req.method??'GET',body,ok,fail,`http://${req.headers.host}`))return;
 if(path==='/v1/question-institutions')return ok({items:[{name:paper.institution,paperCount:1}],truncated:false});
 if(path.endsWith('/recalculation'))return session.status==='active'?fail('conflict',409,'reference_not_available'):ok({sessionId:session.id,originalVersion:1,calculatedAt:now(),complete:true,aggregates:{correct:report().correct,incorrect:report().incorrect,unanswered:report().unanswered,annulled:0,denominator:1,score:report().score},items:[{itemId:ID(21),originalQuestionId:q.id,originalQuestionVersion:1,comparedQuestionId:q.id,comparedQuestionVersion:1,outcome:report().items[0]!.result,reasonCode:'unchanged',reference}]});
-if(path==='/v1/question-features')return ok({import:true,catalog:true,sessions:true});
+if(path==='/v1/question-features')return ok({import:true,catalog:true,sessions:true,bankStudent:false});
 if(path.includes('/taxonomy'))return ok(url.searchParams.get('kind')==='area'?[{id:ID(9),name:'Área sintética'}]:[{id:ID(10),name:'Assunto sintético'}]);
 if(path==='/v1/questions'){if(scenario==='quota')return fail('quota_exceeded');return ok({items:scenario==='empty'||url.searchParams.get('scope')==='mine'?[]:[{...q,userState}],nextCursor:null,total:scenario==='empty'?0:1});}if(path.endsWith('/user-state')){if(req.method==='PUT')userState={...userState,...body};return ok(userState);}if(path.endsWith('/reports'))return ok({reported:true});
 if(path==='/v1/exams')return ok([paper]);if(path===`/v1/exams/${paper.id}`)return ok({paper,questions:[q]});

@@ -1,0 +1,104 @@
+[
+ {
+  "id": "SEC-01kD",
+  "name": "scanned endpoints",
+  "pass": true,
+  "detail": "GET /v1/question-features; GET /v1/questions/facets; GET /v1/questions; GET /v1/questions/:id/attempt; GET /v1/challenge-ai/taxonomy; GET /v1/exam-templates; POST /v1/exam-builder/availability; POST /v1/exam-builder/preview"
+ },
+ {
+  "id": "SEC-01D",
+  "name": "browser network scan: no key/explanation/verdict in any pre-answer response (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "SEC-01kM",
+  "name": "scanned endpoints",
+  "pass": true,
+  "detail": "GET /v1/question-features; GET /v1/questions/facets; GET /v1/questions; GET /v1/questions/:id/attempt; GET /v1/exam-templates; GET /v1/challenge-ai/taxonomy; POST /v1/exam-builder/availability; POST /v1/exam-builder/preview"
+ },
+ {
+  "id": "SEC-01M",
+  "name": "browser network scan: no key/explanation/verdict in any pre-answer response (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "SEC-02s",
+  "name": "session for student (kept for RLS test)",
+  "pass": true,
+  "detail": "397be62e-5050-4f77-be22-8a784c73f61d"
+ },
+ {
+  "id": "SEC-02",
+  "name": "API pre-answer endpoints never contain key/explanation/verdict (list all scopes+sorts, facets, detail, availability, preview, swap, revalidate, templates, session start+get)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "SEC-03p",
+  "name": "preview pinning B private AI -> status",
+  "pass": true,
+  "detail": "200"
+ },
+ {
+  "id": "SEC-03d",
+  "name": "preview pinning a draft -> status",
+  "pass": true,
+  "detail": "200"
+ },
+ {
+  "id": "SEC-03",
+  "name": "RLS A/B: drafts, B private AI, other users sessions and templates invisible",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "SEC-04",
+  "name": "server counts == SQL (facets/list/availability), only eligible",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "EMP-01D",
+  "name": "empty catalog (0 eligible): honest state, no error/legacy; AI tab still works; builder disabled (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "EMP-01M",
+  "name": "empty catalog (0 eligible): honest state, no error/legacy; AI tab still works; builder disabled (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "FLG-01k",
+  "name": "calls with flag off",
+  "pass": true,
+  "detail": "GET /v1/question-features; GET /v1/challenge-ai/taxonomy; GET /v1/question-sessions; GET /v1/boards; GET /v1/question-institutions; GET /v1/exams; GET /v1/questions"
+ },
+ {
+  "id": "FLG-01",
+  "name": "bankStudent off: legacy hub, 404 on /prova, ZERO calls to new routes; API refuses them",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "NAV-01f",
+  "name": "files referencing the route outside the feature",
+  "pass": true,
+  "detail": " || shell/landing hits: "
+ },
+ {
+  "id": "NAV-01",
+  "name": "navigation and Landing without banco links (static source scan)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "BD-19",
+  "name": "prova?source=ai prefill: AI only, marked, 2 available",
+  "pass": true,
+  "detail": ""
+ }
+]

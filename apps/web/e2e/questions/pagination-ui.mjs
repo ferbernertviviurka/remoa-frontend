@@ -25,7 +25,7 @@ try{for(const [label,opts] of [['desktop',{viewport:{width:1440,height:900}}],['
  const run=async(name,fn)=>{try{await fn();checks.push({name,viewport:label,passed:true,...await verify()});}catch(e){checks.push({name,viewport:label,passed:false,error:e.message});await page.screenshot({path:path.join(dir,`failure-${label}.png`)});throw e;}};
  const mount=async(pattern,handler)=>{await page.unrouteAll({behavior:'ignoreErrors'});hits.length=0;await page.route(pattern,route=>{const u=new URL(route.request().url());hits.push(u);return handler(route,u);});};
  const imp=()=>page.getByRole('region',{name:'Importações de provas'}),articles=r=>r.getByRole('article');
- const impRoute=(all=imports,flags={import:true,catalog:true,sessions:true})=>mount('**/v1/**',(route,u)=>{if(u.pathname==='/v1/question-features')return json(route,flags);if(u.pathname==='/v1/admin/questions/imports/page')return json(route,importPage(all.filter(j=>!u.searchParams.get('status')||j.status===u.searchParams.get('status')),u,25));return route.continue();});
+ const impRoute=(all=imports,flags={import:true,catalog:true,sessions:true,bankStudent:false})=>mount('**/v1/**',(route,u)=>{if(u.pathname==='/v1/question-features')return json(route,flags);if(u.pathname==='/v1/admin/questions/imports/page')return json(route,importPage(all.filter(j=>!u.searchParams.get('status')||j.status===u.searchParams.get('status')),u,25));return route.continue();});
  await run('imports: 65 rows load 25/25/15, keyboard-only, focus lands on first new row, no duplicates',async()=>{
   await impRoute();await page.goto(base+'/admin/questoes/importacoes');await expect(articles(imp())).toHaveCount(25);
   const more=imp().getByRole('button',{name:'Carregar mais importações'});await more.focus();await page.keyboard.press('Enter');await expect(articles(imp())).toHaveCount(50);
@@ -47,26 +47,26 @@ try{for(const [label,opts] of [['desktop',{viewport:{width:1440,height:900}}],['
  });
  await run('imports: stale slow search never replaces the current one',async()=>{
   let release,entered;const gate=new Promise(r=>{release=r;}),enteredP=new Promise(r=>{entered=r;});
-  await mount('**/v1/**',async(route,u)=>{if(u.pathname==='/v1/question-features')return json(route,{import:true,catalog:true,sessions:true});if(u.pathname!=='/v1/admin/questions/imports/page')return route.continue();const s=u.searchParams.get('search');if(s==='lenta'){entered();await gate;return json(route,importPage(imports.slice(10,14),u,25)).catch(()=>{});}if(s==='rapida')return json(route,importPage(imports.slice(0,2),u,25));return json(route,importPage(imports,u,25));});
+  await mount('**/v1/**',async(route,u)=>{if(u.pathname==='/v1/question-features')return json(route,{import:true,catalog:true,sessions:true,bankStudent:false});if(u.pathname!=='/v1/admin/questions/imports/page')return route.continue();const s=u.searchParams.get('search');if(s==='lenta'){entered();await gate;return json(route,importPage(imports.slice(10,14),u,25)).catch(()=>{});}if(s==='rapida')return json(route,importPage(imports.slice(0,2),u,25));return json(route,importPage(imports,u,25));});
   await page.goto(base+'/admin/questoes/importacoes');await expect(articles(imp())).toHaveCount(25);const s=imp().getByLabel('Buscar importações por prova, instituição, caderno ou fonte');
   await s.fill('lenta');await enteredP;await s.fill('rapida');await expect(articles(imp())).toHaveCount(2);release();await page.waitForTimeout(400);await expect(articles(imp())).toHaveCount(2);
  });
  await run('imports: page-2 failure keeps loaded rows, shows alert, keyboard retry restores focus on the new row',async()=>{
-  let n=0;await mount('**/v1/**',(route,u)=>{if(u.pathname==='/v1/question-features')return json(route,{import:true,catalog:true,sessions:true});if(u.pathname!=='/v1/admin/questions/imports/page')return route.continue();if(u.searchParams.get('cursor')&&n++===0)return json(route,null,503);return json(route,importPage(imports,u,25));});
+  let n=0;await mount('**/v1/**',(route,u)=>{if(u.pathname==='/v1/question-features')return json(route,{import:true,catalog:true,sessions:true,bankStudent:false});if(u.pathname!=='/v1/admin/questions/imports/page')return route.continue();if(u.searchParams.get('cursor')&&n++===0)return json(route,null,503);return json(route,importPage(imports,u,25));});
   await page.goto(base+'/admin/questoes/importacoes');await expect(articles(imp())).toHaveCount(25);const more=imp().getByRole('button',{name:'Carregar mais importações'});await more.focus();await page.keyboard.press('Enter');
   await expect(imp().getByRole('alert')).toBeVisible();await expect(articles(imp())).toHaveCount(25);await expect(imp().getByText('Nenhuma prova importada')).toHaveCount(0);
   await expect.poll(()=>page.evaluate(()=>document.activeElement?.hasAttribute('data-import-retry'))).toBe(true);await page.keyboard.press('Enter');await expect(articles(imp())).toHaveCount(50);await expect(imp().getByRole('alert')).toHaveCount(0);
   await expect.poll(()=>page.evaluate(()=>document.activeElement?.closest('[data-import-id]')?.getAttribute('data-import-id'))).toBe(id(26));
  });
  await run('imports: first-page 503 is an error with retry, never empty or legacy listing',async()=>{
-  let n=0;await mount('**/v1/**',(route,u)=>{if(u.pathname==='/v1/question-features')return json(route,{import:true,catalog:true,sessions:true});if(u.pathname==='/v1/admin/questions/imports/page'){if(n++===0)return json(route,null,503);return json(route,importPage(imports,u,25));}return route.continue();});
+  let n=0;await mount('**/v1/**',(route,u)=>{if(u.pathname==='/v1/question-features')return json(route,{import:true,catalog:true,sessions:true,bankStudent:false});if(u.pathname==='/v1/admin/questions/imports/page'){if(n++===0)return json(route,null,503);return json(route,importPage(imports,u,25));}return route.continue();});
   await page.goto(base+'/admin/questoes/importacoes');await expect(imp().getByRole('alert')).toBeVisible();await expect(imp().getByText('Nenhuma prova importada')).toHaveCount(0);await expect(articles(imp())).toHaveCount(0);const legacyBefore=hits.filter(u=>u.pathname==='/v1/admin/questions/imports').length;await imp().getByRole('button',{name:'Tentar de novo'}).click();await expect(articles(imp())).toHaveCount(25);
   expect(hits.filter(u=>u.pathname==='/v1/admin/questions/imports').length).toBe(legacyBefore); // ponytail: the one legacy call is the pre-flags boot read; the retry never falls back
  });
  await run('imports: flag off never calls the paginated route',async()=>{
-  await impRoute(imports,{import:false,catalog:true,sessions:true});await page.goto(base+'/admin/questoes/importacoes');await expect(imp().getByText(/importação está desativada/)).toBeVisible();expect(hits.some(u=>u.pathname.endsWith('/imports/page'))).toBe(false);
+  await impRoute(imports,{import:false,catalog:true,sessions:true,bankStudent:false});await page.goto(base+'/admin/questoes/importacoes');await expect(imp().getByText(/importação está desativada/)).toBeVisible();expect(hits.some(u=>u.pathname.endsWith('/imports/page'))).toBe(false);
  });
- const ses=()=>page.getByRole('main');const sessRoute=(all=sessions,flags={import:true,catalog:true,sessions:true})=>mount('**/v1/**',(route,u)=>{if(u.pathname==='/v1/question-features')return json(route,flags);if(u.pathname==='/v1/question-sessions/history'){const st=u.searchParams.get('status');return json(route,sessPage(st?all.filter(s=>s.status===st):all,u));}return route.continue();});
+ const ses=()=>page.getByRole('main');const sessRoute=(all=sessions,flags={import:true,catalog:true,sessions:true,bankStudent:false})=>mount('**/v1/**',(route,u)=>{if(u.pathname==='/v1/question-features')return json(route,flags);if(u.pathname==='/v1/question-sessions/history'){const st=u.searchParams.get('status');return json(route,sessPage(st?all.filter(s=>s.status===st):all,u));}return route.continue();});
  await run('sessions: 45 load 20/20/5 including the old active one (server state), keyboard-only',async()=>{
   await sessRoute();await page.goto(base+'/app/simulados');await expect(ses().getByRole('article')).toHaveCount(20);const more=ses().getByRole('button',{name:'Carregar tentativas anteriores'});
   await more.focus();await page.keyboard.press('Enter');await expect(ses().getByRole('article')).toHaveCount(40);await expect.poll(()=>page.evaluate(()=>document.activeElement?.closest('[data-session-id]')?.getAttribute('data-session-id'))).toBe(id(5021));
@@ -78,14 +78,14 @@ try{for(const [label,opts] of [['desktop',{viewport:{width:1440,height:900}}],['
   await sessRoute();await page.goto(base+'/app/simulados');await expect(ses().getByRole('article')).toHaveCount(20);await ses().getByRole('button',{name:'Carregar tentativas anteriores'}).click();await expect(ses().getByRole('article')).toHaveCount(40);
   hits.length=0;await ses().getByRole('combobox',{name:'Estado da tentativa'}).click();await page.getByRole('option',{name:'Em andamento'}).click();await expect(ses().getByRole('article')).toHaveCount(1);
   const last=hits.filter(u=>u.pathname.endsWith('/history')).at(-1);expect(last.searchParams.get('status')).toBe('active');expect(last.searchParams.has('cursor')).toBe(false);
-  let n=0;await mount('**/v1/**',(route,u)=>{if(u.pathname==='/v1/question-features')return json(route,{import:true,catalog:true,sessions:true});if(u.pathname!=='/v1/question-sessions/history')return route.continue();if(u.searchParams.get('cursor')&&n++===0)return json(route,null,503);return json(route,sessPage(sessions,u));});
+  let n=0;await mount('**/v1/**',(route,u)=>{if(u.pathname==='/v1/question-features')return json(route,{import:true,catalog:true,sessions:true,bankStudent:false});if(u.pathname!=='/v1/question-sessions/history')return route.continue();if(u.searchParams.get('cursor')&&n++===0)return json(route,null,503);return json(route,sessPage(sessions,u));});
   await page.goto(base+'/app/simulados');await expect(ses().getByRole('article')).toHaveCount(20);await ses().getByRole('button',{name:'Carregar tentativas anteriores'}).click();await expect(ses().getByRole('alert')).toBeVisible();await expect(ses().getByRole('article')).toHaveCount(20);
   await ses().getByRole('button',{name:'Tentar de novo'}).click();await expect(ses().getByRole('article')).toHaveCount(40);
-  await mount('**/v1/**',(route,u)=>{if(u.pathname==='/v1/question-features')return json(route,{import:true,catalog:true,sessions:true});if(u.pathname==='/v1/question-sessions/history')return json(route,null,503);return route.continue();});
+  await mount('**/v1/**',(route,u)=>{if(u.pathname==='/v1/question-features')return json(route,{import:true,catalog:true,sessions:true,bankStudent:false});if(u.pathname==='/v1/question-sessions/history')return json(route,null,503);return route.continue();});
   await page.goto(base+'/app/simulados');await expect(ses().getByRole('alert')).toBeVisible();await expect(ses().getByText('Nenhuma tentativa ainda')).toHaveCount(0);await expect(ses().getByRole('article')).toHaveCount(0);
  });
  await run('sessions: flag off never calls the history route',async()=>{
-  await sessRoute(sessions,{import:true,catalog:true,sessions:false});await page.goto(base+'/app/simulados');await expect(ses().getByText('O histórico de tentativas está indisponível neste momento.')).toBeVisible();expect(hits.some(u=>u.pathname.endsWith('/history'))).toBe(false);
+  await sessRoute(sessions,{import:true,catalog:true,sessions:false,bankStudent:false});await page.goto(base+'/app/simulados');await expect(ses().getByText('O histórico de tentativas está indisponível neste momento.')).toBeVisible();expect(hits.some(u=>u.pathname.endsWith('/history'))).toBe(false);
  });
  await context.close();
 }}

@@ -28,7 +28,7 @@ function detail(record:QuestionAdminCatalogItem){return questionEditorialDetailS
 export function catalogHistoryRoute(path:string,method:string,url:URL,ok:Ok,fail:Fail):boolean{
  if(!state)return false;const current=state;
  if(method!=='GET'&&path.startsWith('/v1/')){fail('not_found',404,'readonly_synthetic_fixture');return true;}
- if(path==='/v1/question-features'){ok(questionFeatureFlagsSchema.parse({import:true,catalog:current.scenario!=='catalog-flagoff',sessions:true}));return true;}
+ if(path==='/v1/question-features'){ok(questionFeatureFlagsSchema.parse({import:true,catalog:current.scenario!=='catalog-flagoff',sessions:true,bankStudent:false}));return true;}
  if(path==='/v1/admin/questions/sources'){ok(questionSourceListSchema.parse({items:sources,audit}));return true;}
  if(path==='/v1/admin/questions/imports'){ok(questionImportListSchema.parse({items:[],audit}));return true;}
  if(path==='/v1/admin/questions/metrics'){ok(questionCatalogMetricsSchema.parse({publicCanonical:20,importsByStatus:[],candidateCounts:[],documents:0,generatedPrivate:0,duplicateOrVersionNotCounted:true,publicByOrigin:[{origin:'remoa_authored',count:20}],coverageByArea:[],coverageByTopic:[],coverageTruncated:false,audit}));return true;}

@@ -1,0 +1,44 @@
+[
+ {
+  "id": "EX-01fD",
+  "name": "study feedback after confirm",
+  "pass": true,
+  "detail": "ntética C | × | D | Alternativa sintética D | × | E | Alternativa sintética E | × |  | Vamos entender esse ponto |  | Gabarito: B |  | EXPLICACAO_SECRETA_10 |  | Revisada |  | Existe uma versão mais r"
+ },
+ {
+  "id": "EX-01rD",
+  "name": "result text",
+  "pass": true,
+  "detail": "SEU APRENDIZADO, EM PRÁTICA |  | Cada tentativa deixa um caminho |  | Seu resultado nesta tentativa. |  | Novo treino | 0 de 4 questões corretas |  | 4 erradas |  | 0 não respondidas |  | 0 anuladas |  | Questões anuladas não compõem o denominador. |  | Refazer erros | Refazer erros | Caderno de err"
+ },
+ {
+  "id": "EX-01D",
+  "name": "execute builder session (study) answering all, conclude, result with gabarito from server (desktop)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "EX-01fM",
+  "name": "study feedback after confirm",
+  "pass": true,
+  "detail": "ética C | × | D | Alternativa sintética D | × | E | Alternativa sintética E | × |  | Vamos entender esse ponto |  | Gabarito: A |  | EXPLICACAO_SECRETA_15 |  | Revisada |  | Procedência |  | O mapa de"
+ },
+ {
+  "id": "EX-01rM",
+  "name": "result text",
+  "pass": true,
+  "detail": "SEU APRENDIZADO, EM PRÁTICA |  | Cada tentativa deixa um caminho |  | Seu resultado nesta tentativa. |  | Novo treino | 0 de 4 questões corretas |  | 4 erradas |  | 0 não respondidas |  | 0 anuladas |  | Questões anuladas não compõem o denominador. |  | Refazer erros | Refazer erros | Caderno de err"
+ },
+ {
+  "id": "EX-01M",
+  "name": "execute builder session (study) answering all, conclude, result with gabarito from server (mobile)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "EX-02",
+  "name": "simulation mode: no gabarito/comment before concluding (API + UI), shown only in result",
+  "pass": true,
+  "detail": ""
+ }
+]

@@ -1,0 +1,117 @@
+{
+  "kind": "SYNTHETIC: production components in Vite harness, synthetic HTTP via page.route; no Next SSR/backend/DB; not production evidence",
+  "checks": [
+    {
+      "name": "list 25 + cursor, seal, axe",
+      "viewport": "desktop",
+      "passed": true,
+      "axe": 0,
+      "overflow": false
+    },
+    {
+      "name": "keyboard: load more focuses first new row; no duplicates",
+      "viewport": "desktop",
+      "passed": true,
+      "axe": 0,
+      "overflow": false
+    },
+    {
+      "name": "load-more failure: inline alert, rows kept, retry focused, then recovers",
+      "viewport": "desktop",
+      "passed": true,
+      "axe": 0,
+      "overflow": false
+    },
+    {
+      "name": "initial error: alert with retry, never empty",
+      "viewport": "desktop",
+      "passed": true,
+      "axe": 0,
+      "overflow": false
+    },
+    {
+      "name": "catalog without published questions: honest copy",
+      "viewport": "desktop",
+      "passed": true,
+      "axe": 0,
+      "overflow": false
+    },
+    {
+      "name": "topic autocomplete by keyboard, chip, clear filters",
+      "viewport": "desktop",
+      "passed": true,
+      "axe": 0,
+      "overflow": false
+    },
+    {
+      "name": "drawer by keyboard: answer, reference only after, focus returns, Esc closes",
+      "viewport": "desktop",
+      "passed": true,
+      "axe": 0,
+      "overflow": false
+    },
+    {
+      "name": "selection bar and create-exam navigation",
+      "viewport": "desktop",
+      "passed": true,
+      "axe": 0,
+      "overflow": false
+    },
+    {
+      "name": "list 25 + cursor, seal, axe",
+      "viewport": "mobile",
+      "passed": true,
+      "axe": 0,
+      "overflow": false
+    },
+    {
+      "name": "keyboard: load more focuses first new row; no duplicates",
+      "viewport": "mobile",
+      "passed": true,
+      "axe": 0,
+      "overflow": false
+    },
+    {
+      "name": "load-more failure: inline alert, rows kept, retry focused, then recovers",
+      "viewport": "mobile",
+      "passed": true,
+      "axe": 0,
+      "overflow": false
+    },
+    {
+      "name": "initial error: alert with retry, never empty",
+      "viewport": "mobile",
+      "passed": true,
+      "axe": 0,
+      "overflow": false
+    },
+    {
+      "name": "catalog without published questions: honest copy",
+      "viewport": "mobile",
+      "passed": true,
+      "axe": 0,
+      "overflow": false
+    },
+    {
+      "name": "topic autocomplete by keyboard, chip, clear filters",
+      "viewport": "mobile",
+      "passed": true,
+      "axe": 0,
+      "overflow": false
+    },
+    {
+      "name": "drawer by keyboard: answer, reference only after, focus returns, Esc closes",
+      "viewport": "mobile",
+      "passed": true,
+      "axe": 0,
+      "overflow": false
+    },
+    {
+      "name": "selection bar and create-exam navigation",
+      "viewport": "mobile",
+      "passed": true,
+      "axe": 0,
+      "overflow": false
+    }
+  ]
+}

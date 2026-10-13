@@ -6,6 +6,7 @@ import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Alert, Button, Card, Empty, Input, Select, SkeletonBlock, SkeletonRegion, Tag, Textarea } from '@remoa/ui';
 import { api } from '@/lib/api';
+import { TrainTopicLink } from '@/features/exam-builder/train-topic-link';
 
 const t = withStrings({ boards: more.boards, inspector: more.inspector, map: more.map, questions: more.questions });
 
@@ -152,6 +153,7 @@ export function BankScreen() {
         <p className="mb-3 text-xs font-bold uppercase tracking-[.12em] text-muted">{t('questions.eyebrow')}</p>
         <h1 className="m-0 font-display text-[34px] font-extrabold leading-[1.1] tracking-[-0.03em] outline-none md:text-[44px]">{t('questions.title')}</h1>
         <p className="mt-3 text-muted">{t('questions.subtitle')}</p>
+        <div className="mt-4"><TrainTopicLink kind="byTopic" href="/app/banco-de-questoes/prova?source=ai" /></div>
       </header>
 
       <section aria-label={t('questions.filters')} className="rounded-[26px] border border-border bg-surface p-5 md:p-6">

@@ -4,7 +4,7 @@ import { cleanup,fireEvent,render,screen,waitFor } from '@testing-library/react'
 import { questionImportDetailSchema } from '@remoa/contracts';
 import {testAudit} from './recovery.test-fixtures';
 import { ImportDetailScreen } from './import-detail-screen';
-vi.mock('@/features/questions/flags',()=>({useQuestionFeatureFlags:()=>({import:true,catalog:true,sessions:true})}));
+vi.mock('@/features/questions/flags',()=>({useQuestionFeatureFlags:()=>({import:true,catalog:true,sessions:true,bankStudent:false})}));
 vi.mock('./api',()=>({getImportParserWarnings:vi.fn(async()=>unavailableWarnings('not_recorded')),getImport:vi.fn(),importAction:vi.fn()}));
 vi.mock('./private-preview',()=>({PrivatePreview:()=>null}));
 import {getImport,importAction} from './api';
