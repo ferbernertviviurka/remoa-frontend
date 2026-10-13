@@ -1,0 +1,393 @@
+{
+  "res": [
+    {
+      "name": "seed: 2 institutional drafts with null hash (SQL, synthetic)",
+      "ok": true,
+      "detail": [
+        "c339daff-c73c-4f04-931f-9813391b2f15",
+        "ca7d26af-9371-4078-9708-f985d31dfe57"
+      ]
+    },
+    {
+      "name": "publish BLOCKED: draft without hash/rights/review/integrity (admin)",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "err": {
+          "code": "validation",
+          "message": "expectedContentHash: Invalid"
+        }
+      }
+    },
+    {
+      "name": "publish denied for student (404)",
+      "ok": true,
+      "detail": {
+        "status": 404
+      }
+    },
+    {
+      "name": "publish denied for reviewer (404)",
+      "ok": true,
+      "detail": {
+        "status": 404
+      }
+    },
+    {
+      "name": "publish denied for other (404)",
+      "ok": true,
+      "detail": {
+        "status": 404
+      }
+    },
+    {
+      "name": "hash prepare with stale session -> reauth required, nothing written",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "msg": "reauth_required",
+        "auditDenials": "15->16",
+        "denial": "denied:reauth_required"
+      }
+    },
+    {
+      "name": "hash prepare as student -> 404",
+      "ok": true,
+      "detail": {
+        "status": 404
+      }
+    },
+    {
+      "name": "hash prepare short reason -> 4xx",
+      "ok": true,
+      "detail": {
+        "status": 422
+      }
+    },
+    {
+      "name": "publish BLOCKED with source rights=pending, hash ok, no medical review/integrity/area",
+      "ok": true,
+      "detail": {
+        "prepare": 200,
+        "publish": 409,
+        "err": "content_hash_changed"
+      }
+    },
+    {
+      "name": "medical approval BLOCKED without integrity/key/taxonomy/comment (reviewer)",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "err": "medical_review_incomplete"
+      }
+    },
+    {
+      "name": "publish BLOCKED with source rights=authorized, hash ok, no medical review/integrity/area",
+      "ok": true,
+      "detail": {
+        "prepare": 200,
+        "publish": 409,
+        "err": "content_hash_changed"
+      }
+    },
+    {
+      "name": "catalog hashState=missing lists only null-hash institutional drafts",
+      "ok": true,
+      "detail": {
+        "checkboxes": 2
+      }
+    },
+    {
+      "name": "a11y admin-catalog-hash-missing @390",
+      "ok": true,
+      "detail": {
+        "violations": [],
+        "scrollWidth": 390
+      }
+    },
+    {
+      "name": "a11y admin-hash-dialog @390",
+      "ok": true,
+      "detail": {
+        "violations": [],
+        "scrollWidth": 390
+      }
+    },
+    {
+      "name": "Preparar para edição (UI, real endpoint): hashes written, status unchanged, exactly 1 success audit row",
+      "ok": true,
+      "detail": {
+        "hashes": [
+          "90622eea9c54",
+          "6c290f7f58dd"
+        ],
+        "auditN": "1"
+      }
+    },
+    {
+      "name": "publish STILL BLOCKED after hash prepare (no review/rights/integrity)",
+      "ok": true,
+      "detail": {
+        "status": 404,
+        "err": {
+          "code": "not_found",
+          "message": "question not found"
+        }
+      }
+    },
+    {
+      "name": "geracao loads real metrics/outbox (no error alert)",
+      "ok": true,
+      "detail": {
+        "h1": "Operação da geração de questões",
+        "text": "Operação da geração de questões\n\nAcompanhe a fila de recibos e promoções, a vazão e o custo. Só metadados, sem conteúdo.\n\nAcervo\nFontes\nImportações\nRevisão médica\nRelatos sobre questões\nGeração\nFila e vazão\nRecibo da questão\n\nPendentes 0 · em andamento 0 · esgotados 0\n\nNenhum pendente.\n\nEntregues 0 · recuperados 0 · Últimas 24 h\n\nPromoção da questão\n\nPendentes 0 · em andamento 0 · esgotados 0\n\nNen"
+      }
+    },
+    {
+      "name": "a11y admin-geracao @390",
+      "ok": true,
+      "detail": {
+        "violations": [],
+        "scrollWidth": 390
+      }
+    },
+    {
+      "name": "a11y admin-catalog @1440",
+      "ok": true,
+      "detail": {
+        "violations": [],
+        "scrollWidth": 1440
+      }
+    },
+    {
+      "name": "a11y admin-geracao @1440",
+      "ok": true,
+      "detail": {
+        "violations": [],
+        "scrollWidth": 1440
+      }
+    },
+    {
+      "name": "a11y banco-student-ish @1440",
+      "ok": true,
+      "detail": {
+        "violations": [],
+        "scrollWidth": 1440
+      }
+    },
+    {
+      "name": "a11y admin-importacoes @1440",
+      "ok": true,
+      "detail": {
+        "violations": [],
+        "scrollWidth": 1440
+      }
+    },
+    {
+      "name": "keyboard tab order on geracao reaches interactive controls",
+      "ok": true,
+      "detail": [
+        "Importar prova PDF|h44|outline:solid",
+        "Acervo|h44|outline:solid",
+        "Fontes|h44|outline:solid",
+        "Importações|h44|outline:solid",
+        "Revisão médica|h44|outline:solid",
+        "Relatos sobre questões|h44|outline:solid",
+        "Geração|h44|outline:solid",
+        "INPUT|h48|outline:solid"
+      ]
+    },
+    {
+      "name": "student wrong answer recorded via API (for Caderno de erros)",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "student Caderno de erros lists wrong answers @390",
+      "ok": true,
+      "detail": {
+        "articles": 1
+      }
+    },
+    {
+      "name": "a11y student-caderno-erros @390",
+      "ok": true,
+      "detail": {
+        "violations": [],
+        "scrollWidth": 390
+      }
+    },
+    {
+      "name": "student Favoritas tab @390",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "a11y student-favoritas @390",
+      "ok": true,
+      "detail": {
+        "violations": [],
+        "scrollWidth": 390
+      }
+    },
+    {
+      "name": "a11y student-simulados @390",
+      "ok": true,
+      "detail": {
+        "violations": [],
+        "scrollWidth": 390
+      }
+    },
+    {
+      "name": "a11y student-provas @390",
+      "ok": true,
+      "detail": {
+        "violations": [],
+        "scrollWidth": 390
+      }
+    },
+    {
+      "name": "student Caderno de erros lists wrong answers @1440",
+      "ok": true,
+      "detail": {
+        "articles": 1
+      }
+    },
+    {
+      "name": "a11y student-caderno-erros @1440",
+      "ok": true,
+      "detail": {
+        "violations": [],
+        "scrollWidth": 1440
+      }
+    },
+    {
+      "name": "student Favoritas tab @1440",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "a11y student-favoritas @1440",
+      "ok": true,
+      "detail": {
+        "violations": [],
+        "scrollWidth": 1440
+      }
+    },
+    {
+      "name": "a11y student-simulados @1440",
+      "ok": true,
+      "detail": {
+        "violations": [],
+        "scrollWidth": 1440
+      }
+    },
+    {
+      "name": "a11y student-provas @1440",
+      "ok": true,
+      "detail": {
+        "violations": [],
+        "scrollWidth": 1440
+      }
+    },
+    {
+      "name": "no JS exceptions",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "screens": [
+    {
+      "name": "admin-catalog-hash-missing",
+      "vw": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "admin-hash-dialog",
+      "vw": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "admin-geracao",
+      "vw": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "admin-catalog",
+      "vw": 1440,
+      "scrollWidth": 1440,
+      "violations": []
+    },
+    {
+      "name": "admin-geracao",
+      "vw": 1440,
+      "scrollWidth": 1440,
+      "violations": []
+    },
+    {
+      "name": "banco-student-ish",
+      "vw": 1440,
+      "scrollWidth": 1440,
+      "violations": []
+    },
+    {
+      "name": "admin-importacoes",
+      "vw": 1440,
+      "scrollWidth": 1440,
+      "violations": []
+    },
+    {
+      "name": "student-caderno-erros",
+      "vw": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "student-favoritas",
+      "vw": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "student-simulados",
+      "vw": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "student-provas",
+      "vw": 390,
+      "scrollWidth": 390,
+      "violations": []
+    },
+    {
+      "name": "student-caderno-erros",
+      "vw": 1440,
+      "scrollWidth": 1440,
+      "violations": []
+    },
+    {
+      "name": "student-favoritas",
+      "vw": 1440,
+      "scrollWidth": 1440,
+      "violations": []
+    },
+    {
+      "name": "student-simulados",
+      "vw": 1440,
+      "scrollWidth": 1440,
+      "violations": []
+    },
+    {
+      "name": "student-provas",
+      "vw": 1440,
+      "scrollWidth": 1440,
+      "violations": []
+    }
+  ]
+}

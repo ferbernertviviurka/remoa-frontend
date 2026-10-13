@@ -147,7 +147,8 @@ describe('CompareSection', () => {
   it('renders a table with the 7 rows, 3 columns and the footnote with month/year', () => {
     render(<CompareSection />);
     const table = screen.getByRole('table');
-    expect(within(table).getAllByRole('row')).toHaveLength(1 + strings.landing.compare.rows.length);
+    expect(within(table).getAllByRole('row')).toHaveLength(1 + strings.landing.compare.rows.length - 1);
+    expect(within(table).queryByText(strings.landing.nav.anchors.bank)).toBeNull();
     expect(within(table).getAllByRole('columnheader').map((c) => c.textContent)).toContain(strings.landing.compare.columns.remoa);
     expect(screen.getByText(new RegExp(`/${new Date().getFullYear()}`))).toBeTruthy();
   });

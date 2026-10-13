@@ -50,8 +50,10 @@ describe('Rail Calendário (F25 FR-1)', () => {
     pathname = '/app/calendario';
     const { rerender } = render(<Rail />);
     const links = screen.getAllByRole('link');
-    expect(links).toHaveLength(8);
+    expect(links).toHaveLength(6);
     expect(screen.queryByRole('link', { name: 'Progresso' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Questões' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Provas' })).toBeNull();
     expect(links[3]).toHaveAccessibleName('Calendário');
     expect(links[3]).toHaveAttribute('aria-current', 'page');
     expect(screen.queryByText('Há compromisso nas próximas 24 horas')).toBeNull();
