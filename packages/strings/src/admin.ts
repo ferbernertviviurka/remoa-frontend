@@ -8,6 +8,8 @@ export const admin = {
     ariaLabel: 'Painel de administração',
     backToApp: 'Voltar ao app',
     signOut: 'Sair',
+    openMenu: 'Abrir menu do painel',
+    closeMenu: 'Fechar menu do painel',
   },
 
   // Falha transitória (429/5xx/rede): error boundary do painel
@@ -809,6 +811,8 @@ export const admin = {
     confirm: 'Confirmar',
     wrongPassword: 'Senha incorreta. Tente de novo.',
     otherMethod: 'Entrei com Google ou link por e-mail',
+    recentConfirmDesc: 'Ações sensíveis exigem um login feito nos últimos 30 minutos. Confirme sua senha e repita a ação.',
+    close: 'Fechar',
   },
 
   // FR-21: Segurança

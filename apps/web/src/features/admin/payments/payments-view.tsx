@@ -8,6 +8,7 @@ import {
   PersonCell, ReasonDialog, StatusPill, SummaryChip, type StatusPillProps,
 } from '@remoa/ui';
 import { exportAdminCsv, runAdminAction } from '../shared/actions';
+import { notifyReauth } from '@/lib/api';
 import { fetchAdminDetail } from '../list-kit/detail-action';
 import { useListParams } from '../list-kit/use-list-params';
 import { formatBRL } from '../shared/format';
@@ -63,7 +64,7 @@ export function PaymentsView({ data, query }: { data: AdminPaymentPage | null; q
     if (!openId || !kind) throw new Error('no_payment');
     const r = await runAdminAction(`/payments/${openId}/${kind}`, kind === 'mark-paid' ? { reason, checked: true } : { reason });
     setReauth(!r.ok && r.error.code === 'reauth_required');
-    if (!r.ok) throw new Error(r.error.code);
+    if (!r.ok) { notifyReauth(r.error); throw new Error(r.error.code); }
     return { auditId: r.auditId };
   };
   const confirmed = (auditId: string) => {

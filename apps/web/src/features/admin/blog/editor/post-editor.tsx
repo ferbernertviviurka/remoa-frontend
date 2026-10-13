@@ -15,6 +15,7 @@ import {
   type PublishStatus,
 } from '@remoa/ui';
 import { blogAction, blogPatch } from '../api';
+import { notifyReauth } from '@/lib/api';
 import { listRevisions } from './api';
 import { assetUrls, blogExtensions } from './extensions';
 import { checklistView, formatBrasilia, fromBrasiliaInput, parseDoc, toBrasiliaInput } from './doc';
@@ -92,6 +93,7 @@ export function PostEditor({ post: initialPost, categories, me, site }: PostEdit
   const invalid = { title: !fits('title', f.title), slug: !fits('slug', f.slug), content: !!json && !doc };
   const onError = useCallback((e: SaveError, patch: Record<string, unknown>) => {
     if (e.message === blogErrors.slugTaken && typeof patch.slug === 'string') setRejectedSlug(patch.slug);
+    notifyReauth(e);
     if (e.code === 'reauth_required') toast({ title: t('adminBlog.editor.ui.reauth'), tone: 'danger' });
   }, [toast]);
   const send = useCallback(async (patch: Record<string, unknown>) => {
@@ -116,8 +118,10 @@ export function PostEditor({ post: initialPost, categories, me, site }: PostEdit
   const missing = blockers.map((b) => blockerText[b]);
   if (invalid.content) missing.push(t('adminBlog.editor.ui.content.invalid'));
 
-  const fail = (e: { code: string; message: string }) =>
+  const fail = (e: { code: string; message: string }) => {
+    notifyReauth(e);
     toast({ title: e.code === 'reauth_required' ? t('adminBlog.editor.ui.reauth') : t('adminBlog.editor.ui.actionError'), tone: 'danger' });
+  };
 
   const saveNow = async () => {
     if (await autosave.flush()) toast({ title: t('adminBlog.editor.ui.updated') });

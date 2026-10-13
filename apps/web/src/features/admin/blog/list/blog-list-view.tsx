@@ -7,6 +7,7 @@ import { t } from '@remoa/strings/admin';
 import { AdminHeader, AdminSearch, BlogPostList, BlogPostRow, BlogStatusTabs, Button, ReasonDialog, SitemapCard, useToast } from '@remoa/ui';
 import { useListParams } from '../../list-kit/use-list-params';
 import { blogAction, blogDelete } from '../api';
+import { notifyReauth } from '@/lib/api';
 import { CategoriesSection } from './categories-section';
 import { formatDateTime, formatDay } from './format';
 import { NewPostDialog } from './new-post-dialog';
@@ -74,14 +75,14 @@ export function BlogListView({ data, error, sitemap, sitemapError = false, categ
   async function unpublish(reason: string) {
     const r = await blogAction(`/posts/${unpublishing!.id}/unpublish`, { reason });
     setReauth(!r.ok && r.error.code === 'reauth_required');
-    if (!r.ok) throw new Error(r.error.code);
+    if (!r.ok) { notifyReauth(r.error); throw new Error(r.error.code); }
     return { auditId: r.auditId };
   }
 
   async function remove(reason: string) {
     const r = await blogDelete(`/posts/${deleting!.id}`, { reason });
     setReauth(!r.ok && r.error.code === 'reauth_required');
-    if (!r.ok) throw new Error(r.error.code);
+    if (!r.ok) { notifyReauth(r.error); throw new Error(r.error.code); }
     return { auditId: r.auditId };
   }
 

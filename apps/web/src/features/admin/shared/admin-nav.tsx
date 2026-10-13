@@ -37,6 +37,7 @@ export function AdminNav({ openTickets, name, email }: { openTickets: number; na
       backHref="/app/hoje"
       signOutLabel={t('admin.navigation.signOut')}
       onSignOut={leave}
+      menuLabels={{ open: t('admin.navigation.openMenu'), close: t('admin.navigation.closeMenu') }}
       as={Link}
     />
   );

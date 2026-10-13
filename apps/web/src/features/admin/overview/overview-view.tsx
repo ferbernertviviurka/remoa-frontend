@@ -80,7 +80,7 @@ export function OverviewView({ data, period }: { data: AdminOverview; period: Ov
       </AdminHeader>
 
       <div className="flex flex-col gap-[22px] px-10 pb-14 pt-[26px] max-lg:px-4">
-        <div className="grid grid-cols-3 gap-[18px] max-lg:grid-cols-1">
+        <div className="grid grid-cols-3 gap-[18px] max-2xl:grid-cols-2 max-sm:grid-cols-1">
           {cards.map((x, i) => (
             <StatCard
               key={x.key}
@@ -95,7 +95,7 @@ export function OverviewView({ data, period }: { data: AdminOverview; period: Ov
           ))}
         </div>
 
-        <div className="grid grid-cols-[minmax(0,1fr)_400px] items-stretch gap-[22px] max-lg:grid-cols-1">
+        <div className="grid grid-cols-[minmax(0,1fr)_400px] items-stretch gap-[22px] max-xl:grid-cols-1">
           <BarChart
             title={t('admin.overview.chart.title')}
             aria-label={t('admin.overview.chart.aria')}
@@ -130,7 +130,7 @@ export function OverviewView({ data, period }: { data: AdminOverview; period: Ov
           />
         </AdminSection>
 
-        <div className="grid grid-cols-2 items-start gap-[22px] max-lg:grid-cols-1">
+        <div className="grid grid-cols-2 items-start gap-[22px] max-xl:grid-cols-1">
           <AdminSection title={t('admin.overview.tables.latestUsers')} action={viewAll('/admin/usuarios', t('admin.overview.tables.viewAll'))}>
             <DataTable
               flush

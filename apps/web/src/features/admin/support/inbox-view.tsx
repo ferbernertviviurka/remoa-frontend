@@ -7,6 +7,7 @@ import { formatTicketNumber, type AdminTicketDetail, type AdminTicketMessage, ty
 import { t } from '@remoa/strings/admin';
 import { AdminHeader, AdminSearch, Button, Icon, StatusPill, Switch, Textarea, Thread, type StatusTone, type ThreadMessage } from '@remoa/ui';
 import { runAdminAction } from '../shared/actions';
+import { notifyReauth } from '@/lib/api';
 import { When } from '../shared/when';
 
 const tone: Record<SupportTicketStatus, StatusTone> = { open: 'warn', in_review: 'info', answered: 'ok', resolved: 'muted' };
@@ -141,7 +142,7 @@ function Conversation({ ticket }: { ticket: AdminTicketDetail }) {
       ? await runAdminAction(`/tickets/${ticket.id}/messages`, { reason, body: body.trim(), internal })
       : await runAdminAction(`/tickets/${ticket.id}/${kind}`, { reason });
     setBusy(null);
-    if (!r.ok) return setError(t('admin.support.reply.error'));
+    if (!r.ok) { notifyReauth(r.error); return setError(t('admin.support.reply.error')); }
     if (kind === 'send') { setBody(''); setDone(t(internal ? 'admin.support.reply.successNote' : 'admin.support.reply.successTicket')); }
     router.refresh();
   }
@@ -191,7 +192,7 @@ function Conversation({ ticket }: { ticket: AdminTicketDetail }) {
         <div role="status" className="min-h-0 text-[13px] font-semibold text-primary-deep">{done}</div>
         {error ? <p role="alert" className="m-0 text-[13px] font-semibold text-review-text">{error}</p> : null}
         <div className="flex flex-wrap items-center justify-between gap-2.5">
-          <span className="flex gap-2">
+          <span className="flex flex-wrap gap-2">
             <Button type="button" variant="secondary" disabled={!!busy} loading={busy === 'assign'} onClick={() => void run('assign')}>{t('admin.support.actions.assignToMe')}</Button>
             <Button type="button" variant="secondary" icon={<Icon name="check" size={18} />} disabled={!!busy || closed} loading={busy === 'resolve'} onClick={() => void run('resolve')}>{t('admin.support.actions.markResolved')}</Button>
           </span>

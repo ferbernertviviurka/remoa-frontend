@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, type ComponentType, type ReactNode } from 'react';
+import { useId, useState, type ComponentType, type ReactNode } from 'react';
 import { focusRing } from '../button-styles';
 import { Icon, type IconName } from '../icons';
 import { Logo } from '../logo';
@@ -37,19 +37,29 @@ export type AdminSidebarProps = {
   /** G14: "Sair" no cartão do admin; só aparece com os dois. */
   signOutLabel?: string;
   onSignOut?: () => void;
+  /** Abaixo de 1024 px a barra vira topo com botão de menu; rótulos do botão só-ícone (abrir/fechar). */
+  menuLabels?: { open: string; close: string };
 };
 
-export function AdminSidebar({ brandLabel, badge, items, activeId, account, backLabel, backHref, as, signOutLabel, onSignOut, ...rest }: AdminSidebarProps) {
+export function AdminSidebar({ brandLabel, badge, items, activeId, account, backLabel, backHref, as, signOutLabel, onSignOut, menuLabels, ...rest }: AdminSidebarProps) {
   const As: LinkLike = as ?? 'a';
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
   return (
-    <nav aria-label={rest['aria-label']} className="sticky top-0 box-border flex h-dvh w-[264px] shrink-0 self-start flex-col gap-1.5 overflow-y-auto bg-admin-nav px-4 py-[22px] text-on-dark-muted">
-      <div className="flex items-center gap-2.5 px-2.5 pb-[18px]">
+    <nav aria-label={rest['aria-label']} className="sticky top-0 z-40 box-border flex max-h-dvh w-full shrink-0 flex-col gap-1.5 overflow-y-auto bg-admin-nav px-3 py-2 text-on-dark-muted lg:h-dvh lg:w-[264px] lg:self-start lg:px-4 lg:py-[22px]">
+      <div className="flex items-center gap-2.5 px-1 lg:px-2.5 lg:pb-[18px]">
         {/* G14 (D-587): the logo goes back to the app (Hoje), like the wordmark everywhere else when signed in. */}
         <As href={backHref} className={`flex min-h-11 items-center rounded-[10px] ${focusRing}`}>
           <Logo title={brandLabel} withWordmark onDark size={28} />
         </As>
         <span className="ml-auto rounded-pill bg-review px-2.5 py-[3px] text-[11px] font-extrabold tracking-[0.08em] text-white">{badge}</span>
+        {menuLabels ? (
+          <button type="button" aria-expanded={open} aria-controls={panelId} aria-label={open ? menuLabels.close : menuLabels.open} onClick={() => setOpen((o) => !o)} className={`flex size-11 cursor-pointer items-center justify-center rounded-[12px] border border-white/20 bg-transparent text-white hover:bg-white/10 lg:hidden ${focusRing}`}>
+            <Icon name={open ? 'close' : 'menu'} size={22} />
+          </button>
+        ) : null}
       </div>
+      <div id={panelId} className={`${open || !menuLabels ? 'flex' : 'hidden'} grow flex-col gap-1.5 pb-2 lg:flex lg:pb-0`} onClick={(e) => { if ((e.target as HTMLElement).closest('a')) setOpen(false); }}>
       {items.map((it) => {
         const on = it.id === activeId;
         return (
@@ -85,6 +95,7 @@ export function AdminSidebar({ brandLabel, badge, items, activeId, account, back
           </button>
         ) : null}
       </div>
+      </div>
     </nav>
   );
 }
@@ -97,12 +108,12 @@ export type AdminHeaderProps = { title: string; subtitle?: string; children?: Re
 
 export function AdminHeader({ title, subtitle, children }: AdminHeaderProps) {
   return (
-    <header className="flex min-h-[84px] items-center justify-between gap-5 border-b border-border bg-surface px-10 py-4">
+    <header className="flex min-h-[84px] flex-wrap items-center justify-between gap-x-5 gap-y-3 border-b border-border bg-surface px-4 py-4 sm:px-6 lg:px-10">
       <div className="flex flex-col gap-0.5">
-        <h1 className="m-0 font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.03em]">{title}</h1>
+        <h1 className="m-0 font-display text-[24px] font-extrabold sm:text-[30px] leading-[1.1] tracking-[-0.03em]">{title}</h1>
         {subtitle ? <span className="text-sm text-muted" suppressHydrationWarning>{subtitle}</span> : null}
       </div>
-      {children ? <div className="flex items-center gap-3">{children}</div> : null}
+      {children ? <div className="flex flex-wrap items-center gap-3 max-sm:w-full">{children}</div> : null}
     </header>
   );
 }
@@ -113,10 +124,10 @@ export type AdminSearchProps = { label: string; placeholder: string; value: stri
 export function AdminSearch({ label, placeholder, value, onValueChange }: AdminSearchProps) {
   const id = useId();
   return (
-    <span className="relative block">
+    <span className="relative block max-sm:w-full">
       <label htmlFor={id} className="sr-only">{label}</label>
       <span aria-hidden="true" className="pointer-events-none absolute left-3.5 top-[13px] text-muted"><Icon name="search" size={20} /></span>
-      <input id={id} type="search" placeholder={placeholder} value={value} onChange={(e) => onValueChange(e.target.value)} className={`box-border h-[46px] w-[340px] max-w-full rounded-[14px] border-[1.5px] border-border-strong bg-surface pl-11 pr-3.5 text-[15px] text-ink placeholder:text-muted hover:border-primary focus-visible:border-primary ${focusRing}`} />
+      <input id={id} type="search" placeholder={placeholder} value={value} onChange={(e) => onValueChange(e.target.value)} className={`box-border h-[46px] w-full rounded-[14px] sm:w-[340px] border-[1.5px] border-border-strong bg-surface pl-11 pr-3.5 text-[15px] text-ink placeholder:text-muted hover:border-primary focus-visible:border-primary ${focusRing}`} />
     </span>
   );
 }
@@ -130,7 +141,7 @@ export type PeriodSegmentedProps = { 'aria-label': string; options: ReadonlyArra
 export function PeriodSegmented({ options, value, onValueChange, ...rest }: PeriodSegmentedProps) {
   const idx = Math.max(0, options.findIndex((o) => o.value === value));
   return (
-    <div role="group" aria-label={rest['aria-label']} className="relative box-border flex h-[46px] w-[300px] rounded-[15px] bg-track p-1">
+    <div role="group" aria-label={rest['aria-label']} className="relative box-border flex h-[46px] w-full rounded-[15px] sm:w-[300px] bg-track p-1">
       <span
         aria-hidden="true"
         data-testid="period-marker"

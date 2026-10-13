@@ -34,7 +34,17 @@ export async function apiFetch<T>(path: string, token: string | null, init: Requ
   const body: unknown = await res.json().catch(() => null);
   const result: Result<T> = res.ok ? (body as Result<T>) : { ok: false, error: readErrorBody(body) ?? { code: 'internal', message: `HTTP ${res.status}` } };
   trace(init.method, path, res.status, started, result.ok ? undefined : result.error, timing);
+  if (!result.ok && result.error) notifyReauth(result.error); // a 2xx body is trusted as-is and may lack `ok`
   return result;
+}
+
+/** Fired in the browser when the admin API asks for a recent sign-in (FR-11); the admin layout's ReauthPrompt listens. */
+export const ADMIN_REAUTH_EVENT = 'remoa:admin-reauth';
+
+/** `forbidden` + `reauth_required` is the API's adminErrors.reauth (string kept literal: this module must stay free of contracts runtime). */
+export function notifyReauth(error: { code: string; message?: string }) {
+  if (typeof window !== 'undefined' && (error.code === 'reauth_required' || (error.code === 'forbidden' && error.message === 'reauth_required')))
+    window.dispatchEvent(new Event(ADMIN_REAUTH_EVENT));
 }
 
 export type ApiErrorDetail = { method: string; path: string; status: number; error: AppError };

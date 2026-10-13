@@ -9,6 +9,7 @@ import {
   type DataColumn,
 } from '@remoa/ui';
 import { runAdminAction } from '../shared/actions';
+import { notifyReauth } from '@/lib/api';
 import { formatCount } from '../shared/format';
 import { fetchAdminDetail } from './detail-action';
 import { useListParams } from './use-list-params';
@@ -223,6 +224,7 @@ export function AdminList<Row, Detail extends { audit?: AuditEntry[]; timeline?:
               return out;
             } catch (e) {
               setCode(e instanceof ActionError ? e.code : '');
+              if (e instanceof ActionError) notifyReauth({ code: e.code });
               throw e;
             }
           }}
