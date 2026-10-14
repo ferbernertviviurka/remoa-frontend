@@ -72,7 +72,7 @@ export function StudySection({ openEditor = false }: { openEditor?: boolean }) {
   const view = fromProfile(profile, courses);
   const show = visibleFields(view);
   const confirmed = !!profile && profile.source !== 'migration' && !!profile.course;
-  const goalNames = [...(profile?.goals ?? []).map((g) => allGoals.find((x) => x.code === g)?.name ?? g), ...(profile?.customGoals ?? [])];
+  const goalNames = [...(profile?.goals ?? []).map((g) => allGoals.find((x) => x.code === g)?.name ?? t(`studyProfile.goals.names.${g}`)), ...(profile?.customGoals ?? [])];
   const name = courseName(view);
   const instLine = profile?.institution ? profile.institution.name : (profile?.institutionText ?? '');
   const place = view.city ? `${view.city}${view.uf ? `, ${view.uf}` : ''}` : '';

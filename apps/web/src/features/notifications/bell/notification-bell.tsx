@@ -14,12 +14,13 @@ import { formatMeta, groupViews } from '../view';
 /** F26 FR-1/FR-2: the bell of every shell screen and its popover. */
 export function NotificationBell() {
   const router = useRouter();
-  const { unread, timezone, version, changed } = useNotifications();
+  const { unread, timezone, version, changed, seen } = useNotifications();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<NotificationTab>('all');
   const [items, setItems] = useState<Notification[]>([]);
   const [state, setState] = useState<'ready' | 'loading' | 'error'>('loading');
   const seq = useRef(0);
+  const autoRead = useRef(new Set<string>());
 
   const load = useCallback(async () => {
     const n = ++seq.current;
@@ -28,8 +29,16 @@ export function NotificationBell() {
     if (r?.ok) {
       setItems(r.data.items);
       setState('ready');
+      // Seeing is reading: unread items now visible are marked read on the server and the badge drops at once.
+      // The list keeps them highlighted until it is reopened (no refetch here).
+      const ids = r.data.items.filter((x) => !x.readAt && !autoRead.current.has(x.id)).map((x) => x.id);
+      if (ids.length) {
+        ids.forEach((id) => autoRead.current.add(id));
+        seen(ids.length);
+        void markRead({ ids }).then(() => seen(0), () => seen(0));
+      }
     } else setState('error');
-  }, [tab]);
+  }, [tab, seen]);
 
   // fetch on open, on tab change and whenever Realtime / a local action bumps `version` (refetch by id: no duplicates)
   useEffect(() => {
@@ -69,6 +78,7 @@ export function NotificationBell() {
       onOpenChange={(o) => {
         if (o) {
           setState('loading');
+          autoRead.current.clear();
           notifTrack.bellOpened(unread.total);
         }
         setOpen(o);

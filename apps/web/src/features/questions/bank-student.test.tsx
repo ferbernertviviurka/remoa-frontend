@@ -41,24 +41,25 @@ describe('F34 banco do aluno (HTTP sintético)', () => {
     expect(screen.queryByText('Catálogo Remoa')).toBeNull();
   });
 
-  it('lists with the seal "Validado pela Remoa", progress badge and catalog scope', async () => {
+  it('lists with the seal "Validado pela Remoa", progress badge and the all scope', async () => {
     lists = () => page([q(1, { progress: 'wrong' }), q(2)]);
     bank();
     await screen.findByText('Enunciado sintético 1');
     expect(screen.getAllByText('Validado pela Remoa').length).toBe(2);
     expect(screen.queryByText('Revisada por médico')).toBeNull();
     expect(screen.getByText('Errou')).toBeInTheDocument();
-    expect(calls.some((c) => c.includes('scope=catalog'))).toBe(true);
+    expect(calls.some((c) => c.includes('scope=catalog') || c.includes('scope=mine'))).toBe(false);
+    expect(calls.some((c) => c.includes('course='))).toBe(false);
   });
 
-  it('AI tab is Minhas perguntas: "Gerada por IA" and no seal', async () => {
-    lists = (u) => page(u.searchParams.get('origin') === 'ai_generated' ? [q(3, { origin: 'ai_generated', validation: { kind: 'remoa_institutional', label: 'Remoa' } })] : [q(1)]);
+  it('"Criadas por mim" asks scope=mine: "Gerada por IA" and no seal', async () => {
+    lists = (u) => page(u.searchParams.get('scope') === 'mine' ? [q(3, { origin: 'ai_generated', validation: { kind: 'remoa_institutional', label: 'Remoa' } })] : [q(1)]);
     bank();
-    fireEvent.click(await screen.findByRole('button', { name: 'Minhas perguntas (IA)' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Criadas por mim' }));
     await screen.findByText('Enunciado sintético 3');
     expect(screen.getAllByText('Gerada por IA').length).toBeGreaterThan(0);
     expect(screen.queryByText('Validado pela Remoa')).toBeNull();
-    expect(calls.some((c) => c.includes('scope=mine') && c.includes('origin=ai_generated'))).toBe(true);
+    expect(calls.some((c) => c.includes('scope=mine') && !c.includes('origin='))).toBe(true);
   });
 
   it('error is an alert with retry, never an empty list', async () => {
@@ -67,7 +68,7 @@ describe('F34 banco do aluno (HTTP sintético)', () => {
     const alert = await screen.findByRole('alert');
     expect(within(alert).getByText(/Não conseguimos carregar as questões/)).toBeInTheDocument();
     expect(screen.queryByText('Nenhuma questão com esses filtros')).toBeNull();
-    expect(screen.queryByText('O catálogo ainda não tem questões publicadas')).toBeNull();
+    expect(screen.queryByText('Ainda não há questões no banco')).toBeNull();
     fail = false; fireEvent.click(within(alert).getByRole('button', { name: 'Tentar de novo' }));
     await screen.findByText('Enunciado sintético 1');
   });
@@ -75,12 +76,12 @@ describe('F34 banco do aluno (HTTP sintético)', () => {
   it('catalog without published questions is distinct from an empty filter', async () => {
     lists = () => page([]); facets = () => ok(fac({ total: 0 }));
     bank();
-    await screen.findByText('O catálogo ainda não tem questões publicadas');
+    await screen.findByText('Ainda não há questões no banco');
     cleanup();
     lists = () => page([]); facets = (u) => ok(fac({ total: u.searchParams.has('topicQuery') ? 0 : 5 }));
     bank();
     await screen.findByText('Nenhuma questão com esses filtros');
-    expect(screen.queryByText('O catálogo ainda não tem questões publicadas')).toBeNull();
+    expect(screen.queryByText('Ainda não há questões no banco')).toBeNull();
   });
 
   it('load more: failure stays inline, keeps rows, focuses retry, then focuses the first new row', async () => {
@@ -180,15 +181,15 @@ describe('F34 banco do aluno (HTTP sintético)', () => {
     await screen.findByText('Enunciado sintético 1');
     const boxes = screen.getAllByRole('checkbox', { name: /Selecionar para a prova/ });
     fireEvent.click(boxes[0]!);
-    await screen.findByText('1 questão selecionada');
+    await screen.findByText('1 selecionada');
     fireEvent.click(screen.getAllByRole('button', { name: 'Ver questão' })[1]!);
     fireEvent.click(await screen.findByRole('button', { name: 'Adicionar à prova' }));
     fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
-    await screen.findByText('2 questões selecionadas');
-    fireEvent.click(screen.getByRole('button', { name: 'Criar prova com estas' }));
+    await screen.findByText('2 selecionadas');
+    fireEvent.click(screen.getByRole('button', { name: 'Criar prova' }));
     expect(push).toHaveBeenCalledWith(`/app/banco-de-questoes/prova?ids=${ID(1)},${ID(2)}`);
     fireEvent.click(screen.getByRole('button', { name: 'Limpar seleção' }));
-    expect(screen.queryByText('2 questões selecionadas')).toBeNull();
+    await waitFor(() => expect(screen.queryByText('2 selecionadas')).toBeNull());
   });
 
   it('discursive AI question is not answered here', async () => {
@@ -200,41 +201,36 @@ describe('F34 banco do aluno (HTTP sintético)', () => {
     expect(within(dialog).queryByRole('button', { name: 'Responder' })).toBeNull();
   });
 
-  it('F35 FR-35: course filter defaults to medicine, is sent as course and shows the course on each card', async () => {
-    bank();
-    await screen.findByText('Enunciado sintético 1');
-    expect((screen.getByRole('combobox', { name: 'Curso ou área da saúde' }) as HTMLInputElement).value).toBe('Medicina');
-    expect(screen.getAllByText('Medicina').length).toBeGreaterThan(0);
-    expect(calls.filter((c) => c.startsWith('/v1/questions')).every((c) => new URL(c, 'http://x').searchParams.get('course') === 'medicine')).toBe(true);
-  });
-
-  it('F35: the profile course is the default (nursing) and no request goes out with another course first; empty state is honest', async () => {
+  it('G29: no course by default (never empties the bank); the course is an optional filter sent only when chosen', async () => {
     profileCourse = 'nursing';
-    lists = (u) => page(u.searchParams.get('course') === 'nursing' ? [] : [q(1)]); facets = (u) => ok(fac({ total: u.searchParams.get('course') === 'nursing' ? 0 : 3 }));
-    bank();
-    expect(await screen.findByText('Ainda não há questões publicadas para Enfermagem.')).toBeInTheDocument();
-    const courses = calls.filter((c) => c.startsWith('/v1/questions')).map((c) => new URL(c, 'http://x').searchParams.get('course'));
-    expect(courses.length).toBeGreaterThan(0); expect(new Set(courses)).toEqual(new Set(['nursing']));
-    expect(screen.queryByText('Nenhuma questão com esses filtros')).toBeNull();
-  });
-
-  it('F35: picking a course re-queries list and facets with it (counts come from the server, never summed)', async () => {
     bank();
     await screen.findByText('Enunciado sintético 1');
-    const input = screen.getByRole('combobox', { name: 'Curso ou área da saúde' });
+    expect(calls.filter((c) => c.startsWith('/v1/questions')).every((c) => !c.includes('course='))).toBe(true);
+    expect(screen.queryByRole('combobox', { name: 'Curso ou área da saúde' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar por curso' }));
+    const input = await screen.findByRole('combobox', { name: 'Curso ou área da saúde' });
     fireEvent.change(input, { target: { value: 'enf' } });
     fireEvent.click((await screen.findAllByRole('option'))[0]!);
     await waitFor(() => expect(calls.some((c) => c.startsWith('/v1/questions/facets') && c.includes('course=nursing'))).toBe(true));
     expect(calls.some((c) => c.startsWith('/v1/questions?') && c.includes('course=nursing'))).toBe(true);
   });
 
-  it('F35: the AI tab ("Minhas perguntas") is not filtered by course', async () => {
-    profileCourse = 'nursing';
+  it('G29: an empty course filter says so and offers to clear it, never "catalog empty"', async () => {
+    lists = (u) => page(u.searchParams.get('course') ? [] : [q(1)]); facets = () => ok(fac());
     bank();
-    fireEvent.click(await screen.findByRole('button', { name: 'Minhas perguntas (IA)' }));
+    await screen.findByText('Enunciado sintético 1');
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar por curso' }));
+    expect(await screen.findByText('Nenhuma questão de Medicina com esses filtros')).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Limpar filtros (1)' }).at(-1)!);
+    await screen.findByText('Enunciado sintético 1');
+  });
+
+  it('G29: "Criadas por mim" has no course filter and sends no course', async () => {
+    bank();
+    fireEvent.click(await screen.findByRole('button', { name: 'Criadas por mim' }));
     await waitFor(() => expect(calls.some((c) => c.includes('scope=mine'))).toBe(true));
     expect(calls.filter((c) => c.includes('scope=mine')).every((c) => !c.includes('course='))).toBe(true);
-    expect(screen.queryByRole('combobox', { name: 'Curso ou área da saúde' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Filtrar por curso' })).toBeNull();
   });
 
   it('primary actions: "Praticar agora" starts a session with the current filters; "Montar prova" opens the builder', async () => {
@@ -249,16 +245,16 @@ describe('F34 banco do aluno (HTTP sintético)', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Praticar agora' }));
     const dialog = await screen.findByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Começar sessão' }));
-    await waitFor(() => expect(posted).toMatchObject({ mode: 'study', count: 10, filters: { scope: 'catalog', course: 'medicine', difficulties: ['easy'] } }));
+    await waitFor(() => expect(posted).toMatchObject({ mode: 'study', count: 10, filters: { scope: 'all', difficulties: ['easy'] } }));
   });
 
-  it('"Praticar agora" is disabled while the list is empty; the empty catalog offers the AI tab', async () => {
+  it('"Praticar agora" is disabled while the list is empty; the empty bank offers "Criadas por mim"', async () => {
     lists = () => page([]); facets = () => ok(fac({ total: 0 }));
     bank();
-    await screen.findByText('O catálogo ainda não tem questões publicadas');
+    await screen.findByText('Ainda não há questões no banco');
     expect(screen.getByRole('button', { name: 'Praticar agora' })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: 'Ver Minhas perguntas (IA)' }));
-    await screen.findByText('Você ainda não tem perguntas geradas por IA');
+    fireEvent.click(screen.getByRole('button', { name: 'Ver criadas por mim' }));
+    await screen.findByText('Você ainda não criou nenhuma pergunta');
     expect(screen.getByRole('link', { name: 'Abrir meus mapas' })).toHaveAttribute('href', '/app/mapas');
     expect(screen.getByRole('link', { name: 'Montar prova' })).toHaveAttribute('href', '/app/banco-de-questoes/prova?source=ai');
   });

@@ -69,8 +69,15 @@ describe('bell + popover', () => {
     const item = await within(dialog).findByText('Seu mapa Insuficiência cardíaca está pronto');
     expect(item).toBeInTheDocument();
     fireEvent.click(within(dialog).getAllByRole('button', { name: 'Marcar como lida' })[0]!);
-    await waitFor(() => expect(bellLabel()).toBe('Notificações, 2 não lidas'));
+    await waitFor(() => expect(bellLabel()).toBe('Notificações')); // opening already marked all three as seen
     expect(window.__remoaEvents?.map((e) => e.event)).toContain('notif_marked_read');
+  });
+
+  it('opening the bell marks the visible unread as read without a click', async () => {
+    wrap(<NotificationBell />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Notificações, 3 não lidas' }));
+    await screen.findByRole('dialog', { name: 'Central de notificações' });
+    await waitFor(() => expect(bellLabel()).toBe('Notificações'));
   });
 
   it('mark all clears the badge', async () => {
@@ -87,7 +94,7 @@ describe('bell + popover', () => {
     fireEvent.click(link);
     expect(push).toHaveBeenCalledWith('/app/revisar');
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    await screen.findByRole('button', { name: 'Notificações, 2 não lidas' });
+    await screen.findByRole('button', { name: 'Notificações' });
   });
 
   it('shows the error row with retry', async () => {
@@ -106,7 +113,8 @@ describe('bell + popover', () => {
     pushNotificationMock({ id: '00000000-0000-4000-8000-000000009999', type: 'purchase', category: 'account_billing', href: '/app/conta/plano', groupKey: null, createdAt: FIXTURE_NOW, readAt: null, data: { planName: 'Remoa Pro', orderId: 'o' } });
     await waitFor(() => expect(realtime).not.toBeNull());
     act(() => realtime!({ eventType: 'INSERT', new: { type: 'purchase', data: { planName: 'Remoa Pro', orderId: 'o' } } }));
-    await waitFor(() => expect(bellLabel()).toBe('Notificações, 4 não lidas')); // the modal popover hides the page behind it
+    // the modal popover hides the page behind it; the new row is visible, so it is marked seen too
+    await waitFor(() => expect(bellLabel()).toBe('Notificações'));
     expect(screen.getByRole('status', { hidden: true })).toHaveTextContent('Nova notificação: Pagamento confirmado');
     expect(await screen.findAllByText('Pagamento confirmado')).toHaveLength(2); // the fixture's old purchase + the new one, not 3
   });

@@ -26,4 +26,12 @@ describe('readResultStream', () => {
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toMatchObject({ code: 'conflict', message: 'grade in progress' });
   });
+
+  it('passes progress events on, in order, before the result', async () => {
+    const raw = 'data: {"progress":{"generated":0,"requested":10}}\n\ndata: {"progress":{"generated":5,"requested":10}}\n\ndata: {"result":{"n":10}}\n\n';
+    const seen: unknown[] = [];
+    const result = await readResultStream<{ n: number }>(chunks([raw.slice(0, 30), raw.slice(30)]), undefined, (p) => seen.push(p));
+    expect(seen).toEqual([{ generated: 0, requested: 10 }, { generated: 5, requested: 10 }]);
+    expect(result.ok && result.data.n).toBe(10);
+  });
 });

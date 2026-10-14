@@ -2,12 +2,12 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {useRouter} from 'next/navigation';
 import {Alert,Button,Card,Icon,Progress,Stepper,Tag} from '@remoa/ui';
-import {type ExamAvailability,type HealthCourseCode,type ExamBuilderParams,type ExamGenerateResult,type ExamPreviewItem,type ExamTemplate,type QuestionSessionConfig} from '@remoa/contracts';
+import {EXAM_GENERATE_MAX,type ExamAvailability,type HealthCourseCode,type ExamBuilderParams,type ExamGenerateResult,type ExamPreviewItem,type ExamTemplate,type QuestionSessionConfig} from '@remoa/contracts';
 import {calendarApi} from '@/features/calendar/api';
 import {t} from './labels';
-import {errorTag,generateExamQuestions,getAvailability,getPreview,listAreas,listBoards,listTemplates,listTopics,revalidate,saveTemplate,startBuilderSession,swapQuestion,QuestionsApiError} from './api';
-import {applyPreset,compose,defaultAi,defaultParams,filterOf,idempotencyKey,needsGenerate,originOf,presetIdsFor,sourceOf,stepError,validCount,validGen,type Ai,type Content,type Origin,type PresetId} from './model';
-import {CourseEmpty,StepContent,StepFormat,StepOrigin} from './steps';
+import {errorTag,generateWithProgress,getAvailability,getBoardContent,getPreview,listAreas,listBoards,listTemplates,listTopics,revalidate,saveTemplate,startBuilderSession,swapQuestion,QuestionsApiError} from './api';
+import {applyPreset,compose,defaultAi,defaultParams,filterOf,genCountOf,idempotencyKey,needsGenerate,originOf,presetIdsFor,sourceOf,stepError,stepIds,validCount,validGen,type Ai,type Content,type Origin,type PresetId} from './model';
+import {CourseEmpty,GenProgress,ShortfallNote,StepContent,StepExam,StepFormat,StepOrigin,ThemeCard} from './steps';
 import {useStudyProfile} from '../study-profile/use-study-profile';
 import {catalogCourse,useCourseOptions} from '../questions/course-field';
 import {PreviewList} from './preview-list';
@@ -15,9 +15,8 @@ import {ActiveDialog,ChangedDialog,ConfirmDialog,FieldDialog,type Changed} from 
 
 export type BuilderInit={ids:string[];matrixItemIds:string[];source?:'ai';preset?:PresetId};
 type Load='loading'|'ready'|'error';
-const stepIds=['origin','content','format','review'] as const;
-const LAST=3;
-type SummaryKey='summaryOrigin'|'summaryMap'|'summaryContent'|'summaryQuestions'|'summaryTime'|'summaryMode'|'summaryDistribution'|'summaryOrder';
+const LAST=stepIds.length-1;
+type SummaryKey='summaryName'|'summaryOrigin'|'summaryMap'|'summaryContent'|'summaryQuestions'|'summaryTime'|'summaryMode'|'summaryDistribution'|'summaryOrder';
 type Opt={id:string;name:string};
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 
@@ -32,15 +31,21 @@ export function BuilderScreen({init}:{init:BuilderInit}){
     return init.ids.length?{...base,count:init.ids.length}:init.preset?applyPreset(base,init.preset):base;
   });
   const profileCourse=catalogCourse(profile?.course);
-  const params=useMemo<ExamBuilderParams>(()=>({...raw,course:picked!==undefined?picked:profileCourse}),[raw,picked,profileCourse]);
+  // The map is chosen in step 1 and only reaches the params when the questions are not catalog-only.
+  const [board,setBoard]=useState<string|null>(null);const boardRef=useRef<string|null>(null);boardRef.current=board;
+  const params=useMemo<ExamBuilderParams>(()=>({...raw,course:picked!==undefined?picked:profileCourse,boardId:raw.source==='catalog'?null:board}),[raw,picked,profileCourse,board]);
   const {name:courseName}=useCourseOptions(params.course);
   const [preset,setPreset]=useState<PresetId|null>(init.preset??(init.ids.length?null:'blank'));
-  const [step,setStep]=useState(init.ids.length?2:init.matrixItemIds.length||init.preset?1:0);
+  // Selected questions skip to Formato (name/count already known); a topic or a preset starts on Conteúdo.
+  const [step,setStep]=useState(init.ids.length?3:init.matrixItemIds.length||init.preset?2:0);
+  const [prefilled,setPrefilled]=useState<string|null>(null);
+  const [theme,setTheme]=useState('');
   const [content,setContent]=useState<Content>(init.preset?'mode':init.ids.length?'custom':'area');
   const [ai,setAi]=useState<Ai>(defaultAi);
   const [stepErr,setStepErr]=useState<string|null>(null);
   const [boards,setBoards]=useState<Opt[]|null>(null);const [topics,setTopics]=useState<Opt[]>([]);
   const [gen,setGen]=useState<{busy:boolean;result:ExamGenerateResult|null;error:string|null}>({busy:false,result:null,error:null});
+  const [genProg,setGenProg]=useState<{done:number;total:number}>({done:0,total:0});
   const [genTick,setGenTick]=useState(0);
   const heading=useRef<HTMLHeadingElement>(null);const firstStep=useRef(true);
   const fetched=useRef('');
@@ -68,7 +73,7 @@ export function BuilderScreen({init}:{init:BuilderInit}){
   useEffect(()=>{if(firstStep.current){firstStep.current=false;return;}heading.current?.focus();},[step]);
 
   // FR-24: availability (never draws). Area choice is applied locally, so it is asked with every area.
-  const filterKey=JSON.stringify(filterOf(params));const avOn=step>=1&&loaded;
+  const filterKey=JSON.stringify(filterOf(params));const avOn=step>=2&&loaded;
   useEffect(()=>{
     if(!avOn)return;
     const ac=new AbortController();setAvState('loading');
@@ -102,26 +107,32 @@ export function BuilderScreen({init}:{init:BuilderInit}){
   const minutes=params.timePerQuestionSec?Math.ceil(shown*params.timePerQuestionSec/60):null;
   const hasAi=params.source!=='catalog'||items.some(i=>i.origin==='ai_generated');
   const origin=originOf(params.source);
-  const boardName=boards?.find(b=>b.id===params.boardId)?.name;
+  const boardName=boards?.find(b=>b.id===board)?.name;
+  const genCount=genCountOf(origin,ai,params.count);
+  const themeMode=needsGenerate(origin,ai,board)&&!board;
+  const areaOpts=useMemo(()=>[...areas].map(([id,name])=>({id,name})),[areas]);
   const noNarrowing=!params.topicIds.length&&!params.matrixItemIds.length&&!params.difficulties.length&&params.progress==='all';
   // FR-34: the course has no published catalog (availability 0 with no narrowing filter). Map/AI origins are never affected.
   const courseEmpty=origin==='catalog'&&!!params.course&&avState==='ready'&&av?.total===0&&noNarrowing;
   const presets=presetIdsFor(params.course,params.course===profileCourse?capabilities.starterTemplates:undefined);
   const pickCourse=(code:HealthCourseCode)=>{const c=catalogCourse(code);if(c===params.course)return;setPicked(c);setContent('area');setPreset(null);setTemplateId(null);setStepErr(null);setParams(p=>({...p,areaIds:[],topicIds:[]}));};
-  const otherCourse=()=>{go(1);setTimeout(()=>courseRef.current?.querySelector('input')?.focus(),0);};
-  const emptyBox=courseEmpty?<CourseEmpty course={courseName} onMap={()=>{setOrigin('map');go(0);}} onOther={otherCourse}/>:null;
-  const needGen=needsGenerate(origin,ai)&&!!params.boardId;
-  const setOrigin=(o:Origin)=>{setParams(p=>({...p,source:sourceOf(o),boardId:o==='catalog'?null:p.boardId}));setTemplateId(null);setStepErr(null);if(o==='map'&&!ai.use&&!ai.gen)setAi(a=>({...a,use:true}));};
+  const otherCourse=()=>{go(2);setTimeout(()=>courseRef.current?.querySelector('input')?.focus(),0);};
+  const emptyBox=courseEmpty?<CourseEmpty course={courseName} onMap={()=>{setOrigin('ai');go(1);}} onOther={otherCourse}/>:null;
+  const needGen=needsGenerate(origin,ai,board);
+  const setOrigin=(o:Origin)=>{setParams(p=>({...p,source:sourceOf(o)}));setTemplateId(null);setStepErr(null);if(o==='ai'&&board&&!ai.use&&!ai.gen)setAi(a=>({...a,use:true}));};
   const pickContent=(c:Content)=>{setContent(c);setStepErr(null);setTemplateId(null);setParams(p=>({...p,areaIds:c==='area'||c==='custom'?p.areaIds:[],topicIds:c==='topic'||c==='custom'?p.topicIds:[],...(c==='area'||c==='topic'?{progress:'all' as const}:{})}));};
   const go=(to:number)=>{setStepErr(null);setStep(to);};
-  const next=()=>{const e=stepError(step,{origin,ai,content,params});if(e)setStepErr(t(`examBuilder.errors.${e}`));else go(step+1);};
-  const generate=async()=>{
-    if(!params.boardId||!validGen(ai.count))return;
-    setGen({busy:true,result:null,error:null});
-    try{const r=await generateExamQuestions({boardId:params.boardId,count:ai.count,difficulty:ai.difficulty});
+  const next=()=>{const e=stepError(stepIds[step]!,{origin,ai,content,params,board,theme});if(e)setStepErr(t(`examBuilder.errors.${e}`));else go(step+1);};
+  /** Explicit click only (spends the AI quota). `n` = how many to ask; a second call ("gerar mais") adds to what is already pinned. */
+  const generate=async(n:number)=>{
+    if(!validGen(n)||gen.busy)return;
+    setGen(g=>({...g,busy:true,error:null}));setGenProg({done:0,total:n});
+    try{const r=await generateWithProgress(board?{boardId:board,count:n,difficulty:ai.difficulty}:{boardId:null,count:n,difficulty:ai.difficulty,areaIds:params.areaIds.length||params.topicIds.length||theme.trim()?params.areaIds:allAreaIds,topicIds:params.topicIds,theme:theme.trim()||null},(done,total)=>setGenProg({done,total}));
       const ids=new Set([...pinnedRef.current,...r.questionIds]);r.questionIds.forEach(id=>excluded.current.delete(id));
-      setPinned(ids);setParams(p=>({...p,count:origin==='map'&&!ai.use&&ids.size?ids.size:Math.max(p.count,ids.size)}));setGenTick(v=>v+1);setGen({busy:false,result:r,error:null});}
-    catch(e){setGen({busy:false,result:null,error:e instanceof QuestionsApiError&&(e.code==='quota_exceeded'||e.detail==='quota_exceeded')?t('examBuilder.genStoppedQuota'):t('examBuilder.genError')});}
+      setPinned(ids);setParams(p=>({...p,count:Math.max(p.count,ids.size)}));setGenTick(v=>v+1);
+      setGen(g=>{const a=g.result;const got=(a?.questionIds.length??0)+r.questionIds.length;const requested=a?.requested??r.requested;
+        return {busy:false,error:null,result:a?{questionIds:[...a.questionIds,...r.questionIds],requested,reused:a.reused+r.reused,generated:a.generated+r.generated,shortfall:Math.max(0,requested-got),stoppedBy:r.stoppedBy,shortfallReason:r.shortfallReason}:r};});}
+    catch(e){setGen(g=>({...g,busy:false,error:e instanceof QuestionsApiError&&(e.code==='quota_exceeded'||e.detail==='quota_exceeded')?t('examBuilder.genStoppedQuota'):errorTag(e,'empty_scope')!==null?t('examBuilder.genEmptyMap'):t('examBuilder.genError')}));}
   };
 
   const swap=async(id:string)=>{
@@ -135,8 +146,17 @@ export function BuilderScreen({init}:{init:BuilderInit}){
   const pin=(id:string)=>setPinned(p=>{const n=new Set(p);if(n.has(id))n.delete(id);else n.add(id);return n;});
 
   // Questions generated from the previous map are not in the new map's pool: unpin them and allow a new generation.
-  const changeBoard=(id:string|null)=>{const old=new Set(gen.result?.questionIds??[]);setPinned(p=>new Set([...p].filter(x=>!old.has(x))));setGen({busy:false,result:null,error:null});setParams(p=>({...p,boardId:id}));setStepErr(null);};
-  const applyTemplate=(tpl:ExamTemplate)=>{setParams(tpl.params);setPicked(tpl.params.course);setName(tpl.name);setTemplateId(tpl.id);setPreset(null);setContent('custom');setAi(defaultAi);setGen({busy:false,result:null,error:null});go(LAST);};
+  // A map with content pre-fills Conteúdo (areas/matérias); the student can still change it.
+  const changeBoard=(id:string|null)=>{
+    const old=new Set(gen.result?.questionIds??[]);setPinned(p=>new Set([...p].filter(x=>!old.has(x))));setGen({busy:false,result:null,error:null});setBoard(id);setStepErr(null);setPrefilled(null);
+    if(!id)return;
+    getBoardContent(id).then(c=>{
+      if(!c.areaIds.length&&!c.topicIds.length)return;
+      if(boardRef.current!==id)return; // the student already picked another map
+      setParams(p=>({...p,areaIds:c.areaIds,topicIds:c.topicIds}));setContent(c.areaIds.length&&c.topicIds.length?'custom':c.topicIds.length?'topic':'area');setPrefilled(boards?.find(b=>b.id===id)?.name??'');
+    }).catch(()=>undefined);
+  };
+  const applyTemplate=(tpl:ExamTemplate)=>{setParams(tpl.params);setBoard(tpl.params.boardId);setPrefilled(null);setPicked(tpl.params.course);setName(tpl.name);setTemplateId(tpl.id);setPreset(null);setContent('custom');setAi(defaultAi);setGen({busy:false,result:null,error:null});go(LAST);};
 
   const begin=async()=>{
     if(!total)return;
@@ -184,13 +204,14 @@ export function BuilderScreen({init}:{init:BuilderInit}){
   const stepLabels=stepIds.map(id=>t(`examBuilder.steps.${id}`));
   const row=(k:SummaryKey,v:string):[SummaryKey,string]=>[k,v];
   const summaryRows=[
-    row('summaryOrigin',t(`examBuilder.originChoices.${origin}.title`)),
-    ...(origin!=='catalog'&&boardName?[row('summaryMap',boardName)]:[]),
-    row('summaryContent',t(`examBuilder.contentChoices.${content}.title`)),
+    ...(name.trim()?[row('summaryName',name.trim())]:[]),
+    row('summaryMap',boardName??t('examBuilder.mapNoneOption')),
+    ...(step>=1?[row('summaryOrigin',t(`examBuilder.originChoices.${origin}.title`))]:[]),
+    ...(step>=2?[row('summaryContent',themeMode?t('examBuilder.summaryTheme'):t(`examBuilder.contentChoices.${content}.title`))]:[]),
     row('summaryQuestions',String(shown)),
     row('summaryTime',minutes?t('examBuilder.summaryTimeValue',{n:minutes}):t('examBuilder.summaryTimeNone')),
     row('summaryMode',t(`examBuilder.modeOptions.${params.mode}`)),
-    ...(step>=2?[row('summaryDistribution',t(`examBuilder.distributionOptions.${params.distribution}`)),row('summaryOrder',t(params.shuffle?'examBuilder.orderShuffled':'examBuilder.orderFixed'))]:[]),
+    ...(step>=3?[row('summaryDistribution',t(`examBuilder.distributionOptions.${params.distribution}`)),row('summaryOrder',t(params.shuffle?'examBuilder.orderShuffled':'examBuilder.orderFixed'))]:[]),
   ];
   const genResult=gen.result;
 
@@ -205,21 +226,27 @@ export function BuilderScreen({init}:{init:BuilderInit}){
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="flex min-w-0 flex-col gap-6">
         <h2 ref={heading} tabIndex={-1} className="m-0 font-display text-2xl font-extrabold outline-none">{t(`examBuilder.stepTitles.${stepIds[step]!}`)}</h2>
-        {step===0?<StepOrigin origin={origin} onOrigin={setOrigin} boardId={params.boardId} onBoard={changeBoard} boards={boards} ai={ai} onAi={p=>{setAi(a=>({...a,...p}));setStepErr(null);}}/>:null}
-        {step===1?<StepContent content={content} onContent={pickContent} params={params} patch={patch} av={av} areaName={areaName} toggleArea={toggleArea} topics={topics} preset={preset} presets={presets} showCourse={origin!=='map'} courseName={courseName} onCourse={pickCourse} courseEmpty={emptyBox} courseRef={courseRef} matrixCount={params.matrixItemIds.length}
+        {step===0?<StepExam name={name} onName={setName} params={params} patch={patch} board={board} onBoard={changeBoard} boards={boards}/>:null}
+        {step===1?<StepOrigin origin={origin} onOrigin={setOrigin} board={board} ai={ai} onAi={p=>{setAi(a=>({...a,...p}));setStepErr(null);}} genCount={genCount}/>:null}
+        {step===2?<StepContent content={content} onContent={pickContent} params={params} patch={patch} av={av} areaName={areaName} toggleArea={toggleArea} topics={topics} preset={preset} presets={presets} showCourse={origin!=='ai'} prefilled={prefilled} theme={themeMode?<ThemeCard params={params} patch={patch} areas={areaOpts} topics={topics} theme={theme} onTheme={setTheme}/>:null} courseName={courseName} onCourse={pickCourse} courseEmpty={emptyBox} courseRef={courseRef} matrixCount={params.matrixItemIds.length}
           onPreset={id=>{setParams(p=>applyPreset(p,id));setPreset(id);setTemplateId(null);}}/>:null}
-        {step===2?<StepFormat name={name} onName={setName} params={params} patch={patch} content={content}/>:null}
+        {step===3?<StepFormat params={params} patch={patch} content={content}/>:null}
         {stepErr?<Alert tone="review" role="alert" title={stepErr}/>:null}
 
         {step===LAST?<>
           {needGen?<Card><div className="flex flex-col gap-3">
             <h3 className="m-0 font-display text-lg font-extrabold">{t('examBuilder.genTitle')}</h3>
-            <p className="m-0 text-sm text-muted">{t('examBuilder.genQuota',{n:Math.ceil((validGen(ai.count)?ai.count:1)/10)})}</p>
-            <p className="m-0 text-sm text-muted">{t('examBuilder.genPending')}</p>
-            {genResult?null:<div><Button disabled={!validGen(ai.count)} loading={gen.busy} loadingLabel={t('examBuilder.genBusy')} onClick={()=>void generate()}>{ai.count===1?t('examBuilder.genButtonOne'):t('examBuilder.genButton',{n:validGen(ai.count)?ai.count:0})}</Button></div>}
-            {genResult?<Alert tone={genResult.stoppedBy?'watch':'steady'} role="status" title={t('examBuilder.genDone',{reused:genResult.reused,generated:genResult.generated})}>
-              {genResult.shortfall>0?<p className="m-0">{t('examBuilder.genShort',{n:genResult.reused+genResult.generated,requested:genResult.requested})}</p>:null}
-              {genResult.stoppedBy?<p className="m-0">{t(genResult.stoppedBy==='quota'?'examBuilder.genStoppedQuota':'examBuilder.genStoppedError')}</p>:null}</Alert>:null}
+            {gen.busy?<GenProgress done={genProg.done} total={genProg.total}/>:<>
+              <p className="m-0 text-sm text-muted">{t(board?'examBuilder.genQuota':'examBuilder.genQuotaTheme',{n:Math.ceil((validGen(genCount)?genCount:1)/10)})}</p>
+              {genResult?null:<><p className="m-0 text-sm text-muted">{t('examBuilder.genPending')}</p>
+                <div><Button disabled={!validGen(genCount)} onClick={()=>void generate(genCount)}>{genCount===1?t('examBuilder.genButtonOne'):t('examBuilder.genButton',{n:validGen(genCount)?genCount:0})}</Button></div></>}
+            </>}
+            {genResult&&!gen.busy?(genResult.shortfall>0
+              ?<ShortfallNote got={genResult.requested-genResult.shortfall} requested={genResult.requested} why={genResult.shortfallReason?t(`examBuilder.shortWhy.${genResult.shortfallReason}`):t('examBuilder.shortWhyAi')}>
+                {genResult.shortfallReason==='quota'||genResult.stoppedBy==='quota'?null:<Button size="sm" onClick={()=>void generate(Math.min(genResult.shortfall,EXAM_GENERATE_MAX))}>{genResult.shortfall===1?t('examBuilder.shortMoreOne'):t('examBuilder.shortMore',{n:Math.min(genResult.shortfall,EXAM_GENERATE_MAX)})}</Button>}
+                {genResult.questionIds.length?<Button size="sm" variant="secondary" onClick={()=>patch({count:Math.max(genResult.questionIds.length,pinned.size)})}>{t('examBuilder.shortAccept',{n:Math.max(genResult.questionIds.length,pinned.size)})}</Button>:null}
+              </ShortfallNote>
+              :<Alert tone="steady" role="status" title={t('examBuilder.genDone',{reused:genResult.reused,generated:genResult.generated})}/>):null}
             {gen.error?<Alert tone="review" role="alert" title={gen.error}/>:null}
           </div></Card>:null}
         {emptyBox}
@@ -229,12 +256,11 @@ export function BuilderScreen({init}:{init:BuilderInit}){
           {alloc?<ul aria-label={t('examBuilder.composition')} className="m-0 flex list-none flex-col gap-3 p-0">{alloc.rows.map(r=><li key={r.areaId??'none'} className="flex flex-col gap-1">
             <span className="text-sm">{t('examBuilder.compositionRow',{area:areaName(r.areaId),allocated:r.allocated,available:r.available})}</span>
             <Progress size="sm" aria-label={areaName(r.areaId)} value={r.allocated} max={Math.max(r.target,r.allocated,1)}/></li>)}</ul>:null}
-          {alloc&&alloc.shortfall>0&&countOk?<Alert tone="watch" role="alert" title={t('examBuilder.shortfallTitle',{allocated:alloc.allocated,requested:alloc.requested})}>
-            <ul className="m-0 list-disc pl-5">{alloc.rows.filter(r=>r.allocated<r.target).map(r=><li key={r.areaId??'none'}>{t('examBuilder.shortfallArea',{area:areaName(r.areaId),allocated:r.allocated,target:r.target})}</li>)}</ul>
-            <div className="flex flex-wrap gap-2">
-              {params.source==='catalog'?<Button size="sm" variant="secondary" onClick={()=>patch({source:'catalog_and_ai'})}>{t('examBuilder.shortfallAddAi')}</Button>:null}
-              {alloc.allocated>=1?<Button size="sm" variant="secondary" onClick={()=>patch({count:alloc.allocated})}>{t('examBuilder.shortfallAccept',{n:alloc.allocated})}</Button>:null}
-            </div></Alert>:null}
+          {alloc&&alloc.shortfall>0&&countOk&&!gen.busy&&!(needGen&&(!genResult||genResult.shortfall>0))?<ShortfallNote got={alloc.allocated} requested={alloc.requested} why={t(origin==='catalog'?'examBuilder.shortWhyCatalog':'examBuilder.shortWhyAi')}>
+            {origin==='catalog'?<Button size="sm" onClick={()=>{setOrigin('mixed');setAi(a=>({...a,count:Math.min(alloc.shortfall,EXAM_GENERATE_MAX)}));}}>{t('examBuilder.shortComplete')}</Button>
+              :<Button size="sm" disabled={!validGen(Math.min(alloc.shortfall,EXAM_GENERATE_MAX))} onClick={()=>void generate(Math.min(alloc.shortfall,EXAM_GENERATE_MAX))}>{alloc.shortfall===1?t('examBuilder.shortMoreOne'):t('examBuilder.shortMore',{n:Math.min(alloc.shortfall,EXAM_GENERATE_MAX)})}</Button>}
+            {alloc.allocated>=1?<Button size="sm" variant="secondary" onClick={()=>patch({count:alloc.allocated})}>{t('examBuilder.shortAccept',{n:alloc.allocated})}</Button>:null}
+          </ShortfallNote>:null}
         </section>
 
         <section aria-label={t('examBuilder.preview')} className="flex flex-col gap-3">

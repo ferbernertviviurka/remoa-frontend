@@ -103,13 +103,48 @@ describe('StudyFields', () => {
     expect(screen.getByRole('combobox', { name: 'Onde você se formou' })).toBeVisible();
   });
 
-  it('"Outro objetivo" aceita texto próprio, que vira chip removível', async () => {
+  it('objetivo próprio: digita, Enter ou "Adicionar" vira chip marcado; desmarcar remove', async () => {
     render(<Harness />);
     await pickCourse('enfermagem', 'Enfermagem');
-    fireEvent.change(screen.getByRole('combobox', { name: 'Outro objetivo' }), { target: { value: 'Prova do estágio' } });
-    fireEvent.click(await screen.findByRole('option', { name: 'Usar “Prova do estágio”' }));
+    const add = screen.getByRole('button', { name: 'Adicionar' });
+    expect(add).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Outro objetivo (opcional)'), { target: { value: 'Prova do estágio' } });
+    fireEvent.click(add);
     expect(last.customGoals).toEqual(['Prova do estágio']);
-    fireEvent.click(screen.getByRole('button', { name: 'Prova do estágio' }));
+    expect((screen.getByLabelText('Outro objetivo (opcional)') as HTMLInputElement).value).toBe('');
+    const custom = within(screen.getByRole('group', { name: 'Seus objetivos' })).getByRole('button', { name: 'Prova do estágio' });
+    expect(custom).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.keyDown(screen.getByLabelText('Outro objetivo (opcional)'), { key: 'Enter' }); // empty: nothing added, form not submitted
+    expect(last.customGoals).toEqual(['Prova do estágio']);
+    fireEvent.click(custom);
     expect(last.customGoals).toEqual([]);
+  });
+
+  it('G29: objetivos em chips com nome humano, sugeridos do curso primeiro, contador e limite de 5', async () => {
+    render(<Harness />);
+    await pickCourse('enfermagem', 'Enfermagem');
+    const suggested = screen.getByRole('group', { name: 'Sugeridos para Enfermagem' });
+    expect(within(suggested).getAllByRole('button').map((b) => b.textContent)).toEqual(['Provas da faculdade', 'Concursos públicos da saúde']);
+    expect(within(suggested).getByRole('button', { name: 'Provas da faculdade' })).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() => expect(within(screen.getByRole('group', { name: 'Outros objetivos' })).queryByRole('button', { name: 'ENAMED' })).toBeNull()); // goal of another course is not offered
+    expect(screen.getByText('1 de 5')).toBeVisible();
+    for (const g of ['Concursos públicos da saúde', 'Residência multiprofissional em saúde', 'Idiomas']) fireEvent.click(screen.getByRole('button', { name: g }));
+    fireEvent.change(screen.getByLabelText('Outro objetivo (opcional)'), { target: { value: 'OSCE' } });
+    fireEvent.keyDown(screen.getByLabelText('Outro objetivo (opcional)'), { key: 'Enter' });
+    expect(screen.getByText('5 de 5')).toBeVisible();
+    expect(screen.getByText('Você já escolheu 5. Desmarque um para trocar.')).toBeVisible();
+    expect(screen.getByLabelText('Outro objetivo (opcional)')).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Idiomas' }));
+    expect(last.goals).not.toContain('idiomas');
+  });
+
+  it('G29: instituição abre com uma lista antes de digitar e busca no servidor ao digitar', async () => {
+    search.mockResolvedValue({ ok: true, data: [UFPR] });
+    render(<Harness />);
+    fireEvent.click(screen.getByRole('combobox', { name: 'Instituição de ensino' }));
+    expect(await screen.findByRole('option', { name: /UFPR/ }, { timeout: 2000 })).toBeVisible();
+    expect(search).toHaveBeenCalledWith('', undefined, expect.any(AbortSignal));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Instituição de ensino' }), { target: { value: 'p' } });
+    await waitFor(() => expect(search).toHaveBeenCalledWith('p', undefined, expect.any(AbortSignal)));
   });
 });

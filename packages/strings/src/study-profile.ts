@@ -23,6 +23,8 @@ export const studyProfile = {
     otherLabel: 'Qual é o seu curso?',
     nonHealthLabel: 'O que você estuda?',
     nonHealthHelp: 'O Remoa funciona para qualquer assunto: mapas, revisão e desafios.',
+    /** G29: lista fechada de dez áreas + "Outra área não relacionada à área da saúde". */
+    helpAreas: 'Escolha a sua área da saúde. Se não for da saúde, escolha "Outra área não relacionada à área da saúde".',
   },
   combo: {
     custom: 'Usar “{text}”',
@@ -74,6 +76,32 @@ export const studyProfile = {
     other: 'Outro objetivo',
     otherPlaceholder: 'Digite um objetivo',
     remove: 'Remover {goal}',
+    /** G29: chips de múltipla escolha com contador, sugeridos pelo curso primeiro e "Adicionar" para objetivo próprio. */
+    help: 'Escolha até {max}. Toque de novo para desmarcar.',
+    count: '{n} de {max}',
+    suggested: 'Sugeridos para {course}',
+    more: 'Outros objetivos',
+    all: 'Objetivos',
+    custom: 'Seus objetivos',
+    add: 'Adicionar',
+    otherLabel: 'Outro objetivo (opcional)',
+    full: 'Você já escolheu {max}. Desmarque um para trocar.',
+    /** Nomes por código: usados enquanto a lista do servidor não chega (nunca mostrar o código cru). */
+    names: {
+      enamed: 'ENAMED',
+      residencia_medica: 'Residência médica',
+      revalida: 'Revalida',
+      provas_faculdade: 'Provas da faculdade',
+      provas_curso: 'Provas do curso',
+      concursos_saude: 'Concursos públicos da saúde',
+      residencia_multiprofissional: 'Residência multiprofissional em saúde',
+      residencia_enfermagem: 'Residência em enfermagem ou multiprofissional',
+      residencia_especializacao: 'Residência ou especialização',
+      enade: 'ENADE',
+      atualizacao_profissional: 'Atualização profissional',
+      idiomas: 'Idiomas',
+      aprender_por_conta: 'Aprender por conta própria',
+    },
   },
   menuNote: {
     enamed: 'Você estuda Medicina: o Enamed aparece no seu menu.',

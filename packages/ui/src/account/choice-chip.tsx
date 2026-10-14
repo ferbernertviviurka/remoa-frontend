@@ -2,6 +2,7 @@
 
 import * as RR from '@radix-ui/react-radio-group';
 import { focusRing } from '../button-styles';
+import { Icon } from '../icons';
 
 /**
  * ChoiceChip: grupo de chips de escolha única (radiogroup; setas movem a escolha). `label` = nome do grupo.
@@ -32,7 +33,8 @@ export function ChoiceChip({ label, options, value, onValueChange }: ChoiceChipP
 
 /**
  * ChoiceChipMulti: chips de escolha múltipla (botões `aria-pressed` num `role="group"`). `values` na ordem escolhida; `full` trava os não marcados
- * (limite atingido, calculado por quem usa: pode valer para vários grupos; os marcados continuam desmarcáveis). Mesmo visual do ChoiceChip.
+ * (limite atingido, calculado por quem usa: pode valer para vários grupos; os marcados continuam desmarcáveis). Mesmo visual do ChoiceChip;
+ * o marcado leva um ✓ (G29: múltipla escolha não pode depender só da cor).
  */
 export type ChoiceChipMultiProps = {
   label: string;
@@ -54,8 +56,9 @@ export function ChoiceChipMulti({ label, options, values, onValuesChange, full =
             aria-pressed={on}
             disabled={!on && full}
             onClick={() => onValuesChange(on ? values.filter((v) => v !== o.value) : [...values, o.value])}
-            className={`h-11 rounded-pill border-[1.5px] px-[18px] text-sm font-bold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-60 ${on ? 'border-primary bg-primary-tint text-primary-deep' : 'border-border-strong bg-surface text-ink hover:border-primary'} ${focusRing}`}
+            className={`inline-flex min-h-11 items-center gap-1.5 rounded-pill py-2 text-left border-[1.5px] px-[18px] text-sm font-bold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-60 ${on ? 'border-primary bg-primary-tint text-primary-deep' : 'border-border-strong bg-surface text-ink hover:border-primary'} ${focusRing}`}
           >
+            {on ? <Icon name="check" size={16} strokeWidth={2.6} /> : null}
             {o.label}
           </button>
         );

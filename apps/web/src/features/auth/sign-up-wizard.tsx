@@ -183,7 +183,7 @@ export function SignUpWizard({ next, referred = false, plan, course }: { next?: 
 
   if (pendingEmail) return <ConfirmEmail email={pendingEmail} />;
 
-  const goalNames = [...study.goals.map((g) => allGoals.find((x) => x.code === g)?.name ?? g), ...study.customGoals];
+  const goalNames = [...study.goals.map((g) => allGoals.find((x) => x.code === g)?.name ?? t(`studyProfile.goals.names.${g}`)), ...study.customGoals];
   const focusMain = goalNames.length ? goalNames.join(' · ') : t('studyProfile.focus.noGoal');
 
   if (done) {

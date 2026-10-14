@@ -19,8 +19,10 @@ type Ctx = {
   announcement: string;
   /** call after any local mutation (read, remove) */
   changed: () => void;
+  /** optimistic badge drop for `n` items just marked read, then reconcile with the server (no list refetch: the open list keeps its order) */
+  seen: (n: number) => void;
 };
-const Context = createContext<Ctx>({ unread: ZERO, timezone: 'America/Sao_Paulo', version: 0, announcement: '', changed: () => undefined });
+const Context = createContext<Ctx>({ unread: ZERO, timezone: 'America/Sao_Paulo', version: 0, announcement: '', changed: () => undefined, seen: () => undefined });
 export const useNotifications = () => useContext(Context);
 
 /** Realtime payload row (snake_case Postgres row): only what the web needs to word the announcement. */
@@ -48,6 +50,11 @@ export function NotificationsProvider({ timezone = 'America/Sao_Paulo', userId, 
   }, []);
   const changed = useCallback(() => {
     setVersion((v) => v + 1);
+    void refresh();
+  }, [refresh]);
+
+  const seen = useCallback((n: number) => {
+    setUnread((u) => ({ ...u, total: Math.max(0, u.total - n) }));
     void refresh();
   }, [refresh]);
 
@@ -98,7 +105,7 @@ export function NotificationsProvider({ timezone = 'America/Sao_Paulo', userId, 
     };
   }, [refresh, changed, timezone, userId]);
 
-  const value = useMemo(() => ({ unread, timezone, version, announcement, changed }), [unread, timezone, version, announcement, changed]);
+  const value = useMemo(() => ({ unread, timezone, version, announcement, changed, seen }), [unread, timezone, version, announcement, changed, seen]);
   return (
     <Context.Provider value={value}>
       {children}

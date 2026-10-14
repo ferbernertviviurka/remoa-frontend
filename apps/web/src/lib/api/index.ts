@@ -11,7 +11,7 @@ export { apiBase };
  * Calls the backend API (`/v1/*`). HTTP errors come back as `{ ok: false, error }`;
  * network failures (offline, API down) throw, so callers like the autosave queue can retry.
  */
-export async function apiFetch<T>(path: string, token: string | null, init: RequestInit = {}, onFeedback?: (chunk: string) => void): Promise<Result<T>> {
+export async function apiFetch<T>(path: string, token: string | null, init: RequestInit = {}, onFeedback?: (chunk: string) => void, onProgress?: (progress: unknown) => void): Promise<Result<T>> {
   const headers = new Headers(init.headers);
   if (token) headers.set('authorization', `Bearer ${token}`);
   // FormData: the browser sets multipart/form-data with its boundary.
@@ -29,7 +29,7 @@ export async function apiFetch<T>(path: string, token: string | null, init: Requ
   logTiming({ name: 'api', method: init.method ?? 'GET', path: safePath(path), status: res.status, ms: Date.now() - started, requestId: headers.get('x-request-id') ?? undefined, api: timing });
   if (res.ok && res.body && (res.headers.get('content-type') ?? '').includes('text/event-stream')) {
     trace(init.method, path, res.status, started, undefined, timing);
-    return readResultStream<T>(res.body, onFeedback);
+    return readResultStream<T>(res.body, onFeedback, onProgress);
   }
   const body: unknown = await res.json().catch(() => null);
   const result: Result<T> = res.ok ? (body as Result<T>) : { ok: false, error: readErrorBody(body) ?? { code: 'internal', message: `HTTP ${res.status}` } };
@@ -70,8 +70,8 @@ function trace(method = 'GET', path: string, status: number, started: number, er
  * Browser-side call with the current Supabase session token. supabase-js is imported lazily (G11/D-357) so public pages
  * that only use `apiFetch`/`apiBase` (the landing) do not ship ~60 KB gzip of auth client.
  */
-export async function api<T>(path: string, init?: RequestInit, onFeedback?: (chunk: string) => void): Promise<Result<T>> {
-  return apiFetch<T>(path, await sessionToken(), init, onFeedback);
+export async function api<T>(path: string, init?: RequestInit, onFeedback?: (chunk: string) => void, onProgress?: (progress: unknown) => void): Promise<Result<T>> {
+  return apiFetch<T>(path, await sessionToken(), init, onFeedback, onProgress);
 }
 
 /** The browser's Supabase access token (local read, no network), for calls that cannot go through `api` (XHR uploads). */

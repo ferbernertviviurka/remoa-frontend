@@ -15,12 +15,14 @@ const body=(c:Call)=>JSON.parse(String(c.init?.body));
 const last=(p:string)=>[...calls].reverse().find(c=>c.path===p);
 const session={id:ID(700),mode:'study',status:'active',revision:1,startedAt:new Date().toISOString(),deadline:null,finishedAt:null,serverTime:new Date().toISOString(),items:[]};
 
-vi.mock('@/lib/api',()=>({api:vi.fn(async(path:string,init?:RequestInit)=>{
+let progressEvents:unknown[];let boardContent:{cardCount:number;areaIds:string[];topicIds:string[]};
+vi.mock('@/lib/api',()=>({api:vi.fn(async(path:string,init?:RequestInit,_f?:unknown,onProgress?:(p:unknown)=>void)=>{
   calls.push({path,init});
   if(path==='/v1/challenge-ai/taxonomy?kind=topic')return {ok:true,data:[{id:TOPIC,name:'Asma'}]};
   if(path.startsWith('/v1/challenge-ai/taxonomy'))return {ok:true,data:[{id:AREA,name:'Clínica Médica'}]};
   if(path==='/v1/boards')return {ok:true,data:[{id:BOARD,title:'Mapa sintético'}]};
-  if(path==='/v1/exam-builder/generate')return genReply;
+  if(path==='/v1/exam-builder/generate'){progressEvents.forEach(p=>onProgress?.(p));return genReply;}
+  if(path.startsWith('/v1/exam-builder/board-content'))return {ok:true,data:{boardId:BOARD,matrixItemIds:[],...boardContent}};
   if(path==='/v1/exam-templates'&&!init?.method)return {ok:true,data:{items:tplList,limit:3}};
   if(path==='/v1/exam-templates')return templateReply==='limit'?{ok:false,error:{code:'limit_reached',message:'limit_reached'}}:{ok:true,data:{id:ID(800),name:'x',params:JSON.parse(String(init!.body)).params,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}};
   if(path==='/v1/exam-builder/availability')return {ok:true,data:{total:available,areas:[{areaId:AREA,available}]}};
@@ -35,11 +37,12 @@ vi.mock('@/lib/api',()=>({api:vi.fn(async(path:string,init?:RequestInit)=>{
   return {ok:false,error:{code:'not_found',message:path}};
 })}));
 
-beforeEach(()=>{tplList=[];genReply={ok:true,data:{questionIds:[ID(71),ID(72)],requested:2,reused:1,generated:1,shortfall:0,stoppedBy:null}};calls=[];available=100;pool=100;startResults=[];templateReply='ok';revalidateReply={ok:true,unavailable:[],updated:[]};push.mockClear();sessionStorage.clear();});
+beforeEach(()=>{progressEvents=[];boardContent={cardCount:0,areaIds:[],topicIds:[]};tplList=[];genReply={ok:true,data:{questionIds:[ID(71),ID(72)],requested:2,reused:1,generated:1,shortfall:0,stoppedBy:null,shortfallReason:null}};calls=[];available=100;pool=100;startResults=[];templateReply='ok';revalidateReply={ok:true,unavailable:[],updated:[]};push.mockClear();sessionStorage.clear();});
 afterEach(cleanup);
 const init={ids:[],matrixItemIds:[]};
 const next=()=>fireEvent.click(screen.getByRole('button',{name:'Continuar'}));
-const toReview=()=>{next();next();next();};
+const toContent=()=>{next();next();};
+const toReview=()=>{next();next();next();next();};
 const ready=async()=>{toReview();await screen.findByText('Enunciado sintético 1');};
 const h2=(name:string)=>screen.getByRole('heading',{level:2,name});
 const choose=(name:RegExp)=>fireEvent.click(screen.getByRole('button',{name}));
@@ -50,13 +53,13 @@ const previews=()=>calls.filter(c=>c.path==='/v1/exam-builder/preview').map(body
 
 describe('presets (FR-22)',()=>{
   it('ENAMED applies 100 questions, simulado, 3 min and is marked as approximation',async()=>{
-    render(<BuilderScreen init={init}/>);next();choose(/Por modo/);
+    render(<BuilderScreen init={init}/>);toContent();choose(/Por modo/);
     choose(/Formato ENAMED/);expect(screen.getByText(/Aproximação/)).toBeTruthy();
     next();next();
     await waitFor(()=>expect(previews().at(-1)).toMatchObject({params:{count:100,mode:'simulation',timePerQuestionSec:180,distribution:'balanced'}}));
   });
   it('Treino rápido and Revisar meus erros set progress and count',async()=>{
-    render(<BuilderScreen init={init}/>);next();choose(/Por modo/);
+    render(<BuilderScreen init={init}/>);toContent();choose(/Por modo/);
     choose(/Treino rápido/);next();next();
     await waitFor(()=>expect(previews().at(-1)).toMatchObject({params:{count:10,progress:'unseen'}}));
     fireEvent.click(screen.getByRole('button',{name:'Voltar'}));fireEvent.click(screen.getByRole('button',{name:'Voltar'}));
@@ -66,26 +69,42 @@ describe('presets (FR-22)',()=>{
 });
 
 describe('stepper navigation and validation (D-1846)',()=>{
-  it('starts on Origem, moves the focus to each step heading, and Voltar returns',()=>{
+  it('order is Prova → Origem → Conteúdo → Formato → Revisar; focus follows each heading and Voltar returns',()=>{
     render(<BuilderScreen init={init}/>);
-    expect(h2('De onde vêm as questões?')).toBeTruthy();
+    expect(h2('Sua prova')).toBeTruthy();
+    expect(screen.getByRole('list',{name:'Etapas da prova'}).querySelector('[aria-current="step"]')?.textContent).toContain('Prova');
+    next();expect(document.activeElement).toBe(h2('De onde vêm as questões?'));
     next();expect(document.activeElement).toBe(h2('Como filtrar as questões?'));
-    fireEvent.click(screen.getByRole('button',{name:'Voltar'}));expect(document.activeElement).toBe(h2('De onde vêm as questões?'));
-    expect(screen.getByRole('list',{name:'Etapas da prova'}).querySelector('[aria-current="step"]')?.textContent).toContain('Origem');
+    next();expect(document.activeElement).toBe(h2('Formato da prova'));
+    fireEvent.click(screen.getByRole('button',{name:'Voltar'}));expect(document.activeElement).toBe(h2('Como filtrar as questões?'));
   });
-  it('map origin needs a map and at least one of use-existing / generate',async()=>{
+  it('name, map and count are asked once, in step 1; Formato does not repeat them',()=>{
     render(<BuilderScreen init={init}/>);
-    choose(/A partir de um mapa/);next();
-    expect(screen.getByRole('alert').textContent).toMatch(/Escolha o mapa de base/);
-    expect(h2('De onde vêm as questões?')).toBeTruthy();
-    await pick('Mapa de base','Mapa sintético');
+    expect(screen.getByRole('textbox',{name:'Nome da prova'})).toBeTruthy();
+    expect(screen.getByRole('combobox',{name:'Mapa (opcional)'})).toBeTruthy();
+    expect(screen.getByRole('spinbutton',{name:'Quantidade de questões'})).toBeTruthy();
+    fireEvent.change(screen.getByRole('spinbutton',{name:'Quantidade de questões'}),{target:{value:'0'}});next();
+    expect(screen.getByRole('alert').textContent).toMatch(/1 a 200 questões/);
+    fireEvent.click(screen.getByRole('button',{name:'40 questões'}));next();next();next();
+    expect(h2('Formato da prova')).toBeTruthy();
+    expect(screen.queryByRole('textbox',{name:'Nome da prova'})).toBeNull();
+    expect(screen.queryByRole('spinbutton',{name:'Quantidade de questões'})).toBeNull();
+    expect(screen.queryByRole('combobox',{name:'Mapa (opcional)'})).toBeNull();
+  });
+  it('the map is optional; with a map, AI origin needs use-existing or generate',async()=>{
+    render(<BuilderScreen init={init}/>);
+    next();choose(/Questões da IA/);
+    expect(screen.queryByRole('checkbox',{name:/já criou/})).toBeNull(); // no map: the AI generates by theme
+    expect(screen.getByText(/A IA cria as 20 questões da prova/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button',{name:'Voltar'}));
+    await pick('Mapa (opcional)','Mapa sintético');next();
     fireEvent.click(screen.getByRole('checkbox',{name:/já criou/}));next();
     expect(screen.getByRole('alert').textContent).toMatch(/usar as questões que a IA já criou, criar novas/);
     fireEvent.click(screen.getByRole('checkbox',{name:/cria questões novas/}));next();
     expect(h2('Como filtrar as questões?')).toBeTruthy();
   });
   it('Por matéria needs at least one topic',async()=>{
-    render(<BuilderScreen init={init}/>);next();choose(/Por matéria/);next();
+    render(<BuilderScreen init={init}/>);toContent();choose(/Por matéria/);next();
     expect(screen.getByRole('alert').textContent).toMatch(/ao menos uma matéria/);
     await pick('Matérias','Asma');next();expect(h2('Formato da prova')).toBeTruthy();
   });
@@ -93,20 +112,20 @@ describe('stepper navigation and validation (D-1846)',()=>{
 
 describe('filter modes map to params',()=>{
   it('Por especialidade: areas checklist, no topics, params without topics',async()=>{
-    render(<BuilderScreen init={init}/>);next();
+    render(<BuilderScreen init={init}/>);toContent();
     expect(await screen.findByRole('checkbox',{name:/Clínica Médica · 100 disponíveis/})).toBeTruthy();
     expect(screen.queryByRole('combobox',{name:'Matérias'})).toBeNull();
     next();next();await screen.findByText('Enunciado sintético 1');
     expect(previews().at(-1)).toMatchObject({params:{areaIds:[],topicIds:[],source:'catalog',boardId:null}});
   });
   it('Por matéria sets topicIds (and the availability filter carries them)',async()=>{
-    render(<BuilderScreen init={init}/>);next();choose(/Por matéria/);await pick('Matérias','Asma');next();next();
+    render(<BuilderScreen init={init}/>);toContent();choose(/Por matéria/);await pick('Matérias','Asma');next();next();
     await screen.findByText('Enunciado sintético 1');
     expect(previews().at(-1)).toMatchObject({params:{topicIds:[TOPIC]}});
     expect(body(last('/v1/exam-builder/availability')!)).toMatchObject({topicIds:[TOPIC]});
   });
   it('Totalmente personalizada offers areas, matérias, dificuldade and progresso',async()=>{
-    render(<BuilderScreen init={init}/>);next();choose(/Totalmente personalizada/);
+    render(<BuilderScreen init={init}/>);toContent();choose(/Totalmente personalizada/);
     expect(await screen.findByRole('checkbox',{name:/Clínica Médica/})).toBeTruthy();
     expect(screen.getByRole('combobox',{name:'Matérias'})).toBeTruthy();
     expect(screen.getByText('Progresso')).toBeTruthy();
@@ -116,52 +135,115 @@ describe('filter modes map to params',()=>{
     expect(previews().at(-1)).toMatchObject({params:{difficulties:['easy'],topicIds:[TOPIC]}});
   });
   it('Por especialidade asks for difficulty in the Formato step',()=>{
-    render(<BuilderScreen init={init}/>);next();next();
+    render(<BuilderScreen init={init}/>);toContent();next();
     fireEvent.click(screen.getByRole('button',{name:'Difícil'}));expect(screen.getByRole('button',{name:'Difícil'}).getAttribute('aria-pressed')).toBe('true');
   });
 });
 
 describe('map as base (D-1846)',()=>{
-  const mapFlow=async()=>{render(<BuilderScreen init={init}/>);choose(/A partir de um mapa/);await pick('Mapa de base','Mapa sintético');fireEvent.click(screen.getByRole('checkbox',{name:/cria questões novas/}));toReview();};
+  const mapFlow=async()=>{render(<BuilderScreen init={init}/>);await pick('Mapa (opcional)','Mapa sintético');next();choose(/Questões da IA/);fireEvent.click(screen.getByRole('checkbox',{name:/cria questões novas/}));next();next();next();};
   it('calls generate only when the button is clicked, with {boardId,count,difficulty}, and pins the ids',async()=>{
     await mapFlow();
     await screen.findByText('Enunciado sintético 1');
     expect(screen.getByText(/limite diário de IA/)).toBeTruthy();
     expect(last('/v1/exam-builder/generate')).toBeUndefined();
     expect(previews().at(-1)).toMatchObject({params:{source:'ai',boardId:BOARD}});
-    fireEvent.click(screen.getByRole('button',{name:'Gerar 10 questões com IA'}));
+    fireEvent.click(screen.getByRole('button',{name:'Gerar 20 questões com IA'}));
     await screen.findByText('Prontas e fixadas na prova: 1 reaproveitadas e 1 novas.');
-    expect(body(last('/v1/exam-builder/generate')!)).toEqual({boardId:BOARD,count:10,difficulty:'mixed'});
+    expect(body(last('/v1/exam-builder/generate')!)).toEqual({boardId:BOARD,count:20,difficulty:'mixed'});
     expect(calls.filter(c=>c.path==='/v1/exam-builder/generate')).toHaveLength(1);
-    expect(screen.queryByRole('button',{name:'Gerar 10 questões com IA'})).toBeNull(); // no second charge by a repeat click
+    expect(screen.queryByRole('button',{name:'Gerar 20 questões com IA'})).toBeNull(); // no second charge by a repeat click
     await waitFor(()=>expect(previews().at(-1).pinnedIds).toEqual([ID(71),ID(72)]));
     expect(screen.getByRole('button',{name:'Desafixar a questão 1'})).toBeTruthy();
   });
   it('shows the daily-limit message when the AI quota ran out and keeps what exists',async()=>{
-    genReply={ok:true,data:{questionIds:[ID(71)],requested:10,reused:1,generated:0,shortfall:9,stoppedBy:'quota'}};
+    genReply={ok:true,data:{questionIds:[ID(71)],requested:10,reused:1,generated:0,shortfall:9,stoppedBy:'quota',shortfallReason:'quota'}};
     await mapFlow();await screen.findByText('Enunciado sintético 1');
-    fireEvent.click(screen.getByRole('button',{name:'Gerar 10 questões com IA'}));
-    expect(await screen.findByText(/limite diário de IA acabou/)).toBeTruthy();
-    expect(screen.getByText('Só deu para reunir 1 de 10.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button',{name:'Gerar 20 questões com IA'}));
+    expect(await screen.findByText(/limite diário de IA do seu plano acabou/)).toBeTruthy();
+    expect(screen.getByText('Reunimos 1 de 10 questões')).toBeTruthy();
+    expect(screen.queryByRole('button',{name:/Gerar mais/})).toBeNull(); // quota is over: no point offering more
     // the preview reloads with the pinned ids right after generating; Começar is enabled again once it is ready
     await waitFor(()=>expect((screen.getByRole('button',{name:'Começar prova'}) as HTMLButtonElement).disabled).toBe(false));
+  });
+  it('an empty map (empty_scope) says what to do instead of a generic error',async()=>{
+    genReply={ok:false,error:{code:'validation',message:'empty_scope'}};
+    await mapFlow();await screen.findByText('Enunciado sintético 1');
+    fireEvent.click(screen.getByRole('button',{name:'Gerar 20 questões com IA'}));
+    expect(await screen.findByText(/ainda não tem cards para a IA usar/)).toBeTruthy();
   });
   it('a quota error from the API is also explained',async()=>{
     genReply={ok:false,error:{code:'quota_exceeded',message:'ai_question_batches'}};
     await mapFlow();await screen.findByText('Enunciado sintético 1');
-    fireEvent.click(screen.getByRole('button',{name:'Gerar 10 questões com IA'}));
+    fireEvent.click(screen.getByRole('button',{name:'Gerar 20 questões com IA'}));
     expect(await screen.findByText(/limite diário de IA acabou/)).toBeTruthy();
   });
   it('only-existing questions: no generate card; Banco + IA asks for a map and shows the card',async()=>{
-    render(<BuilderScreen init={init}/>);choose(/A partir de um mapa/);await pick('Mapa de base','Mapa sintético');toReview();
+    render(<BuilderScreen init={init}/>);await pick('Mapa (opcional)','Mapa sintético');next();choose(/Questões da IA/);next();next();next();
     await screen.findByText('Enunciado sintético 1');
     expect(screen.queryByText('Questões novas da IA')).toBeNull();
     expect(previews().at(-1)).toMatchObject({params:{source:'ai',boardId:BOARD}});
     cleanup();calls=[];
-    render(<BuilderScreen init={init}/>);choose(/Banco e questões novas/);next();expect(screen.getByRole('alert').textContent).toMatch(/mapa de base/);
-    await pick('Mapa de base','Mapa sintético');toReview();await screen.findByText('Enunciado sintético 1');
+    render(<BuilderScreen init={init}/>);await pick('Mapa (opcional)','Mapa sintético');next();choose(/Banco e questões novas/);next();next();next();await screen.findByText('Enunciado sintético 1');
     expect(previews().at(-1)).toMatchObject({params:{source:'catalog_and_ai',boardId:BOARD}});
     expect(screen.getByRole('button',{name:'Gerar 10 questões com IA'})).toBeTruthy();
+  });
+  it('without a map the AI needs a theme (areas/matérias) in Conteúdo',async()=>{
+    render(<BuilderScreen init={init}/>);next();choose(/Questões da IA/);next();
+    expect(screen.getByRole('heading',{name:'Tema das questões'})).toBeTruthy();
+    expect(screen.queryByRole('button',{name:/Por modo/})).toBeNull();
+    next();expect(screen.getByRole('alert').textContent).toMatch(/ao menos uma área ou matéria/);
+    fireEvent.click(await screen.findByRole('checkbox',{name:'Clínica Médica'}));next();
+    expect(h2('Formato da prova')).toBeTruthy();
+    next();await screen.findByRole('button',{name:'Gerar 20 questões com IA'});
+    await waitFor(()=>expect(previews().at(-1)).toMatchObject({params:{source:'ai',boardId:null,areaIds:[AREA]}}));
+    fireEvent.click(screen.getByRole('button',{name:'Gerar 20 questões com IA'}));
+    await waitFor(()=>expect(body(last('/v1/exam-builder/generate')!)).toEqual({boardId:null,count:20,difficulty:'mixed',areaIds:[AREA],topicIds:[],theme:null}));
+    expect(new Headers(last('/v1/exam-builder/generate')!.init!.headers).get('accept')).toBe('text/event-stream');
+  });
+  it('a free theme alone is enough without a map',async()=>{
+    render(<BuilderScreen init={init}/>);next();choose(/Questões da IA/);next();
+    fireEvent.change(screen.getByRole('textbox',{name:'Tema (opcional)'}),{target:{value:'  sepse  '}});next();next();
+    fireEvent.click(await screen.findByRole('button',{name:'Gerar 20 questões com IA'}));
+    await waitFor(()=>expect(body(last('/v1/exam-builder/generate')!)).toMatchObject({boardId:null,areaIds:[],theme:'sepse'}));
+  });
+  it('a map with content pre-fills Conteúdo (areas and matérias)',async()=>{
+    boardContent={cardCount:4,areaIds:[AREA],topicIds:[TOPIC]};
+    render(<BuilderScreen init={init}/>);await pick('Mapa (opcional)','Mapa sintético');next();next();
+    expect(await screen.findByText('Conteúdo preenchido a partir do mapa Mapa sintético. Ajuste se quiser.')).toBeTruthy();
+    expect(screen.getByRole('button',{name:/Totalmente personalizada/}).getAttribute('aria-pressed')).toBe('true');
+    next();next();await waitFor(()=>expect(previews().at(-1)).toMatchObject({params:{areaIds:[AREA],topicIds:[TOPIC]}}));
+  });
+  it('an empty map pre-fills nothing',async()=>{
+    render(<BuilderScreen init={init}/>);await pick('Mapa (opcional)','Mapa sintético');
+    await waitFor(()=>expect(calls.some(c=>c.path===`/v1/exam-builder/board-content?boardId=${BOARD}`)).toBe(true));
+    next();next();expect(screen.queryByText(/Conteúdo preenchido/)).toBeNull();
+  });
+  it('while generating, shows a live "x de n" counter and progress',async()=>{
+    let resolve:(v:unknown)=>void=()=>undefined;
+    genReply=new Promise(r=>{resolve=r;}) as unknown as typeof genReply;
+    progressEvents=[{generated:5,requested:20},{bogus:true}];
+    await mapFlow();await screen.findByText('Enunciado sintético 1');
+    fireEvent.click(screen.getByRole('button',{name:'Gerar 20 questões com IA'}));
+    // the stream said 5 of 20; the big number counts up to it, and a malformed event is ignored
+    expect(await screen.findByRole('status',{name:'Questões geradas: 5 de 20'})).toBeTruthy();
+    expect(screen.getByRole('progressbar',{name:'Questões geradas: 5 de 20'})).toBeTruthy();
+    await waitFor(()=>expect(screen.getByText('5 de 20')).toBeTruthy());
+    resolve({ok:true,data:{questionIds:[ID(71),ID(72)],requested:2,reused:1,generated:1,shortfall:0,stoppedBy:null,shortfallReason:null}});
+    expect(await screen.findByText('Prontas e fixadas na prova: 1 reaproveitadas e 1 novas.')).toBeTruthy();
+    expect(screen.queryByRole('status',{name:/Questões geradas/})).toBeNull();
+  });
+  it('a generation shortfall is informative and offers to generate the rest',async()=>{
+    genReply={ok:true,data:{questionIds:[ID(71)],requested:3,reused:0,generated:1,shortfall:2,stoppedBy:null,shortfallReason:'rejected'}};
+    await mapFlow();await screen.findByText('Enunciado sintético 1');
+    fireEvent.click(screen.getByRole('button',{name:'Gerar 20 questões com IA'}));
+    expect(await screen.findByText('Reunimos 1 de 3 questões')).toBeTruthy();
+    expect(screen.getByText(/não passaram nas nossas checagens/)).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull(); // not an error
+    genReply={ok:true,data:{questionIds:[ID(73),ID(74)],requested:2,reused:0,generated:2,shortfall:0,stoppedBy:null,shortfallReason:null}};
+    fireEvent.click(screen.getByRole('button',{name:'Gerar mais 2 com IA'}));
+    await waitFor(()=>expect(calls.filter(c=>c.path==='/v1/exam-builder/generate').map(body).at(-1)).toMatchObject({count:2}));
+    expect(await screen.findByText('Prontas e fixadas na prova: 0 reaproveitadas e 3 novas.')).toBeTruthy();
   });
 });
 
@@ -179,11 +261,10 @@ describe('deep links',()=>{
     expect(screen.getByRole('button',{name:/Por modo/}).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByRole('button',{name:/Formato ENAMED/}).getAttribute('aria-pressed')).toBe('true');
   });
-  it('?source=ai starts with the map origin and "use existing"',()=>{
+  it('?source=ai (the "Gerar com IA" buttons) starts on Prova with the AI origin chosen',()=>{
     render(<BuilderScreen init={{ids:[],matrixItemIds:[],source:'ai'}}/>);
-    expect(h2('De onde vêm as questões?')).toBeTruthy();
-    expect(screen.getByRole('button',{name:/A partir de um mapa/}).getAttribute('aria-pressed')).toBe('true');
-    expect((screen.getByRole('checkbox',{name:/já criou/}) as HTMLInputElement).getAttribute('aria-checked')).toBe('true');
+    expect(h2('Sua prova')).toBeTruthy();next();
+    expect(screen.getByRole('button',{name:/Questões da IA/}).getAttribute('aria-pressed')).toBe('true');
   });
   it('?ids= lands on Formato',()=>{
     render(<BuilderScreen init={{ids:[ID(5)],matrixItemIds:[]}}/>);
@@ -199,19 +280,20 @@ describe('deep links',()=>{
 });
 
 describe('shortfall (FR-26)',()=>{
-  it('warns "Só deu para reunir X de N" and never completes from AI on its own',async()=>{
+  it('says "Reunimos X de N" (neutral, not an alert) and never completes from AI on its own',async()=>{
     available=3;pool=3;
     render(<BuilderScreen init={init}/>);await ready();
-    expect(await screen.findByText('Só deu para reunir 3 de 20')).toBeTruthy();
+    expect(await screen.findByText('Reunimos 3 de 20 questões')).toBeTruthy();
+    expect(screen.getByText('Não há mais questões com esses filtros no banco.')).toBeTruthy();
     expect(previews().every(p=>p.params.source==='catalog')).toBe(true);
-    fireEvent.click(screen.getByRole('button',{name:'Aceitar 3'}));
+    fireEvent.click(screen.getByRole('button',{name:'Seguir com 3'}));
     await waitFor(()=>expect(previews().at(-1).params.count).toBe(3));
     expect(previews().every(p=>p.params.source==='catalog')).toBe(true);
   });
-  it('"Incluir minhas perguntas de IA" is an explicit choice',async()=>{
+  it('"Completar com questões da IA" is an explicit choice',async()=>{
     available=3;pool=3;
     render(<BuilderScreen init={init}/>);await ready();
-    fireEvent.click(await screen.findByRole('button',{name:'Incluir minhas perguntas de IA'}));
+    fireEvent.click(await screen.findByRole('button',{name:'Completar com questões da IA'}));
     await waitFor(()=>expect(previews().at(-1).params.source).toBe('catalog_and_ai'));
   });
 });

@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { HealthCourse, Institution, StudyGoalCode } from '@remoa/contracts';
 import { MAX_GOALS } from '@remoa/contracts/constants';
 import { STUDY_PROFILE_LIMITS, profileCapabilities, studySituations } from '@remoa/contracts/study-profile-core'; // zod-free (D-1864)
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
-import { Autocomplete, type AutocompleteOption, ChoiceChip, ChoiceChipMulti, Input, NumberStepper } from '@remoa/ui';
+import { Autocomplete, type AutocompleteOption, Button, ChoiceChip, ChoiceChipMulti, Input, NumberStepper } from '@remoa/ui';
 import { searchInstitutions } from './api';
 import { applyCourse, applyInstitution, courseName, toggleGoal, undoAutoGoal, visibleFields, type StudyDraft, type StudyErrors } from './autofill';
 import { useCourses, useGoals } from './reference';
@@ -42,7 +42,8 @@ export function StudyFields({ value: d, onChange, errors = {}, disabled, askCoun
     if (known.councilCode !== d.council || label !== d.courseLabel) onChange({ ...d, council: known.councilCode, courseLabel: label });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the list or the course changes
   }, [known]);
-  const goalName = (g: StudyGoalCode) => listed.find((x) => x.code === g)?.name ?? all.find((x) => x.code === g)?.name ?? g;
+  const goalName = (g: StudyGoalCode) => listed.find((x) => x.code === g)?.name ?? all.find((x) => x.code === g)?.name ?? t(`studyProfile.goals.names.${g}`);
+  const [otherGoal, setOtherGoal] = useState('');
 
   function pickCourse(v: { value: string | null; label: string; custom?: boolean } | null) {
     if (!v) return onChange(applyCourse(d, null, ''));
@@ -61,11 +62,15 @@ export function StudyFields({ value: d, onChange, errors = {}, disabled, askCoun
   }
 
   const goalValues = [...d.goals, ...d.customGoals.map((g) => CUSTOM + g)];
-  const goalOptions = [
-    ...listed.map((g) => ({ value: g.code, label: g.name })),
-    ...d.goals.filter((g) => !listed.some((x) => x.code === g)).map((g) => ({ value: g, label: goalName(g) })),
-    ...d.customGoals.map((g) => ({ value: CUSTOM + g, label: g })),
-  ];
+  // G29: every goal is a chip with its human name; the course's suggestions come first, in their own group.
+  const suggestedCodes = known?.suggestedGoals ?? [];
+  const pool = [...new Set<StudyGoalCode>([...suggestedCodes, ...listed.map((g) => g.code), ...d.goals])];
+  const chip = (g: StudyGoalCode) => ({ value: g, label: goalName(g) });
+  const goalGroups = [
+    { key: 'suggested', title: suggestedCodes.length ? t('studyProfile.goals.suggested', { course: known?.name ?? '' }) : '', options: pool.filter((g) => suggestedCodes.includes(g)).map(chip) },
+    { key: 'more', title: t(suggestedCodes.length ? 'studyProfile.goals.more' : 'studyProfile.goals.all'), options: pool.filter((g) => !suggestedCodes.includes(g)).map(chip) },
+    { key: 'custom', title: t('studyProfile.goals.custom'), options: d.customGoals.map((g) => ({ value: CUSTOM + g, label: g })) },
+  ].filter((g) => g.options.length);
   function setGoals(vs: string[]) {
     const removed = goalValues.find((v) => !vs.includes(v));
     const added = vs.find((v) => !goalValues.includes(v));
@@ -75,12 +80,12 @@ export function StudyFields({ value: d, onChange, errors = {}, disabled, askCoun
     else onChange(toggleGoal(d, changed as StudyGoalCode));
   }
   const goalCount = d.goals.length + d.customGoals.length;
-  function addOtherGoal(v: { value: string | null; label: string; custom?: boolean } | null) {
-    if (!v) return;
-    if (v.value && !v.custom) { if (!d.goals.includes(v.value as StudyGoalCode) && goalCount < MAX_GOALS) onChange(toggleGoal(d, v.value as StudyGoalCode)); return; }
-    const text = v.label.trim().replace(/\s+/g, ' ').slice(0, STUDY_PROFILE_LIMITS.customGoal);
-    if (text.length < 2 || d.customGoals.includes(text) || d.customGoals.length >= STUDY_PROFILE_LIMITS.customGoals || goalCount >= MAX_GOALS) return;
-    onChange({ ...d, customGoals: [...d.customGoals, text] });
+  const otherText = otherGoal.trim().replace(/\s+/g, ' ').slice(0, STUDY_PROFILE_LIMITS.customGoal);
+  const canAddOther = otherText.length >= 2 && !d.customGoals.includes(otherText) && d.customGoals.length < STUDY_PROFILE_LIMITS.customGoals && goalCount < MAX_GOALS;
+  function addOtherGoal() {
+    if (!canAddOther) return;
+    onChange({ ...d, customGoals: [...d.customGoals, otherText] });
+    setOtherGoal('');
   }
 
   const caps = profileCapabilities(d.course ? { course: d.course, situation: d.situation, source: 'profile' } : null);
@@ -94,7 +99,6 @@ export function StudyFields({ value: d, onChange, errors = {}, disabled, askCoun
     disabled,
   };
   const name = courseName(d);
-  const otherGoals = listed.filter((g) => !d.goals.includes(g.code)).map((g) => ({ value: g.code, label: g.name }));
   const place = d.city ? `${d.city}${d.uf ? `, ${d.uf}` : ''}` : '';
 
   return (
@@ -120,7 +124,7 @@ export function StudyFields({ value: d, onChange, errors = {}, disabled, askCoun
           error={errors.course}
           {...combo}
         />
-        <p className={help}>{t('studyProfile.course.help')}</p>
+        <p className={help}>{t('studyProfile.course.helpAreas')}</p>
       </div>
 
       {show.council || d.autoGoal ? (
@@ -158,6 +162,7 @@ export function StudyFields({ value: d, onChange, errors = {}, disabled, askCoun
           label={t(d.situation === 'profissional' ? 'studyProfile.institution.labelGraduated' : 'studyProfile.institution.label')}
           placeholder={t('studyProfile.institution.placeholder')}
           loadOptions={loadInstitutions}
+          minChars={0}
           value={d.institution ? { value: d.institution.id, label: instLabel(d.institution) } : d.institutionText ? { value: null, label: d.institutionText, custom: true } : null}
           onValueChange={pickInstitution}
           {...combo}
@@ -198,19 +203,33 @@ export function StudyFields({ value: d, onChange, errors = {}, disabled, askCoun
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-2">
-        <span className="font-bold text-ink">{t('studyProfile.goals.label')}</span>
-        {goalOptions.length ? <ChoiceChipMulti label={t('studyProfile.goals.label')} options={goalOptions} values={goalValues} full={goalCount >= MAX_GOALS} onValuesChange={setGoals} /> : null}
-        <Autocomplete
-          label={t('studyProfile.goals.other')}
-          placeholder={t('studyProfile.goals.otherPlaceholder')}
-          options={otherGoals}
-          value={null}
-          onValueChange={addOtherGoal}
-          error={errors.goals}
-          {...combo}
-          disabled={disabled || goalCount >= MAX_GOALS}
-        />
+      <div role="group" aria-labelledby={`${id}-goals`} aria-describedby={`${id}-goals-help`} className="flex flex-col gap-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <span id={`${id}-goals`} className="font-bold text-ink">{t('studyProfile.goals.label')}</span>
+          <span aria-live="polite" className="shrink-0 text-[13px] font-bold text-muted">{t('studyProfile.goals.count', { n: goalCount, max: MAX_GOALS })}</span>
+        </div>
+        <p id={`${id}-goals-help`} className={help}>{t(goalCount >= MAX_GOALS ? 'studyProfile.goals.full' : 'studyProfile.goals.help', { max: MAX_GOALS })}</p>
+        {goalGroups.map((g) => (
+          <div key={g.key} className="flex flex-col gap-2">
+            <span className="text-xs font-extrabold uppercase tracking-[.08em] text-muted">{g.title}</span>
+            <ChoiceChipMulti label={g.title} options={g.options} values={goalValues} full={goalCount >= MAX_GOALS} onValuesChange={setGoals} />
+          </div>
+        ))}
+        <div className="flex items-end gap-2">
+          <div className="min-w-0 flex-1">
+            <Input
+              label={t('studyProfile.goals.otherLabel')}
+              placeholder={t('studyProfile.goals.otherPlaceholder')}
+              value={otherGoal}
+              maxLength={STUDY_PROFILE_LIMITS.customGoal}
+              disabled={disabled || goalCount >= MAX_GOALS}
+              onChange={(e) => setOtherGoal(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addOtherGoal(); } }}
+            />
+          </div>
+          <Button type="button" variant="secondary" disabled={disabled || !canAddOther} onClick={addOtherGoal}>{t('studyProfile.goals.add')}</Button>
+        </div>
+        <Err id={`${id}-goals-err`}>{errors.goals}</Err>
         <p className={help}>{t(caps.needsConfirmation ? 'studyProfile.menuNote.none' : caps.showEnamed ? 'studyProfile.menuNote.enamed' : 'studyProfile.menuNote.course')}</p>
       </div>
     </div>

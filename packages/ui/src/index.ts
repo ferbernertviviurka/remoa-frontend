@@ -99,3 +99,4 @@ export * from './notifications';
 export * from './blog';
 export * from './legal';
 export * from './autocomplete';
+export * from './answer-option';
