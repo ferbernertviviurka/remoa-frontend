@@ -113,7 +113,8 @@ export function AccountShell({ children }: { children: ReactNode }) {
               </>
             }
           />
-          {children}
+          {/* one grid item: the layout passes ConfirmBanner + the section, which would otherwise be 2 items (section dropped under the nav) */}
+          <div className="flex min-w-0 flex-col gap-6">{children}</div>
         </div>
       </div>
     </PhotoDialogProvider>
