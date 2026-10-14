@@ -4,7 +4,7 @@ export const personal = {
     label: 'Você é',
     aluno: 'Aluno',
     professor: 'Professor',
-    medico_formado: 'Médico formado',
+    medico_formado: 'Profissional formado(a)',
     required: 'Escolha uma opção para continuar.',
   },
   sex: {

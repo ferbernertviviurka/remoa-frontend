@@ -31,7 +31,7 @@ test('trilho (etiqueta Breve) e Hoje levam à Loja em breve; simulador, prévia 
   await page.getByRole('button', { name: 'Quero vender os meus' }).click();
   await page.getByRole('button', { name: 'Entrar na lista de espera' }).last().click();
   await expect(page.locator('#lista').getByRole('alert')).toContainText('Conte se você é professor');
-  await page.getByRole('group', { name: 'Quem você é' }).getByRole('button', { name: 'Médico formado' }).click();
+  await page.getByRole('group', { name: 'Quem você é' }).getByRole('button', { name: 'Profissional formado(a)' }).click();
   await page.getByRole('button', { name: 'Entrar na lista de espera' }).last().click();
   await expect(page.getByText('Você está na lista.')).toBeVisible();
   await page.getByRole('button', { name: 'Alterar minhas respostas' }).click();
