@@ -1,15 +1,15 @@
-import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
+import {afterEach,beforeAll,beforeEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen,waitFor,within} from '@testing-library/react';
 import {BuilderScreen} from './builder-screen';
 
 const ID=(n:number)=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
-const SEED='a'.repeat(32);const AREA=ID(900);
+const SEED='a'.repeat(32);const AREA=ID(900);const TOPIC=ID(910);const BOARD=ID(920);
 const push=vi.fn();
 vi.mock('next/navigation',()=>({useRouter:()=>({push})}));
 vi.mock('next/link',()=>({default:({href,...p}:{href:string})=><a href={href} {...p}/>}));
 
 type Call={path:string;init?:RequestInit};
-let calls:Call[];let available:number;let pool:number;let startResults:Array<{ok:true;data:unknown}|{ok:false;error:{code:string;message:string}}>;let templateReply:'ok'|'limit';let revalidateReply:{ok:boolean;unavailable:string[];updated:{id:string;latestId:string}[]};
+let genReply:{ok:true;data:unknown}|{ok:false;error:{code:string;message:string}};let tplList:unknown[];let calls:Call[];let available:number;let pool:number;let startResults:Array<{ok:true;data:unknown}|{ok:false;error:{code:string;message:string}}>;let templateReply:'ok'|'limit';let revalidateReply:{ok:boolean;unavailable:string[];updated:{id:string;latestId:string}[]};
 const item=(n:number,pinned=false)=>({questionId:ID(n),canonicalId:ID(n),version:1,areaId:AREA,topicId:null,origin:'official_exam',difficulty:'medium',stemPreview:`Enunciado sintético ${n}`,sourceLabel:null,validation:null,pinned});
 const body=(c:Call)=>JSON.parse(String(c.init?.body));
 const last=(p:string)=>[...calls].reverse().find(c=>c.path===p);
@@ -17,8 +17,11 @@ const session={id:ID(700),mode:'study',status:'active',revision:1,startedAt:new 
 
 vi.mock('@/lib/api',()=>({api:vi.fn(async(path:string,init?:RequestInit)=>{
   calls.push({path,init});
+  if(path==='/v1/challenge-ai/taxonomy?kind=topic')return {ok:true,data:[{id:TOPIC,name:'Asma'}]};
   if(path.startsWith('/v1/challenge-ai/taxonomy'))return {ok:true,data:[{id:AREA,name:'Clínica Médica'}]};
-  if(path==='/v1/exam-templates'&&!init?.method)return {ok:true,data:{items:[],limit:3}};
+  if(path==='/v1/boards')return {ok:true,data:[{id:BOARD,title:'Mapa sintético'}]};
+  if(path==='/v1/exam-builder/generate')return genReply;
+  if(path==='/v1/exam-templates'&&!init?.method)return {ok:true,data:{items:tplList,limit:3}};
   if(path==='/v1/exam-templates')return templateReply==='limit'?{ok:false,error:{code:'limit_reached',message:'limit_reached'}}:{ok:true,data:{id:ID(800),name:'x',params:JSON.parse(String(init!.body)).params,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}};
   if(path==='/v1/exam-builder/availability')return {ok:true,data:{total:available,areas:[{areaId:AREA,available}]}};
   if(path==='/v1/exam-builder/preview'){
@@ -32,25 +35,166 @@ vi.mock('@/lib/api',()=>({api:vi.fn(async(path:string,init?:RequestInit)=>{
   return {ok:false,error:{code:'not_found',message:path}};
 })}));
 
-beforeEach(()=>{calls=[];available=100;pool=100;startResults=[];templateReply='ok';revalidateReply={ok:true,unavailable:[],updated:[]};push.mockClear();sessionStorage.clear();});
+beforeEach(()=>{tplList=[];genReply={ok:true,data:{questionIds:[ID(71),ID(72)],requested:2,reused:1,generated:1,shortfall:0,stoppedBy:null}};calls=[];available=100;pool=100;startResults=[];templateReply='ok';revalidateReply={ok:true,unavailable:[],updated:[]};push.mockClear();sessionStorage.clear();});
 afterEach(cleanup);
 const init={ids:[],matrixItemIds:[]};
-const ready=async()=>{await screen.findByText('Enunciado sintético 1');};
+const next=()=>fireEvent.click(screen.getByRole('button',{name:'Continuar'}));
+const toReview=()=>{next();next();next();};
+const ready=async()=>{toReview();await screen.findByText('Enunciado sintético 1');};
+const h2=(name:string)=>screen.getByRole('heading',{level:2,name});
+const choose=(name:RegExp)=>fireEvent.click(screen.getByRole('button',{name}));
+// Radix Select scrolls the chosen option into view; jsdom has no scrollIntoView.
+beforeAll(()=>Object.defineProperty(HTMLElement.prototype,'scrollIntoView',{configurable:true,value:vi.fn()}));
+const pick=async(label:string,option:string)=>{fireEvent.keyDown(screen.getByRole('combobox',{name:label}),{key:'Enter',code:'Enter'});fireEvent.click(await screen.findByRole('option',{name:option}));};
 const previews=()=>calls.filter(c=>c.path==='/v1/exam-builder/preview').map(body);
 
 describe('presets (FR-22)',()=>{
   it('ENAMED applies 100 questions, simulado, 3 min and is marked as approximation',async()=>{
-    render(<BuilderScreen init={init}/>);await ready();
-    fireEvent.click(screen.getByRole('button',{name:/Formato ENAMED/}));
+    render(<BuilderScreen init={init}/>);next();choose(/Por modo/);
+    choose(/Formato ENAMED/);expect(screen.getByText(/Aproximação/)).toBeTruthy();
+    next();next();
     await waitFor(()=>expect(previews().at(-1)).toMatchObject({params:{count:100,mode:'simulation',timePerQuestionSec:180,distribution:'balanced'}}));
-    expect(screen.getByText(/Aproximação/)).toBeTruthy();
   });
   it('Treino rápido and Revisar meus erros set progress and count',async()=>{
-    render(<BuilderScreen init={init}/>);await ready();
-    fireEvent.click(screen.getByRole('button',{name:/Treino rápido/}));
+    render(<BuilderScreen init={init}/>);next();choose(/Por modo/);
+    choose(/Treino rápido/);next();next();
     await waitFor(()=>expect(previews().at(-1)).toMatchObject({params:{count:10,progress:'unseen'}}));
-    fireEvent.click(screen.getByRole('button',{name:/Revisar meus erros/}));
+    fireEvent.click(screen.getByRole('button',{name:'Voltar'}));fireEvent.click(screen.getByRole('button',{name:'Voltar'}));
+    choose(/Revisar meus erros/);next();next();
     await waitFor(()=>expect(previews().at(-1)).toMatchObject({params:{count:20,progress:'wrong'}}));
+  });
+});
+
+describe('stepper navigation and validation (D-1846)',()=>{
+  it('starts on Origem, moves the focus to each step heading, and Voltar returns',()=>{
+    render(<BuilderScreen init={init}/>);
+    expect(h2('De onde vêm as questões?')).toBeTruthy();
+    next();expect(document.activeElement).toBe(h2('Como filtrar as questões?'));
+    fireEvent.click(screen.getByRole('button',{name:'Voltar'}));expect(document.activeElement).toBe(h2('De onde vêm as questões?'));
+    expect(screen.getByRole('list',{name:'Etapas da prova'}).querySelector('[aria-current="step"]')?.textContent).toContain('Origem');
+  });
+  it('map origin needs a map and at least one of use-existing / generate',async()=>{
+    render(<BuilderScreen init={init}/>);
+    choose(/A partir de um mapa/);next();
+    expect(screen.getByRole('alert').textContent).toMatch(/Escolha o mapa de base/);
+    expect(h2('De onde vêm as questões?')).toBeTruthy();
+    await pick('Mapa de base','Mapa sintético');
+    fireEvent.click(screen.getByRole('checkbox',{name:/já criou/}));next();
+    expect(screen.getByRole('alert').textContent).toMatch(/usar as questões que a IA já criou, criar novas/);
+    fireEvent.click(screen.getByRole('checkbox',{name:/cria questões novas/}));next();
+    expect(h2('Como filtrar as questões?')).toBeTruthy();
+  });
+  it('Por matéria needs at least one topic',async()=>{
+    render(<BuilderScreen init={init}/>);next();choose(/Por matéria/);next();
+    expect(screen.getByRole('alert').textContent).toMatch(/ao menos uma matéria/);
+    await pick('Matérias','Asma');next();expect(h2('Formato da prova')).toBeTruthy();
+  });
+});
+
+describe('filter modes map to params',()=>{
+  it('Por especialidade: areas checklist, no topics, params without topics',async()=>{
+    render(<BuilderScreen init={init}/>);next();
+    expect(await screen.findByRole('checkbox',{name:/Clínica Médica · 100 disponíveis/})).toBeTruthy();
+    expect(screen.queryByRole('combobox',{name:'Matérias'})).toBeNull();
+    next();next();await screen.findByText('Enunciado sintético 1');
+    expect(previews().at(-1)).toMatchObject({params:{areaIds:[],topicIds:[],source:'catalog',boardId:null}});
+  });
+  it('Por matéria sets topicIds (and the availability filter carries them)',async()=>{
+    render(<BuilderScreen init={init}/>);next();choose(/Por matéria/);await pick('Matérias','Asma');next();next();
+    await screen.findByText('Enunciado sintético 1');
+    expect(previews().at(-1)).toMatchObject({params:{topicIds:[TOPIC]}});
+    expect(body(last('/v1/exam-builder/availability')!)).toMatchObject({topicIds:[TOPIC]});
+  });
+  it('Totalmente personalizada offers areas, matérias, dificuldade and progresso',async()=>{
+    render(<BuilderScreen init={init}/>);next();choose(/Totalmente personalizada/);
+    expect(await screen.findByRole('checkbox',{name:/Clínica Médica/})).toBeTruthy();
+    expect(screen.getByRole('combobox',{name:'Matérias'})).toBeTruthy();
+    expect(screen.getByText('Progresso')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button',{name:'Fácil'}));await pick('Matérias','Asma');next();
+    expect(screen.queryByText('Dificuldade')).toBeNull(); // already set in the previous step
+    next();await screen.findByText('Enunciado sintético 1');
+    expect(previews().at(-1)).toMatchObject({params:{difficulties:['easy'],topicIds:[TOPIC]}});
+  });
+  it('Por especialidade asks for difficulty in the Formato step',()=>{
+    render(<BuilderScreen init={init}/>);next();next();
+    fireEvent.click(screen.getByRole('button',{name:'Difícil'}));expect(screen.getByRole('button',{name:'Difícil'}).getAttribute('aria-pressed')).toBe('true');
+  });
+});
+
+describe('map as base (D-1846)',()=>{
+  const mapFlow=async()=>{render(<BuilderScreen init={init}/>);choose(/A partir de um mapa/);await pick('Mapa de base','Mapa sintético');fireEvent.click(screen.getByRole('checkbox',{name:/cria questões novas/}));toReview();};
+  it('calls generate only when the button is clicked, with {boardId,count,difficulty}, and pins the ids',async()=>{
+    await mapFlow();
+    await screen.findByText('Enunciado sintético 1');
+    expect(screen.getByText(/limite diário de IA/)).toBeTruthy();
+    expect(last('/v1/exam-builder/generate')).toBeUndefined();
+    expect(previews().at(-1)).toMatchObject({params:{source:'ai',boardId:BOARD}});
+    fireEvent.click(screen.getByRole('button',{name:'Gerar 10 questões com IA'}));
+    await screen.findByText('Prontas e fixadas na prova: 1 reaproveitadas e 1 novas.');
+    expect(body(last('/v1/exam-builder/generate')!)).toEqual({boardId:BOARD,count:10,difficulty:'mixed'});
+    expect(calls.filter(c=>c.path==='/v1/exam-builder/generate')).toHaveLength(1);
+    expect(screen.queryByRole('button',{name:'Gerar 10 questões com IA'})).toBeNull(); // no second charge by a repeat click
+    await waitFor(()=>expect(previews().at(-1).pinnedIds).toEqual([ID(71),ID(72)]));
+    expect(screen.getByRole('button',{name:'Desafixar a questão 1'})).toBeTruthy();
+  });
+  it('shows the daily-limit message when the AI quota ran out and keeps what exists',async()=>{
+    genReply={ok:true,data:{questionIds:[ID(71)],requested:10,reused:1,generated:0,shortfall:9,stoppedBy:'quota'}};
+    await mapFlow();await screen.findByText('Enunciado sintético 1');
+    fireEvent.click(screen.getByRole('button',{name:'Gerar 10 questões com IA'}));
+    expect(await screen.findByText(/limite diário de IA acabou/)).toBeTruthy();
+    expect(screen.getByText('Só deu para reunir 1 de 10.')).toBeTruthy();
+    // the preview reloads with the pinned ids right after generating; Começar is enabled again once it is ready
+    await waitFor(()=>expect((screen.getByRole('button',{name:'Começar prova'}) as HTMLButtonElement).disabled).toBe(false));
+  });
+  it('a quota error from the API is also explained',async()=>{
+    genReply={ok:false,error:{code:'quota_exceeded',message:'ai_question_batches'}};
+    await mapFlow();await screen.findByText('Enunciado sintético 1');
+    fireEvent.click(screen.getByRole('button',{name:'Gerar 10 questões com IA'}));
+    expect(await screen.findByText(/limite diário de IA acabou/)).toBeTruthy();
+  });
+  it('only-existing questions: no generate card; Banco + IA asks for a map and shows the card',async()=>{
+    render(<BuilderScreen init={init}/>);choose(/A partir de um mapa/);await pick('Mapa de base','Mapa sintético');toReview();
+    await screen.findByText('Enunciado sintético 1');
+    expect(screen.queryByText('Questões novas da IA')).toBeNull();
+    expect(previews().at(-1)).toMatchObject({params:{source:'ai',boardId:BOARD}});
+    cleanup();calls=[];
+    render(<BuilderScreen init={init}/>);choose(/Banco e questões novas/);next();expect(screen.getByRole('alert').textContent).toMatch(/mapa de base/);
+    await pick('Mapa de base','Mapa sintético');toReview();await screen.findByText('Enunciado sintético 1');
+    expect(previews().at(-1)).toMatchObject({params:{source:'catalog_and_ai',boardId:BOARD}});
+    expect(screen.getByRole('button',{name:'Gerar 10 questões com IA'})).toBeTruthy();
+  });
+});
+
+describe('deep links',()=>{
+  it('?matrixItemIds= lands on Conteúdo with the map filter visible and applied',async()=>{
+    render(<BuilderScreen init={{ids:[],matrixItemIds:[ID(30)]}}/>);
+    expect(h2('Como filtrar as questões?')).toBeTruthy();
+    expect(screen.getByText('Filtrando pelos assuntos do mapa (1).')).toBeTruthy();
+    next();next();await screen.findByText('Enunciado sintético 1');
+    expect(previews().at(-1)).toMatchObject({params:{matrixItemIds:[ID(30)],source:'catalog'}});
+  });
+  it('?preset= lands on Por modo with the preset selected',()=>{
+    render(<BuilderScreen init={{ids:[],matrixItemIds:[],preset:'enamed'}}/>);
+    expect(h2('Como filtrar as questões?')).toBeTruthy();
+    expect(screen.getByRole('button',{name:/Por modo/}).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button',{name:/Formato ENAMED/}).getAttribute('aria-pressed')).toBe('true');
+  });
+  it('?source=ai starts with the map origin and "use existing"',()=>{
+    render(<BuilderScreen init={{ids:[],matrixItemIds:[],source:'ai'}}/>);
+    expect(h2('De onde vêm as questões?')).toBeTruthy();
+    expect(screen.getByRole('button',{name:/A partir de um mapa/}).getAttribute('aria-pressed')).toBe('true');
+    expect((screen.getByRole('checkbox',{name:/já criou/}) as HTMLInputElement).getAttribute('aria-checked')).toBe('true');
+  });
+  it('?ids= lands on Formato',()=>{
+    render(<BuilderScreen init={{ids:[ID(5)],matrixItemIds:[]}}/>);
+    expect(h2('Formato da prova')).toBeTruthy();
+  });
+  it('applying a saved template jumps to Revisar e começar',async()=>{
+    tplList=[{id:ID(801),name:'Meu modelo',params:{source:'catalog',areaIds:[],topicIds:[],matrixItemIds:[],difficulties:[],progress:'all',boardId:null,count:12,distribution:'balanced',timePerQuestionSec:null,mode:'study',shuffle:false},createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}];
+    render(<BuilderScreen init={init}/>);
+    fireEvent.click(await screen.findByRole('button',{name:'Usar Meu modelo'}));
+    expect(h2('Revisar e começar')).toBeTruthy();
+    await waitFor(()=>expect(previews().at(-1)).toMatchObject({params:{count:12}}));
   });
 });
 
@@ -105,7 +249,7 @@ describe('preview actions (FR-27)',()=>{
     expect(previews().at(-1).pinnedIds).toEqual([ID(3)]);
   });
   it('?ids= from the selection arrive pinned',async()=>{
-    render(<BuilderScreen init={{ids:[ID(5),ID(6)],matrixItemIds:[]}}/>);
+    render(<BuilderScreen init={{ids:[ID(5),ID(6)],matrixItemIds:[]}}/>);next();
     await screen.findByText('Enunciado sintético 5');
     expect(previews()[0]).toMatchObject({pinnedIds:[ID(5),ID(6)],params:{count:2}});
     expect(screen.getByRole('button',{name:'Desafixar a questão 1'})).toBeTruthy();
@@ -115,7 +259,7 @@ describe('preview actions (FR-27)',()=>{
 describe('Começar (FR-30, FR-32, FR-33)',()=>{
   it('is disabled with 0 questions',async()=>{
     available=0;pool=0;
-    render(<BuilderScreen init={init}/>);
+    render(<BuilderScreen init={init}/>);toReview();
     await screen.findByText('Nenhuma questão disponível com esses filtros');
     await waitFor(()=>expect(screen.queryByText('Sorteando questões')).toBeNull());
     expect((screen.getByRole('button',{name:'Começar prova'}) as HTMLButtonElement).disabled).toBe(true);

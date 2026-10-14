@@ -26,6 +26,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ n
       initial={{ answers: r.ok ? r.data.answers : {} }}
       missing={missing}
       profileOnly={done}
+      studyProfile={me.ok ? me.data.studyProfile : undefined}
       next={next}
       profile={p ? { name: p.name, phone: p.phone, school: p.school, schoolId: p.schoolId } : undefined}
     />

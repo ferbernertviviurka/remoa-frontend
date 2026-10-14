@@ -9,6 +9,8 @@ import { LazyMapSlider } from './slider/lazy-map-slider';
 import { ActivationChecklist } from '@/features/onboarding/activation-checklist';
 import { GoButton, HeroActions, HomeHeaderActions } from './home-actions';
 import { CalendarStrip, UpcomingCard } from './home-calendar';
+import { CoverageSlot } from './coverage-slot';
+import { ConfirmBanner } from '@/features/study-profile/confirm-banner';
 
 export type FirstInQueue = { title: string; pct: number };
 export type HomeViewProps = { now: Date; summary: HomeSummary; boards: BoardSummary[]; coverage: CoverageRow[]; first?: FirstInQueue; queueStart?: ReactNode; checklist?: ActivationItem[]; /** F25: compromissos próximos (null = API fora do ar: some a faixa e o card) e o fuso do perfil */ calendar?: { upcoming: UpcomingEvents; timeZone: string } | null;
@@ -126,6 +128,7 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart, ch
       </div>
       <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-7">
+          <ConfirmBanner />
           {slots?.libraryBanner}
           {slots?.calendarStrip ?? (calendar ? <CalendarStrip upcoming={calendar.upcoming} /> : null)}
           {slots?.checklist ?? <ActivationChecklist items={checklist ?? []} />}
@@ -148,7 +151,7 @@ export function HomeView({ now, summary, boards, coverage, first, queueStart, ch
           </Hero>
           <LazyMapSlider maps={boards} />
           <Panel id="home-cov" size="lg" title={t('home.coverage')} aside={<span className="text-[13px] text-muted">{t('home.coverageHint')}</span>}>
-            {slots?.coverage ?? <CoverageRows coverage={coverage} />}
+            <CoverageSlot>{slots?.coverage ?? <CoverageRows coverage={coverage} />}</CoverageSlot>
           </Panel>
         </div>
         <aside aria-label={t('home.weekTitle')} className="flex min-w-0 flex-col gap-5">

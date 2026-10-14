@@ -6,9 +6,10 @@ import { MAX_MATRIX_ITEMS_PER_BOARD, SHARE_PASSWORD_MAX, SHARE_PASSWORD_MIN } fr
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Combobox, FilterChip, Input, PasswordInput, Segmented } from '@remoa/ui';
+import { useStudyProfile } from '@/features/study-profile/use-study-profile';
 import { aboutErrors, type AboutMap } from './about-map';
 
-const t = withStrings({ boards: more.boards, boardsAccess: more.boardsAccess, importExisting: more.importExisting, newMapAbout: more.newMapAbout });
+const t = withStrings({ boards: more.boards, boardsAccess: more.boardsAccess, importExisting: more.importExisting, newMapAbout: more.newMapAbout, studyGate: more.studyGate });
 type StringKey = Parameters<typeof t>[0];
 
 // P-516: state and validation live in about-map.ts, so the page can import them without the form (Combobox, Segmented, PasswordInput).
@@ -39,6 +40,13 @@ export function AboutMapForm({ value, onChange, items, suggestions, showErrors, 
   const valueRef = useRef(value);
   valueRef.current = value;
   useEffect(() => nameRef.current?.focus(), []);
+  // F35 FR-29: the ENAMED matrix (and the CM default) belongs to the 'enamed' subject system; other profiles start on the free-form area.
+  const { capabilities, loaded } = useStudyProfile();
+  const enamed = capabilities.subjectSystem === 'enamed';
+  useEffect(() => {
+    if (loaded && !enamed && valueRef.current.area === 'CM' && valueRef.current.matrixItemIds.length === 0) set({ area: 'OUTRO' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per load result; set() only reads refs
+  }, [loaded, enamed]);
   const errors = showErrors ? aboutErrors(value) : {};
   if (passwordOptional && !value.password) delete errors.password;
   const set = (patch: Partial<AboutMap>) => {
@@ -84,6 +92,7 @@ export function AboutMapForm({ value, onChange, items, suggestions, showErrors, 
             </FilterChip>
           ))}
         </div>
+        {!enamed ? <p className="m-0 text-sm text-muted">{t('studyGate.newMap.freeAreaHint')}</p> : null}
         {areaCleared ? <p role="status" className="m-0 text-sm text-muted">{t('newMapAbout.areaChangedWarning')}</p> : null}
       </div>
 
@@ -91,7 +100,7 @@ export function AboutMapForm({ value, onChange, items, suggestions, showErrors, 
         label={t('newMapAbout.itemsLabel')}
         placeholder={t('newMapAbout.searchPlaceholder')}
         options={leaves.map(option)}
-        suggestions={value.area === 'CM' ? suggestions.filter((s) => leaves.some((l) => l.id === s.id)).map(option) : []}
+        suggestions={value.area === 'CM' && enamed ? suggestions.filter((s) => leaves.some((l) => l.id === s.id)).map(option) : []}
         suggestionsLabel={t('newMapAbout.suggestionsLabel')}
         value={value.matrixItemIds}
         onValueChange={(next) => {

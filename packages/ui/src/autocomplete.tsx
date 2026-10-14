@@ -10,6 +10,8 @@ export interface AutocompleteOption {
   label: string;
   /** Linha secundária, ex.: "Cidade · UF" */
   hint?: string;
+  /** Alias de `hint` (linha secundária); tem precedência */
+  description?: string;
   /** Termos extras buscáveis (sigla, apelidos); não são exibidos */
   keywords?: ReadonlyArray<string>;
 }
@@ -18,11 +20,23 @@ export interface AutocompleteValue {
   /** null = texto livre (não está na lista) */
   value: string | null;
   label: string;
+  /** true = texto livre digitado (value null) */
+  custom?: boolean;
+  /** Opção escolhida (ausente no texto livre), para autopreencher campos relacionados */
+  option?: AutocompleteOption;
 }
 
 export interface AutocompleteProps {
   label: string;
-  options: ReadonlyArray<AutocompleteOption>;
+  options?: ReadonlyArray<AutocompleteOption>;
+  /** Busca no servidor; substitui o filtro local. Respostas antigas são ignoradas. */
+  loadOptions?: (query: string, signal: AbortSignal) => Promise<ReadonlyArray<AutocompleteOption>>;
+  /** Espera após digitar antes de buscar (padrão 200 ms) */
+  debounceMs?: number;
+  /** Mínimo de caracteres para buscar (padrão 2) */
+  minChars?: number;
+  /** Texto do status de carregamento (aria-live) */
+  loadingLabel?: string;
   value: AutocompleteValue | null;
   onValueChange: (next: AutocompleteValue | null) => void;
   placeholder?: string;
@@ -83,7 +97,11 @@ function Highlight({ text, query }: { text: string; query: string }): ReactNode 
  */
 export function Autocomplete({
   label,
-  options,
+  options = [],
+  loadOptions,
+  debounceMs = 200,
+  minChars = 2,
+  loadingLabel = 'Buscando…',
   value,
   onValueChange,
   placeholder,
@@ -109,9 +127,15 @@ export function Autocomplete({
 
   const text = query ?? value?.label ?? '';
   const q = norm((query ?? '').trim());
-  const matched = q
-    ? options.filter((o) => norm([o.label, o.hint ?? '', ...(o.keywords ?? [])].join(' ')).includes(q))
-    : options;
+  const [remote, setRemote] = useState<ReadonlyArray<AutocompleteOption>>([]);
+  const [loading, setLoading] = useState(false);
+  const typed = (query ?? '').trim();
+  const searchable = !loadOptions || typed.length >= minChars;
+  const matched = loadOptions
+    ? searchable ? remote : []
+    : q
+      ? options.filter((o) => norm([o.label, o.hint ?? '', o.description ?? '', ...(o.keywords ?? [])].join(' ')).includes(q))
+      : options;
   const shown = matched.slice(0, limit);
   const customText = (query ?? '').trim();
   const showCustom = allowCustom && customText !== '';
@@ -119,7 +143,25 @@ export function Autocomplete({
   const total = shown.length + (showCustom ? 1 : 0);
   const optId = (i: number) => `${uid}-opt-${i}`;
 
-  useEffect(() => setActive(-1), [query, open]);
+  useEffect(() => setActive(-1), [query, open, remote]);
+  useEffect(() => {
+    if (!loadOptions) return;
+    if (typed.length < minChars) {
+      setRemote([]);
+      setLoading(false);
+      return;
+    }
+    const ctrl = new AbortController();
+    setLoading(true);
+    const timer = setTimeout(() => {
+      loadOptions(typed, ctrl.signal)
+        .then((r) => { if (!ctrl.signal.aborted) { setRemote(r); setLoading(false); } })
+        .catch(() => { if (!ctrl.signal.aborted) { setRemote([]); setLoading(false); } });
+    }, debounceMs);
+    // limpeza aborta a busca anterior: resposta atrasada nunca sobrescreve a nova
+    return () => { clearTimeout(timer); ctrl.abort(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadOptions costuma ser inline; só o texto dispara
+  }, [typed, minChars, debounceMs]);
   useEffect(() => {
     listRef.current?.querySelector('[data-active]')?.scrollIntoView?.({ block: 'nearest' });
   }, [active]);
@@ -132,9 +174,9 @@ export function Autocomplete({
   function choose(i: number) {
     if (i < shown.length) {
       const o = shown[i]!;
-      onValueChange({ value: o.value, label: o.label });
+      onValueChange({ value: o.value, label: o.label, custom: false, option: o });
     } else if (showCustom) {
-      onValueChange({ value: null, label: customText });
+      onValueChange({ value: null, label: customText, custom: true });
     }
     close();
   }
@@ -261,13 +303,14 @@ export function Autocomplete({
                   className={`flex min-h-11 cursor-pointer flex-col justify-center rounded-[10px] px-3 py-2 text-sm ${active === i ? 'bg-primary-tint text-primary-deep' : 'text-ink hover:bg-canvas'}`}
                 >
                   <span className="font-semibold"><Highlight text={o.label} query={query ?? ''} /></span>
-                  {o.hint && <span className="text-xs text-muted"><Highlight text={o.hint} query={query ?? ''} /></span>}
+                  {(o.description ?? o.hint) && <span className="text-xs text-muted"><Highlight text={(o.description ?? o.hint)!} query={query ?? ''} /></span>}
                 </div>
               ))}
               {matched.length > shown.length && (
                 <div role="status" className="px-3 py-2 text-xs font-semibold text-muted">{moreLabel(shown.length)}</div>
               )}
-              {shown.length === 0 && !showCustom && (
+              {loading && <div role="status" aria-live="polite" className="px-3 py-2 text-xs font-semibold text-muted">{loadingLabel}</div>}
+              {shown.length === 0 && !showCustom && !loading && searchable && (
                 <div role="status" className="px-3 py-4 text-center text-sm text-muted">{emptyLabel}</div>
               )}
               {showCustom && (

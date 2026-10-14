@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import type { QuestionImportInput, ImportCandidateReviewInput, QuestionPublishInput, QuestionReportQueueQuery, QuestionReportResolveInput } from '@remoa/contracts';
+import type { QuestionImportInput, ImportCandidateReviewInput, QuestionCandidateAcceptInput, QuestionPublishInput, QuestionReportQueueQuery, QuestionReportResolveInput } from '@remoa/contracts';
 import {request as validatedRequest,QuestionsApiError} from '@/features/questions/request';
 type Contracts = typeof import('./schema-loaders');
 async function request<T>(path:string,schema:(contracts:Contracts)=>z.ZodType<T,z.ZodTypeDef,unknown>,init?:RequestInit):Promise<T>{return validatedRequest(path,schema(await import('./schema-loaders')),init);}
@@ -17,6 +17,7 @@ export const createImport=(input:QuestionImportInput,key:string)=>request('/v1/a
 export const getImport=(id:string,signal?:AbortSignal)=>request(`/v1/admin/questions/imports/${id}`,c => c.questionImportDetailSchema,{signal});
 export const importAction=(id:string,action:'retry'|'cancel',reason:string)=>request(`/v1/admin/questions/imports/${id}/${action}`,c => c.questionImportStatusResultSchema,{method:'POST',body:JSON.stringify({reason})});
 export const saveCandidate=(importId:string,id:string,input:ImportCandidateReviewInput)=>request(`/v1/admin/questions/imports/${importId}/candidates/${id}`,c => c.questionCandidateSavedSchema,{method:'PATCH',body:JSON.stringify(input)});
+export const acceptCandidates=(importId:string,input:QuestionCandidateAcceptInput)=>request(`/v1/admin/questions/imports/${importId}/candidates/accept`,c => c.questionCandidateAcceptResultSchema,{method:'POST',body:JSON.stringify(input)});
 export const catalogMetrics=()=>request('/v1/admin/questions/metrics',c => c.questionCatalogMetricsSchema);
 export const editorialQueue=()=>request('/v1/editorial/questions',c => c.questionEditorialQueueSchema);
 export const editorialDetail=(id:string)=>request(`/v1/editorial/questions/${id}`,c => c.questionEditorialDetailSchema);

@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { AREA_OPTIONS, type Goal, type OnboardingAnswersPatch, type OnboardingState, type RequiredProfileField, type Segment, type UserType } from '@remoa/contracts';
+import { AREA_OPTIONS, type StudyProfile, type Goal, type OnboardingAnswersPatch, type OnboardingState, type RequiredProfileField, type Segment, type UserType } from '@remoa/contracts';
 import { MAX_GOALS, isValidName, normalizeBrPhone, normalizeName, userTypes } from '@remoa/contracts/constants';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
@@ -13,8 +13,13 @@ import { api } from '@/lib/api';
 import { useAcceptLegal } from '@/features/legal/use-accept-legal';
 import { maskPhone } from '../account/profile/personal-basics';
 import { GOAL_GROUPS, SEGMENTS } from './options';
+import { confirmStudyProfile, saveStudyProfile } from '../study-profile/api';
+import { emptyDraft, fromProfile, validateDraft, type StudyDraft } from '../study-profile/autofill';
+import { useCourses } from '../study-profile/reference';
+import { StudyFields } from '../study-profile/study-fields';
+import { publishStudyProfile } from '../study-profile/use-study-profile';
 
-const t = withStrings({ account: more.account, boards: more.boards, newMap: more.newMap, onboarding: more.onboarding, personal: more.personal });
+const t = withStrings({ account: more.account, boards: more.boards, newMap: more.newMap, onboarding: more.onboarding, personal: more.personal, studyProfile: more.studyProfile });
 type StringKey = Parameters<typeof t>[0];
 
 type Path = 'pdf' | 'anki' | 'seed' | 'blank';
@@ -27,7 +32,10 @@ const PATHS: ReadonlyArray<{ id: Path; icon: 'file' | 'archive' | 'book' | 'plus
 const STEPS = ['segment', 'institution', 'goal', 'area', 'start'] as const;
 const loadInstitution = () => import('./institution-field');
 const InstitutionField = dynamic(() => loadInstitution().then((m) => m.InstitutionField), { loading: () => <SkeletonBlock height={84} radius={16} /> });
-type StepKey = 'userType' | (typeof STEPS)[number];
+type StepKey = 'userType' | 'study' | (typeof STEPS)[number];
+/** F35: a confirmed study profile (sign-up step 2) already answers segment, institution and goals; without one (Google, FR-11; migrated, FR-46) one "Seu estudo" step asks them. */
+const studySteps = (p: StudyProfile | null | undefined): readonly StepKey[] =>
+  p === undefined ? STEPS : p && p.source !== 'migration' && p.course ? ['area', 'start'] : ['study', 'area', 'start'];
 
 type ProfileDraft = { name: string | null; phone: string | null; school: string | null; schoolId: string | null };
 
@@ -35,7 +43,8 @@ type ProfileDraft = { name: string | null; phone: string | null; school: string 
  * `missing` (G20, D-844): required profile fields still empty (Google sign-up, e-mail confirmed later, pre-G20 account); the first step
  * "Conte quem você é" asks them and cannot be skipped. `profileOnly`: onboarding already done, so only that step shows, then `next`.
  */
-export function OnboardingView({ initial, missing = [], profile, next: nextUrl = '/app/hoje', profileOnly = false }: { initial: Pick<OnboardingState, 'answers'>; missing?: readonly RequiredProfileField[]; profile?: ProfileDraft; next?: string; profileOnly?: boolean }) {
+/** `studyProfile` undefined = unknown (old API): the legacy steps. `next` other than Hoje = where the sign-up asked to go (plan, Enamed; FR-8/FR-12). */
+export function OnboardingView({ initial, missing = [], profile, next: nextUrl = '/app/hoje', profileOnly = false, studyProfile }: { initial: Pick<OnboardingState, 'answers'>; missing?: readonly RequiredProfileField[]; profile?: ProfileDraft; next?: string; profileOnly?: boolean; studyProfile?: StudyProfile | null }) {
   const needsUserType = missing.includes('userType');
   const needsProfile = missing.length > 0;
   useAcceptLegal(needsUserType); // D-954: the Google sign-up path (needsUserType) never saw the consent line
@@ -49,6 +58,10 @@ export function OnboardingView({ initial, missing = [], profile, next: nextUrl =
   const [area, setArea] = useState<'CM' | undefined>(initial.answers.area === 'CM' ? 'CM' : undefined);
   const [path, setPath] = useState<Path | undefined>(initial.answers.startPath);
   const [busy, setBusy] = useState(false);
+  const courses = useCourses(studyProfile !== undefined);
+  const [study, setStudy] = useState<StudyDraft>(emptyDraft);
+  const studyTouched = useRef(false);
+  useEffect(() => { if (!studyTouched.current && studyProfile) setStudy(fromProfile(studyProfile, courses)); }, [studyProfile, courses]);
   const [failed, setFailed] = useState(false);
   const h1 = useRef<HTMLHeadingElement>(null);
   const first = useRef(true);
@@ -58,13 +71,14 @@ export function OnboardingView({ initial, missing = [], profile, next: nextUrl =
     else h1.current?.focus();
   }, [step]);
 
-  const keys: readonly StepKey[] = profileOnly ? ['userType'] : needsProfile ? ['userType', ...STEPS] : STEPS;
+  const flow = studySteps(studyProfile);
+  const keys: readonly StepKey[] = profileOnly ? ['userType'] : needsProfile ? ['userType', ...flow] : flow;
   const key = keys[step]!;
   const last = keys.length - 1;
   const nameOk = !missing.includes('name') || isValidName(normalizeName(name));
   const phoneOk = !missing.includes('phone') || !!normalizeBrPhone(phone);
   const typeOk = !needsUserType || !!userType;
-  const value = { userType: (nameOk && phoneOk && typeOk) || undefined, segment, institution: institution?.label.trim() || undefined, goal: picked.length > 0 || undefined, area, start: path }[key];
+  const value = { userType: (nameOk && phoneOk && typeOk) || undefined, segment, institution: institution?.label.trim() || undefined, goal: picked.length > 0 || undefined, area, start: path, study: !!validateDraft(study, 'signup').input || undefined }[key];
   const toggleGoal = (g: Goal) => setGoals((p) => (p.includes(g) ? p.filter((x) => x !== g) : p.length < MAX_GOALS ? [...p, g] : p));
 
   async function save(patch: OnboardingAnswersPatch): Promise<boolean> {
@@ -76,7 +90,17 @@ export function OnboardingView({ initial, missing = [], profile, next: nextUrl =
   async function next(skip: boolean) {
     setBusy(true);
     setFailed(false);
-    const patch: OnboardingAnswersPatch = skip ? {} : { segment: { segment }, goal: { goals: picked }, area: { area }, start: {}, userType: {}, institution: {} }[key];
+    const patch: OnboardingAnswersPatch = skip ? {} : { segment: { segment }, goal: { goals: picked }, area: { area }, start: {}, userType: {}, institution: {}, study: {} }[key];
+    if (key === 'study' && !skip) {
+      const input = validateDraft(study, 'signup').input;
+      const send = studyProfile?.source === 'migration' ? confirmStudyProfile : saveStudyProfile;
+      const r = input ? await send(input).catch(() => null) : null;
+      if (!r?.ok) { setFailed(true); setBusy(false); return; }
+      publishStudyProfile(r.data);
+      setStep(step + 1);
+      setBusy(false);
+      return;
+    }
     const profilePatch = key === 'userType'
       ? { ...(missing.includes('name') ? { name: normalizeName(name) } : {}), ...(missing.includes('phone') ? { phone } : {}), ...(needsUserType ? { userType } : {}) }
       : key === 'institution' && !skip && institution ? { institution: { schoolId: institution.value, name: institution.label.trim() } } : null;
@@ -106,15 +130,15 @@ export function OnboardingView({ initial, missing = [], profile, next: nextUrl =
     if (!done?.ok) return fail();
     track('onboarding_completed', { path: chosen ?? 'skipped' }); // "blank" is its own path (D-530)
     // Hard navigation: the router cache may hold the (app) layout's redirect to this very page for /app/hoje.
-    window.location.assign(chosen ? `/app/mapas/novo?caminho=${chosen}&de=onboarding` : '/app/hoje');
+    window.location.assign(nextUrl !== '/app/hoje' ? nextUrl : chosen ? `/app/mapas/novo?caminho=${chosen}&de=onboarding` : '/app/hoje');
   }
   function fail() {
     setFailed(true);
     setBusy(false);
   }
 
-  const steps = keys.map((s) => t(`onboarding.step.${s}` as StringKey));
-  const title = key === 'institution' && segment === 'not_med' ? t('onboarding.institution.titleOther') : t(`onboarding.${key}.title` as StringKey);
+  const steps = keys.map((s) => (s === 'study' ? t('studyProfile.title') : t(`onboarding.step.${s}` as StringKey)));
+  const title = key === 'study' ? t('studyProfile.title') : key === 'institution' && segment === 'not_med' ? t('onboarding.institution.titleOther') : t(`onboarding.${key}.title` as StringKey);
   return (
     <div className="flex min-h-dvh flex-col bg-canvas text-ink">
       <main className="mx-auto flex w-full max-w-[760px] flex-1 flex-col gap-6 px-4 pb-10 pt-5 sm:px-6 sm:pt-[30px] md:gap-7">
@@ -128,7 +152,7 @@ export function OnboardingView({ initial, missing = [], profile, next: nextUrl =
         <div className="flex flex-col gap-[22px]">
           <div className="flex flex-col gap-1.5">
             <h1 ref={h1} tabIndex={-1} className="m-0 font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.03em] outline-none md:text-[38px]">{title}</h1>
-            <p className="m-0 text-base text-muted">{t(`onboarding.${key}.desc` as StringKey)}</p>
+            <p className="m-0 text-base text-muted">{key === 'study' ? t('studyProfile.intro') : t(`onboarding.${key}.desc` as StringKey)}</p>
           </div>
 
           {key === 'userType' ? (
@@ -154,6 +178,8 @@ export function OnboardingView({ initial, missing = [], profile, next: nextUrl =
               ) : null}
             </div>
           ) : null}
+
+          {key === 'study' ? <StudyFields value={study} onChange={(d) => { studyTouched.current = true; setStudy(d); }} disabled={busy} /> : null}
 
           {key === 'institution' ? (
             <InstitutionField

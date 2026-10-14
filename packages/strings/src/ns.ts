@@ -39,3 +39,7 @@ export { questionsBank } from './questions-bank';
 export { questionsAdmin } from './questions-admin';
 
 export { examBuilder } from './exam-builder';
+
+export { studyGate } from './study-gate';
+
+export { studyProfile } from './study-profile';

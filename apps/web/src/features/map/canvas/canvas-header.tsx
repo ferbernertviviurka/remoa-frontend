@@ -11,6 +11,7 @@ import { CHALLENGE_MIN_CARDS } from '@remoa/contracts';
 import { Alert, Button, Icon, InlineTitle, Menu, Segmented, Tooltip, useToast } from '@remoa/ui';
 import { openChallengeTour } from '@/features/challenge/tour';
 import { api } from '@/lib/api';
+import { useStudyProfile } from '@/features/study-profile/use-study-profile';
 // F17 T7: ShareDialog (FR-12) — loaded only when the board is private and not a seed.
 import { MapPropertiesDialog } from '@/features/map/properties/map-properties-dialog';
 import { ShareDialog } from '@/features/map/share/share-dialog';
@@ -57,6 +58,7 @@ const dots = (
 /** Editor.dc.html header (68 px): back, area + inline title, "Salvo há", Explorar/Desafio, "Desafiar este mapa". ⌘K moved to the app navbar (D-607). */
 export const CanvasHeader = memo(function CanvasHeader(p: Props) {
   const router = useRouter();
+  const coverage = useStudyProfile().capabilities.showEnamed ? p.coverage : null; // F35 FR-26: no Enamed link for profiles without it
   const { toast } = useToast();
   const saved = useRef(p.board.title);
   const [title, setTitle] = useState(p.board.title);
@@ -116,14 +118,14 @@ export const CanvasHeader = memo(function CanvasHeader(p: Props) {
           <span aria-hidden="true" className={`block size-2 rounded-full ${failed || p.status.state === 'offline' ? 'bg-review' : 'bg-primary'}`} />
           {saveText(p.status, p.board.updatedAt, now)}
         </span>
-        {p.coverage ? (
+        {coverage ? (
           <>
             {/* P-050b: full text from lg, compact chip md–lg, "⋯" menu item below md */}
             <Link href="/app/cobertura" className="hidden min-h-11 min-w-24 max-w-[22rem] shrink items-center truncate text-[13px] font-semibold text-primary-deep no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:inline-flex">
-              {t('editor.coversHeader', { pct: p.coverage.pct, item: p.coverage.item })}
+              {t('editor.coversHeader', { pct: coverage.pct, item: coverage.item })}
             </Link>
-            <Link href="/app/cobertura" aria-label={t('editor.coversHeader', { pct: p.coverage.pct, item: p.coverage.item })} className="hidden min-h-11 shrink-0 items-center text-[13px] font-semibold text-primary-deep no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:inline-flex lg:hidden">
-              {t('editor.coversShort', { pct: p.coverage.pct })}
+            <Link href="/app/cobertura" aria-label={t('editor.coversHeader', { pct: coverage.pct, item: coverage.item })} className="hidden min-h-11 shrink-0 items-center text-[13px] font-semibold text-primary-deep no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:inline-flex lg:hidden">
+              {t('editor.coversShort', { pct: coverage.pct })}
             </Link>
           </>
         ) : null}
@@ -167,7 +169,7 @@ export const CanvasHeader = memo(function CanvasHeader(p: Props) {
             icon={dots}
             label={t('editor.moreActions')}
             items={[
-              ...(p.coverage ? [{ label: t('editor.coversMenu', { pct: p.coverage.pct, item: p.coverage.item }), onSelect: () => router.push('/app/cobertura') }] : []),
+              ...(coverage ? [{ label: t('editor.coversMenu', { pct: coverage.pct, item: coverage.item }), onSelect: () => router.push('/app/cobertura') }] : []),
               ...(canShare ? [{ label: t('share.headerButton'), onSelect: () => setShareOpen(true) }, { label: t('mapProps.menu'), onSelect: () => setPropsOpen(true) }] : []),
               p.mode === 'explore' ? { label: blocked ? `${challengeText} · ${reason}` : challengeText, onSelect: () => (blocked ? undefined : p.onMode('challenge')) } : { label: t('quiz.exit'), onSelect: () => p.onMode('explore') },
               tourItem,

@@ -23,6 +23,32 @@ export function ReadyMarquee({ flags }: { flags?: Partial<LandingFlags> }) {
   );
 }
 
+/** FR-38: "Para quem é" (#areas). Chips = every course except `not_health` and the generic `other_health` (that is the trailing "e outras áreas"). */
+export function AreasSection() {
+  const a = strings.landing.areas;
+  const names = Object.entries(strings.landing.courses).filter(([code]) => code !== 'not_health' && code !== 'other_health').map(([, c]) => c.name);
+  return (
+    <Section id="areas" eyebrow={a.eyebrow} title={a.title} lead={a.lead}>
+      <RevealFallback />
+      <ul aria-label={a.chipsLabel} className="m-0 flex list-none flex-wrap gap-2.5 p-0">
+        {names.map((n) => <li key={n} className={chip}>{n}</li>)}
+        <li className={`${chip} text-muted`}>{a.more}</li>
+      </ul>
+      <div className="grid gap-6 md:grid-cols-3">
+        {a.cards.map((c, i) => (
+          <Reveal key={c.title} delay={i * 80}>
+            <article className="flex h-full flex-col gap-2 rounded-[32px] border border-border bg-surface p-6">
+              <h3 className="m-0 font-display text-2xl font-extrabold tracking-[-0.025em]">{c.title}</h3>
+              <p className="m-0 text-base leading-[1.55] text-muted">{c.text}</p>
+            </article>
+          </Reveal>
+        ))}
+      </div>
+      <p className="m-0 text-[15px] leading-normal text-muted">{a.note}</p>
+    </Section>
+  );
+}
+
 const problemThumbs = [LooseCardsThumb, RepeatThumb, CoverageThumb];
 
 export function ProblemSection() {

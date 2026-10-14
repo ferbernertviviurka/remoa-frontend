@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { OnboardingView } from './onboarding-view';
+import { COURSES, goalsFor, profileFixture } from '../study-profile/fixtures';
+import { resetReference } from '../study-profile/reference';
 
 const push = vi.fn();
 vi.stubGlobal('location', { assign: push });
@@ -12,6 +14,7 @@ vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  resetReference();
 });
 const ok = { ok: true, data: {} };
 const body = (i: number) => JSON.parse((api.mock.calls[i]![1] as RequestInit).body as string);
@@ -165,5 +168,40 @@ describe('OnboardingView', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Pular este passo' }));
     expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('Quais são os seus objetivos?');
     expect(api).toHaveBeenCalledTimes(1); // só o segmento
+  });
+
+  describe('F35: Seu estudo', () => {
+    const byUrl = (url: string) =>
+      url === '/v1/public/reference/courses' ? { ok: true, data: COURSES }
+      : url.startsWith('/v1/public/reference/goals') ? { ok: true, data: goalsFor(new URLSearchParams(url.split('?')[1]).get('course')) }
+      : url === '/v1/account/study-profile' ? { ok: true, data: { profile: profileFixture(), capabilities: {} } }
+      : ok;
+
+    it('com o estudo do cadastro: não pergunta momento, instituição nem objetivos; next explícito vence', async () => {
+      api.mockImplementation(async (url: string) => byUrl(url));
+      render(<OnboardingView initial={{ answers: {} }} studyProfile={profileFixture()} next="/app/planos?periodo=anual" />);
+      expect(screen.getAllByRole('listitem').map((li) => li.textContent)).toHaveLength(2);
+      expect(screen.queryByRole('button', { name: '5º–6º ano' })).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Clínica Médica' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+      fireEvent.click(await screen.findByRole('button', { name: /Do meu PDF/ }));
+      fireEvent.click(screen.getByRole('button', { name: 'Ir para o primeiro mapa' }));
+      await waitFor(() => expect(push).toHaveBeenCalledWith('/app/planos?periodo=anual'));
+    });
+
+    it('sem estudo (Google, FR-11): um passo "Seu estudo" salva pelo PUT antes de seguir', async () => {
+      api.mockImplementation(async (url: string) => byUrl(url));
+      render(<OnboardingView initial={{ answers: {} }} studyProfile={null} />);
+      expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Seu estudo');
+      expect(screen.getByRole('button', { name: 'Continuar' })).toBeDisabled();
+      fireEvent.change(screen.getByRole('combobox', { name: 'Curso ou área' }), { target: { value: 'enferm' } });
+      await waitFor(() => expect(screen.getAllByRole('option').some((o) => o.textContent?.startsWith('Enfermagem'))).toBe(true));
+      fireEvent.click(screen.getAllByRole('option').find((o) => o.textContent?.startsWith('Enfermagem'))!);
+      fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+      await waitFor(() => expect(screen.getByRole('heading', { level: 1 }).textContent).not.toBe('Seu estudo'));
+      const put = api.mock.calls.find((c) => c[0] === '/v1/account/study-profile')!;
+      expect(put[1].method).toBe('PUT');
+      expect(JSON.parse(put[1].body)).toMatchObject({ course: 'nursing', goals: ['provas_faculdade'], context: 'signup' });
+    });
   });
 });

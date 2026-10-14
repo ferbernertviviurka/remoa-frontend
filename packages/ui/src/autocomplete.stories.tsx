@@ -55,3 +55,36 @@ export const Desabilitado: S = {
     </div>
   ),
 };
+
+const BUSCA = [
+  { value: 'usp', label: 'Universidade de São Paulo', description: 'São Paulo · SP · Pública' },
+  { value: 'ufpr', label: 'Universidade Federal do Paraná', description: 'Curitiba · PR · Pública' },
+  { value: 'pucpr', label: 'PUC-PR', description: 'Curitiba · PR · Privada' },
+];
+
+/** Busca no servidor: debounce 200 ms, mínimo 2 letras, resposta antiga ignorada; texto livre sempre disponível. */
+function Busca() {
+  const [v, setV] = useState<AutocompleteValue | null>(null);
+  return (
+      <div className="max-w-md p-6">
+        <Autocomplete
+          label="Instituição de ensino"
+          placeholder="Digite ao menos 2 letras"
+          loadOptions={(q, signal) =>
+            new Promise((res, rej) => {
+              const t = setTimeout(() => res(BUSCA.filter((o) => (o.label + o.description).toLowerCase().includes(q.toLowerCase()))), 600);
+              signal.addEventListener('abort', () => { clearTimeout(t); rej(new DOMException('abort', 'AbortError')); });
+            })
+          }
+          value={v}
+          onValueChange={setV}
+          allowCustom
+          loadingLabel="Buscando instituições…"
+          emptyLabel="Nenhuma instituição encontrada"
+          customLabel={(t) => `Usar o que digitei: “${t}”`}
+          clearAriaLabel="Limpar instituição"
+        />
+      </div>
+  );
+}
+export const BuscaNoServidor: S = { render: () => <Busca /> };

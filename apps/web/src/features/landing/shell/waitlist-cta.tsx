@@ -7,6 +7,9 @@ import { t, strings } from '@remoa/strings/landing';
 import { WaitlistForm, type WaitlistState, type WaitlistValues } from '@remoa/ui';
 import { track } from '@/lib/analytics';
 import { trackCta } from '../analytics';
+import { useSelectedCourse } from './selected-course';
+import { staticCourses } from '../hero/courses';
+import { signupHref } from './signup-href';
 import { postWaitlist, WAITLIST_SEGMENTS } from './waitlist';
 import type { LaunchPhase } from '../flags';
 
@@ -20,10 +23,12 @@ const dots = [
 
 /** FR-14: dark CTA block. `waitlist` phase: form; `open` phase: link to sign-up. */
 export function WaitlistCta({ phase, variant }: { phase: LaunchPhase; variant: '29' | '49' | null }) {
+  const curso = useSelectedCourse();
   const [state, setState] = useState<WaitlistState>('idle');
   const [email, setEmail] = useState('');
   const [segment, setSegment] = useState<string>(WAITLIST_SEGMENTS[1]!);
   const [error, setError] = useState('');
+  const cursoName = curso ? staticCourses().find((k) => k.code === curso)?.name : undefined;
 
   const fail = (msg: string) => { setError(msg); setState('error'); };
   const submit = async (v: WaitlistValues) => {
@@ -31,7 +36,7 @@ export function WaitlistCta({ phase, variant }: { phase: LaunchPhase; variant: '
     if (!EMAIL.test(v.email.trim())) return fail(t('landing.waitlist.validation.emailInvalid'));
     setState('submitting');
     const seg = WAITLIST_SEGMENTS.find((s) => s === segment) ?? WAITLIST_SEGMENTS[1]!;
-    const r = await postWaitlist({ email: v.email.trim(), segment: seg, variant, honeypot: v.honeypot });
+    const r = await postWaitlist({ email: v.email.trim(), segment: seg, variant, honeypot: v.honeypot, course: curso });
     if (r.kind === 'ok') {
       setState('success');
       if (!v.honeypot) track('waitlist_joined', { segment: seg, variant });
@@ -47,9 +52,12 @@ export function WaitlistCta({ phase, variant }: { phase: LaunchPhase; variant: '
           {dots.map((c) => <span key={c} aria-hidden="true" className={`lp-dot absolute rounded-full ${c}`} />)}
           <h2 id="cta-title" className="relative m-0 max-w-[820px] font-display text-[40px] leading-[1.02] font-extrabold tracking-[-0.04em] md:text-[72px]">{t('landing.ctaSection.title')}</h2>
           <p className="relative m-0 text-[17px] text-on-dark-muted-2 md:text-xl">{phase === 'open' ? t('landing.ctaSection.text') : t('landing.ctaSection.textWaitlist')}</p>
+          {phase === 'waitlist' && cursoName ? (
+            <p className="relative m-0 text-[15px] text-on-dark-muted-2">{t('landing.waitlist.course.label')}: <strong className="text-on-dark">{cursoName}</strong> · <a href="#hero-title" className="text-on-dark underline">{t('landing.waitlist.course.change')}</a></p>
+          ) : null}
           <div className="relative mt-3 flex w-full justify-center">
             {phase === 'open' ? (
-              <Link href="/cadastro" onClick={trackCta('final', 'create')} className="inline-flex min-h-14 items-center justify-center rounded-field bg-on-dark px-[26px] text-[17px] font-extrabold text-panel-dark no-underline hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-steady-on-dark">{t('landing.ctaSection.primary')}</Link>
+              <Link href={signupHref({ curso })} onClick={trackCta('final', 'create')} className="inline-flex min-h-14 items-center justify-center rounded-field bg-on-dark px-[26px] text-[17px] font-extrabold text-panel-dark no-underline hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-steady-on-dark">{t('landing.ctaSection.primary')}</Link>
             ) : (
               <WaitlistForm
                 state={state} email={email} onEmailChange={setEmail} segment={segment} onSegmentChange={setSegment} onSubmit={submit}

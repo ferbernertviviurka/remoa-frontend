@@ -16,6 +16,7 @@ export const questionsBank = {
   select: 'Selecionar para a prova', selectMax: 'Você pode selecionar até {n} questões por prova.',
   open: 'Ver questão', list: 'Questões', loadMore: 'Carregar mais {n}', loadMoreAny: 'Carregar mais',
   listError: 'Não conseguimos carregar as questões. Nada foi perdido: tente de novo.', moreError: 'Não conseguimos carregar mais questões. As que já estão na tela continuam aqui.',
+  courseLabel: 'Curso ou área da saúde', coursePlaceholder: 'Digite o curso ou a área', courseNone: 'Nenhum curso encontrado', emptyCourseTitle: 'Ainda não há questões publicadas para {course}.', emptyCourseHelp: 'Escolha outro curso ou veja Minhas perguntas (IA).',
   emptyFilterTitle: 'Nenhuma questão com esses filtros', emptyFilterHelp: 'Tire algum filtro ou mude a busca para ver mais questões.',
   emptyCatalogTitle: 'O catálogo ainda não tem questões publicadas', emptyCatalogHelp: 'Nenhuma questão passou pela publicação e pela revisão até agora. Elas aparecem aqui assim que forem liberadas. Enquanto isso, veja Minhas perguntas (IA).',
   emptyAiTitle: 'Você ainda não tem perguntas geradas por IA', emptyAiHelp: 'As perguntas que você gera nos desafios dos seus mapas ficam aqui.',

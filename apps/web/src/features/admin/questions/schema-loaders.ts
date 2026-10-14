@@ -12,6 +12,7 @@ export {
   questionCandidatePageImageInputSchema,
   questionCandidatePageImageResultSchema,
   questionCandidateSavedSchema,
+  questionCandidateAcceptResultSchema,
   questionCatalogMetricsSchema,
   questionDocumentPreviewSchema,
   questionDocumentPagePreviewSchema,

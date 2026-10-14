@@ -8,6 +8,8 @@ import {
   magicLinkInputSchema as magicSchema,
   signInInputSchema as signInSchema,
   signUpInputSchema as signUpSchema,
+  studyProfileInputSchema,
+  type StudyProfileInput,
   type ErrorCode,
   type MagicLinkInput,
   type SignInInput,
@@ -50,15 +52,25 @@ async function legalMeta(): Promise<Record<string, string>> {
   return { ...(termsVersion ? { [LEGAL_SIGNUP_META.terms]: termsVersion } : {}), ...(privacyVersion ? { [LEGAL_SIGNUP_META.privacy]: privacyVersion } : {}) };
 }
 
-export async function signUp(input: SignUpInput): Promise<AuthResult> {
-  const p = signUpSchema.safeParse(input);
+/**
+ * D-1859 (F35 FR-8): the validated "Seu estudo" rides in the sign-up metadata as `study_profile`; the API creates the row on the first
+ * GET /v1/account/study-profile. `next` (safeNext) is where the confirmation link lands (plan intent, FR-8); default the onboarding.
+ */
+export async function signUp(input: SignUpInput & { studyProfile?: StudyProfileInput; next?: string }): Promise<AuthResult> {
+  const { studyProfile, next, ...rest } = input;
+  const p = signUpSchema.safeParse(rest);
   if (!p.success) return invalid();
+  const sp = studyProfile ? studyProfileInputSchema.safeParse({ ...studyProfile, context: 'signup' }) : null;
+  if (sp && !sp.success) return invalid();
   const supabase = await createClient();
   const { error } = await supabase.auth.signUp({
     email: p.data.email,
     password: p.data.password,
     // F24 FR-7: the confirmation link comes back through /auth/callback (Supabase appends ?code=).
-    options: { data: { ...(p.data.name ? { name: p.data.name } : {}), ...(await legalMeta()) }, emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(ONBOARDING_HOME)}` },
+    options: {
+      data: { ...(p.data.name ? { name: p.data.name } : {}), ...(sp?.success ? { study_profile: sp.data } : {}), ...(await legalMeta()) },
+      emailRedirectTo: `${await origin()}/auth/callback?next=${encodeURIComponent(next ? safeNext(next) : ONBOARDING_HOME)}`,
+    },
   });
   return error ? fromSupabase(error) : { ok: true }; // confirmations off: session is set immediately
 }

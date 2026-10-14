@@ -3,7 +3,7 @@ import { t } from '@remoa/strings/full';
 import { Icon } from '@remoa/ui';
 import type { LandingFlags } from '../flags';
 import type { H1Variant } from '../shell/variants';
-import { HeroCtas } from './hero-ctas';
+import { HeroActions } from './hero-actions';
 import { HeroStage } from './hero-stage';
 
 const d = (s: number) => ({ '--d': `${s}s` }) as CSSProperties;
@@ -37,8 +37,7 @@ export function HeroSection({ h1, flags }: { h1: H1Variant; flags: LandingFlags 
           <Title text={t(`landing.hero.h1.${h1}`)} />
         </h1>
         <p className="hx-in hx-lcp m-0 max-w-[740px] text-[17px] leading-normal text-muted md:text-[21px]" style={d(0.25)}>{t('landing.hero.subtitle')}</p>
-        <HeroCtas launchPhase={flags.launchPhase} />
-        <span className="hx-in text-sm text-muted" style={d(0.4)}>{t('landing.hero.microcopy')}</span>
+        <HeroActions launchPhase={flags.launchPhase} />
       </div>
       <HeroStage flags={flags} />
     </section>

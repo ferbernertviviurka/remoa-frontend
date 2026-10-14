@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QuestionsHub } from './questions-hub';
 import type { QuestionPublic } from '@remoa/contracts';
+import { resetStudyProfileCache } from '../study-profile/use-study-profile';
+import { resetReference } from '../study-profile/reference';
 
 const ID = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const base: QuestionPublic = { id: ID(1), canonicalId: ID(1), version: 1, type: 'objective', stem: 'Enunciado sintético 1', alternatives: [{ key: 'A', text: 'Alternativa sintética A' }, { key: 'B', text: 'Alternativa sintética B' }], origin: 'official_exam', visibility: 'public', availability: 'active', difficulty: 'medium', topicId: null, areaId: null, sourceId: null, sourceLabel: 'Fonte sintética', reviewed: true, validation: { kind: 'remoa_institutional', label: 'Remoa' }, assets: [], boardId: null, cardIds: [], createdAt: new Date('2026-10-08T12:00:00.000Z') };
@@ -9,11 +11,15 @@ const q = (n: number, extra: Partial<QuestionPublic> = {}): QuestionPublic => ({
 const attempt = { questionId: ID(1), selectedKey: 'A', result: 'correct', answeredAt: '2026-10-13T12:00:00.000Z', reference: { questionId: ID(1), version: 1, correctKey: 'A', explanation: 'Comentário liberado só após responder', distractorNotes: null, annulled: false, reviewed: true, reviewerName: null, reviewerCrm: null, referenceDate: null, sourceUrl: null, obsolete: false } };
 
 type Handler = (url: URL, init?: RequestInit) => unknown | Promise<unknown>;
+let profileCourse: string | null = null;
+const COURSES = [{ code: 'medicine', name: 'Medicina', aliases: ['med'], kind: 'course' }, { code: 'nursing', name: 'Enfermagem', aliases: ['enf'], kind: 'course' }];
 let lists: Handler; let facets: Handler; let calls: string[]; let answers: unknown[]; const push = vi.fn();
 const ok = (data: unknown) => ({ ok: true, data });
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 vi.mock('@/lib/api', () => ({ api: vi.fn(async (path: string, init?: RequestInit) => {
   calls.push(path); const url = new URL(path, 'http://x');
+  if (url.pathname === '/v1/account/study-profile') return ok({ profile: profileCourse ? { course: profileCourse, source: 'user' } : null, capabilities: { showEnamed: true, suggestedGoals: [], starterTemplates: ['enamed', 'quick', 'mistakes', 'blank'], subjectSystem: 'enamed', needsConfirmation: false } });
+  if (url.pathname === '/v1/public/reference/courses') return ok(COURSES);
   if (url.pathname === '/v1/questions/facets') return facets(url, init);
   if (url.pathname === '/v1/questions') return lists(url, init);
   if (url.pathname.endsWith('/attempt')) return ok({ last: null });
@@ -24,7 +30,7 @@ vi.mock('@/lib/api', () => ({ api: vi.fn(async (path: string, init?: RequestInit
 const fac = (extra = {}) => ({ total: 3, difficulties: [{ value: 'easy', count: 2 }], institutions: [{ name: 'Inst A', count: 3 }], years: [{ year: 2025, count: 3 }], ...extra });
 const page = (items: QuestionPublic[], nextCursor: string | null = null, total = items.length) => ok({ items, nextCursor, total });
 const bank = () => render(<QuestionsHub bankStudent />);
-beforeEach(() => { calls = []; answers = []; push.mockClear(); lists = () => page([q(1), q(2)]); facets = () => ok(fac()); });
+beforeEach(() => { profileCourse = null; resetStudyProfileCache(); resetReference(); calls = []; answers = []; push.mockClear(); lists = () => page([q(1), q(2)]); facets = () => ok(fac()); });
 afterEach(cleanup);
 
 describe('F34 banco do aluno (HTTP sintético)', () => {
@@ -192,5 +198,42 @@ describe('F34 banco do aluno (HTTP sintético)', () => {
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText(/corrigidas no Desafio/)).toBeInTheDocument();
     expect(within(dialog).queryByRole('button', { name: 'Responder' })).toBeNull();
+  });
+
+  it('F35 FR-35: course filter defaults to medicine, is sent as course and shows the course on each card', async () => {
+    bank();
+    await screen.findByText('Enunciado sintético 1');
+    expect((screen.getByRole('combobox', { name: 'Curso ou área da saúde' }) as HTMLInputElement).value).toBe('Medicina');
+    expect(screen.getAllByText('Medicina').length).toBeGreaterThan(0);
+    expect(calls.filter((c) => c.startsWith('/v1/questions')).every((c) => new URL(c, 'http://x').searchParams.get('course') === 'medicine')).toBe(true);
+  });
+
+  it('F35: the profile course is the default (nursing) and no request goes out with another course first; empty state is honest', async () => {
+    profileCourse = 'nursing';
+    lists = (u) => page(u.searchParams.get('course') === 'nursing' ? [] : [q(1)]); facets = (u) => ok(fac({ total: u.searchParams.get('course') === 'nursing' ? 0 : 3 }));
+    bank();
+    expect(await screen.findByText('Ainda não há questões publicadas para Enfermagem.')).toBeInTheDocument();
+    const courses = calls.filter((c) => c.startsWith('/v1/questions')).map((c) => new URL(c, 'http://x').searchParams.get('course'));
+    expect(courses.length).toBeGreaterThan(0); expect(new Set(courses)).toEqual(new Set(['nursing']));
+    expect(screen.queryByText('Nenhuma questão com esses filtros')).toBeNull();
+  });
+
+  it('F35: picking a course re-queries list and facets with it (counts come from the server, never summed)', async () => {
+    bank();
+    await screen.findByText('Enunciado sintético 1');
+    const input = screen.getByRole('combobox', { name: 'Curso ou área da saúde' });
+    fireEvent.change(input, { target: { value: 'enf' } });
+    fireEvent.click((await screen.findAllByRole('option'))[0]!);
+    await waitFor(() => expect(calls.some((c) => c.startsWith('/v1/questions/facets') && c.includes('course=nursing'))).toBe(true));
+    expect(calls.some((c) => c.startsWith('/v1/questions?') && c.includes('course=nursing'))).toBe(true);
+  });
+
+  it('F35: the AI tab ("Minhas perguntas") is not filtered by course', async () => {
+    profileCourse = 'nursing';
+    bank();
+    fireEvent.click(await screen.findByRole('button', { name: 'Minhas perguntas (IA)' }));
+    await waitFor(() => expect(calls.some((c) => c.includes('scope=mine'))).toBe(true));
+    expect(calls.filter((c) => c.includes('scope=mine')).every((c) => !c.includes('course='))).toBe(true);
+    expect(screen.queryByRole('combobox', { name: 'Curso ou área da saúde' })).toBeNull();
   });
 });

@@ -26,7 +26,7 @@ describe('AccountShell', () => {
   it('hero shows name, plan and completeness; subnav marks the current section', () => {
     view();
     expect(screen.getByRole('heading', { level: 1, name: 'Ana Souza' })).toBeVisible();
-    expect(screen.getByText('Perfil 60% completo')).toBeVisible();
+    expect(screen.getByText('Perfil 33% completo')).toBeVisible();
     expect(screen.getByText('4 dias seguidos')).toBeVisible();
     expect(screen.getByRole('link', { name: /Perfil/ })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: /Plano e uso/ })).not.toHaveAttribute('aria-current');
@@ -37,9 +37,11 @@ describe('AccountShell', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ligar lembrete' }));
     expect(push).toHaveBeenCalledWith('/app/conta/preferencias');
     expect(track).toHaveBeenCalledWith('completeness_chip_clicked', { item: 'reminder' });
+    fireEvent.click(screen.getByRole('button', { name: 'Definir foco' }));
+    expect(push).toHaveBeenLastCalledWith('/app/conta/perfil?campo=estudo');
+    expect(screen.getByRole('button', { name: 'Completar cadastro' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Adicionar foto' }));
     expect(screen.getByRole('dialog', { name: 'Foto de perfil' })).toBeVisible();
-    expect(screen.queryByRole('button', { name: 'Definir objetivo' })).toBeNull(); // goal is done
   });
 
   it('100% shows "Perfil completo" and no pending chips', () => {

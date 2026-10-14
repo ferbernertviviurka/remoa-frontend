@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { accountFreeFixture } from '@remoa/contracts/mocks';
+import { profileCapabilities } from '@remoa/contracts';
+import { accountFreeFixture, accountProFixture } from '@remoa/contracts/mocks';
+import { resetStudyProfileCache } from '@/features/study-profile/use-study-profile';
 import { Wrap } from '../test-utils';
 import { AccountHero } from '../shell/account-hero';
 import { ProfileSection } from './profile-section';
@@ -10,6 +12,22 @@ const track = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }), useSearchParams: () => new URLSearchParams() }));
 vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
 vi.mock('@/lib/analytics', () => ({ track: (...a: unknown[]) => track(...a) }));
+const save = vi.fn();
+const confirm = vi.fn();
+let bank = false;
+vi.mock('@/features/exam-builder/train-topic-link', () => ({ useBankStudentOpen: () => bank }));
+vi.mock('@/features/study-profile/api', async () => {
+  const f = await import('@/features/study-profile/fixtures');
+  return {
+    getStudyProfile: () => new Promise(() => {}), // /me already brings it; the shared read never answers here
+    saveStudyProfile: (...a: unknown[]) => save(...a),
+    confirmStudyProfile: (...a: unknown[]) => confirm(...a),
+    suggestReference: async () => ({ ok: true, data: null }),
+    listCourses: async () => ({ ok: true, data: f.COURSES }),
+    listGoals: async (course?: string) => ({ ok: true, data: f.goalsFor(course) }),
+    searchInstitutions: async () => ({ ok: true, data: [] }),
+  };
+});
 vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} }); // Radix Select/Checkbox in jsdom
 URL.createObjectURL = vi.fn(() => 'blob:x');
 URL.revokeObjectURL = vi.fn();
@@ -26,6 +44,8 @@ const boom = { ok: false, error: { code: 'internal', message: 'x' } };
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  resetStudyProfileCache();
+  bank = false;
 });
 
 describe('name', () => {
@@ -73,7 +93,7 @@ describe('email', () => {
     expect(await screen.findByText('Aguardando confirmação de novo@remoa.test')).toBeVisible();
     expect(api).toHaveBeenCalledWith('/v1/account/email', { method: 'POST', body: JSON.stringify({ newEmail: 'novo@remoa.test', currentPassword: 'segredo123' }) });
     expect(screen.getByRole('button', { name: 'Reenviar' })).toBeDisabled(); // 60 s cooldown starts at send
-    expect(screen.getByText('Perfil 40% completo')).toBeVisible(); // pending e-mail drops completeness
+    expect(screen.getByText('Perfil 17% completo')).toBeVisible(); // pending e-mail drops completeness
   });
 
   it('pending: resend starts the 60 s wait; cancel clears it', async () => {
@@ -84,34 +104,6 @@ describe('email', () => {
     expect(screen.getByText('Você pode reenviar em 60 s.', { selector: 'span' })).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar troca' }));
     await waitFor(() => expect(screen.queryByText(/Aguardando confirmação/)).toBeNull());
-  });
-});
-
-describe('study choices', () => {
-  it('saves on click and reverts when the server fails', async () => {
-    api.mockResolvedValue(boom);
-    view();
-    const group = screen.getByRole('group', { name: /^Objetivo de prova: Enamed/ });
-    expect(within(group).getByRole('button', { name: 'Enamed 2027.1' })).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(within(group).getByRole('button', { name: 'Enamed 2027.2' }));
-    expect(within(group).getByRole('button', { name: 'Enamed 2027.2' })).toHaveAttribute('aria-pressed', 'true'); // optimistic
-    await waitFor(() => expect(within(group).getByRole('button', { name: 'Enamed 2027.2' })).toHaveAttribute('aria-pressed', 'false')); // reverted
-    expect(within(group).getByRole('button', { name: 'Enamed 2027.1' })).toHaveAttribute('aria-pressed', 'true');
-    expect(await screen.findByText('Não conseguimos concluir agora. Tente de novo.')).toBeVisible();
-  });
-
-  it('G14 13: several objectives across groups, sent as goals (up to 5)', async () => {
-    api.mockResolvedValue({ ok: true, data: {} });
-    view();
-    const residency = screen.getByRole('group', { name: /^Objetivo de prova: Resid/ });
-    fireEvent.click(within(residency).getByRole('button', { name: 'ENARE' }));
-    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/account/profile', { method: 'PATCH', body: JSON.stringify({ goals: ['enamed_2027_1', 'residencia_enare'] }) }));
-    expect(within(residency).getByRole('button', { name: 'ENARE' })).toHaveAttribute('aria-pressed', 'true');
-    const enamed = screen.getByRole('group', { name: /^Objetivo de prova: Enamed/ });
-    expect(within(enamed).getByRole('button', { name: 'Enamed 2027.1' })).toHaveAttribute('aria-pressed', 'true'); // both stay
-    for (const n of ['Enamed 2027.2', 'Enamed 2028.1', 'Enamed 2028.2']) fireEvent.click(within(enamed).getByRole('button', { name: n }));
-    expect(within(residency).getByRole('button', { name: 'USP' })).toBeDisabled(); // 5 of 5
-    expect(screen.getByText(/Você já escolheu 5 objetivos/)).toBeVisible();
   });
 });
 
@@ -140,28 +132,71 @@ describe('personal data (G14 15)', () => {
   });
 });
 
-describe('instituição de ensino (G20)', () => {
-  it('picks one from the list and PATCHes { institution }; clearing sends null', async () => {
-    api.mockResolvedValue({ ok: true, data: {} });
-    view();
-    fireEvent.change(screen.getByLabelText('Instituição de ensino'), { target: { value: 'usp' } });
-    const opt = (await screen.findAllByRole('option'))[0]!;
-    const name = opt.textContent ?? '';
-    fireEvent.click(opt);
-    await waitFor(() => expect(api).toHaveBeenCalledTimes(1));
-    const sent = JSON.parse((api.mock.calls[0]![1] as RequestInit).body as string).institution as { schoolId: string | null; name: string };
-    expect(sent.schoolId).toBeTruthy();
-    expect(name).toContain(sent.name);
-    fireEvent.click(await screen.findByRole('button', { name: 'Limpar instituição' }));
-    await waitFor(() => expect(api).toHaveBeenLastCalledWith('/v1/account/profile', { method: 'PATCH', body: JSON.stringify({ institution: null }) }));
+describe('Seu estudo (F35 FR-23..FR-25)', () => {
+  const pro = accountProFixture; // medicine + graduação, goal ENAMED, institution typed "USP"
+  it('cartão de foco, atalhos por perfil e cadastro de estudo', async () => {
+    bank = true;
+    view(pro);
+    const card = screen.getByRole('region', { name: 'Seu estudo' });
+    expect(within(card).getByText('SEU FOCO')).toBeVisible();
+    expect(await within(card).findByText('Estudante de Medicina · 9º período')).toBeVisible();
+    expect(within(card).getByText('ENAMED', { selector: 'span.font-display' })).toBeVisible();
+    const nav = within(card).getByRole('navigation', { name: 'Atalhos do seu estudo' });
+    expect(within(nav).getByRole('link', { name: 'Abrir mapas do ENAMED' })).toHaveAttribute('href', '/app/cobertura');
+    await waitFor(() => expect(within(nav).getByRole('link', { name: 'Criar prova de Medicina' })).toHaveAttribute('href', '/app/banco-de-questoes/prova'));
+    expect(within(nav).getByRole('link', { name: 'Novo mapa' })).toHaveAttribute('href', '/app/mapas/novo');
+    expect(within(card).getByText('100% completo')).toBeVisible();
+    expect(within(card).getByText('Conselho').nextSibling?.textContent).toBe('CRM');
   });
 
-  it('free text goes with schoolId null', async () => {
-    api.mockResolvedValue({ ok: true, data: {} });
+  it('sem o Enamed nem o banco: só "Novo mapa"; sem perfil: 0% e "Defina o seu foco"', async () => {
     view();
-    fireEvent.change(screen.getByLabelText('Instituição de ensino'), { target: { value: 'Escola Exemplo' } });
-    fireEvent.click(await screen.findByRole('option', { name: /Usar “Escola Exemplo”/ }));
-    await waitFor(() => expect(api).toHaveBeenCalledWith('/v1/account/profile', { method: 'PATCH', body: JSON.stringify({ institution: { schoolId: null, name: 'Escola Exemplo' } }) }));
+    const card = screen.getByRole('region', { name: 'Seu estudo' });
+    expect(within(card).getByText('Defina o seu foco')).toBeVisible();
+    expect(within(card).getByText('0% completo')).toBeVisible();
+    expect(within(card).queryByRole('link', { name: /Criar prova/ })).toBeNull();
+    expect(within(card).getByRole('link', { name: 'Novo mapa' })).toBeVisible();
+  });
+
+  it('Editar abre os campos; Salvar faz PUT, publica e avisa', async () => {
+    const saved = { profile: { ...pro.studyProfile!, course: 'nursing' as const, goals: ['enamed' as const] }, capabilities: profileCapabilities({ course: 'nursing', situation: 'graduacao', source: 'profile' }) };
+    save.mockResolvedValue({ ok: true, data: saved });
+    const heard = vi.fn();
+    window.addEventListener('remoa:study-profile', heard);
+    view(pro);
+    const card = screen.getByRole('region', { name: 'Seu estudo' });
+    fireEvent.click(within(card).getByRole('button', { name: 'Editar' }));
+    await waitFor(() => expect((screen.getByRole('combobox', { name: 'Curso ou área' }) as HTMLInputElement).value).toBe('Medicina'));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Curso ou área' }), { target: { value: 'enferm' } });
+    await waitFor(() => expect(screen.getAllByRole('option').some((o) => o.textContent?.startsWith('Enfermagem'))).toBe(true));
+    fireEvent.click(screen.getAllByRole('option').find((o) => o.textContent?.startsWith('Enfermagem'))!);
+    fireEvent.click(within(card).getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    expect(save.mock.calls[0]![0]).toMatchObject({ course: 'nursing', goals: ['enamed'], institutionText: 'USP', context: 'profile' }); // ENAMED was the user's: kept
+    expect(confirm).not.toHaveBeenCalled();
+    expect(await screen.findByText('Seu estudo foi atualizado.')).toBeVisible();
+    expect(heard).toHaveBeenCalledTimes(1);
+    expect(within(card).queryByRole('combobox', { name: 'Curso ou área' })).toBeNull();
+    window.removeEventListener('remoa:study-profile', heard);
+  });
+
+  it('perfil migrado confirma (POST confirm) em vez de PUT', async () => {
+    confirm.mockResolvedValue({ ok: true, data: { profile: { ...pro.studyProfile!, source: 'profile' }, capabilities: profileCapabilities(null) } });
+    view({ ...pro, studyProfile: { ...pro.studyProfile!, source: 'migration' } });
+    fireEvent.click(within(screen.getByRole('region', { name: 'Seu estudo' })).getByRole('button', { name: 'Editar' }));
+    await waitFor(() => expect((screen.getByRole('combobox', { name: 'Curso ou área' }) as HTMLInputElement).value).toBe('Medicina'));
+    fireEvent.click(within(screen.getByRole('region', { name: 'Seu estudo' })).getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(confirm).toHaveBeenCalledTimes(1));
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it('campos obrigatórios: sem foco não salva', async () => {
+    view({ ...pro, studyProfile: { ...pro.studyProfile!, goals: [] } });
+    fireEvent.click(within(screen.getByRole('region', { name: 'Seu estudo' })).getByRole('button', { name: 'Editar' }));
+    await waitFor(() => expect((screen.getByRole('combobox', { name: 'Curso ou área' }) as HTMLInputElement).value).toBe('Medicina'));
+    fireEvent.click(within(screen.getByRole('region', { name: 'Seu estudo' })).getByRole('button', { name: 'Salvar' }));
+    expect(await screen.findByText('Escolha pelo menos um foco de estudo.')).toBeVisible();
+    expect(save).not.toHaveBeenCalled();
   });
 });
 

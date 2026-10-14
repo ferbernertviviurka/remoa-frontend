@@ -7,6 +7,6 @@ describe('landing SEO copy', () => {
     const { title, description } = strings.landing.seo;
     expect(title.length).toBeLessThanOrEqual(60);
     expect(description.length).toBeLessThanOrEqual(155);
-    for (const s of [title, description]) expect(s).toMatch(/residência médica/);
+    for (const s of [title, description]) expect(s).toMatch(/área da saúde/);
   });
 });

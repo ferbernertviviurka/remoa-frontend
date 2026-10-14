@@ -22,10 +22,10 @@ describe('institutional approval dialog (D-1819)',()=>{
   vi.mocked(approveInstitutionally).mockRejectedValueOnce(new QuestionsApiError('internal')).mockResolvedValueOnce(mockQuestionInstitutionalApproveResult);
   const onDone=vi.fn();render(<InstitutionalApproveDialog items={[item]} onClose={vi.fn()} onDone={onDone}/>);fill();accept();fireEvent.click(submit());
   await screen.findByRole('alert');fireEvent.click(submit());
-  await screen.findByText('Resultado por questão');
+  await screen.findByText('Resultado');
   const [a,b]=vi.mocked(approveInstitutionally).mock.calls.map(c=>c[0]);
   expect(a!.idempotencyKey).toBe(b!.idempotencyKey);expect(b!.attestation).toEqual({approverRole:'medical_founder',approverName:'Dra. Fundadora',rightsBasis:'remoa_owned',acceptsUnconfirmedChecks:true});
-  expect(screen.getByText('Publicada com o selo Validado pela Remoa.')).toBeInTheDocument();
+  expect(screen.queryByText('Publicada com o selo Validado pela Remoa.')).toBeNull(); // D-1840: only pending items are listed
   expect(screen.getByText(/Sem gabarito válido/)).toBeInTheDocument();
   expect(screen.getAllByText(/Preparar para edição/).length).toBeGreaterThan(0);
   expect(screen.getByText('1 publicadas, 0 já publicadas, 2 com pendência.')).toBeInTheDocument();
@@ -35,6 +35,14 @@ describe('institutional approval dialog (D-1819)',()=>{
   render(<InstitutionalApproveDialog items={[item]} onClose={vi.fn()} onDone={vi.fn()}/>);fill();accept();fireEvent.click(submit());await screen.findByRole('alert');
   fireEvent.change(screen.getByLabelText(/Motivo/),{target:{value:'Outro motivo válido'}});fireEvent.click(submit());await waitFor(()=>expect(approveInstitutionally).toHaveBeenCalledTimes(2));
   const [a,b]=vi.mocked(approveInstitutionally).mock.calls.map(c=>c[0]);expect(a!.idempotencyKey).not.toBe(b!.idempotencyKey);
+ });
+ it('D-1840: sends a large selection 500 per call, one after another, and sums the outcomes',async()=>{
+  const many=Array.from({length:1201},(_,i)=>({...item,id:`00000000-0000-4000-8000-${String(i).padStart(12,'0')}`}));
+  vi.mocked(approveInstitutionally).mockImplementation(async input=>({...mockQuestionInstitutionalApproveResult,replayed:false,results:input.items.map(i=>({id:i.id,outcome:'published' as const,version:i.revision,contentHash:i.expectedContentHash}))}));
+  render(<InstitutionalApproveDialog items={many} onClose={vi.fn()} onDone={vi.fn()}/>);fill();accept();fireEvent.click(screen.getByRole('button',{name:'Validar e publicar 1201 questões'}));
+  expect(await screen.findByText('1201 publicadas, 0 já publicadas, 0 com pendência.')).toBeInTheDocument();
+  expect(vi.mocked(approveInstitutionally).mock.calls.map(c=>c[0].items.length)).toEqual([500,500,201]);
+  expect(new Set(vi.mocked(approveInstitutionally).mock.calls.map(c=>c[0].idempotencyKey)).size).toBe(3);
  });
  it('does not send items without hash and says so',()=>{
   render(<InstitutionalApproveDialog items={[{...item,contentHash:null}]} onClose={vi.fn()} onDone={vi.fn()}/>);

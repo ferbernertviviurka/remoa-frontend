@@ -1,10 +1,11 @@
 'use client';
 import { useEffect, useId, useState, type KeyboardEvent } from 'react';
 import { Alert, Button, Checkbox, Dialog, Input, Select } from '@remoa/ui';
-import type { BoardSummary, ExamPaperPublic, QuestionFacets, QuestionListQuery } from '@remoa/contracts';
+import type { BoardSummary, ExamPaperPublic, HealthCourseCode, QuestionFacets, QuestionListQuery } from '@remoa/contracts';
 import { t } from './labels';
 import { listQuestionFacets } from './api';
 import { t as bt } from './bank-t';
+import { CourseField } from './course-field';
 
 type Filters = Partial<QuestionListQuery>;
 type Named = { id: string; name: string };
@@ -211,8 +212,8 @@ export function QuestionFilterBar({
 /* ---- F34 student bank filters (flag bankStudent): multivalue, facet counts, ARIA topic combobox ---- */
 
 type Difficulty = 'easy' | 'medium' | 'hard';
-export type BankFilters = { search: string; topicIds: string[]; institutions: string[]; years: number[]; difficulties: Difficulty[]; origin: '' | 'official_exam' | 'remoa_authored'; state: '' | 'unseen' | 'answered' | 'wrong' | 'favorite'; sort: '' | 'difficulty' | 'topic' };
-export const emptyBankFilters: BankFilters = { search: '', topicIds: [], institutions: [], years: [], difficulties: [], origin: '', state: '', sort: '' };
+export type BankFilters = { search: string; topicIds: string[]; institutions: string[]; years: number[]; difficulties: Difficulty[]; origin: '' | 'official_exam' | 'remoa_authored'; state: '' | 'unseen' | 'answered' | 'wrong' | 'favorite'; sort: '' | 'difficulty' | 'topic'; /** F35 FR-35: catalog course; null = medicine. Not a narrowing filter (not counted, kept on clear). */ course: HealthCourseCode | null };
+export const emptyBankFilters: BankFilters = { search: '', topicIds: [], institutions: [], years: [], difficulties: [], origin: '', state: '', sort: '', course: null };
 export const bankFilterCount = (f: BankFilters) => f.topicIds.length + f.institutions.length + f.years.length + f.difficulties.length + (f.origin ? 1 : 0) + (f.state ? 1 : 0) + (f.search.trim() ? 1 : 0);
 export type BankTab = 'catalog' | 'ai';
 /** Query shared by list and facets (no cursor). The tab decides scope/origin (D-1823); the origin filter only exists in the catalog. */
@@ -223,6 +224,8 @@ export const bankQuery = (tab: BankTab, f: BankFilters): Partial<QuestionListQue
   topicIds: f.topicIds.length ? f.topicIds : undefined, institutions: f.institutions.length ? f.institutions : undefined,
   years: f.years.length ? f.years : undefined, difficulties: f.difficulties.length ? f.difficulties : undefined,
   state: f.state || undefined, sort: f.sort || undefined,
+  // The server applies the course to the catalog only (the private AI list is never filtered by it).
+  course: tab === 'catalog' ? f.course ?? 'medicine' : undefined,
 });
 const toggle = <T,>(list: T[], value: T) => (list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
 
@@ -297,6 +300,7 @@ export function BankFilterBar({ tab, filters, onChange, onClear, facets, facetsE
         <Select label={bt('questionsBank.sort')} value={filters.sort || 'recent'} onValueChange={(v) => set({ sort: v === 'recent' ? '' : (v as BankFilters['sort']) })}
           options={[{ value: 'recent', label: bt('questionsBank.sortRecent') }, { value: 'difficulty', label: bt('questionsBank.sortDifficulty') }, { value: 'topic', label: bt('questionsBank.sortTopic') }]} />
       </div>
+      {tab === 'catalog' ? <CourseField label={bt('questionsBank.courseLabel')} placeholder={bt('questionsBank.coursePlaceholder')} emptyLabel={bt('questionsBank.courseNone')} value={filters.course} onChange={(course) => set({ course })} /> : null}
       <div className="grid gap-3 md:grid-cols-3">
         <TopicCombobox tab={tab} filters={filters} onPick={(topic) => { topicNames[topic.id] = topic.name; set({ topicIds: toggle(filters.topicIds, topic.id) }); }} />
         {tab === 'catalog' ? <Select label={bt('questionsBank.origin')} value={filters.origin || 'all'} onValueChange={(v) => set({ origin: v === 'all' ? '' : (v as BankFilters['origin']) })}

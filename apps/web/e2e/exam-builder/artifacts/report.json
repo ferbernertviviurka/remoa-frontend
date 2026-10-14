@@ -1,0 +1,137 @@
+{
+  "kind": "synthetic HTTP API, production components",
+  "checks": [
+    {
+      "name": "axe origem 1440",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll origem 1440",
+      "passed": true
+    },
+    {
+      "name": "axe builder 1440",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll builder 1440",
+      "passed": true
+    },
+    {
+      "name": "keyboard reaches Começar 1440",
+      "passed": true
+    },
+    {
+      "name": "axe confirm 1440",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll confirm 1440",
+      "passed": true
+    },
+    {
+      "name": "axe changed 1440",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll changed 1440",
+      "passed": true
+    },
+    {
+      "name": "navigates to execution 1440",
+      "passed": true
+    },
+    {
+      "name": "POST question-sessions carried Idempotency-Key 1440",
+      "passed": true
+    },
+    {
+      "name": "axe curso sem catálogo 1440",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll curso sem catálogo 1440",
+      "passed": true
+    },
+    {
+      "name": "course empty state 1440",
+      "passed": true
+    },
+    {
+      "name": "no JS exceptions 1440",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "axe origem 390",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll origem 390",
+      "passed": true
+    },
+    {
+      "name": "axe builder 390",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll builder 390",
+      "passed": true
+    },
+    {
+      "name": "keyboard reaches Começar 390",
+      "passed": true
+    },
+    {
+      "name": "axe confirm 390",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll confirm 390",
+      "passed": true
+    },
+    {
+      "name": "axe changed 390",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll changed 390",
+      "passed": true
+    },
+    {
+      "name": "navigates to execution 390",
+      "passed": true
+    },
+    {
+      "name": "POST question-sessions carried Idempotency-Key 390",
+      "passed": true
+    },
+    {
+      "name": "axe curso sem catálogo 390",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll curso sem catálogo 390",
+      "passed": true
+    },
+    {
+      "name": "course empty state 390",
+      "passed": true
+    },
+    {
+      "name": "no JS exceptions 390",
+      "passed": true,
+      "errors": []
+    }
+  ]
+}
