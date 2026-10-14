@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Button, Dialog, RadioGroup, Tag } from '@remoa/ui';
+import { Alert, Button, Dialog, Icon, RadioGroup, Tag } from '@remoa/ui';
 import type { QuestionDrawerAttempt, QuestionPublic } from '@remoa/contracts';
 import { t } from './bank-t';
 import { answerQuestion, getLastAttempt } from './api';
@@ -12,7 +12,7 @@ export function BankMeta({ question: q, course }: { question: QuestionPublic; co
   const ai = q.origin === 'ai_generated';
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Tag tone={ai ? 'review' : 'brand'}>{ai ? t('questionsBank.aiLabel') : t(`questions.source.${q.origin}`)}</Tag>
+      <Tag tone={ai ? 'ai' : 'brand'}>{ai ? <span className="mr-1 inline-flex"><Icon name="sparkle" size={12} /></span> : null}{ai ? t('questionsBank.aiLabel') : t(`questions.source.${q.origin}`)}</Tag>
       {course ? <Tag tone="unknown">{course}</Tag> : null}
       <span className="text-xs text-muted">{t(`questions.difficultyLabel.${q.difficulty}`)}</span>
       {ai ? null : isInstitutional(q.validation) ? <ValidationSeal /> : q.validation?.kind === 'medical_review' ? <Tag tone="steady">{t('questionsBank.sealMedicalBy', { name: q.validation.label })}</Tag> : null}

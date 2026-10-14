@@ -101,11 +101,13 @@ test('formato 1 com IA simulada: a pergunta entra no banco e a resposta do card 
   await expect(page.locator('body')).not.toContainText(ANSWER);
   expect(await axe(page), 'sessão da pergunta gerada').toEqual([]);
 
+  // G29 (D-1883): the bank's main filter is Todas | Criadas por mim; the user's AI questions live in "Criadas por mim"
   await page.goto('/app/banco-de-questoes');
   await expect(page.getByRole('heading', { name: 'Banco de questões' })).toBeVisible();
-  await page.getByRole('group', { name: 'Origem' }).getByRole('button', { name: 'IA', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Origem das questões' }).getByRole('button', { name: 'Criadas por mim' }).click();
   const row = page.getByRole('article', { name: 'Qual registro o card traz?' });
   await expect(row).toBeVisible();
+  await expect(row.getByText('Gerada por IA')).toBeVisible();
   expect(await axe(page), 'banco de questões').toEqual([]);
   await expect(row).not.toContainText(ANSWER);
   const search = page.getByRole('searchbox', { name: 'Buscar no enunciado' });
@@ -115,24 +117,15 @@ test('formato 1 com IA simulada: a pergunta entra no banco e a resposta do card 
   await expect(row).toHaveCount(0);
   await search.fill('');
   await expect(row).toBeVisible();
-  const confirmed = row.getByText(/Tema confirmado: /);
-  await expect(confirmed).toBeVisible();
-  const topicName = ((await confirmed.textContent()) ?? '').replace('Tema confirmado: ', '').trim();
-  expect(topicName.length).toBeGreaterThan(0);
-  const topicBox = page.getByRole('combobox', { name: 'Tema' });
-  await topicBox.click();
-  await page.getByRole('option', { name: topicName, exact: true }).click();
-  await expect(row).toBeVisible();
-  await topicBox.click();
-  const names = (await page.getByRole('option').allInnerTexts()).map((s) => s.trim());
-  const other = names.find((name) => name && name !== 'Todos' && name !== topicName);
-  expect(other, 'outro tema da lista').toBeTruthy();
-  await page.getByRole('option', { name: other!, exact: true }).click();
-  await expect(row).toHaveCount(0);
-  await topicBox.click();
-  await page.getByRole('option', { name: 'Todos', exact: true }).click();
-  await expect(row).toBeVisible();
-  await row.getByRole('button', { name: 'Reportar erro' }).click();
-  await expect(row.getByText('Recebido. Um revisor vai analisar esta pergunta.')).toBeVisible();
+  // the drawer never shows the card's answer either, and a problem can be reported from it
+  await row.getByRole('button', { name: 'Ver questão' }).click();
+  const drawer = page.getByRole('dialog').filter({ hasText: 'Qual registro o card traz?' });
+  await expect(drawer).toBeVisible();
+  await expect(drawer).not.toContainText(ANSWER);
+  await drawer.getByRole('button', { name: 'Reportar erro' }).click();
+  const report = page.getByRole('dialog', { name: 'Reportar problema nesta versão' });
+  await report.getByLabel('Descrição').fill('Enunciado sintético para teste.');
+  await report.getByRole('button', { name: 'Enviar relato' }).click();
+  await expect(report.getByText('Relato enviado para revisão')).toBeVisible();
   expect((await Promise.all(bodies)).join('\n')).not.toMatch(/correct_?key|expected_?answer|key_?points/i);
 });

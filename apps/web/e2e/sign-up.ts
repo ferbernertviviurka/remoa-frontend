@@ -44,7 +44,8 @@ export async function skipOnboarding(page: Page) {
     const phone = page.getByLabel('Telefone');
     if (await phone.isVisible()) await phone.fill('11912345678');
     await page.getByRole('button', { name: 'Aluno' }).click();
-    await page.getByRole('button', { name: 'Continuar' }).click();
+    // a phone typed before hydration is wiped and Continuar stays disabled: a bounded click lets the retry type it again
+    await page.getByRole('button', { name: 'Continuar' }).click({ timeout: 3000 });
     await expect(page.getByRole('heading', { level: 1 })).not.toHaveText('Conte quem você é', { timeout: 3000 });
   }).toPass({ timeout: 30_000 });
   await expect(async () => {

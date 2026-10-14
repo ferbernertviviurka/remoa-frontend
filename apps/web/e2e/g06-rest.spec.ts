@@ -94,7 +94,8 @@ test('perfil F35: editar Seu estudo (curso, situação, objetivo) persiste após
   await page.getByRole('option', { name: 'Enfermagem' }).first().click();
   await page.getByRole('radio', { name: /Residente/ }).click();
   await page.getByRole('button', { name: 'Atualização profissional' }).click();
-  await page.getByRole('button', { name: 'Salvar' }).click();
+  // "Dados pessoais" also has an open form with its own Salvar: save the Seu estudo one
+  await page.getByRole('region').filter({ has: page.getByRole('heading', { level: 2, name: 'Seu estudo' }) }).getByRole('button', { name: 'Salvar' }).click();
   await expect(page.getByText('Seu estudo foi atualizado.').first()).toBeVisible();
   await page.reload();
   await expect(page.getByText('Residente ou pós-graduando em Enfermagem')).toBeVisible();

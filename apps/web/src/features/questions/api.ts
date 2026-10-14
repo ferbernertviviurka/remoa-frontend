@@ -1,7 +1,7 @@
 import type { z } from 'zod';
 import type { QuestionListQuery, QuestionSessionConfig, QuestionAnswerInput } from '@remoa/contracts';
 import { t } from './labels';
-import { api } from '@/lib/api';
+import { api, apiFetch, sessionToken } from '@/lib/api';
 import {request,QuestionsApiError} from './request';
 export {request,QuestionsApiError} from './request';
 export function questionError(error: unknown): string {
@@ -31,6 +31,13 @@ export const listSessions = (signal?: AbortSignal) => catalogRequest('/v1/questi
 export const getSession = (id: string, signal?: AbortSignal) => catalogRequest(`/v1/question-sessions/${id}`, c => c.questionSessionPublicSchema, { signal });
 export const createSession = (config: QuestionSessionConfig, key: string) => catalogRequest('/v1/question-sessions', c => c.questionSessionPublicSchema, { method: 'POST', headers: { 'Idempotency-Key': key }, body: JSON.stringify(config) });
 export const saveAnswer = (sessionId: string, itemId: string, input: QuestionAnswerInput) => catalogRequest(`/v1/question-sessions/${sessionId}/items/${itemId}/answer`, c => c.questionAnswerSavedSchema, { method: 'PUT', body: JSON.stringify(input) });
+/** Token read ahead of time: on pagehide there is no time for an async lookup before the request must start. */
+let exitToken: string | null = null;
+export async function warmExitToken(): Promise<void> { try { exitToken = await sessionToken(); } catch { /* offline or signed out: the exit send just goes without it */ } }
+/** Best-effort send while the page is going away (`keepalive` outlives it). Same route and mutationId as the normal save; never throws. */
+export function saveAnswerOnExit(sessionId: string, itemId: string, input: QuestionAnswerInput): void {
+  void apiFetch(`/v1/question-sessions/${sessionId}/items/${itemId}/answer`, exitToken, { method: 'PUT', body: JSON.stringify(input), keepalive: true }).catch(() => undefined);
+}
 export const getReference = (sessionId: string, itemId: string) => catalogRequest(`/v1/question-sessions/${sessionId}/items/${itemId}/reference`, c => c.questionReferenceAfterAnswerSchema);
 export const startSavedDiscursive = (questionId:string) => catalogRequest(`/v1/challenge-ai/bank/${encodeURIComponent(questionId)}/start`, c => c.savedQuestionStartResultSchema,{method:'POST',body:JSON.stringify({})});
 export const finishSession = (id: string, key: string) => catalogRequest(`/v1/question-sessions/${id}/finish`, c => c.questionSessionReportSchema, { method: 'POST', headers: { 'Idempotency-Key': key }, body: '{}' });

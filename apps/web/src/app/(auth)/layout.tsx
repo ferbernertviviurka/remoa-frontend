@@ -20,10 +20,11 @@ export const metadata: Metadata = { robots: { index: false, follow: true } };
 export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
-      <aside className="hidden flex-col justify-between gap-10 bg-panel-dark p-12 text-on-dark lg:sticky lg:top-0 lg:flex lg:h-dvh lg:self-start">
+      <aside className="hidden flex-col justify-between gap-10 bg-panel-dark p-12 text-on-dark lg:sticky lg:top-0 lg:flex lg:h-dvh lg:self-start lg:overflow-y-auto">
         <Link href="/" aria-label={t('landing.nav.wordmark.aria')} className="inline-flex min-h-11 items-center self-start no-underline"><Logo size={36} withWordmark onDark /></Link>
         <div className="flex flex-col items-start gap-8">
-          <Constellation nodes={nodes} edges={edges} />
+          {/* the F35 sign-up copy is longer: on short screens the drawing goes so the text stays on the dark panel (axe contrast) */}
+          <div className="[@media(max-height:860px)]:hidden"><Constellation nodes={nodes} edges={edges} /></div>
           <AuthAsideCopy tagline={t('auth.brand.tagline')} sub={t('auth.brand.sub')} />
         </div>
       </aside>

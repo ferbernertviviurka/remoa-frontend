@@ -80,7 +80,7 @@ export function ThemeCard({params,patch,areas,topics,theme,onTheme}:{params:Exam
   </div></Card>;
 }
 
-export function StepContent({content,onContent,params,patch,av,areaName,toggleArea,topics,preset,presets,onPreset,matrixCount,showCourse,courseName,onCourse,courseEmpty,courseRef,prefilled,theme}:{content:Content;onContent:(c:Content)=>void;params:ExamBuilderParams;patch:Patch;av:ExamAvailability|null;areaName:(id:string|null)=>string;toggleArea:(id:string,on:boolean)=>void;topics:Opt[];preset:PresetId|null;presets:readonly PresetId[];onPreset:(id:PresetId)=>void;matrixCount:number;showCourse:boolean;courseName:string;onCourse:(c:HealthCourseCode)=>void;courseEmpty:ReactNode;courseRef:RefObject<HTMLDivElement|null>;prefilled:string|null;theme:ReactNode}){
+export function StepContent({content,onContent,params,patch,av,areaName,toggleArea,topics,preset,presets,onPreset,matrixCount,showCourse,courseName,onCourse,courseEmpty,courseRef,prefilled,theme,areaOpts=[]}:{areaOpts?:Opt[];content:Content;onContent:(c:Content)=>void;params:ExamBuilderParams;patch:Patch;av:ExamAvailability|null;areaName:(id:string|null)=>string;toggleArea:(id:string,on:boolean)=>void;topics:Opt[];preset:PresetId|null;presets:readonly PresetId[];onPreset:(id:PresetId)=>void;matrixCount:number;showCourse:boolean;courseName:string;onCourse:(c:HealthCourseCode)=>void;courseEmpty:ReactNode;courseRef:RefObject<HTMLDivElement|null>;prefilled:string|null;theme:ReactNode}){
   const showAreas=content==='area'||content==='custom',showTopics=content==='topic'||content==='custom';
   const chosen=params.areaIds;
   const areaRows=(av?.areas??[]).filter(a=>a.areaId!==null);
@@ -109,6 +109,8 @@ export function StepContent({content,onContent,params,patch,av,areaName,toggleAr
       {showAreas?<fieldset className="m-0 flex flex-col gap-1 border-0 p-0"><legend className="mb-1 text-[15px] font-bold">{t('examBuilder.areas')}</legend>
         {areaRows.map(a=>{const id=a.areaId as string;return <Checkbox key={id} checked={chosen.length===0||chosen.includes(id)} onCheckedChange={on=>toggleArea(id,on===true)}
           label={`${areaName(id)} · ${a.available===1?t('examBuilder.areaAvailableOne'):t('examBuilder.areaAvailable',{n:a.available})}`}/>;})}
+        {/* AI origin before any question exists: availability has no rows, so offer the taxonomy areas (no counts). */}
+        {!areaRows.length?areaOpts.map(a=><Checkbox key={a.id} checked={chosen.includes(a.id)} label={a.name} onCheckedChange={v=>patch({areaIds:v===true?[...new Set([...chosen,a.id])]:chosen.filter(x=>x!==a.id)})}/>):null}
       </fieldset>:null}
       {showTopics&&!params.course?<TopicsField params={params} patch={patch} topics={topics}/>:null}
       {content==='custom'?<div className="grid gap-5 sm:grid-cols-2"><DifficultyField params={params} patch={patch}/>
