@@ -2,12 +2,14 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {useRouter} from 'next/navigation';
 import {Alert,Button,Card,Icon,Progress,Stepper,Tag} from '@remoa/ui';
-import {type ExamAvailability,type ExamBuilderParams,type ExamGenerateResult,type ExamPreviewItem,type ExamTemplate,type QuestionSessionConfig} from '@remoa/contracts';
+import {type ExamAvailability,type HealthCourseCode,type ExamBuilderParams,type ExamGenerateResult,type ExamPreviewItem,type ExamTemplate,type QuestionSessionConfig} from '@remoa/contracts';
 import {calendarApi} from '@/features/calendar/api';
 import {t} from './labels';
 import {errorTag,generateExamQuestions,getAvailability,getPreview,listAreas,listBoards,listTemplates,listTopics,revalidate,saveTemplate,startBuilderSession,swapQuestion,QuestionsApiError} from './api';
-import {applyPreset,compose,defaultAi,defaultParams,filterOf,idempotencyKey,needsGenerate,originOf,sourceOf,stepError,validCount,validGen,type Ai,type Content,type Origin,type PresetId} from './model';
-import {StepContent,StepFormat,StepOrigin} from './steps';
+import {applyPreset,compose,defaultAi,defaultParams,filterOf,idempotencyKey,needsGenerate,originOf,presetIdsFor,sourceOf,stepError,validCount,validGen,type Ai,type Content,type Origin,type PresetId} from './model';
+import {CourseEmpty,StepContent,StepFormat,StepOrigin} from './steps';
+import {useStudyProfile} from '../study-profile/use-study-profile';
+import {catalogCourse,useCourseOptions} from '../questions/course-field';
 import {PreviewList} from './preview-list';
 import {ActiveDialog,ChangedDialog,ConfirmDialog,FieldDialog,type Changed} from './dialogs';
 
@@ -21,10 +23,17 @@ const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMon
 
 export function BuilderScreen({init}:{init:BuilderInit}){
   const router=useRouter();
-  const [params,setParams]=useState<ExamBuilderParams>(()=>{
+  const {profile,capabilities,loaded}=useStudyProfile();
+  // FR-31: null = still the profile's course; a pick (null = medicine) or a template wins. Until the profile is read nothing is fetched.
+  const [picked,setPicked]=useState<HealthCourseCode|null|undefined>(undefined);
+  const courseRef=useRef<HTMLDivElement>(null);
+  const [raw,setParams]=useState<ExamBuilderParams>(()=>{
     const base=defaultParams({matrixItemIds:init.matrixItemIds,...(init.source?{source:'ai' as const}:{}),count:Math.min(200,Math.max(20,init.ids.length))});
     return init.ids.length?{...base,count:init.ids.length}:init.preset?applyPreset(base,init.preset):base;
   });
+  const profileCourse=catalogCourse(profile?.course);
+  const params=useMemo<ExamBuilderParams>(()=>({...raw,course:picked!==undefined?picked:profileCourse}),[raw,picked,profileCourse]);
+  const {name:courseName}=useCourseOptions(params.course);
   const [preset,setPreset]=useState<PresetId|null>(init.preset??(init.ids.length?null:'blank'));
   const [step,setStep]=useState(init.ids.length?2:init.matrixItemIds.length||init.preset?1:0);
   const [content,setContent]=useState<Content>(init.preset?'mode':init.ids.length?'custom':'area');
@@ -59,7 +68,7 @@ export function BuilderScreen({init}:{init:BuilderInit}){
   useEffect(()=>{if(firstStep.current){firstStep.current=false;return;}heading.current?.focus();},[step]);
 
   // FR-24: availability (never draws). Area choice is applied locally, so it is asked with every area.
-  const filterKey=JSON.stringify(filterOf(params));const avOn=step>=1;
+  const filterKey=JSON.stringify(filterOf(params));const avOn=step>=1&&loaded;
   useEffect(()=>{
     if(!avOn)return;
     const ac=new AbortController();setAvState('loading');
@@ -70,7 +79,7 @@ export function BuilderScreen({init}:{init:BuilderInit}){
   // FR-27: preview proposal. Debounced; pinned/excluded read from refs so pinning does not redraw.
   const paramsKey=JSON.stringify(params)+':'+tick+':'+genTick;
   useEffect(()=>{
-    if(!countOk||step!==LAST||fetched.current===paramsKey)return;
+    if(!countOk||!loaded||step!==LAST||fetched.current===paramsKey)return;
     const ac=new AbortController();setPvState('loading');
     const id=setTimeout(()=>{
       const p={...params,count:Math.max(params.count,pinnedRef.current.size)};
@@ -81,7 +90,7 @@ export function BuilderScreen({init}:{init:BuilderInit}){
     },300);
     return()=>{clearTimeout(id);ac.abort();};
     // eslint-disable-next-line react-hooks/exhaustive-deps -- paramsKey is the serialised params + reshuffle tick
-  },[paramsKey,countOk,step]);
+  },[paramsKey,countOk,step,loaded]);
 
   const alloc=useMemo(()=>av?compose(av,params,items,pinned):null,[av,params,items,pinned]);
   const total=items.length;
@@ -94,6 +103,13 @@ export function BuilderScreen({init}:{init:BuilderInit}){
   const hasAi=params.source!=='catalog'||items.some(i=>i.origin==='ai_generated');
   const origin=originOf(params.source);
   const boardName=boards?.find(b=>b.id===params.boardId)?.name;
+  const noNarrowing=!params.topicIds.length&&!params.matrixItemIds.length&&!params.difficulties.length&&params.progress==='all';
+  // FR-34: the course has no published catalog (availability 0 with no narrowing filter). Map/AI origins are never affected.
+  const courseEmpty=origin==='catalog'&&!!params.course&&avState==='ready'&&av?.total===0&&noNarrowing;
+  const presets=presetIdsFor(params.course,params.course===profileCourse?capabilities.starterTemplates:undefined);
+  const pickCourse=(code:HealthCourseCode)=>{const c=catalogCourse(code);if(c===params.course)return;setPicked(c);setContent('area');setPreset(null);setTemplateId(null);setStepErr(null);setParams(p=>({...p,areaIds:[],topicIds:[]}));};
+  const otherCourse=()=>{go(1);setTimeout(()=>courseRef.current?.querySelector('input')?.focus(),0);};
+  const emptyBox=courseEmpty?<CourseEmpty course={courseName} onMap={()=>{setOrigin('map');go(0);}} onOther={otherCourse}/>:null;
   const needGen=needsGenerate(origin,ai)&&!!params.boardId;
   const setOrigin=(o:Origin)=>{setParams(p=>({...p,source:sourceOf(o),boardId:o==='catalog'?null:p.boardId}));setTemplateId(null);setStepErr(null);if(o==='map'&&!ai.use&&!ai.gen)setAi(a=>({...a,use:true}));};
   const pickContent=(c:Content)=>{setContent(c);setStepErr(null);setTemplateId(null);setParams(p=>({...p,areaIds:c==='area'||c==='custom'?p.areaIds:[],topicIds:c==='topic'||c==='custom'?p.topicIds:[],...(c==='area'||c==='topic'?{progress:'all' as const}:{})}));};
@@ -120,7 +136,7 @@ export function BuilderScreen({init}:{init:BuilderInit}){
 
   // Questions generated from the previous map are not in the new map's pool: unpin them and allow a new generation.
   const changeBoard=(id:string|null)=>{const old=new Set(gen.result?.questionIds??[]);setPinned(p=>new Set([...p].filter(x=>!old.has(x))));setGen({busy:false,result:null,error:null});setParams(p=>({...p,boardId:id}));setStepErr(null);};
-  const applyTemplate=(tpl:ExamTemplate)=>{setParams(tpl.params);setName(tpl.name);setTemplateId(tpl.id);setPreset(null);setContent('custom');setAi(defaultAi);setGen({busy:false,result:null,error:null});go(LAST);};
+  const applyTemplate=(tpl:ExamTemplate)=>{setParams(tpl.params);setPicked(tpl.params.course);setName(tpl.name);setTemplateId(tpl.id);setPreset(null);setContent('custom');setAi(defaultAi);setGen({busy:false,result:null,error:null});go(LAST);};
 
   const begin=async()=>{
     if(!total)return;
@@ -190,7 +206,7 @@ export function BuilderScreen({init}:{init:BuilderInit}){
       <div className="flex min-w-0 flex-col gap-6">
         <h2 ref={heading} tabIndex={-1} className="m-0 font-display text-2xl font-extrabold outline-none">{t(`examBuilder.stepTitles.${stepIds[step]!}`)}</h2>
         {step===0?<StepOrigin origin={origin} onOrigin={setOrigin} boardId={params.boardId} onBoard={changeBoard} boards={boards} ai={ai} onAi={p=>{setAi(a=>({...a,...p}));setStepErr(null);}}/>:null}
-        {step===1?<StepContent content={content} onContent={pickContent} params={params} patch={patch} av={av} areaName={areaName} toggleArea={toggleArea} topics={topics} preset={preset} matrixCount={params.matrixItemIds.length}
+        {step===1?<StepContent content={content} onContent={pickContent} params={params} patch={patch} av={av} areaName={areaName} toggleArea={toggleArea} topics={topics} preset={preset} presets={presets} showCourse={origin!=='map'} courseName={courseName} onCourse={pickCourse} courseEmpty={emptyBox} courseRef={courseRef} matrixCount={params.matrixItemIds.length}
           onPreset={id=>{setParams(p=>applyPreset(p,id));setPreset(id);setTemplateId(null);}}/>:null}
         {step===2?<StepFormat name={name} onName={setName} params={params} patch={patch} content={content}/>:null}
         {stepErr?<Alert tone="review" role="alert" title={stepErr}/>:null}
@@ -206,6 +222,7 @@ export function BuilderScreen({init}:{init:BuilderInit}){
               {genResult.stoppedBy?<p className="m-0">{t(genResult.stoppedBy==='quota'?'examBuilder.genStoppedQuota':'examBuilder.genStoppedError')}</p>:null}</Alert>:null}
             {gen.error?<Alert tone="review" role="alert" title={gen.error}/>:null}
           </div></Card>:null}
+        {emptyBox}
         <section aria-label={t('examBuilder.composition')} aria-live="polite" className="flex flex-col gap-3">
           <h2 className="m-0 font-display text-xl font-extrabold">{avState==='loading'&&!av?t('examBuilder.availabilityLoading'):av?(av.total===0?t('examBuilder.foundNone'):av.total===1?t('examBuilder.foundOne'):t('examBuilder.found',{n:av.total})):t('examBuilder.composition')}</h2>
           {avState==='error'?<Alert tone="review" role="alert" title={t('examBuilder.availabilityError')}/>:null}
@@ -244,7 +261,7 @@ export function BuilderScreen({init}:{init:BuilderInit}){
             {summaryRows.map(([k,v])=><div key={k} className="flex justify-between gap-3"><dt className="text-muted">{t(`examBuilder.${k}`)}</dt><dd className="m-0 text-right font-semibold">{v}</dd></div>)}
           </dl>
           {step===LAST?<>
-            <Button disabled={total===0||pvState!=='ready'} onClick={()=>{setStartError(null);setDialog('confirm');}}>{t('examBuilder.start')}</Button>
+            <Button disabled={total===0||pvState!=='ready'||courseEmpty} onClick={()=>{setStartError(null);setDialog('confirm');}}>{t('examBuilder.start')}</Button>
             {total===0?<p className="m-0 text-sm text-muted">{t('examBuilder.startDisabledHint')}</p>:null}
             <Button variant="secondary" onClick={()=>{setDialogError(null);setDialog('template');}}>{t('examBuilder.saveTemplate')}</Button>
             <Button variant="secondary" onClick={()=>{setDialogError(null);setDialog('calendar');}}>{t('examBuilder.calendar')}</Button>

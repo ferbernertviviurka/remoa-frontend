@@ -44,7 +44,7 @@ export const questionsAdminOps = {
     delivered: 'Já foi entregue.', durable_content_missing: 'O conteúdo gravado não foi encontrado: não é possível recuperar.', replay_metadata_invalid: 'Os metadados do conteúdo gravado não conferem: não é possível recuperar.',
     conflict: 'Mudou desde a leitura: recarregue a lista e tente de novo.', not_found: 'Item não encontrado.',
   },
-  // D-1840: batch accept of import candidates.
+  // D-1841: batch accept of import candidates.
   acceptTitle: 'Aceitar em lote', acceptHelp: 'Marque as candidatas pendentes. Cada uma segue para revisão médica como rascunho; nada é publicado.',
   acceptSelect: 'Selecionar {label}', acceptSelectAll: 'Selecionar todas ({n})', acceptClear: 'Limpar seleção', acceptSelected: '{n} selecionadas',
   acceptAction: 'Aceitar selecionadas', acceptEmpty: 'Nenhuma candidata pendente.',

@@ -47,3 +47,5 @@ export const PlansIsland = island(() => import('./plans/plans-section').then((m)
 export const FaqIsland = island(() => import('./plans/faq-section').then((m) => m.FaqSection));
 // eager: the form must work as soon as it is on screen (a click before the idle load used to submit the inert server form: page reload, nothing visible)
 export const WaitlistIsland = island(() => import('./shell/waitlist-cta').then((m) => m.WaitlistCta), { eager: true });
+// Above the fold but not LCP (the h1/subtitle are): the picker loads after idle like the others; the chips beside it work meanwhile.
+export const CoursePickerIsland = island(() => import('./hero/course-picker').then((m) => m.CoursePicker));

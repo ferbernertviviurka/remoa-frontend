@@ -50,6 +50,19 @@
       "passed": true
     },
     {
+      "name": "axe curso sem catálogo 1440",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll curso sem catálogo 1440",
+      "passed": true
+    },
+    {
+      "name": "course empty state 1440",
+      "passed": true
+    },
+    {
       "name": "no JS exceptions 1440",
       "passed": true,
       "errors": []
@@ -100,6 +113,19 @@
     },
     {
       "name": "POST question-sessions carried Idempotency-Key 390",
+      "passed": true
+    },
+    {
+      "name": "axe curso sem catálogo 390",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll curso sem catálogo 390",
+      "passed": true
+    },
+    {
+      "name": "course empty state 390",
       "passed": true
     },
     {

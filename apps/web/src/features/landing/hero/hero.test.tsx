@@ -41,7 +41,7 @@ describe('HeroSection', () => {
     const create = screen.getByRole('link', { name: h.cta.primary });
     create.addEventListener('click', (e) => e.preventDefault()); // jsdom has no navigation
     fireEvent.click(create);
-    expect(create.getAttribute('href')).toBe('/cadastro');
+    expect(create.getAttribute('href')).toBe('/cadastro?de=landing');
     expect(track).toHaveBeenCalledWith('hero_cta_clicked', { cta: 'create' });
   });
 

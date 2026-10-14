@@ -8,11 +8,12 @@ import { MapLink, ReportDialog } from './shared';
 import { isInstitutional, ValidationSeal } from './validation-seal';
 
 /** D-1823/D-1824: AI questions carry "Gerada por IA" and never a seal; institutional = "Validado pela Remoa"; medical review names the reviewer, never a CRM. */
-export function BankMeta({ question: q }: { question: QuestionPublic }) {
+export function BankMeta({ question: q, course }: { question: QuestionPublic; course?: string }) {
   const ai = q.origin === 'ai_generated';
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Tag tone={ai ? 'review' : 'brand'}>{ai ? t('questionsBank.aiLabel') : t(`questions.source.${q.origin}`)}</Tag>
+      {course ? <Tag tone="unknown">{course}</Tag> : null}
       <span className="text-xs text-muted">{t(`questions.difficultyLabel.${q.difficulty}`)}</span>
       {ai ? null : isInstitutional(q.validation) ? <ValidationSeal /> : q.validation?.kind === 'medical_review' ? <Tag tone="steady">{t('questionsBank.sealMedicalBy', { name: q.validation.label })}</Tag> : null}
       {q.sourceLabel ? <span className="text-xs text-muted">{q.sourceLabel}</span> : null}

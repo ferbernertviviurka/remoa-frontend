@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { t } from '@remoa/strings/full';
 import { Card, Constellation, Logo } from '@remoa/ui';
+import { AuthAsideCopy } from '@/features/auth/signup-aside';
 
 const nodes = [
   { x: 190, y: 150, size: 26, state: 'review' as const, pulse: true, label: 'Sepse', labelSide: 'right' as const },
@@ -23,10 +24,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <Link href="/" aria-label={t('landing.nav.wordmark.aria')} className="inline-flex min-h-11 items-center self-start no-underline"><Logo size={36} withWordmark onDark /></Link>
         <div className="flex flex-col items-start gap-8">
           <Constellation nodes={nodes} edges={edges} />
-          <div className="flex max-w-[420px] flex-col gap-3">
-            <p className="m-0 font-display text-[40px] font-extrabold leading-[1.05] tracking-[-0.03em]">{t('auth.brand.tagline')}</p>
-            <p className="m-0 text-base leading-normal text-on-dark-muted-2">{t('auth.brand.sub')}</p>
-          </div>
+          <AuthAsideCopy tagline={t('auth.brand.tagline')} sub={t('auth.brand.sub')} />
         </div>
       </aside>
       <main className="flex flex-col items-center justify-center gap-6 px-4 py-8 sm:p-8">

@@ -11,7 +11,10 @@ import { usePhotoDialog } from '../profile/photo-dialog';
 import { useAccount } from './account-context';
 import { formatMonth, initialsOf } from './format';
 
-const t = withStrings({ account: more.account });
+const t = withStrings({ account: more.account, studyProfile: more.studyProfile });
+/** F35 FR-24: the two study items have their own labels; the rest keep account.hero.*. */
+const itemLabel = (item: CompletenessItem, kind: 'items' | 'todo') =>
+  item === 'study_focus' || item === 'course_institution' ? t(`studyProfile.completeness.${kind}.${item}`) : t(`account.hero.${kind}.${item}`);
 
 const chip = 'rounded-pill bg-white/[.14] px-3 py-[5px] text-[13px] font-semibold text-on-dark-muted-2';
 const todoChip =
@@ -39,14 +42,14 @@ export function AccountHero() {
   const router = useRouter();
   const { profile } = account;
   // Recomputed from the live context so optimistic edits move the ring without a reload (FR-3).
-  const c = computeCompleteness(profile, account.preferences, { emailConfirmed: account.emailConfirmed, emailPending: !!account.pendingEmail });
+  const c = computeCompleteness(profile, account.preferences, { emailConfirmed: account.emailConfirmed, emailPending: !!account.pendingEmail }, account.studyProfile ?? null);
   const name = profile.name?.trim() || null;
 
   function pick(item: CompletenessItem) {
     track('completeness_chip_clicked', { item });
     if (item === 'photo') return photo.open();
     if (item === 'reminder') return router.push('/app/conta/preferencias');
-    const campo = { name: 'nome', goal: 'objetivo', email: 'email' }[item];
+    const campo = { name: 'nome', email: 'email', study_focus: 'estudo', course_institution: 'estudo' }[item];
     router.push(`/app/conta/perfil?campo=${campo}`);
   }
 
@@ -89,12 +92,12 @@ export function AccountHero() {
               c.missing.includes(item) ? (
                 <button key={item} type="button" onClick={() => pick(item)} className={todoChip}>
                   <Icon name="plus" size={16} />
-                  {t(`account.hero.todo.${item}`)}
+                  {itemLabel(item, 'todo')}
                 </button>
               ) : (
                 <span key={item} className="flex h-10 items-center gap-2 rounded-pill bg-white/[.14] pl-2.5 pr-3.5 text-sm font-semibold text-on-dark-muted-2">
                   <Icon name="check" size={16} />
-                  {t(`account.hero.items.${item}`)}
+                  {itemLabel(item, 'items')}
                 </span>
               ),
             )}

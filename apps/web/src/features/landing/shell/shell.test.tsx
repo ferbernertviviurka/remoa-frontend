@@ -10,8 +10,9 @@ import { headerLabels } from './header-labels';
 const post = vi.hoisted(() => vi.fn());
 vi.mock('./waitlist', async (orig) => ({ ...(await orig<typeof import('./waitlist')>()), postWaitlist: post }));
 import { WaitlistCta } from './waitlist-cta';
+import { setSelectedCourse } from './selected-course';
 
-afterEach(() => { cleanup(); window.__remoaEvents = []; post.mockReset(); });
+afterEach(() => { setSelectedCourse(null); cleanup(); window.__remoaEvents = []; post.mockReset(); });
 
 describe('variants', () => {
   test('h defaults to a; v only counts in waitlist phase', () => {
@@ -68,10 +69,20 @@ describe('WaitlistCta', () => {
     fill('a@b.co');
     const ok = await screen.findByRole('status');
     await waitFor(() => expect(document.activeElement).toBe(ok));
-    expect(post).toHaveBeenCalledWith({ email: 'a@b.co', segment: 'y5_6', variant: '29', honeypot: '' });
+    expect(post).toHaveBeenCalledWith({ email: 'a@b.co', segment: 'y5_6', variant: '29', honeypot: '', course: null });
     expect(window.__remoaEvents).toContainEqual({ event: 'waitlist_joined', props: { segment: 'y5_6', variant: '29', platform: 'web', plan: 'free', appVersion: '0.0.0' } });
     fireEvent.click(screen.getByRole('button', { name: strings.landing.waitlist.success.alternate }));
     expect((screen.getByLabelText(strings.landing.waitlist.email.label) as HTMLInputElement).value).toBe('');
+  });
+  test('F35 FR-37: the chosen course is sent and shown with a change link', async () => {
+    post.mockResolvedValue({ kind: 'ok' });
+    setSelectedCourse('nursing');
+    render(<WaitlistCta phase="waitlist" variant={null} />);
+    expect(screen.getByText(strings.landing.courses.nursing.name)).toBeTruthy();
+    expect(screen.getByRole('link', { name: strings.landing.waitlist.course.change }).getAttribute('href')).toBe('#hero-title');
+    fill('a@b.co');
+    await screen.findByRole('status');
+    expect(post).toHaveBeenCalledWith(expect.objectContaining({ course: 'nursing' }));
   });
   test('429 shows the rate-limit message; network error shows the generic one', async () => {
     post.mockResolvedValueOnce({ kind: 'rate_limited', message: 'Muitas tentativas.' });
@@ -85,7 +96,7 @@ describe('WaitlistCta', () => {
   });
   test('open phase links to sign-up instead of the form', () => {
     render(<WaitlistCta phase="open" variant={null} />);
-    expect(screen.getByRole('link', { name: strings.landing.ctaSection.primary }).getAttribute('href')).toBe('/cadastro');
+    expect(screen.getByRole('link', { name: strings.landing.ctaSection.primary }).getAttribute('href')).toBe('/cadastro?de=landing');
     expect(screen.queryByLabelText(strings.landing.waitlist.email.label)).toBeNull();
   });
 });
@@ -98,7 +109,7 @@ describe('LandingHeader (D-320)', () => {
     expect(screen.getAllByRole('link', { name: strings.landing.nav.createMap })[0]?.getAttribute('href')).toBe('#cta');
     rerender(<LandingHeader labels={headerLabels()} blogLabel="Blog" phase="open" />);
     expect(screen.getAllByRole('link', { name: strings.landing.nav.signIn })[0]?.getAttribute('href')).toBe('/entrar');
-    expect(screen.getAllByRole('link', { name: strings.landing.nav.createMap })[0]?.getAttribute('href')).toBe('/cadastro');
+    expect(screen.getAllByRole('link', { name: strings.landing.nav.createMap })[0]?.getAttribute('href')).toBe('/cadastro?de=landing');
     expect(screen.queryByRole('link', { name: strings.landing.nav.openApp })).toBeNull();
     rerender(<LandingHeader labels={headerLabels()} blogLabel="Blog" phase="open" signedIn />);
     expect(screen.getAllByRole('link', { name: strings.landing.nav.openApp })[0]?.getAttribute('href')).toBe('/app');

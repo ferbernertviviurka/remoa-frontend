@@ -29,7 +29,7 @@ describe('DemoSection', () => {
     fireEvent.click(screen.getByRole('button', { name: new RegExp(d.alternatives[1]) }));
     expect(screen.getByRole('status').textContent).toContain(d.verdicts.incorrect);
     expect(track).toHaveBeenCalledWith('demo_answered', { correct: false });
-    expect(screen.getByRole('link', { name: d.cta }).getAttribute('href')).toBe('/cadastro');
+    expect(screen.getByRole('link', { name: d.cta }).getAttribute('href')).toBe('/cadastro?de=landing');
     fireEvent.click(screen.getByRole('button', { name: d.retry }));
     expect(screen.queryByRole('status')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: new RegExp(d.alternatives[0]) }));

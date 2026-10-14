@@ -1,8 +1,10 @@
 'use client';
+import type {ReactNode,RefObject} from 'react';
 import {Alert,Button,Card,Checkbox,ChoiceRow,Combobox,Input,Segmented,Select} from '@remoa/ui';
-import {EXAM_BUILDER_LIMITS,EXAM_GENERATE_MAX,type ExamAvailability,type ExamBuilderParams} from '@remoa/contracts';
+import {EXAM_BUILDER_LIMITS,EXAM_GENERATE_MAX,type ExamAvailability,type ExamBuilderParams,type HealthCourseCode} from '@remoa/contracts';
 import {t} from './labels';
-import {presetIds,type Ai,type Content,type GenDifficulty,type Origin,type PresetId} from './model';
+import {CourseField} from '../questions/course-field';
+import {type Ai,type Content,type GenDifficulty,type Origin,type PresetId} from './model';
 
 type Opt={id:string;name:string};
 type Patch=(p:Partial<ExamBuilderParams>)=>void;
@@ -34,10 +36,24 @@ export function DifficultyField({params,patch}:{params:ExamBuilderParams;patch:P
     <div role="group" aria-labelledby="eb-diff" className="flex flex-wrap gap-2">{(['easy','medium','hard'] as const).map(d=>{const on=params.difficulties.includes(d);return <Button key={d} size="sm" variant={on?'primary':'secondary'} aria-pressed={on} onClick={()=>patch({difficulties:on?params.difficulties.filter(x=>x!==d):[...params.difficulties,d]})}>{t(`examBuilder.difficultyOptions.${d}`)}</Button>;})}</div></div>;
 }
 
-export function StepContent({content,onContent,params,patch,av,areaName,toggleArea,topics,preset,onPreset,matrixCount}:{content:Content;onContent:(c:Content)=>void;params:ExamBuilderParams;patch:Patch;av:ExamAvailability|null;areaName:(id:string|null)=>string;toggleArea:(id:string,on:boolean)=>void;topics:Opt[];preset:PresetId|null;onPreset:(id:PresetId)=>void;matrixCount:number}){
+/** FR-34: the catalog of the course has no published question. The map/AI origin still works for any course. */
+export function CourseEmpty({course,onMap,onOther}:{course:string;onMap:()=>void;onOther:()=>void}){
+  return <Alert tone="watch" role="status" title={t('examBuilder.courseEmpty.title',{course})}>
+    <p className="m-0">{t('examBuilder.courseEmpty.help')}</p>
+    <div className="flex flex-wrap gap-2"><Button size="sm" variant="secondary" onClick={onMap}>{t('examBuilder.courseEmpty.useMap')}</Button><Button size="sm" variant="secondary" onClick={onOther}>{t('examBuilder.courseEmpty.other')}</Button></div></Alert>;
+}
+
+export function StepContent({content,onContent,params,patch,av,areaName,toggleArea,topics,preset,presets,onPreset,matrixCount,showCourse,courseName,onCourse,courseEmpty,courseRef}:{content:Content;onContent:(c:Content)=>void;params:ExamBuilderParams;patch:Patch;av:ExamAvailability|null;areaName:(id:string|null)=>string;toggleArea:(id:string,on:boolean)=>void;topics:Opt[];preset:PresetId|null;presets:readonly PresetId[];onPreset:(id:PresetId)=>void;matrixCount:number;showCourse:boolean;courseName:string;onCourse:(c:HealthCourseCode)=>void;courseEmpty:ReactNode;courseRef:RefObject<HTMLDivElement|null>}){
   const showAreas=content==='area'||content==='custom',showTopics=content==='topic'||content==='custom';
   const chosen=params.areaIds;
+  const areaRows=(av?.areas??[]).filter(a=>a.areaId!==null);
+  // FR-32: only medicine has a taxonomy (the 7 ENAMED areas). Other courses show the honest empty state, never fake areas.
+  const noSubjects=!!params.course&&(content==='topic'||!areaRows.length);
   return <div className="flex flex-col gap-5">
+    {showCourse?<div ref={courseRef} className="flex flex-col gap-2">
+      <CourseField label={t('examBuilder.course.label')} placeholder={t('examBuilder.course.placeholder')} emptyLabel={t('examBuilder.course.empty')} value={params.course} onChange={onCourse}/>
+      <p className="m-0 text-[13px] text-muted">{t('examBuilder.course.help')}</p></div>:null}
+    {courseEmpty}
     <div role="group" aria-label={t('examBuilder.contentLabel')} className="grid gap-3 sm:grid-cols-2">
       {contents.map(c=><ChoiceRow key={c} indicator="radio" size="lg" selected={content===c} onSelect={()=>onContent(c)} title={t(`examBuilder.contentChoices.${c}.title`)} description={t(`examBuilder.contentChoices.${c}.description`)}/>)}
     </div>
@@ -45,16 +61,17 @@ export function StepContent({content,onContent,params,patch,av,areaName,toggleAr
       <p className="m-0">{t('examBuilder.topicsFromMap')}</p><div><Button size="sm" variant="secondary" onClick={()=>patch({matrixItemIds:[]})}>{t('examBuilder.matrixClear')}</Button></div></Alert>:null}
     {content==='mode'?<div className="flex flex-col gap-3">
       <div role="group" aria-label={t('examBuilder.presetsLabel')} className="grid gap-3 sm:grid-cols-2">
-        {presetIds.map(id=><ChoiceRow key={id} indicator="radio" size="lg" selected={preset===id} onSelect={()=>onPreset(id)} title={t(`examBuilder.presets.${id}.title`)} description={t(`examBuilder.presets.${id}.description`)} badge={id==='enamed'?t('examBuilder.presets.enamed.tag'):undefined}/>)}
+        {presets.map(id=><ChoiceRow key={id} indicator="radio" size="lg" selected={preset===id} onSelect={()=>onPreset(id)} title={t(`examBuilder.presets.${id}.title`)} description={t(`examBuilder.presets.${id}.description`)} badge={id==='enamed'?t('examBuilder.presets.enamed.tag'):undefined}/>)}
       </div>
       {preset==='enamed'?<p className="m-0 text-sm text-muted">{t('examBuilder.enamedNote')}</p>:null}
     </div>:null}
-    {showAreas||showTopics?<Card><div className="flex flex-col gap-5">
+    {noSubjects&&(showAreas||showTopics)?<Alert tone="steady" role="status" title={t('examBuilder.subjectsNone',{course:courseName})}/>:null}
+    {(showAreas||showTopics)&&!noSubjects?<Card><div className="flex flex-col gap-5">
       {showAreas?<fieldset className="m-0 flex flex-col gap-1 border-0 p-0"><legend className="mb-1 text-[15px] font-bold">{t('examBuilder.areas')}</legend>
-        {(av?.areas??[]).filter(a=>a.areaId!==null).map(a=>{const id=a.areaId as string;return <Checkbox key={id} checked={chosen.length===0||chosen.includes(id)} onCheckedChange={on=>toggleArea(id,on===true)}
+        {areaRows.map(a=>{const id=a.areaId as string;return <Checkbox key={id} checked={chosen.length===0||chosen.includes(id)} onCheckedChange={on=>toggleArea(id,on===true)}
           label={`${areaName(id)} · ${a.available===1?t('examBuilder.areaAvailableOne'):t('examBuilder.areaAvailable',{n:a.available})}`}/>;})}
       </fieldset>:null}
-      {showTopics?<Combobox label={t('examBuilder.topics')} placeholder={t('examBuilder.topicsPlaceholder')} options={topics.map(x=>({value:x.id,label:x.name}))} value={params.topicIds} onValueChange={v=>patch({topicIds:v})}
+      {showTopics&&!params.course?<Combobox label={t('examBuilder.topics')} placeholder={t('examBuilder.topicsPlaceholder')} options={topics.map(x=>({value:x.id,label:x.name}))} value={params.topicIds} onValueChange={v=>patch({topicIds:v})}
         max={EXAM_BUILDER_LIMITS.maxTopics} maxMessage={t('examBuilder.topicsMax')} emptyLabel={t('examBuilder.topicsEmpty')} removeChipAriaLabel={name=>t('examBuilder.topicRemove',{name})}/>:null}
       {content==='custom'?<div className="grid gap-5 sm:grid-cols-2"><DifficultyField params={params} patch={patch}/>
         <Select label={t('examBuilder.progress')} value={params.progress} onValueChange={v=>patch({progress:v as ExamBuilderParams['progress']})} options={(['all','unseen','wrong'] as const).map(v=>({value:v,label:t(`examBuilder.progressOptions.${v}`)}))}/></div>:null}

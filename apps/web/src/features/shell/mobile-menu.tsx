@@ -1,5 +1,7 @@
 'use client';
 import {useQuestionFeatureFlags,questionDestinationEnabled} from '@/features/questions/flags';
+import {useStudyProfile} from '@/features/study-profile/use-study-profile';
+import {studyDestinationEnabled} from '@/features/study-profile/destinations';
 
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
@@ -15,11 +17,11 @@ const row = 'flex min-h-11 w-full items-center gap-3 rounded-[14px] px-3 text-le
 /** Celular: hambúrguer no cabeçalho abre uma folha com todos os destinos do trilho, Conta, Ajuda e Sair. */
 export function MobileMenu({ dueTotal = 0, isAdmin = false }: { dueTotal?: number; isAdmin?: boolean }) {
   const [open, setOpen] = useState(false);
-  const flags=useQuestionFeatureFlags();const path = usePathname();
+  const flags=useQuestionFeatureFlags();const{capabilities}=useStudyProfile();const path = usePathname();
   const { pending } = useNavPending();
   const close = () => setOpen(false);
   const dests = [
-    ...items.filter(i=>questionDestinationEnabled(i.href,flags)).map((i) => ({ ...i, label: t(i.label) })),
+    ...items.filter(i=>questionDestinationEnabled(i.href,flags)&&studyDestinationEnabled(i.href,capabilities)).map((i) => ({ ...i, label: t(i.label) })),
     { href: ACCOUNT_HOME, icon: 'user' as const, label: t('shell.mobileMenu.account') },
     ...(isAdmin ? [{ href: '/admin', icon: 'shield' as const, label: t('admin.navigation.admin') }] : []),
   ];

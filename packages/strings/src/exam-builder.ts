@@ -7,11 +7,16 @@ export const examBuilder = {
   presetsLabel: 'Modelos de partida',
   presets: {
     enamed: { title: 'Formato ENAMED', description: '100 questões, equilibrada entre as áreas, simulado, 3 min por questão.', tag: 'aproximação' },
+    full_40: { title: 'Simulado completo (40)', description: '40 questões, equilibrada entre as áreas, simulado, 3 min por questão.', tag: '' },
     quick: { title: 'Treino rápido', description: '10 questões que você ainda não respondeu.', tag: '' },
     mistakes: { title: 'Revisar meus erros', description: '20 questões que você errou.', tag: '' },
     blank: { title: 'Em branco', description: 'Comece do zero e ajuste cada parâmetro.', tag: '' },
   },
   enamedNote: 'Aproximação: ainda não há distribuição oficial por área na Matriz. Confira o edital.',
+  // F35 FR-31..34 (D-1861)
+  course: { label: 'Curso ou área da saúde', placeholder: 'Digite o curso ou a área', empty: 'Nenhum curso encontrado', help: 'O banco e os modelos de partida seguem o curso escolhido.' },
+  courseEmpty: { title: 'Ainda não há questões publicadas para {course}.', help: 'Você ainda pode montar a prova com perguntas de IA geradas a partir de um mapa, ou escolher outro curso.', useMap: 'Usar perguntas de IA de um mapa', other: 'Escolher outro curso' },
+  subjectsNone: 'Ainda não há áreas nem disciplinas cadastradas para {course}.',
   name: 'Nome da prova',
   namePlaceholder: 'Ex.: Clínica Médica, revisão de sexta',
   defaultName: 'Minha prova',

@@ -4,23 +4,28 @@ import type {IncomingMessage,ServerResponse} from 'node:http';
 const ID=(n:number)=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const A=ID(901),B=ID(902);const now=()=>new Date().toISOString();const SEED='b'.repeat(32);
 const AV={[A]:25,[B]:15};
-let state={sessions:0,startMode:'ok' as 'ok'|'changed'|'active',templates:[] as any[],log:[] as string[]};
+let state={sessions:0,startMode:'ok' as 'ok'|'changed'|'active',templates:[] as any[],log:[] as string[],course:null as string|null};
 const item=(n:number,pinned:boolean)=>({questionId:ID(n),canonicalId:ID(n),version:1,areaId:n%2?A:B,topicId:null,origin:'official_exam',difficulty:'medium',stemPreview:`Enunciado sintético ${n}, sem conteúdo médico.`,sourceLabel:null,validation:n%5===0?{kind:'remoa_institutional',label:'Remoa'}:null,pinned});
 const send=(res:ServerResponse,status:number,data:unknown)=>{res.statusCode=status;res.setHeader('content-type','application/json');res.end(JSON.stringify(status<300?{ok:true,data}:data));};
 const read=(req:IncomingMessage)=>new Promise<any>(r=>{let s='';req.on('data',c=>s+=c);req.on('end',()=>r(s?JSON.parse(s):{}));});
 export async function apiMiddleware(req:IncomingMessage,res:ServerResponse,next:()=>void){
   const url=new URL(req.url??'/','http://x');const p=url.pathname;
-  if(p==='/__test/reset'){state={sessions:0,startMode:'ok',templates:[],log:[]};return send(res,200,{ok:true});}
+  if(p==='/__test/reset'){state={sessions:0,startMode:'ok',templates:[],log:[],course:null};return send(res,200,{ok:true});}
   if(p==='/__test/mode'){state.startMode=url.searchParams.get('v') as any;return send(res,200,{ok:true});}
+  if(p==='/__test/course'){state.course=url.searchParams.get('v')||null;return send(res,200,{ok:true});}
   if(p==='/__test/log')return send(res,200,state.log);
   if(!p.startsWith('/v1/'))return next();
   const b=req.method==='POST'?await read(req):{};state.log.push(`${req.method} ${p}${req.headers['idempotency-key']?` key=${req.headers['idempotency-key']}`:''}`);
+  // F35: profile course drives the default course; courses are synthetic names (nonmedical fixtures).
+  if(p==='/v1/account/study-profile')return send(res,200,{profile:state.course?{course:state.course,source:'user'}:null,capabilities:{showEnamed:!state.course||state.course==='medicine',suggestedGoals:[],starterTemplates:[state.course&&state.course!=='medicine'?'full_40':'enamed','quick','mistakes','blank'],subjectSystem:state.course&&state.course!=='medicine'?'course_disciplines':'enamed',needsConfirmation:false}});
+  if(p==='/v1/public/reference/courses')return send(res,200,[{code:'medicine',name:'Medicina',aliases:[],kind:'course',councilCode:null,suggestedGoals:[]},{code:'nursing',name:'Enfermagem',aliases:[],kind:'course',councilCode:null,suggestedGoals:[]}]);
   if(p==='/v1/boards')return send(res,200,[{id:ID(920),title:'Mapa sintético'}]);
   if(p==='/v1/exam-builder/generate')return send(res,200,{questionIds:[ID(71),ID(72)],requested:b.count,reused:1,generated:1,shortfall:0,stoppedBy:null});
   if(p==='/v1/challenge-ai/taxonomy'&&url.searchParams.get('kind')==='topic')return send(res,200,[{id:ID(910),name:'Matéria sintética'}]);
   if(p==='/v1/challenge-ai/taxonomy')return send(res,200,[{id:A,name:'Área sintética A'},{id:B,name:'Área sintética B'}]);
   if(p==='/v1/exam-templates'&&req.method==='GET')return send(res,200,{items:state.templates,limit:3});
   if(p==='/v1/exam-templates'){const t={id:ID(800+state.templates.length),name:b.name,params:b.params,createdAt:now(),updatedAt:now()};state.templates.unshift(t);return send(res,200,t);}
+  if(p==='/v1/exam-builder/availability'&&b.course&&b.course!=='medicine')return send(res,200,{total:0,areas:[]});
   if(p==='/v1/exam-builder/availability')return send(res,200,{total:40,areas:[{areaId:A,available:AV[A]},{areaId:B,available:AV[B]}]});
   if(p==='/v1/exam-builder/preview'){
     const n=Math.min(b.params.count,40);const ids:number[]=b.pinnedIds.map((x:string)=>Number(x.slice(-12)));

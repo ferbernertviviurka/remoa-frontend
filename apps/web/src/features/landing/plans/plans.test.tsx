@@ -85,7 +85,7 @@ describe('PlansSection', () => {
     unmount();
     render(<PlansSection priceBook={book} flags={{ launchPhase: 'open', betaFounder: true, approvedContent: false }} />);
     expect(screen.getByText(strings.landing.plans.pro.founder)).toBeTruthy();
-    expect(screen.getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/cadastro', '/cadastro', '/cadastro']);
+    expect(screen.getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/cadastro?de=landing', '/cadastro?de=landing&plano=pro_monthly', '/cadastro?de=landing&plano=founder']);
   });
 
   it('Founder card: one-time lifetime price from the book, unaffected by the period toggle, CTA tracked as plans_founder', () => {

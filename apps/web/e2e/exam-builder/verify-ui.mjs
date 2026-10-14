@@ -46,6 +46,13 @@ const scan=async(page,name,width)=>{await page.addScriptTag({path:axe});
     await page.request.get(base+'/__test/mode?v=active');await page.goto(base+'/');for(let i=0;i<3;i++)await page.getByRole('button',{name:'Continuar'}).click();await expect(page.getByText('Enunciado sintético 1,')).toBeVisible();
     await page.getByRole('button',{name:'Começar prova'}).first().click();await page.getByRole('dialog').getByRole('button',{name:'Começar prova'}).click();
     await expect(page.getByRole('link',{name:'Retomar prova'})).toHaveAttribute('href',/\/app\/simulados\/00000000-0000-4000-8000-000000000333/);
+    // F35 FR-34: a course with no published catalog -> honest empty state, Começar disabled, switch to map
+    await page.request.get(base+'/__test/course?v=nursing');await page.goto(base+'/');await page.getByRole('button',{name:'Continuar'}).click();
+    await expect(page.getByText('Ainda não há questões publicadas para Enfermagem.')).toBeVisible();await expect(page.getByRole('combobox',{name:'Curso ou área da saúde'})).toHaveValue('Enfermagem');await scan(page,'curso sem catálogo',width);
+    await page.getByRole('button',{name:'Continuar'}).click();await page.getByRole('button',{name:'Continuar'}).click();
+    await expect(page.getByRole('button',{name:'Começar prova'}).first()).toBeDisabled();
+    await page.getByRole('button',{name:'Usar perguntas de IA de um mapa'}).click();await expect(page.getByRole('heading',{level:2,name:'De onde vêm as questões?'})).toBeVisible();
+    await page.request.get(base+'/__test/course');ok(`course empty state ${width}`,true);
     ok(`no JS exceptions ${width}`,errors.length===0,{errors});await ctx.close();
   }
   await browser.close();fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report.checks.filter(c=>!c.passed),null,2),`${report.checks.length} checks`);

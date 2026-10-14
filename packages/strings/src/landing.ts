@@ -2,9 +2,11 @@
 // No price/percentage/count literals: use placeholders ({price}, {pct}, {n}, {value}).
 // Reuse where possible: common.retry, common.cancel, plan.pro.*, plans.period.{monthly,annual}, billing.*
 import { landingExtras } from './landing-g21';
+import { landingAreas } from './landing-areas';
 
 export const landing = {
   ...landingExtras,
+  ...landingAreas,
   // Navigation and layout
   nav: {
     navLabel: 'Navegação da página',
@@ -49,13 +51,13 @@ export const landing = {
 
   // Hero section
   hero: {
-    tag: 'Para a residência médica e o Enamed',
+    tag: 'Para toda a área da saúde',
     h1: {
       a: 'Seu conhecimento tem conexões. Seu estudo também.',
       b: 'O card te testa um por um. A prova te testa pela conexão.',
       c: 'Monte o mapa. Ele te desafia.',
     },
-    subtitle: 'O Remoa transforma seus resumos em um mapa vivo de medicina: revisão espaçada em cada conceito, perguntas sobre o que liga um ao outro e correção com fonte quando você erra. Com a matriz do Enamed mostrando onde você está.',
+    subtitle: 'O Remoa transforma seus resumos em um mapa vivo da sua área: revisão espaçada em cada conceito, perguntas sobre o que liga um ao outro e correção com fonte quando você erra. Para quem estuda Medicina, com a matriz do Enamed mostrando onde você está.',
     cta: {
       primary: 'Criar meu primeiro mapa',
       secondary: 'Experimentar um desafio',
@@ -96,8 +98,8 @@ export const landing = {
 
   // Ready maps section
   ready: {
-    title: 'Mapas prontos de Clínica Médica, em breve',
-    titleApproved: 'Mapas prontos de Clínica Médica',
+    title: 'Mapas prontos do ENAMED, para Medicina, em breve',
+    titleApproved: 'Mapas prontos do ENAMED, para Medicina',
     maps: [
       'Sepse e choque séptico',
       'Insuficiência cardíaca',
@@ -159,7 +161,7 @@ export const landing = {
 
   // Feature explorer section — exact copy from mock #recursos, plus the question bank
   explorer: {
-    title: 'Tudo o que o seu estudo para a residência precisa, no mesmo mapa.',
+    title: 'Tudo o que o seu estudo precisa, no mesmo mapa.',
     lead: 'Escolha um recurso e veja como ele aparece dentro da plataforma.',
     caption: 'Imagem da plataforma: {tab}',
     items: [
@@ -286,7 +288,7 @@ export const landing = {
       },
       {
         title: 'Mapas prontos, revisados',
-        text: 'Comece com mapas de Clínica Médica que já vêm com fonte, versão e o nome do revisor com CRM.',
+        text: 'Comece com os mapas de Medicina que já vêm com fonte, versão e o nome do revisor com CRM.',
         alt: 'Mapas prontos com selo de revisão e o painel de origem do card',
         approvedOnly: true,
       },
@@ -454,12 +456,16 @@ export const landing = {
     title: 'Perguntas frequentes sobre o Remoa',
     items: [
       {
+        q: 'O Remoa é só para Medicina?',
+        a: 'Não. O Remoa funciona para qualquer curso da área da saúde e também para quem estuda outro assunto. Os mapas prontos do ENAMED são para quem estuda Medicina; o conteúdo pronto das outras áreas da saúde está a caminho, e enquanto isso você monta os seus próprios mapas.',
+      },
+      {
         q: 'Funciona com o Anki?',
         a: 'Sim. Importe seu arquivo .apkg e os cards viram mapa; a oclusão de imagem vem junto.',
       },
       {
         q: 'Para quem é o Remoa?',
-        a: 'Para quem estuda para a residência médica: internos do 5º e 6º ano e recém-formados. A cobertura do Enamed começa por Clínica Médica; seus próprios mapas podem ser de qualquer tema.',
+        a: 'Para quem estuda ou atua na área da saúde: graduação, curso técnico, residência, pós, concursos e o dia a dia profissional. A cobertura do Enamed começa por Clínica Médica e é para estudantes de Medicina; seus próprios mapas podem ser de qualquer tema.',
       },
       {
         q: 'O que é revisão espaçada e como o Remoa usa?',
@@ -468,16 +474,16 @@ export const landing = {
       {
         q: 'A correção por IA pode errar?',
         a: 'Pode. Por isso ela corrige contra uma rubrica com fonte e foi feita para não aceitar o que está fora dela. Se você discordar, a revisão editorial analisa e você recebe a resposta.',
-        aApproved: 'Pode. Por isso ela corrige contra uma rubrica revisada por médico e nunca aprova o que está fora dela. Se você discordar, um revisor decide e você recebe a resposta.',
+        aApproved: 'Pode. Por isso ela corrige contra uma rubrica revisada e nunca aprova o que está fora dela. Se você discordar, um revisor decide e você recebe a resposta.',
       },
       {
         q: 'Quem revisa o conteúdo pronto?',
-        a: 'Médicos revisores, com nome e CRM em cada card aprovado e o marco temporal da edição.',
+        a: 'Nos mapas prontos de Medicina, médicos revisores, com nome e CRM em cada card aprovado e o marco temporal da edição.',
         approvedOnly: true,
       },
       {
         q: 'Serve para o Enamed 2027?',
-        a: 'O Remoa organiza a cobertura por temas de Clínica Médica alinhados à matriz de referência do Enamed (Portaria Inep 478/2025). É uma curadoria própria, não oficial, e não indica peso de prova nem garante resultado.',
+        a: 'Para estudantes de Medicina, sim. O Remoa organiza a cobertura por temas de Clínica Médica alinhados à matriz de referência do Enamed (Portaria Inep 478/2025). É uma curadoria própria, não oficial, e não indica peso de prova nem garante resultado.',
       },
       {
         q: 'Funciona no celular?',
@@ -529,6 +535,7 @@ export const landing = {
       label: 'Você é',
       options: ['3º–4º ano', '5º–6º ano', 'Formado(a)'],
     },
+    course: { label: 'Seu curso', change: 'trocar' }, // F35 FR-37 (CCR-161)
     submit: 'Entrar na lista',
     honeypot: 'Website',
     honeypotLabel: 'Deixe em branco',
@@ -565,7 +572,7 @@ export const landing = {
       privacy: 'Privacidade',
       contact: 'Contato',
     },
-    disclaimer: 'Ferramenta de estudo. Não substitui diretriz clínica nem supervisão.',
+    disclaimer: 'Ferramenta de estudo. Não substitui diretrizes, protocolos nem supervisão profissional.',
     copyright: 'Copyright © {year} Remoa.',
   },
 
@@ -578,16 +585,16 @@ export const landing = {
   },
 
   seo: {
-    title: 'Remoa: IA, Enamed e calendário da residência médica',
-    description: 'Mapas para a residência médica: a IA cria cards e corrige com fonte, mapas prontos do Enamed e calendário de provas.',
+    title: 'Remoa: mapas de estudo para a área da saúde, com IA e Enamed',
+    description: 'Mapas de estudo para toda a área da saúde: a IA cria cards e corrige com fonte, calendário de provas e mapas prontos do Enamed para Medicina.',
     ogTitle: 'O que você aprende, fica.',
-    ogDescription: 'Mapas de medicina que te testam pela conexão.',
+    ogDescription: 'Mapas de estudo da área da saúde que te testam pela conexão.',
     orgName: 'Remoa',
     appCategory: 'EducationalApplication',
     // /llms.txt (llmstxt.org): resumo do produto para assistentes de IA.
     llms: {
-      summary: 'O Remoa é um app de estudo para a residência médica: o aluno monta mapas de cards conectados, revisa na hora certa com revisão espaçada (FSRS) e usa o próprio mapa como teste.',
-      details: 'Público: estudantes do 5º e 6º ano de medicina e médicos recém-formados que estudam para a residência. A primeira grande área é a Clínica Médica. Principais recursos: mapas de cards ligados por conexões com rótulo; fila diária "Revisar hoje"; modo "Desafiar este mapa" (card oculto, conexão, próximo passo, imagem e caso clínico); correção das respostas com fonte; cobertura da matriz do Enamed; importação de baralhos do Anki e de PDFs; mapas prontos com revisão editorial; revisão pelo celular. O conteúdo médico gerado por IA só é publicado depois de revisado por um médico.',
+      summary: 'O Remoa é um app de estudo para toda a área da saúde: o aluno monta mapas de cards conectados, revisa na hora certa com revisão espaçada (FSRS) e usa o próprio mapa como teste.',
+      details: 'Público: estudantes e profissionais de qualquer curso da área da saúde (graduação, técnico, residência, concursos e atualização). Os mapas prontos do Enamed são para Medicina, começando pela Clínica Médica; o conteúdo pronto das outras áreas está a caminho. Principais recursos: mapas de cards ligados por conexões com rótulo; fila diária "Revisar hoje"; modo "Desafiar este mapa" (card oculto, conexão, próximo passo, imagem e caso clínico); correção das respostas com fonte; cobertura da matriz do Enamed; importação de baralhos do Anki e de PDFs; mapas prontos com revisão editorial; revisão pelo celular. O conteúdo médico gerado por IA só é publicado depois de revisado por um médico.',
       pages: 'Páginas',
       blog: 'Blog',
       optional: 'Optional',
@@ -601,7 +608,7 @@ export const landing = {
 
   // Keep existing keys from F12 stub (do not remove)
   tagline: 'O que você aprende, fica.',
-  subtitle: 'Monte o mapa do que você sabe e deixe ele te desafiar: revisão espaçada, correção com fonte e cobertura do Enamed. Comece com seu Anki, um PDF ou um mapa pronto.',
+  subtitle: 'Monte o mapa do que você sabe e deixe ele te desafiar: revisão espaçada, correção com fonte e, para Medicina, a cobertura do Enamed. Comece com seu Anki, um PDF ou um mapa pronto.',
   cta: 'Criar meu primeiro mapa',
   signIn: 'Entrar',
 } as const;

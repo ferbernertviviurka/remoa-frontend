@@ -1,6 +1,8 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useSelectedCourse } from '../shell/selected-course';
+import { signupHref } from '../shell/signup-href';
 import Link from 'next/link';
 import { strings, t } from '@remoa/strings/landing';
 import { VerdictBox } from '@remoa/ui';
@@ -14,6 +16,7 @@ const focus = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visi
 
 /** Demo sem cadastro (FR-10): só cliente, nada é gravado. `flags.launchPhase` decide o destino do CTA. */
 export function DemoSection({ flags }: { flags: Pick<LandingFlags, 'launchPhase'> }) {
+  const curso = useSelectedCourse();
   const [pick, setPick] = useState<number | null>(null);
   const started = useRef(false);
   const answered = pick !== null;
@@ -38,7 +41,7 @@ export function DemoSection({ flags }: { flags: Pick<LandingFlags, 'launchPhase'
           <h2 id="experimente-title" className="m-0 font-display text-[34px] leading-[1.05] font-extrabold tracking-[-0.035em] md:text-[44px] lg:text-[56px]">{t('landing.demo.title')}</h2>
           <p className="m-0 text-[17px] leading-normal text-muted md:text-[19px]">{t('landing.demo.intro')}</p>
           {answered ? (
-            <Link href={flags.launchPhase === 'open' ? '/cadastro' : '#cta'} onClick={trackCta('demo', flags.launchPhase === 'open' ? 'create' : 'waitlist')} className={`pop flex min-h-14 items-center gap-2.5 self-start rounded-field bg-primary px-[26px] text-[17px] font-extrabold text-on-primary no-underline ${focus}`}>
+            <Link href={flags.launchPhase === 'open' ? signupHref({ curso }) : '#cta'} onClick={trackCta('demo', flags.launchPhase === 'open' ? 'create' : 'waitlist')} className={`pop flex min-h-14 items-center gap-2.5 self-start rounded-field bg-primary px-[26px] text-[17px] font-extrabold text-on-primary no-underline ${focus}`}>
               {t('landing.demo.cta')}
             </Link>
           ) : null}

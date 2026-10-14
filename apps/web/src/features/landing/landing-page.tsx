@@ -6,7 +6,7 @@ import { landingFlags } from './flags';
 import { HeroSection } from './hero/hero-section';
 import { CompareSection } from './plans/compare-section';
 import { planFacts } from './plans/plan-facts';
-import { HowSection, MoreSection, ProblemSection, ReadyMarquee } from './sections/sections';
+import { AreasSection, HowSection, MoreSection, ProblemSection, ReadyMarquee } from './sections/sections';
 import { LandingBlog } from './blog/landing-blog';
 import { LandingAnalytics } from './shell/landing-analytics';
 import { buildFaqItems } from './shell/faq';
@@ -33,6 +33,7 @@ export async function LandingPage({ h1, variant }: { h1: H1Variant; variant: '29
       <LandingAnalytics variant={variant} h1={h1} />
       <HeroSection h1={h1} flags={flags} />
       <ReadyMarquee />
+      <AreasSection />
       <ProblemSection />
       <HowSection />
       <FeaturesIsland />

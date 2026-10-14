@@ -9,7 +9,7 @@ export const home = {
   reviewOpenLabel: 'Abrir o mapa {mapa}',
   continueFrom: 'Continue de onde parou',
   seeAll: 'Ver todos os mapas',
-  coverage: 'Cobertura da matriz do Enamed',
+  coverage: 'Cobertura do seu estudo',
   coverageHint: 'Conteúdo mapeado, não peso de prova',
   weekTitle: 'Sua semana',
   weekStreak: '{n, plural, =0 {0 dias seguidos} one {# dia seguido} other {# dias seguidos}}',
