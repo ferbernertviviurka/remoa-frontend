@@ -160,7 +160,7 @@ export const referral = {
     validLabel: '{name} convidou você para o Remoa',
     validLabelAnon: 'Você foi convidado para o Remoa',
     validTitle: 'Ganhe 1 mês de Pro ao criar seu primeiro mapa.',
-    validSubtitle: 'O Remoa transforma seus resumos em um mapa vivo de medicina, com revisão espaçada e correção com fonte.',
+    validSubtitle: 'O Remoa transforma seus resumos em um mapa vivo da sua área, com revisão espaçada e correção com fonte.',
     validNote: '{name} também ganha 1 mês de Pro quando você criar o primeiro mapa.',
     validNoteAnon: 'Quem convidou você também ganha 1 mês de Pro quando você criar o primeiro mapa.',
 

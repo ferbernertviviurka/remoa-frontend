@@ -10,7 +10,7 @@ export const landingAreas = {
     custom: 'Usar "{text}" (outro curso)',
     goals: 'Objetivos comuns: {goals}.',
     messages: {
-      medicine: 'Para Medicina: mapas, revisão, desafios, provas da faculdade e os mapas prontos do ENAMED, já no ar.',
+      medicine: 'Para Medicina: mapas, revisão, desafios, provas da faculdade e os mapas do ENAMED.',
       other: 'Para {course}: mapas, revisão espaçada, desafios corrigidos pela IA e provas com os assuntos do seu curso. Os mapas prontos da sua área estão a caminho.',
       notHealth: 'O Remoa funciona para qualquer assunto: crie mapas, revise no tempo certo e faça desafios.',
     },

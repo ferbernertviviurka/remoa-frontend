@@ -33,7 +33,7 @@ describe('hero course picker (FR-37)', () => {
     expect(cta()).toBe('/cadastro?de=landing');
   });
 
-  it('a chosen course rides the CTA href; Medicina says "já no ar", other courses say "a caminho" without promising ready maps', () => {
+  it('a chosen course rides the CTA href; Medicina names the ENAMED maps (no availability claim, D-1863), other courses say "a caminho" without promising ready maps', () => {
     render(<HeroSection h1="a" flags={flags} />);
     fireEvent.click(screen.getByRole('button', { name: 'Enfermagem' }));
     expect(cta()).toBe('/cadastro?curso=nursing&de=landing');
@@ -42,11 +42,16 @@ describe('hero course picker (FR-37)', () => {
     expect(msg.textContent).not.toContain('já no ar');
     fireEvent.click(screen.getByRole('button', { name: 'Medicina' }));
     expect(cta()).toBe('/cadastro?curso=medicine&de=landing');
-    expect(screen.getByText(/^Para Medicina:/).textContent).toContain('ENAMED, já no ar');
+    expect(screen.getByText(/^Para Medicina:/).textContent).toContain('mapas do ENAMED');
+    expect(screen.getByText(/^Para Medicina:/).textContent).not.toContain('já no ar');
   });
 
   it('typing in the combobox picks a course from the list', async () => {
-    render(<HeroSection h1="a" flags={flags} />);
+    const { container } = render(<HeroSection h1="a" flags={flags} />);
+    // D-1865: the Autocomplete chunk is not loaded in the page load window; the first pointer/focus on the island loads it
+    await new Promise((r) => setTimeout(r, 100));
+    expect(screen.queryByRole('combobox')).toBeNull();
+    fireEvent.pointerOver(container.querySelector('[data-island="pending"]')!);
     const input = await screen.findByRole('combobox', {}, { timeout: 3000 });
     fireEvent.click(input);
     fireEvent.change(input, { target: { value: 'fisio' } });

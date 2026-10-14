@@ -22,5 +22,5 @@ export const goalsFor = (course?: string | null) => GOALS.filter((g) => !course 
 export const UFPR: Institution = { id: '00000000-0000-4000-8000-000000000001', name: 'Universidade Federal do Paraná', acronym: 'UFPR', city: 'Curitiba', uf: 'PR', type: 'public' };
 export const profileFixture = (p: Partial<StudyProfile> = {}): StudyProfile => ({
   situation: 'graduacao', course: 'nursing', courseOtherText: null, institution: UFPR, institutionText: null, city: 'Curitiba', uf: 'PR', institutionType: 'public',
-  period: 5, goals: ['provas_faculdade'], customGoals: [], councilNumber: null, nonHealthTopic: null, source: 'signup', updatedAt: '2026-10-13T12:00:00.000Z', ...p,
+  period: 5, goals: ['provas_faculdade'], customGoals: [], councilNumber: null, nonHealthTopic: null, source: 'signup', updatedAt: new Date('2026-10-13T12:00:00.000Z'), ...p,
 });

@@ -57,7 +57,7 @@ export const landing = {
       b: 'O card te testa um por um. A prova te testa pela conexão.',
       c: 'Monte o mapa. Ele te desafia.',
     },
-    subtitle: 'O Remoa transforma seus resumos em um mapa vivo da sua área: revisão espaçada em cada conceito, perguntas sobre o que liga um ao outro e correção com fonte quando você erra. Para quem estuda Medicina, com a matriz do Enamed mostrando onde você está.',
+    subtitle: 'O Remoa transforma seus resumos em um mapa vivo da sua área: revisão espaçada em cada conceito, perguntas sobre o que liga um ao outro e correção com fonte quando você erra. Em Medicina, com a matriz do Enamed.',
     cta: {
       primary: 'Criar meu primeiro mapa',
       secondary: 'Experimentar um desafio',

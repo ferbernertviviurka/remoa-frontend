@@ -1,0 +1,111 @@
+{
+  "kind": "conta Seu estudo: production components, real API/SQL on isolated DB",
+  "checks": [
+    {
+      "name": "focus card + register % + shortcuts (medicine grad: Abrir mapas do ENAMED) 1440",
+      "passed": true
+    },
+    {
+      "name": "rail shows Enamed before edit 1440",
+      "passed": true
+    },
+    {
+      "name": "axe conta view 1440",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll conta view 1440",
+      "passed": true
+    },
+    {
+      "name": "axe conta edit 1440",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll conta edit 1440",
+      "passed": true
+    },
+    {
+      "name": "inline edit: switch to Enfermagem via keyboard, save 1440",
+      "passed": true
+    },
+    {
+      "name": "after save: focus card, shortcuts and menu update without reload 1440",
+      "passed": true
+    },
+    {
+      "name": "persisted in DB (real API): course nursing, source profile 1440",
+      "passed": true
+    },
+    {
+      "name": "audit row written (study_profile_audit, fields only) 1440",
+      "passed": true
+    },
+    {
+      "name": "no JS exceptions 1440",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "migration: banner + focus empty (no course inferred) 1440",
+      "passed": true
+    },
+    {
+      "name": "migration: confirm via edit (course medicine) removes banner, source profile 1440",
+      "passed": true
+    },
+    {
+      "name": "focus card + register % + shortcuts (medicine grad: Abrir mapas do ENAMED) 390",
+      "passed": true
+    },
+    {
+      "name": "axe conta view 390",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll conta view 390",
+      "passed": true
+    },
+    {
+      "name": "axe conta edit 390",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll conta edit 390",
+      "passed": true
+    },
+    {
+      "name": "inline edit: switch to Enfermagem via keyboard, save 390",
+      "passed": true
+    },
+    {
+      "name": "after save: focus card, shortcuts and menu update without reload 390",
+      "passed": true
+    },
+    {
+      "name": "persisted in DB (real API): course nursing, source profile 390",
+      "passed": true
+    },
+    {
+      "name": "audit row written (study_profile_audit, fields only) 390",
+      "passed": true
+    },
+    {
+      "name": "no JS exceptions 390",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "migration: banner + focus empty (no course inferred) 390",
+      "passed": true
+    },
+    {
+      "name": "migration: confirm via edit (course medicine) removes banner, source profile 390",
+      "passed": true
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, lazy, useEffect, useState, type ComponentType } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState, type ComponentType } from 'react';
 
 /** Resolves at the first idle moment after the load event: island chunks never compete with the first paint (LCP). */
 export function afterLoadIdle() {
@@ -21,19 +21,28 @@ const keep = { __html: '' };
  * App Router re-renders made React drop those and show the (empty) fallback.
  * Don't use it above the fold: the re-rendered nodes would be a late LCP candidate (see hero-stage, D-356).
  */
-export function island<P extends object>(load: () => Promise<ComponentType<P>>, opts?: { eager?: boolean }) {
+/** `onInteraction` (D-1865): the chunk loads on the first pointer, touch or focus inside the island, never in the load window. */
+export function island<P extends object>(load: () => Promise<ComponentType<P>>, opts?: { eager?: boolean; onInteraction?: boolean }) {
   const ServerOnly = lazy(async () => ({ default: await load() }));
   return function Island(props: P) {
     const [Comp, setComp] = useState<ComponentType<P> | null>(null);
+    const [wanted, setWanted] = useState(!opts?.onInteraction);
+    const box = useRef<HTMLDivElement>(null);
+    const hadFocus = useRef(false);
     useEffect(() => {
+      if (!wanted) return;
       let alive = true;
-      void (opts?.eager ? load() : afterLoadIdle().then(load)).then((C) => { if (alive) setComp(() => C); });
+      void (opts?.eager || opts?.onInteraction ? load() : afterLoadIdle().then(load)).then((C) => { if (alive) setComp(() => C); });
       return () => { alive = false; };
-    }, []);
+    }, [wanted]);
+    // The server input had focus while the chunk loaded: give it back to the live one.
+    useEffect(() => { if (Comp && hadFocus.current) box.current?.querySelector<HTMLElement>('input,button')?.focus(); }, [Comp]);
+    const want = (focus?: boolean) => { if (focus) hadFocus.current = true; if (!wanted) setWanted(true); };
     if (typeof window === 'undefined') return <div className="contents" data-island="pending"><Suspense><ServerOnly {...props} /></Suspense></div>;
     return Comp
-      ? <div className="contents" data-island="ready"><Comp {...props} /></div>
-      : <div className="contents" data-island="pending" dangerouslySetInnerHTML={keep} suppressHydrationWarning onSubmit={opts?.eager ? (e) => e.preventDefault() : undefined} />;
+      ? <div ref={box} className="contents" data-island="ready"><Comp {...props} /></div>
+      : <div ref={box} className="contents" data-island="pending" dangerouslySetInnerHTML={keep} suppressHydrationWarning onSubmit={opts?.eager ? (e) => e.preventDefault() : undefined}
+          {...(opts?.onInteraction ? { onPointerOver: () => want(), onTouchStart: () => want(), onFocus: () => want(true) } : {})} />;
   };
 }
 
@@ -47,5 +56,6 @@ export const PlansIsland = island(() => import('./plans/plans-section').then((m)
 export const FaqIsland = island(() => import('./plans/faq-section').then((m) => m.FaqSection));
 // eager: the form must work as soon as it is on screen (a click before the idle load used to submit the inert server form: page reload, nothing visible)
 export const WaitlistIsland = island(() => import('./shell/waitlist-cta').then((m) => m.WaitlistCta), { eager: true });
-// Above the fold but not LCP (the h1/subtitle are): the picker loads after idle like the others; the chips beside it work meanwhile.
-export const CoursePickerIsland = island(() => import('./hero/course-picker').then((m) => m.CoursePicker));
+// D-1865: above the fold, so its Autocomplete + popover (~30 kB) load only on interaction, not in the Lighthouse load window;
+// the server-rendered input and the chips beside it are there from the first paint.
+export const CoursePickerIsland = island(() => import('./hero/course-picker').then((m) => m.CoursePicker), { onInteraction: true });

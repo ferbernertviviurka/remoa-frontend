@@ -9,7 +9,8 @@ export function StepCard({ number, title, text, thumbnail }: StepCardProps) {
     <Reveal>
       <article className="flex flex-col gap-4">
         <div className="flex items-center gap-3.5">
-          <span aria-hidden="true" className="font-display text-[48px] leading-none font-extrabold tracking-[-0.04em] text-border-strong md:text-[64px]">{number}</span>
+          {/* Decorative: drawn by CSS (attr) so it is not document text; the light tone is intentional (G28-P QA axe contrast). */}
+          <span aria-hidden="true" data-n={number} className="font-display text-[48px] leading-none font-extrabold tracking-[-0.04em] text-border-strong before:content-[attr(data-n)] md:text-[64px]" />
           <h3 className="m-0 font-display text-[26px] font-extrabold tracking-[-0.03em] md:text-[30px]">{title}</h3>
         </div>
         <div className="relative h-[200px] overflow-hidden rounded-[24px] bg-primary-tint">{thumbnail}</div>

@@ -1,0 +1,13 @@
+import {createRequire} from 'node:module';import {fileURLToPath} from 'node:url';import fs from 'node:fs';import path from 'node:path';
+const require=createRequire(import.meta.url);export const axe=require.resolve('axe-core/axe.min.js');
+export const base='http://127.0.0.1:4328';export const here=fileURLToPath(new URL('.',import.meta.url));
+export const out=path.join(here,'artifacts');fs.mkdirSync(out,{recursive:true});
+export const mk=(kind)=>{const report={kind,checks:[]};
+  const ok=(name,passed,extra={})=>{report.checks.push({name,passed:!!passed,...extra});if(!passed)console.log('FAIL',name,JSON.stringify(extra).slice(0,300));};
+  const step=async(name,fn)=>{try{const r=await fn();ok(name,r!==false,r&&typeof r==='object'?{detail:r}:{});}catch(e){ok(name,false,{error:String(e.message).split('\n').slice(0,3).join(' | ')});}};
+  const scan=async(page,name,width)=>{await page.addScriptTag({path:axe});
+    const r=await page.evaluate(async()=>await axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21a','wcag21aa']}}));
+    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
+    ok(`axe ${name} ${width}`,r.violations.length===0,{violations:r.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.slice(0,3).map(n=>n.target.join(' '))}))});ok(`no horizontal scroll ${name} ${width}`,!overflow);};
+  const done=(file)=>{fs.writeFileSync(path.join(out,file),JSON.stringify(report,null,2));console.log(file,report.checks.length,'checks;',report.checks.filter(c=>!c.passed).length,'failed');if(report.checks.some(c=>!c.passed))process.exitCode=1;};
+  return {report,ok,step,scan,done};};
