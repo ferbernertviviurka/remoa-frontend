@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useId, useState, type KeyboardEvent } from 'react';
-import { Alert, Button, Checkbox, Dialog, Input, Select } from '@remoa/ui';
+import { Alert, Button, Checkbox, Dialog, FilterChip, Input, Select } from '@remoa/ui';
 import type { BoardSummary, ExamPaperPublic, HealthCourseCode, QuestionFacets, QuestionListQuery } from '@remoa/contracts';
 import { t } from './labels';
 import { listQuestionFacets } from './api';
@@ -278,47 +278,59 @@ function TopicCombobox({ tab, filters, onPick }: { tab: BankTab; filters: BankFi
 
 function FacetGroup<V extends string | number>({ legend, options, selected, onToggle }: { legend: string; options: { value: V; label: string; count: number }[]; selected: V[]; onToggle: (value: V) => void }) {
   return (
-    <fieldset className="min-w-0 space-y-1"><legend className="mb-1 text-sm font-semibold">{legend}</legend>
-      <div className="max-h-48 overflow-auto">{options.map((o) => <Checkbox key={String(o.value)} checked={selected.includes(o.value)} onCheckedChange={() => onToggle(o.value)} label={bt('questionsBank.facetOption', { name: o.label, n: o.count })} />)}</div>
+    <fieldset className="min-w-0 border-t border-divider pt-4"><legend className="float-left mb-1 w-full text-sm font-bold">{legend}</legend>
+      <div className="clear-both max-h-48 overflow-auto">{options.map((o) => <Checkbox key={String(o.value)} checked={selected.includes(o.value)} onCheckedChange={() => onToggle(o.value)} label={bt('questionsBank.facetOption', { name: o.label, n: o.count })} />)}</div>
     </fieldset>
   );
 }
 
-export function BankFilterBar({ tab, filters, onChange, onClear, facets, facetsError, onFacetsRetry, topicNames }: {
-  tab: BankTab; filters: BankFilters; onChange: (next: BankFilters) => void; onClear: () => void; facets: QuestionFacets | null; facetsError: boolean; onFacetsRetry: () => void; topicNames: Record<string, string>;
-}) {
+/** One-click choice among a few values (origin, progress): chips read faster than a closed Select. */
+function ChipGroup<V extends string>({ legend, options, value, onPick }: { legend: string; options: { value: V; label: string }[]; value: V; onPick: (value: V) => void }) {
+  return (
+    <fieldset className="min-w-0 border-t border-divider pt-4"><legend className="float-left mb-2 w-full text-sm font-bold">{legend}</legend>
+      <div className="clear-both flex flex-wrap gap-2">{options.map((o) => <FilterChip key={o.value} pressed={value === o.value} onClick={() => onPick(o.value)}>{o.label}</FilterChip>)}</div>
+    </fieldset>
+  );
+}
+
+/** Search (debounced 300 ms) and sort: the toolbar above the list. */
+export function BankSearchBar({ filters, onChange }: { filters: BankFilters; onChange: (next: BankFilters) => void }) {
   const [search, setSearch] = useState(filters.search);
   useEffect(() => { setSearch(filters.search); }, [filters.search]);
   useEffect(() => { const timer = setTimeout(() => { if (search !== filters.search) onChange({ ...filters, search }); }, 300); return () => clearTimeout(timer); }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <div className="flex flex-wrap items-end justify-between gap-3">
+      <Input label={bt('questionsBank.search')} variant="search" placeholder={bt('questionsBank.searchPlaceholder')} value={search} onChange={(event) => setSearch(event.target.value)} />
+      <div className="w-full sm:w-[220px]"><Select label={bt('questionsBank.sort')} value={filters.sort || 'recent'} onValueChange={(v) => onChange({ ...filters, sort: v === 'recent' ? '' : (v as BankFilters['sort']) })}
+        options={[{ value: 'recent', label: bt('questionsBank.sortRecent') }, { value: 'difficulty', label: bt('questionsBank.sortDifficulty') }, { value: 'topic', label: bt('questionsBank.sortTopic') }]} /></div>
+    </div>
+  );
+}
+
+/** Side panel: course, topic, origin, progress and the server facets (institution, year, difficulty). */
+export function BankFilterPanel({ tab, filters, onChange, onClear, facets, facetsError, onFacetsRetry, topicNames }: {
+  tab: BankTab; filters: BankFilters; onChange: (next: BankFilters) => void; onClear: () => void; facets: QuestionFacets | null; facetsError: boolean; onFacetsRetry: () => void; topicNames: Record<string, string>;
+}) {
   const n = bankFilterCount(filters);
   const set = (patch: Partial<BankFilters>) => onChange({ ...filters, ...patch });
   const fieldName = (kind: Difficulty) => t(`questions.difficultyLabel.${kind}`);
   return (
-    <div className="mb-5 flex flex-col gap-4" role="group" aria-label={bt('questionsBank.filtersGroup')}>
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px] md:items-end">
-        <Input label={bt('questionsBank.search')} variant="search" placeholder={bt('questionsBank.searchPlaceholder')} value={search} onChange={(event) => setSearch(event.target.value)} />
-        <Select label={bt('questionsBank.sort')} value={filters.sort || 'recent'} onValueChange={(v) => set({ sort: v === 'recent' ? '' : (v as BankFilters['sort']) })}
-          options={[{ value: 'recent', label: bt('questionsBank.sortRecent') }, { value: 'difficulty', label: bt('questionsBank.sortDifficulty') }, { value: 'topic', label: bt('questionsBank.sortTopic') }]} />
-      </div>
+    <div className="flex flex-col gap-4" role="group" aria-label={bt('questionsBank.filtersGroup')}>
       {tab === 'catalog' ? <CourseField label={bt('questionsBank.courseLabel')} placeholder={bt('questionsBank.coursePlaceholder')} emptyLabel={bt('questionsBank.courseNone')} value={filters.course} onChange={(course) => set({ course })} /> : null}
-      <div className="grid gap-3 md:grid-cols-3">
-        <TopicCombobox tab={tab} filters={filters} onPick={(topic) => { topicNames[topic.id] = topic.name; set({ topicIds: toggle(filters.topicIds, topic.id) }); }} />
-        {tab === 'catalog' ? <Select label={bt('questionsBank.origin')} value={filters.origin || 'all'} onValueChange={(v) => set({ origin: v === 'all' ? '' : (v as BankFilters['origin']) })}
-          options={[{ value: 'all', label: bt('questionsBank.originAll') }, { value: 'official_exam', label: bt('questionsBank.originOfficial') }, { value: 'remoa_authored', label: bt('questionsBank.originRemoa') }]} /> : <div />}
-        <Select label={bt('questionsBank.progress')} value={filters.state || 'all'} onValueChange={(v) => set({ state: v === 'all' ? '' : (v as BankFilters['state']) })}
-          options={[{ value: 'all', label: bt('questionsBank.progressAll') }, { value: 'unseen', label: bt('questionsBank.progressUnseen') }, { value: 'answered', label: bt('questionsBank.progressAnswered') }, { value: 'wrong', label: bt('questionsBank.progressWrong') }, { value: 'favorite', label: bt('questionsBank.progressFavorite') }]} />
-      </div>
+      <TopicCombobox tab={tab} filters={filters} onPick={(topic) => { topicNames[topic.id] = topic.name; set({ topicIds: toggle(filters.topicIds, topic.id) }); }} />
       {filters.topicIds.length ? <ul aria-label={bt('questionsBank.topicSelected')} className="flex flex-wrap gap-2">{filters.topicIds.map((id) => {
         const name = topicNames[id] ?? bt('questionsBank.topicUnknown');
-        return <li key={id}><Button variant="secondary" aria-label={bt('questionsBank.topicRemove', { name })} onClick={() => set({ topicIds: filters.topicIds.filter((v) => v !== id) })}>{name} ×</Button></li>;
+        return <li key={id}><Button size="sm" variant="secondary" aria-label={bt('questionsBank.topicRemove', { name })} onClick={() => set({ topicIds: filters.topicIds.filter((v) => v !== id) })}>{name} ×</Button></li>;
       })}</ul> : null}
-      {facets ? <div className="grid gap-4 md:grid-cols-3">
-        {facets.institutions?.length ? <FacetGroup legend={bt('questionsBank.institution')} options={facets.institutions.map((i) => ({ value: i.name, label: i.name, count: i.count }))} selected={filters.institutions} onToggle={(v) => set({ institutions: toggle(filters.institutions, v) })} /> : null}
-        {facets.years?.length ? <FacetGroup legend={bt('questionsBank.year')} options={facets.years.map((y) => ({ value: y.year, label: String(y.year), count: y.count }))} selected={filters.years} onToggle={(v) => set({ years: toggle(filters.years, v) })} /> : null}
-        {facets.difficulties?.length ? <FacetGroup legend={bt('questionsBank.difficulty')} options={facets.difficulties.map((d) => ({ value: d.value, label: fieldName(d.value), count: d.count }))} selected={filters.difficulties} onToggle={(v) => set({ difficulties: toggle(filters.difficulties, v) })} /> : null}
-      </div> : null}
+      <ChipGroup legend={bt('questionsBank.progress')} value={filters.state || 'all'} onPick={(v) => set({ state: v === 'all' ? '' : v })}
+        options={[{ value: 'all', label: bt('questionsBank.progressAll') }, { value: 'unseen', label: bt('questionsBank.progressUnseen') }, { value: 'wrong', label: bt('questionsBank.progressWrong') }, { value: 'answered', label: bt('questionsBank.progressAnswered') }, { value: 'favorite', label: bt('questionsBank.progressFavorite') }]} />
+      {tab === 'catalog' ? <ChipGroup legend={bt('questionsBank.origin')} value={filters.origin || 'all'} onPick={(v) => set({ origin: v === 'all' ? '' : v })}
+        options={[{ value: 'all', label: bt('questionsBank.originAll') }, { value: 'official_exam', label: bt('questionsBank.originOfficial') }, { value: 'remoa_authored', label: bt('questionsBank.originRemoa') }]} /> : null}
+      {facets?.difficulties?.length ? <FacetGroup legend={bt('questionsBank.difficulty')} options={facets.difficulties.map((d) => ({ value: d.value, label: fieldName(d.value), count: d.count }))} selected={filters.difficulties} onToggle={(v) => set({ difficulties: toggle(filters.difficulties, v) })} /> : null}
+      {facets?.institutions?.length ? <FacetGroup legend={bt('questionsBank.institution')} options={facets.institutions.map((i) => ({ value: i.name, label: i.name, count: i.count }))} selected={filters.institutions} onToggle={(v) => set({ institutions: toggle(filters.institutions, v) })} /> : null}
+      {facets?.years?.length ? <FacetGroup legend={bt('questionsBank.year')} options={facets.years.map((y) => ({ value: y.year, label: String(y.year), count: y.count }))} selected={filters.years} onToggle={(v) => set({ years: toggle(filters.years, v) })} /> : null}
       {facetsError ? <Alert tone="review" title={bt('questionsBank.facetsError')}><Button variant="quiet" onClick={onFacetsRetry}>{t('common.retry')}</Button></Alert> : null}
-      {n > 0 ? <div><Button variant="quiet" onClick={onClear}>{bt('questionsBank.clearFilters', { n })}</Button></div> : null}
+      {n > 0 ? <Button variant="secondary" onClick={onClear}>{bt('questionsBank.clearFilters', { n })}</Button> : null}
     </div>
   );
 }

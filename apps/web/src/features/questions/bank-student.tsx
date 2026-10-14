@@ -1,21 +1,24 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Alert, Button, Checkbox, Empty, FilterChip, Tag } from '@remoa/ui';
+import { Alert, Button, buttonVariants, Checkbox, Empty, FilterChip, focusRing, Icon, IconButton, Tag } from '@remoa/ui';
 import type { QuestionFacets, QuestionPublic } from '@remoa/contracts';
 import { t } from './bank-t';
 import { listQuestionFacets, listQuestions, saveUserState } from './api';
-import { BankFilterBar, bankFilterCount, bankQuery, emptyBankFilters, type BankFilters, type BankTab } from './questions-filters';
+import { BankFilterPanel, BankSearchBar, bankFilterCount, bankQuery, emptyBankFilters, type BankFilters, type BankTab } from './questions-filters';
 import { catalogCourse, useCourseOptions } from './course-field';
 import { useStudyProfile } from '../study-profile/use-study-profile';
 import { QuestionDrawer, BankMeta } from './question-drawer';
 import { SelectionBar, BANK_SELECTION_MAX } from './selection-bar';
 import { QuestionsSkeleton } from './questions-skeleton';
-import { PageTitle, panel } from './shared';
+import { ConfigDialog, PageTitle } from './shared';
 
 export const BANK_EXAM_HREF = '/app/banco-de-questoes/prova';
 type Status = 'loading' | 'ready' | 'error';
 const progressTone = { unseen: 'unknown', correct: 'steady', wrong: 'review' } as const;
+const progressEdge = { unseen: 'border-l-border', correct: 'border-l-steady', wrong: 'border-l-review' } as const;
+const linkButton = `${buttonVariants.secondary} ${focusRing} inline-flex min-h-12 items-center justify-center gap-2 rounded-btn px-5 text-[15px] no-underline`;
 
 /** F34 student bank (flag bankStudent, D-1821). Lists never carry a key or verdict (D-1822); correction only in the drawer's answer response. */
 export function BankStudent() {
@@ -47,6 +50,8 @@ export function BankStudent() {
   const retryMore = useRef<HTMLButtonElement>(null);
   const focusAfterMore = useRef<string | null>(null);
   const opener = useRef<string | null>(null);
+  const [practice, setPractice] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const load = useCallback(() => {
     if (!loaded) return undefined;
@@ -112,45 +117,69 @@ export function BankStudent() {
   const catalogEmpty = baseline !== null ? baseline === 0 : noFilters && total === 0;
   const remaining = Math.min(25, total - items.length);
 
+  const clearFilters = () => setFilters({ ...emptyBankFilters, course: picked.course });
+  const n = bankFilterCount(filters);
+  const goAi = <Button variant="secondary" onClick={() => reset('ai')}>{t('questionsBank.emptyGoAi')}</Button>;
+  const empty = catalogEmpty
+    ? tab === 'catalog' && filters.course !== 'medicine' ? <Empty title={t('questionsBank.emptyCourseTitle', { course: courseName })} description={t('questionsBank.emptyCourseHelp')} action={goAi} />
+    : tab === 'ai' ? <Empty title={t('questionsBank.emptyAiTitle')} description={t('questionsBank.emptyAiHelp')} action={<Link className={linkButton} href="/app/mapas">{t('questionsBank.emptyAiAction')}</Link>} />
+    : <Empty title={t('questionsBank.emptyCatalogTitle')} description={t('questionsBank.emptyCatalogHelp')} action={goAi} />
+    : <Empty title={t('questionsBank.emptyFilterTitle')} description={t('questionsBank.emptyFilterHelp')} action={n > 0 ? <Button variant="secondary" onClick={clearFilters}>{t('questionsBank.clearFilters', { n })}</Button> : undefined} />;
+
   return (
     <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 py-2 md:px-6">
-      <PageTitle title={t('questions.title')} description={t('questions.subtitle')} />
+      <PageTitle title={t('questions.title')} description={t('questions.subtitle')}>
+        <div className="flex flex-wrap gap-2">
+          <Link className={linkButton} href={tab === 'ai' ? `${BANK_EXAM_HREF}?source=ai` : BANK_EXAM_HREF}>{t('questionsBank.buildExam')}</Link>
+          <Button icon={<Icon name="bolt" size={18} />} disabled={status !== 'ready' || total === 0} onClick={() => setPractice(true)}>{t('questionsBank.practice')}</Button>
+        </div>
+      </PageTitle>
       <nav aria-label={t('questionsBank.tabsLabel')} className="flex flex-wrap items-center gap-2">
         <FilterChip pressed={tab === 'catalog'} onClick={() => reset('catalog')}>{t('questionsBank.tabCatalog')}</FilterChip>
         <FilterChip pressed={tab === 'ai'} onClick={() => reset('ai')}>{t('questionsBank.tabAi')}</FilterChip>
       </nav>
-      {tab === 'ai' ? <p className="text-sm text-muted">{t('questionsBank.aiNote')}</p> : null}
-      <section className="min-w-0" aria-label={t('questionsBank.list')}>
-        <BankFilterBar tab={tab} filters={filters} onChange={setFilters} onClear={() => setFilters({ ...emptyBankFilters, course: picked.course })} facets={facets} facetsError={facetsError} onFacetsRetry={() => setFacetsReload((v) => v + 1)} topicNames={topicNames.current} />
-        {status === 'loading' ? <QuestionsSkeleton /> : null}
-        {status === 'error' ? <Alert role="alert" tone="review" title={t('questionsBank.listError')}><Button variant="secondary" onClick={() => load()}>{t('common.retry')}</Button></Alert> : null}
-        {status === 'ready' ? <>
-          <p className="mb-4 text-sm text-muted" role="status">{total === 1 ? t('questionsBank.countOne') : t('questionsBank.count', { n: total })}</p>
-          {items.length === 0 ? (catalogEmpty
-            ? tab === 'catalog' && filters.course !== 'medicine' ? <Empty title={t('questionsBank.emptyCourseTitle', { course: courseName })} description={t('questionsBank.emptyCourseHelp')} />
-            : <Empty title={t(tab === 'ai' ? 'questionsBank.emptyAiTitle' : 'questionsBank.emptyCatalogTitle')} description={t(tab === 'ai' ? 'questionsBank.emptyAiHelp' : 'questionsBank.emptyCatalogHelp')} />
-            : <Empty title={t('questionsBank.emptyFilterTitle')} description={t('questionsBank.emptyFilterHelp')} />) : null}
-          {favoriteError ? <Alert role="alert" tone="review" title={t('questionsBank.favoriteError')} /> : null}
-          <ul className="flex flex-col gap-4">{items.map((q) => {
-            const mark = progress[q.id] ?? q.progress ?? 'unseen';
-            const fav = favorites[q.id] ?? q.userState?.favorite ?? false;
-            const picked = selected.includes(q.id);
-            return <li key={q.id}><article aria-label={q.stem.slice(0, 120)} className={panel}>
-              <div className="flex flex-wrap items-start justify-between gap-3"><BankMeta question={q} course={tab === 'catalog' ? courseName : undefined} /><Tag tone={progressTone[mark]}>{t(`questionsBank.badge.${mark}`)}</Tag></div>
-              <h2 className="mt-4 line-clamp-3 whitespace-pre-wrap break-words font-display text-xl font-bold leading-relaxed">{q.stem}</h2>
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <Button data-bank-open={q.id} onClick={() => { opener.current = q.id; setOpen(q); }}>{t('questionsBank.open')}</Button>
-                <Button variant="secondary" aria-pressed={fav} onClick={() => void toggleFavorite(q)}>{fav ? t('questionsBank.unfavorite') : t('questionsBank.favorite')}</Button>
-                <Checkbox checked={picked} disabled={!picked && selected.length >= BANK_SELECTION_MAX} onCheckedChange={() => toggleSelect(q.id)} aria-label={`${t('questionsBank.select')}: ${q.stem.slice(0, 80)}`} label={t('questionsBank.select')} />
-              </div>
-            </article></li>;
-          })}</ul>
-          {selected.length >= BANK_SELECTION_MAX ? <p className="mt-3 text-sm text-muted">{t('questionsBank.selectMax', { n: BANK_SELECTION_MAX })}</p> : null}
-          {moreError ? <Alert role="alert" tone="review" title={t('questionsBank.moreError')}><Button ref={retryMore} variant="secondary" onClick={() => void more()}>{t('common.retry')}</Button></Alert> : null}
-          {cursor && !moreError ? <div className="mt-5"><Button variant="secondary" loading={loadingMore} onClick={() => void more()}>{remaining > 0 ? t('questionsBank.loadMore', { n: remaining }) : t('questionsBank.loadMoreAny')}</Button></div> : null}
-        </> : null}
-      </section>
+      {tab === 'ai' ? <p className="max-w-3xl text-sm text-muted">{t('questionsBank.aiNote')}</p> : null}
+      <div className="grid items-start gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
+        <aside>
+          <div className="lg:hidden">
+            <Button variant="secondary" icon={<Icon name="filter" size={18} />} aria-expanded={filtersOpen} aria-controls="bank-filters" onClick={() => setFiltersOpen((v) => !v)}>
+              {n > 0 ? t('questionsBank.filtersShowCount', { n }) : t('questionsBank.filtersShow')}
+            </Button>
+          </div>
+          <div id="bank-filters" className={`${filtersOpen ? 'mt-3' : 'max-lg:hidden'} rounded-[24px] border border-border bg-surface p-5`}>
+            <BankFilterPanel tab={tab} filters={filters} onChange={setFilters} onClear={clearFilters} facets={facets} facetsError={facetsError && status !== 'error'} onFacetsRetry={() => setFacetsReload((v) => v + 1)} topicNames={topicNames.current} />
+          </div>
+        </aside>
+        <section className="flex min-w-0 flex-col gap-4" aria-label={t('questionsBank.list')}>
+          <BankSearchBar filters={filters} onChange={setFilters} />
+          {status === 'loading' ? <QuestionsSkeleton /> : null}
+          {status === 'error' ? <Alert role="alert" tone="review" title={t('questionsBank.listError')}><Button variant="secondary" onClick={() => load()}>{t('common.retry')}</Button></Alert> : null}
+          {status === 'ready' ? <>
+            <p className="text-sm font-semibold text-muted" role="status">{total === 1 ? t('questionsBank.countOne') : t('questionsBank.count', { n: total })}</p>
+            {items.length === 0 ? empty : null}
+            {favoriteError ? <Alert role="alert" tone="review" title={t('questionsBank.favoriteError')} /> : null}
+            <ul className="flex flex-col gap-3">{items.map((q) => {
+              const mark = progress[q.id] ?? q.progress ?? 'unseen';
+              const fav = favorites[q.id] ?? q.userState?.favorite ?? false;
+              const isPicked = selected.includes(q.id);
+              return <li key={q.id}><article aria-label={q.stem.slice(0, 120)} className={`rounded-[20px] border border-l-4 bg-surface p-4 transition-colors md:p-5 ${isPicked ? 'border-primary' : 'border-border'} ${progressEdge[mark]}`}>
+                <div className="flex flex-wrap items-center gap-2"><Tag tone={progressTone[mark]}>{t(`questionsBank.badge.${mark}`)}</Tag><BankMeta question={q} course={tab === 'catalog' ? courseName : undefined} /></div>
+                <h2 className="mt-3 line-clamp-3 whitespace-pre-wrap break-words text-base font-semibold leading-relaxed text-ink md:text-[17px]">{q.stem}</h2>
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <Button size="sm" data-bank-open={q.id} onClick={() => { opener.current = q.id; setOpen(q); }}>{t('questionsBank.open')}</Button>
+                  <IconButton variant="quiet" aria-pressed={fav} aria-label={fav ? t('questionsBank.unfavorite') : t('questionsBank.favorite')} onClick={() => void toggleFavorite(q)}><Icon name="star" size={20} fill={fav ? 'currentColor' : 'none'} /></IconButton>
+                  <Checkbox checked={isPicked} disabled={!isPicked && selected.length >= BANK_SELECTION_MAX} onCheckedChange={() => toggleSelect(q.id)} aria-label={`${t('questionsBank.select')}: ${q.stem.slice(0, 80)}`} label={t('questionsBank.selectShort')} />
+                </div>
+              </article></li>;
+            })}</ul>
+            {selected.length >= BANK_SELECTION_MAX ? <p className="text-sm text-muted">{t('questionsBank.selectMax', { n: BANK_SELECTION_MAX })}</p> : null}
+            {moreError ? <Alert role="alert" tone="review" title={t('questionsBank.moreError')}><Button ref={retryMore} variant="secondary" onClick={() => void more()}>{t('common.retry')}</Button></Alert> : null}
+            {cursor && !moreError ? <div><Button variant="secondary" loading={loadingMore} onClick={() => void more()}>{remaining > 0 ? t('questionsBank.loadMore', { n: remaining }) : t('questionsBank.loadMoreAny')}</Button></div> : null}
+          </> : null}
+        </section>
+      </div>
       <SelectionBar count={selected.length} onClear={() => setSelected([])} onCreate={() => router.push(`${BANK_EXAM_HREF}?ids=${selected.join(',')}`)} />
+      {practice ? <ConfigDialog filters={bankQuery(tab, filters)} open onOpenChange={(v) => { if (!v) setPractice(false); }} /> : null}
       {open ? <QuestionDrawer key={open.id} question={open} inExam={selected.includes(open.id)} examFull={selected.length >= BANK_SELECTION_MAX} onToggleExam={() => toggleSelect(open.id)}
         onAnswered={(id, result) => { if (result !== 'annulled') setProgress((old) => ({ ...old, [id]: result === 'correct' ? 'correct' : 'wrong' })); }} onClose={close} /> : null}
     </div>

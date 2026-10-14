@@ -236,4 +236,45 @@ describe('F34 banco do aluno (HTTP sintético)', () => {
     expect(calls.filter((c) => c.includes('scope=mine')).every((c) => !c.includes('course='))).toBe(true);
     expect(screen.queryByRole('combobox', { name: 'Curso ou área da saúde' })).toBeNull();
   });
+
+  it('primary actions: "Praticar agora" starts a session with the current filters; "Montar prova" opens the builder', async () => {
+    let posted: unknown = null;
+    bank();
+    await screen.findByText('Enunciado sintético 1');
+    expect(screen.getByRole('link', { name: 'Montar prova' })).toHaveAttribute('href', '/app/banco-de-questoes/prova');
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Fácil (2)' }));
+    await waitFor(() => expect(calls.some((c) => c.startsWith('/v1/questions?') && c.includes('difficulties=easy'))).toBe(true));
+    const { api } = await import('@/lib/api');
+    vi.mocked(api).mockImplementationOnce(async (_p: string, init?: RequestInit) => { posted = JSON.parse(String(init?.body)); return { ok: false, error: { code: 'internal', message: 'x' } } as never; });
+    fireEvent.click(await screen.findByRole('button', { name: 'Praticar agora' }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Começar sessão' }));
+    await waitFor(() => expect(posted).toMatchObject({ mode: 'study', count: 10, filters: { scope: 'catalog', course: 'medicine', difficulties: ['easy'] } }));
+  });
+
+  it('"Praticar agora" is disabled while the list is empty; the empty catalog offers the AI tab', async () => {
+    lists = () => page([]); facets = () => ok(fac({ total: 0 }));
+    bank();
+    await screen.findByText('O catálogo ainda não tem questões publicadas');
+    expect(screen.getByRole('button', { name: 'Praticar agora' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver Minhas perguntas (IA)' }));
+    await screen.findByText('Você ainda não tem perguntas geradas por IA');
+    expect(screen.getByRole('link', { name: 'Abrir meus mapas' })).toHaveAttribute('href', '/app/mapas');
+    expect(screen.getByRole('link', { name: 'Montar prova' })).toHaveAttribute('href', '/app/banco-de-questoes/prova?source=ai');
+  });
+
+  it('filters toggle (phone) reports its state and the active count; favorite is a pressed star', async () => {
+    bank();
+    await screen.findByText('Enunciado sintético 1');
+    const toggle = screen.getByRole('button', { name: 'Filtros' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Que errei' }));
+    await screen.findByRole('button', { name: 'Filtros (1)' });
+    await waitFor(() => expect(calls.some((c) => c.startsWith('/v1/questions?') && c.includes('state=wrong'))).toBe(true));
+    const star = screen.getAllByRole('button', { name: 'Favoritar esta questão' })[0]!;
+    fireEvent.click(star);
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'Remover das favoritas' })[0]).toHaveAttribute('aria-pressed', 'true'));
+  });
 });

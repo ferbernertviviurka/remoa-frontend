@@ -24,6 +24,20 @@ describe('Visão geral', () => {
     expect(replace).toHaveBeenCalledWith('/admin?period=7', { scroll: false });
   });
 
+  it('labels the chart with the period of the data it received, not the stale URL one', () => {
+    const { rerender } = render(<OverviewView data={{ ...adminOverviewFixture, period: 30 }} period={30} />);
+    expect(screen.getByText('há 30 dias')).toBeInTheDocument();
+    rerender(<OverviewView data={{ ...adminOverviewFixture, period: 90 }} period={90} />);
+    expect(screen.getByText('há 90 dias')).toBeInTheDocument();
+  });
+
+  it('draws every point of the period in the KPI sparklines (not only the last 12)', () => {
+    const spark = Array.from({ length: 30 }, (_, i) => i);
+    const kpi = { ...adminOverviewFixture.kpis.accounts, spark };
+    const { container } = render(<OverviewView data={{ ...adminOverviewFixture, kpis: { ...adminOverviewFixture.kpis, accounts: kpi } }} period={30} />);
+    expect(Math.max(...[...container.querySelectorAll('[aria-hidden="true"]')].map((e) => e.children.length))).toBe(30);
+  });
+
   it('links attention items and "Ver todos" to the lists', () => {
     render(<OverviewView data={adminOverviewFixture} period={30} />);
     expect(screen.getByRole('link', { name: /indicações em revisão/ })).toHaveAttribute('href', '/admin/indicacoes?status=in_review');
