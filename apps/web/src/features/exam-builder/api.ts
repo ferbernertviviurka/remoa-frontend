@@ -1,8 +1,9 @@
 import {z} from 'zod';
 import {
-  examAvailabilitySchema,examGenerateResultSchema,examPreviewSchema,examRevalidateResultSchema,examSwapResultSchema,examTemplateListSchema,examTemplateSchema,questionSessionPublicSchema,
-  type ExamBuilderFilter,type ExamGenerateInput,type ExamBuilderParams,type ExamPreview,type ExamPreviewItem,type ExamRevalidateResult,type QuestionSessionConfig,
+  examAvailabilitySchema,examBoardContentSchema,examGenerateProgressSchema,examGenerateResultSchema,examPreviewSchema,examRevalidateResultSchema,examSwapResultSchema,examTemplateListSchema,examTemplateSchema,questionSessionPublicSchema,
+  type ExamBuilderFilter,type ExamGenerateInput,type ExamGenerateResult,type ExamBuilderParams,type ExamPreview,type ExamPreviewItem,type ExamRevalidateResult,type QuestionSessionConfig,
 } from '@remoa/contracts';
+import {api} from '@/lib/api';
 import {request,QuestionsApiError} from '../questions/request';
 
 const post=(body:unknown,headers?:Record<string,string>):RequestInit=>({method:'POST',body:JSON.stringify(body),...(headers?{headers}:{})});
@@ -11,8 +12,6 @@ export const listAreas=()=>request('/v1/challenge-ai/taxonomy?kind=area',z.array
 export const listTopics=()=>request('/v1/challenge-ai/taxonomy?kind=topic',z.array(z.object({id:z.string(),name:z.string()}).passthrough()));
 /** The student's maps (same route as the bank filters). */
 export const listBoards=()=>request('/v1/boards',z.array(z.object({id:z.string(),title:z.string()}).passthrough()));
-/** D-1846: reuses the map's saved AI questions, then generates; spends the daily AI quota. Only ever called from an explicit button. */
-export const generateExamQuestions=(input:ExamGenerateInput)=>request('/v1/exam-builder/generate',examGenerateResultSchema,post(input));
 /** Body = the filter part of the params (areaIds [] = every area), never a draw (FR-24). */
 export const getAvailability=(filter:ExamBuilderFilter,signal?:AbortSignal)=>request('/v1/exam-builder/availability',examAvailabilitySchema,{...post(filter),signal});
 export const getPreview=(params:ExamBuilderParams,pinnedIds:string[],excludedIds:string[],seed?:string,signal?:AbortSignal):Promise<ExamPreview>=>
@@ -31,3 +30,17 @@ export function errorTag(e:unknown,name:string):string|null{
   return null;
 }
 export {QuestionsApiError};
+
+// G29 (D-1882): generate with live progress (SSE) and the map → Conteúdo prefill.
+/** Generates (by map, or by theme when boardId is null) and reports `done of total` after each saved chunk. */
+export async function generateWithProgress(input:ExamGenerateInput,onProgress:(done:number,total:number)=>void):Promise<ExamGenerateResult>{
+  onProgress(0,input.count);
+  const r=await api<unknown>('/v1/exam-builder/generate',post(input,{accept:'text/event-stream'}),undefined,p=>{const v=examGenerateProgressSchema.safeParse(p);if(v.success)onProgress(v.data.generated,v.data.requested);});
+  if(!r.ok)throw new QuestionsApiError(r.error.code,r.error.message);
+  const parsed=examGenerateResultSchema.safeParse(r.data);
+  if(!parsed.success)throw new QuestionsApiError('invalid_response');
+  return parsed.data;
+}
+/** Areas and matérias a map covers, to pre-fill the Conteúdo step (empty when the map has no cards). */
+export const getBoardContent=(boardId:string)=>request(`/v1/exam-builder/board-content?boardId=${encodeURIComponent(boardId)}`,examBoardContentSchema)
+  .then(c=>c.cardCount>0?{areaIds:c.areaIds,topicIds:c.topicIds}:{areaIds:[],topicIds:[]});

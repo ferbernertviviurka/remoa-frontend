@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Alert, Button, buttonVariants, Checkbox, Empty, FilterChip, focusRing, Icon, IconButton, Tag } from '@remoa/ui';
@@ -7,8 +7,7 @@ import type { QuestionFacets, QuestionPublic } from '@remoa/contracts';
 import { t } from './bank-t';
 import { listQuestionFacets, listQuestions, saveUserState } from './api';
 import { BankFilterPanel, BankSearchBar, bankFilterCount, bankQuery, emptyBankFilters, type BankFilters, type BankTab } from './questions-filters';
-import { catalogCourse, useCourseOptions } from './course-field';
-import { useStudyProfile } from '../study-profile/use-study-profile';
+import { useCourseOptions } from './course-field';
 import { QuestionDrawer, BankMeta } from './question-drawer';
 import { SelectionBar, BANK_SELECTION_MAX } from './selection-bar';
 import { QuestionsSkeleton } from './questions-skeleton';
@@ -23,11 +22,9 @@ const linkButton = `${buttonVariants.secondary} ${focusRing} inline-flex min-h-1
 /** F34 student bank (flag bankStudent, D-1821). Lists never carry a key or verdict (D-1822); correction only in the drawer's answer response. */
 export function BankStudent() {
   const router = useRouter();
-  const [tab, setTab] = useState<BankTab>('catalog');
-  const { profile, loaded } = useStudyProfile();
-  const [picked, setFilters] = useState<BankFilters>(emptyBankFilters);
-  // FR-35: the course defaults to the profile's; nothing is fetched before it is known (no wrong-course flash).
-  const filters = useMemo<BankFilters>(() => ({ ...picked, course: picked.course ?? catalogCourse(profile?.course) ?? 'medicine' }), [picked, profile?.course]);
+  const [tab, setTab] = useState<BankTab>('all');
+  // G29: no default course; the course is an optional filter and never empties the list on its own.
+  const [filters, setFilters] = useState<BankFilters>(emptyBankFilters);
   const { name: courseName } = useCourseOptions(filters.course);
   const [items, setItems] = useState<QuestionPublic[]>([]);
   const [total, setTotal] = useState(0);
@@ -54,7 +51,6 @@ export function BankStudent() {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const load = useCallback(() => {
-    if (!loaded) return undefined;
     const seq = ++generation.current;
     moreController.current?.abort();
     const controller = new AbortController();
@@ -63,26 +59,24 @@ export function BankStudent() {
       .then((data) => { if (seq !== generation.current) return; setItems(data.items); setTotal(data.total); setCursor(data.nextCursor); setStatus('ready'); })
       .catch(() => { if (seq === generation.current) setStatus('error'); });
     return () => controller.abort();
-  }, [tab, filters, loaded]);
+  }, [tab, filters]);
   useEffect(() => load(), [load]);
 
   // Baseline: how many eligible questions exist with NO filters, to tell "empty for this filter" from "catalog still empty".
   useEffect(() => {
-    if (!loaded) return undefined;
     const controller = new AbortController();
     setBaseline(null);
-    listQuestionFacets({ ...bankQuery(tab, { ...emptyBankFilters, course: filters.course }), groups: ['difficulty'] }, controller.signal).then((f) => { if (!controller.signal.aborted) setBaseline(f.total); }).catch(() => undefined);
+    listQuestionFacets({ ...bankQuery(tab, emptyBankFilters), groups: ['difficulty'] }, controller.signal).then((f) => { if (!controller.signal.aborted) setBaseline(f.total); }).catch(() => undefined);
     return () => controller.abort();
-  }, [tab, filters.course, loaded]);
+  }, [tab]);
   useEffect(() => {
-    if (!loaded) return undefined;
     const controller = new AbortController();
     setFacetsError(false);
     listQuestionFacets({ ...bankQuery(tab, filters), groups: ['institution', 'year', 'difficulty'] }, controller.signal)
       .then((f) => { if (!controller.signal.aborted) setFacets(f); })
       .catch(() => { if (!controller.signal.aborted) setFacetsError(true); });
     return () => controller.abort();
-  }, [tab, filters, facetsReload, loaded]);
+  }, [tab, filters, facetsReload]);
 
   const more = async () => {
     if (!cursor || loadingMore) return;
@@ -105,7 +99,7 @@ export function BankStudent() {
     document.querySelector<HTMLButtonElement>(`[data-bank-open="${id}"]`)?.focus();
   }, [items, loadingMore]);
 
-  const reset = (next: BankTab) => { setTab(next); setFilters({ ...emptyBankFilters, course: picked.course }); };
+  const reset = (next: BankTab) => { setTab(next); setFilters(emptyBankFilters); };
   const toggleSelect = (id: string) => setSelected((old) => (old.includes(id) ? old.filter((v) => v !== id) : old.length >= BANK_SELECTION_MAX ? old : [...old, id]));
   const toggleFavorite = async (q: QuestionPublic) => {
     const next = !(favorites[q.id] ?? q.userState?.favorite ?? false);
@@ -117,28 +111,27 @@ export function BankStudent() {
   const catalogEmpty = baseline !== null ? baseline === 0 : noFilters && total === 0;
   const remaining = Math.min(25, total - items.length);
 
-  const clearFilters = () => setFilters({ ...emptyBankFilters, course: picked.course });
+  const clearFilters = () => setFilters(emptyBankFilters);
   const n = bankFilterCount(filters);
-  const goAi = <Button variant="secondary" onClick={() => reset('ai')}>{t('questionsBank.emptyGoAi')}</Button>;
   const empty = catalogEmpty
-    ? tab === 'catalog' && filters.course !== 'medicine' ? <Empty title={t('questionsBank.emptyCourseTitle', { course: courseName })} description={t('questionsBank.emptyCourseHelp')} action={goAi} />
-    : tab === 'ai' ? <Empty title={t('questionsBank.emptyAiTitle')} description={t('questionsBank.emptyAiHelp')} action={<Link className={linkButton} href="/app/mapas">{t('questionsBank.emptyAiAction')}</Link>} />
-    : <Empty title={t('questionsBank.emptyCatalogTitle')} description={t('questionsBank.emptyCatalogHelp')} action={goAi} />
+    ? tab === 'mine' ? <Empty title={t('questionsBank.emptyMineTitle')} description={t('questionsBank.emptyMineHelp')} action={<Link className={linkButton} href="/app/mapas">{t('questionsBank.emptyAiAction')}</Link>} />
+    : <Empty title={t('questionsBank.emptyAllTitle')} description={t('questionsBank.emptyAllHelp')} action={<Button variant="secondary" onClick={() => reset('mine')}>{t('questionsBank.emptyAllAction')}</Button>} />
+    : filters.course ? <Empty title={t('questionsBank.emptyCourseFilterTitle', { course: courseName })} description={t('questionsBank.emptyCourseFilterHelp')} action={<Button variant="secondary" onClick={clearFilters}>{t('questionsBank.clearFilters', { n })}</Button>} />
     : <Empty title={t('questionsBank.emptyFilterTitle')} description={t('questionsBank.emptyFilterHelp')} action={n > 0 ? <Button variant="secondary" onClick={clearFilters}>{t('questionsBank.clearFilters', { n })}</Button> : undefined} />;
 
   return (
     <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 py-2 md:px-6">
       <PageTitle title={t('questions.title')} description={t('questions.subtitle')}>
         <div className="flex flex-wrap gap-2">
-          <Link className={linkButton} href={tab === 'ai' ? `${BANK_EXAM_HREF}?source=ai` : BANK_EXAM_HREF}>{t('questionsBank.buildExam')}</Link>
+          <Link className={linkButton} href={tab === 'mine' ? `${BANK_EXAM_HREF}?source=ai` : BANK_EXAM_HREF}>{t('questionsBank.buildExam')}</Link>
           <Button icon={<Icon name="bolt" size={18} />} disabled={status !== 'ready' || total === 0} onClick={() => setPractice(true)}>{t('questionsBank.practice')}</Button>
         </div>
       </PageTitle>
       <nav aria-label={t('questionsBank.tabsLabel')} className="flex flex-wrap items-center gap-2">
-        <FilterChip pressed={tab === 'catalog'} onClick={() => reset('catalog')}>{t('questionsBank.tabCatalog')}</FilterChip>
-        <FilterChip pressed={tab === 'ai'} onClick={() => reset('ai')}>{t('questionsBank.tabAi')}</FilterChip>
+        <FilterChip pressed={tab === 'all'} onClick={() => reset('all')}>{t('questionsBank.tabAll')}</FilterChip>
+        <FilterChip pressed={tab === 'mine'} onClick={() => reset('mine')}>{t('questionsBank.tabMine')}</FilterChip>
       </nav>
-      {tab === 'ai' ? <p className="max-w-3xl text-sm text-muted">{t('questionsBank.aiNote')}</p> : null}
+      {tab === 'mine' ? <p className="max-w-3xl text-sm text-muted">{t('questionsBank.mineNote')}</p> : null}
       <div className="grid items-start gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
         <aside>
           <div className="lg:hidden">
@@ -163,7 +156,7 @@ export function BankStudent() {
               const fav = favorites[q.id] ?? q.userState?.favorite ?? false;
               const isPicked = selected.includes(q.id);
               return <li key={q.id}><article aria-label={q.stem.slice(0, 120)} className={`rounded-[20px] border border-l-4 bg-surface p-4 transition-colors md:p-5 ${isPicked ? 'border-primary' : 'border-border'} ${progressEdge[mark]}`}>
-                <div className="flex flex-wrap items-center gap-2"><Tag tone={progressTone[mark]}>{t(`questionsBank.badge.${mark}`)}</Tag><BankMeta question={q} course={tab === 'catalog' ? courseName : undefined} /></div>
+                <div className="flex flex-wrap items-center gap-2"><Tag tone={progressTone[mark]}>{t(`questionsBank.badge.${mark}`)}</Tag><BankMeta question={q} course={filters.course ? courseName : undefined} /></div>
                 <h2 className="mt-3 line-clamp-3 whitespace-pre-wrap break-words text-base font-semibold leading-relaxed text-ink md:text-[17px]">{q.stem}</h2>
                 <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
                   <Button size="sm" data-bank-open={q.id} onClick={() => { opener.current = q.id; setOpen(q); }}>{t('questionsBank.open')}</Button>

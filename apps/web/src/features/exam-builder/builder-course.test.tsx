@@ -30,7 +30,7 @@ const next=()=>fireEvent.click(screen.getByRole('button',{name:'Continuar'}));
 const avs=()=>calls.filter(c=>c.path==='/v1/exam-builder/availability').map(body);
 const field=()=>screen.findByRole('combobox',{name:'Curso ou área da saúde'});
 const chooseCourse=async(text:string,name:string)=>{const input=await field() as HTMLInputElement;await waitFor(()=>expect(input.value).not.toBe(''));fireEvent.change(input,{target:{value:text}});fireEvent.click((await screen.findAllByRole('option')).find(o=>(o.textContent??'').replace(/\s/g,'').includes(name))!);};
-const goContent=async()=>{render(<BuilderScreen init={init}/>);await waitFor(()=>expect(calls.some(c=>c.path==='/v1/public/reference/courses')||true).toBe(true));next();};
+const goContent=async()=>{render(<BuilderScreen init={init}/>);await waitFor(()=>expect(calls.some(c=>c.path==='/v1/public/reference/courses')||true).toBe(true));next();next();};
 
 describe('curso no Criador de prova (F35 FR-31..34)',()=>{
   it('opens with the profile course (nursing) and sends it in availability; never lists not_health',async()=>{
@@ -67,9 +67,9 @@ describe('curso no Criador de prova (F35 FR-31..34)',()=>{
     next();next();
     expect(await screen.findByText('Ainda não há questões publicadas para Enfermagem.')).toBeTruthy();
     expect((screen.getByRole('button',{name:'Começar prova'}) as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.click(screen.getByRole('button',{name:'Usar perguntas de IA de um mapa'}));
+    fireEvent.click(screen.getByRole('button',{name:'Usar questões da IA'}));
     expect(screen.getByRole('heading',{level:2,name:'De onde vêm as questões?'})).toBeTruthy();
-    expect(screen.getByRole('button',{name:/A partir de um mapa/}).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button',{name:/Questões da IA/}).getAttribute('aria-pressed')).toBe('true');
     next();expect(screen.queryByRole('combobox',{name:'Curso ou área da saúde'})).toBeNull();
   });
   it('"Escolher outro curso" goes back to the selector and a published course clears the empty state',async()=>{

@@ -10,10 +10,12 @@ export type IconButtonProps = Omit<ComponentProps<'button'>, 'className' | 'aria
   'aria-label': string;
   variant?: 'primary' | 'secondary' | 'quiet' | 'danger' | 'outline';
   size?: 'md' | 'touch' | 'sm' | 'lg';
+  /** Cor quando `aria-pressed`: brand (padrão, tint roxo) | danger (vermelho, ex.: favorito). */
+  pressedTone?: 'brand' | 'danger';
 };
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
-  { variant = 'quiet', size = 'md', type = 'button', children, ...rest },
+  { variant = 'quiet', size = 'md', pressedTone = 'brand', type = 'button', children, ...rest },
   ref,
 ) {
   return (
@@ -22,7 +24,8 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       type={type}
       {...rest}
       className={clsx(
-        'inline-flex shrink-0 items-center justify-center aria-pressed:bg-primary-tint aria-pressed:text-primary-deep disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100',
+        'inline-flex shrink-0 items-center justify-center disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100',
+        pressedTone === 'danger' ? 'aria-pressed:bg-danger-bg aria-pressed:text-danger' : 'aria-pressed:bg-primary-tint aria-pressed:text-primary-deep',
         pressable,
         focusRing,
         variant === 'outline' ? 'lift border-[1.5px] border-border bg-surface text-ink' : buttonVariants[variant],

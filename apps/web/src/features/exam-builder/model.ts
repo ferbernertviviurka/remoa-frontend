@@ -34,26 +34,33 @@ export function idempotencyKey(signature:string):string{
   }catch{return crypto.randomUUID();}
 }
 
-// D-1846 wizard: where the questions come from (maps onto params.source) and how the student filters them.
-export type Origin='catalog'|'map'|'mixed';
+// D-1846 wizard, reordered in G29: Prova (name, optional map, count) → Origem → Conteúdo → Formato → Revisar.
+export const stepIds=['exam','origin','content','format','review'] as const;
+export type StepId=(typeof stepIds)[number];
+export type Origin='catalog'|'ai'|'mixed';
 export type Content='area'|'topic'|'mode'|'custom';
 export type GenDifficulty='mixed'|'easy'|'medium'|'hard';
-/** use = questions the AI already made from the map; gen = ask the AI for new ones (explicit button in the last step). */
+/** use = questions the AI already made from the map; gen = ask the AI for new ones (explicit button in the last step). Without a map the AI always generates (by theme). */
 export type Ai={use:boolean;gen:boolean;count:number;difficulty:GenDifficulty};
 export const defaultAi:Ai={use:true,gen:false,count:10,difficulty:'mixed'};
-export const originOf=(s:ExamBuilderParams['source']):Origin=>s==='catalog'?'catalog':s==='ai'?'map':'mixed';
-export const sourceOf=(o:Origin):ExamBuilderParams['source']=>o==='catalog'?'catalog':o==='map'?'ai':'catalog_and_ai';
-export const needsGenerate=(o:Origin,ai:Ai)=>o==='mixed'||(o==='map'&&ai.gen);
+export const originOf=(s:ExamBuilderParams['source']):Origin=>s==='catalog'?'catalog':s==='ai'?'ai':'mixed';
+export const sourceOf=(o:Origin):ExamBuilderParams['source']=>o==='catalog'?'catalog':o==='ai'?'ai':'catalog_and_ai';
+export const needsGenerate=(o:Origin,ai:Ai,board:string|null)=>o==='mixed'||(o==='ai'&&(ai.gen||!board));
+/** AI-only: the AI makes the whole exam (capped per request); mixed: the student says how many new ones. */
+export const genCountOf=(o:Origin,ai:Ai,count:number)=>o==='ai'?Math.min(validCount(count)?count:1,EXAM_GENERATE_MAX):ai.count;
 export const validGen=(n:number)=>Number.isInteger(n)&&n>=1&&n<=EXAM_GENERATE_MAX;
-export type Stage={origin:Origin;ai:Ai;content:Content;params:ExamBuilderParams};
+export type Stage={origin:Origin;ai:Ai;content:Content;params:ExamBuilderParams;board:string|null;theme?:string};
 /** Blocks Continuar: returns the `examBuilder.errors.*` key, or null when the step is complete. */
-export function stepError(step:number,s:Stage):'needMap'|'needChoice'|'needGen'|'needTopics'|'needCount'|null{
-  if(step===0&&s.origin!=='catalog'){
-    if(!s.params.boardId)return 'needMap';
-    if(s.origin==='map'&&!s.ai.use&&!s.ai.gen)return 'needChoice';
-    if(needsGenerate(s.origin,s.ai)&&!validGen(s.ai.count))return 'needGen';
+export function stepError(step:StepId,s:Stage):'needChoice'|'needGen'|'needTheme'|'needTopics'|'needCount'|null{
+  if(step==='exam'&&!validCount(s.params.count))return 'needCount';
+  if(step==='origin'){
+    if(s.origin==='ai'&&s.board&&!s.ai.use&&!s.ai.gen)return 'needChoice';
+    if(s.origin==='mixed'&&!validGen(s.ai.count))return 'needGen';
   }
-  if(step===1&&s.content==='topic'&&!s.params.topicIds.length&&!s.params.course)return 'needTopics';
-  if(step===2&&!validCount(s.params.count))return 'needCount';
+  if(step==='content'){
+    // Without a map the AI needs a theme to write about.
+    if(needsGenerate(s.origin,s.ai,s.board)&&!s.board&&!s.params.areaIds.length&&!s.params.topicIds.length&&!s.theme?.trim())return 'needTheme';
+    if(s.content==='topic'&&!s.params.topicIds.length&&!s.params.course)return 'needTopics';
+  }
   return null;
 }

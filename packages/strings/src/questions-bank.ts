@@ -31,4 +31,11 @@ export const questionsBank = {
   // Banco v2 (layout): ações principais, painel de filtros no celular, ações dos estados vazios.
   practice: 'Praticar agora', buildExam: 'Montar prova', filtersShow: 'Filtros', filtersShowCount: 'Filtros ({n})', selectShort: 'Selecionar',
   emptyGoAi: 'Ver Minhas perguntas (IA)', emptyAiAction: 'Abrir meus mapas',
+  // G29 (pedido 11/12): filtro principal Todas | Criadas por mim, curso opcional, estados vazios e barra de seleção compacta.
+  tabAll: 'Todas', tabMine: 'Criadas por mim', mineNote: 'Aqui ficam as perguntas que você criou, inclusive as geradas por IA nos desafios dos seus mapas. As de IA não são questões oficiais nem têm revisão médica.',
+  courseFilter: 'Filtrar por curso', courseFilterOff: 'Remover filtro de curso',
+  emptyAllTitle: 'Ainda não há questões no banco', emptyAllHelp: 'Quando houver questões publicadas ou você criar perguntas nos seus mapas, elas aparecem aqui.', emptyAllAction: 'Ver criadas por mim',
+  emptyMineTitle: 'Você ainda não criou nenhuma pergunta', emptyMineHelp: 'As perguntas que você gera nos desafios dos seus mapas ficam aqui.', emptyMineAction: 'Ver todas as questões',
+  emptyCourseFilterTitle: 'Nenhuma questão de {course} com esses filtros', emptyCourseFilterHelp: 'Tire o filtro de curso para ver todas as questões do banco.',
+  selectedPillOne: '1 selecionada', selectedPill: '{n} selecionadas', createExamShort: 'Criar prova',
 } as const;

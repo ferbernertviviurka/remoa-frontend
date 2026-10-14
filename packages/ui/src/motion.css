@@ -247,3 +247,9 @@ mark.rb-pending { background: var(--state-watch-bg); color: var(--state-watch-te
 
 /* Admin do blog: barra de pontuação do SEO (500 ms), troca de status/template (200 ms). */
 .rb-score { transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Troca de questão (simulado): virar página. `page-next` entra pela direita, `page-prev` pela esquerda. Só transform/opacity; desligado em movimento reduzido. */
+@keyframes page-next { from { opacity: 0; transform: perspective(1400px) translateX(40px) rotateY(-7deg); } }
+@keyframes page-prev { from { opacity: 0; transform: perspective(1400px) translateX(-40px) rotateY(7deg); } }
+.page-next { transform-origin: 0 50%; animation: page-next 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.page-prev { transform-origin: 100% 50%; animation: page-prev 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }

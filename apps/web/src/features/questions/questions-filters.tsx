@@ -212,20 +212,20 @@ export function QuestionFilterBar({
 /* ---- F34 student bank filters (flag bankStudent): multivalue, facet counts, ARIA topic combobox ---- */
 
 type Difficulty = 'easy' | 'medium' | 'hard';
-export type BankFilters = { search: string; topicIds: string[]; institutions: string[]; years: number[]; difficulties: Difficulty[]; origin: '' | 'official_exam' | 'remoa_authored'; state: '' | 'unseen' | 'answered' | 'wrong' | 'favorite'; sort: '' | 'difficulty' | 'topic'; /** F35 FR-35: catalog course; null = medicine. Not a narrowing filter (not counted, kept on clear). */ course: HealthCourseCode | null };
+export type BankFilters = { search: string; topicIds: string[]; institutions: string[]; years: number[]; difficulties: Difficulty[]; origin: '' | 'official_exam' | 'remoa_authored'; state: '' | 'unseen' | 'answered' | 'wrong' | 'favorite'; sort: '' | 'difficulty' | 'topic'; /** G29: optional course filter (null = none, the default: never empties the bank on its own). */ course: HealthCourseCode | null };
 export const emptyBankFilters: BankFilters = { search: '', topicIds: [], institutions: [], years: [], difficulties: [], origin: '', state: '', sort: '', course: null };
-export const bankFilterCount = (f: BankFilters) => f.topicIds.length + f.institutions.length + f.years.length + f.difficulties.length + (f.origin ? 1 : 0) + (f.state ? 1 : 0) + (f.search.trim() ? 1 : 0);
-export type BankTab = 'catalog' | 'ai';
-/** Query shared by list and facets (no cursor). The tab decides scope/origin (D-1823); the origin filter only exists in the catalog. */
+export const bankFilterCount = (f: BankFilters) => f.topicIds.length + f.institutions.length + f.years.length + f.difficulties.length + (f.origin ? 1 : 0) + (f.state ? 1 : 0) + (f.search.trim() ? 1 : 0) + (f.course ? 1 : 0);
+export type BankTab = 'all' | 'mine';
+/** Query shared by list and facets (no cursor). G29: the tab is only the scope ('all' = catalog + mine, 'mine' = created by me); the origin filter and the course exist only in 'all'. */
 export const bankQuery = (tab: BankTab, f: BankFilters): Partial<QuestionListQuery> => ({
-  scope: tab === 'catalog' ? 'catalog' : 'mine',
-  origin: tab === 'ai' ? 'ai_generated' : f.origin || undefined,
+  scope: tab === 'all' ? 'all' : 'mine',
+  origin: tab === 'all' ? f.origin || undefined : undefined,
   search: f.search.trim() || undefined,
   topicIds: f.topicIds.length ? f.topicIds : undefined, institutions: f.institutions.length ? f.institutions : undefined,
   years: f.years.length ? f.years : undefined, difficulties: f.difficulties.length ? f.difficulties : undefined,
   state: f.state || undefined, sort: f.sort || undefined,
-  // The server applies the course to the catalog only (the private AI list is never filtered by it).
-  course: tab === 'catalog' ? f.course ?? 'medicine' : undefined,
+  // The server applies the course to the public part only (own questions are never hidden by it).
+  course: tab === 'all' ? f.course ?? undefined : undefined,
 });
 const toggle = <T,>(list: T[], value: T) => (list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
 
@@ -316,7 +316,10 @@ export function BankFilterPanel({ tab, filters, onChange, onClear, facets, facet
   const fieldName = (kind: Difficulty) => t(`questions.difficultyLabel.${kind}`);
   return (
     <div className="flex flex-col gap-4" role="group" aria-label={bt('questionsBank.filtersGroup')}>
-      {tab === 'catalog' ? <CourseField label={bt('questionsBank.courseLabel')} placeholder={bt('questionsBank.coursePlaceholder')} emptyLabel={bt('questionsBank.courseNone')} value={filters.course} onChange={(course) => set({ course })} /> : null}
+      {tab === 'all' ? <div className="flex min-w-0 flex-col gap-3">
+        <div><FilterChip pressed={filters.course !== null} onClick={() => set({ course: filters.course ? null : 'medicine' })}>{filters.course ? bt('questionsBank.courseFilterOff') : bt('questionsBank.courseFilter')}</FilterChip></div>
+        {filters.course ? <CourseField label={bt('questionsBank.courseLabel')} placeholder={bt('questionsBank.coursePlaceholder')} emptyLabel={bt('questionsBank.courseNone')} value={filters.course} onChange={(course) => set({ course })} /> : null}
+      </div> : null}
       <TopicCombobox tab={tab} filters={filters} onPick={(topic) => { topicNames[topic.id] = topic.name; set({ topicIds: toggle(filters.topicIds, topic.id) }); }} />
       {filters.topicIds.length ? <ul aria-label={bt('questionsBank.topicSelected')} className="flex flex-wrap gap-2">{filters.topicIds.map((id) => {
         const name = topicNames[id] ?? bt('questionsBank.topicUnknown');
@@ -324,7 +327,7 @@ export function BankFilterPanel({ tab, filters, onChange, onClear, facets, facet
       })}</ul> : null}
       <ChipGroup legend={bt('questionsBank.progress')} value={filters.state || 'all'} onPick={(v) => set({ state: v === 'all' ? '' : v })}
         options={[{ value: 'all', label: bt('questionsBank.progressAll') }, { value: 'unseen', label: bt('questionsBank.progressUnseen') }, { value: 'wrong', label: bt('questionsBank.progressWrong') }, { value: 'answered', label: bt('questionsBank.progressAnswered') }, { value: 'favorite', label: bt('questionsBank.progressFavorite') }]} />
-      {tab === 'catalog' ? <ChipGroup legend={bt('questionsBank.origin')} value={filters.origin || 'all'} onPick={(v) => set({ origin: v === 'all' ? '' : v })}
+      {tab === 'all' ? <ChipGroup legend={bt('questionsBank.origin')} value={filters.origin || 'all'} onPick={(v) => set({ origin: v === 'all' ? '' : v })}
         options={[{ value: 'all', label: bt('questionsBank.originAll') }, { value: 'official_exam', label: bt('questionsBank.originOfficial') }, { value: 'remoa_authored', label: bt('questionsBank.originRemoa') }]} /> : null}
       {facets?.difficulties?.length ? <FacetGroup legend={bt('questionsBank.difficulty')} options={facets.difficulties.map((d) => ({ value: d.value, label: fieldName(d.value), count: d.count }))} selected={filters.difficulties} onToggle={(v) => set({ difficulties: toggle(filters.difficulties, v) })} /> : null}
       {facets?.institutions?.length ? <FacetGroup legend={bt('questionsBank.institution')} options={facets.institutions.map((i) => ({ value: i.name, label: i.name, count: i.count }))} selected={filters.institutions} onToggle={(v) => set({ institutions: toggle(filters.institutions, v) })} /> : null}

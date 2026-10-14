@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { t } from './labels';
 import { QuestionProvenance } from './provenance';
 import { startSavedDiscursive } from './api';
-import { Alert, Button, Tag } from '@remoa/ui';
+import { Alert, Button, Icon, Pill, Tag } from '@remoa/ui';
 import type { QuestionPublic } from '@remoa/contracts';
 import { questionError } from './api';
 import { isInstitutional, ValidationSeal } from './validation-seal';
@@ -16,7 +16,7 @@ export function PageTitle({ title, description, children }: { title: string; des
   return <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"><div><p className="mb-3 text-xs font-bold uppercase tracking-[.12em] text-muted">{t('questions.eyebrow')}</p><h1 tabIndex={-1} className={`${heading} outline-none`}>{title}</h1><p className="mt-3 text-muted">{description}</p></div>{children}</header>;
 }
 export function QuestionMeta({ question: q }: { question: QuestionPublic }) {
-  return <div className="flex flex-wrap items-center gap-2"><Tag tone={q.origin === 'ai_generated' ? 'review' : 'brand'}>{t(`questions.source.${q.origin}`)}</Tag><Tag tone="unknown">{t(`questions.visibility.${q.visibility}`)}</Tag><span className="text-xs text-muted">{t(`questions.difficultyLabel.${q.difficulty}`)}</span>{isInstitutional(q.validation)?<ValidationSeal/>:<span className="text-xs text-muted">{t(q.reviewed ? 'questions.reviewed' : 'questions.unreviewed')}{q.validation?.kind==='medical_review'?` · ${q.validation.label}`:''}</span>}{q.availability !== 'active' ? <Tag tone="review">{t(q.availability === 'annulled' ? 'questions.annulled' : 'questions.unavailable')}</Tag> : null}<QuestionProvenance question={q}/></div>;
+  return <div className="flex flex-wrap items-center gap-2"><Pill tone={q.origin === 'ai_generated' ? 'ai' : 'brand'}>{q.origin === 'ai_generated' ? <span className="mr-1 inline-flex"><Icon name="sparkle" size={14} /></span> : null}{t(`questions.source.${q.origin}`)}</Pill><Pill tone="unknown">{t(`questions.visibility.${q.visibility}`)}</Pill><Pill tone="unknown">{t(`questions.difficultyLabel.${q.difficulty}`)}</Pill>{isInstitutional(q.validation)?<ValidationSeal/>:<span className="text-xs text-muted">{t(q.reviewed ? 'questions.reviewed' : 'questions.unreviewed')}{q.validation?.kind==='medical_review'?` · ${q.validation.label}`:''}</span>}{q.availability !== 'active' ? <Tag tone="review">{t(q.availability === 'annulled' ? 'questions.annulled' : 'questions.unavailable')}</Tag> : null}<QuestionProvenance question={q}/></div>;
 }
 export {ConfigDialog,PersonalDialog,ReportDialog} from './lazy-dialogs';
 export function MapLink({ question }: { question: QuestionPublic }) {

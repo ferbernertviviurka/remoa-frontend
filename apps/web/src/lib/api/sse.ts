@@ -1,10 +1,10 @@
 import type { Result } from '@remoa/contracts';
 import { readErrorBody } from '@remoa/contracts/constants';
 
-type StreamEvent = { feedback?: unknown; result?: unknown; error?: unknown };
+type StreamEvent = { feedback?: unknown; progress?: unknown; result?: unknown; error?: unknown };
 
-/** Reads an SSE body of `{ feedback }`, then `{ result }` or `{ error }`. */
-export async function readResultStream<T>(stream: ReadableStream<Uint8Array>, onFeedback?: (chunk: string) => void): Promise<Result<T>> {
+/** Reads an SSE body of `{ feedback }` / `{ progress }` events, then `{ result }` or `{ error }`. `progress` is passed on unparsed (the caller validates it). */
+export async function readResultStream<T>(stream: ReadableStream<Uint8Array>, onFeedback?: (chunk: string) => void, onProgress?: (progress: unknown) => void): Promise<Result<T>> {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
   let buf = '';
@@ -19,6 +19,7 @@ export async function readResultStream<T>(stream: ReadableStream<Uint8Array>, on
       return;
     }
     if (typeof event.feedback === 'string') onFeedback?.(event.feedback);
+    if (event.progress !== undefined) onProgress?.(event.progress);
     if ('result' in event) result = { ok: true, data: event.result as T };
     const error = event.error ? readErrorBody({ error: event.error }) : null;
     if (error) result = { ok: false, error };
