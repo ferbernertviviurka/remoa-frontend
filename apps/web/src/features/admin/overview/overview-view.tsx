@@ -17,10 +17,10 @@ import { formatBRL, formatCount, formatDelta, formatPct, formatTime } from '../s
 const REFRESH_MS = 60_000;
 const tone: Record<AdminOverview['latestPayments'][number]['status'], NonNullable<StatusPillProps['tone']>> = { paid: 'ok', pending: 'warn', failed: 'bad', refunded: 'muted' };
 const person = (u: AdminUserRef | null) => <PersonCell name={u?.name ?? u?.email ?? t('admin.overview.unknownUser')} {...(u?.email ? { sub: u.email } : {})} />;
+// The whole period (the API already buckets it: 7 days, 30 days, 90 days in 3-day buckets), not just its last 12 points.
 const bars = (spark: number[]) => {
-  const last = spark.slice(-12);
-  const max = Math.max(1, ...last);
-  return last.map((v) => v / max);
+  const max = Math.max(1, ...spark);
+  return spark.map((v) => v / max);
 };
 const viewAll = (href: string, label: string) => (
   <Link href={href} className="flex h-11 items-center gap-1.5 rounded-lg px-1 text-sm font-bold text-primary-deep no-underline">
@@ -104,9 +104,9 @@ export function OverviewView({ data, period }: { data: AdminOverview; period: Ov
             aria-label={t('admin.overview.chart.aria')}
             series={data.growth.map((g) => ({ a: g.accounts, b: g.maps }))}
             legend={[t('admin.overview.chart.newAccounts'), t('admin.overview.chart.newMaps')]}
-            startLabel={t('admin.overview.chart.startLabel', { n: period })}
+            startLabel={t('admin.overview.chart.startLabel', { n: data.period })}
             endLabel={t('admin.overview.chart.endLabel')}
-            animationKey={String(period)}
+            animationKey={String(data.period)}
           />
           <AdminSection title={t('admin.overview.attention.label')}>
             <div className="flex flex-col gap-3 px-6 pb-6">

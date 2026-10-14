@@ -28,4 +28,7 @@ export const questionsBank = {
   correctIs: 'Gabarito: alternativa {key}', explanation: 'Comentário', distractorNotes: 'Sobre as alternativas', sourceLine: 'Fonte: {name}', sourceLink: 'Abrir a fonte', referenceDate: 'Referência de {date}',
   obsoleteRef: 'Existe uma versão mais recente desta questão.', discursive: 'Perguntas discursivas de IA são corrigidas no Desafio, com a nota da IA.',
   sealMedical: 'Revisada por médico', sealMedicalBy: 'Revisada por médico · {name}', noSeal: 'Sem selo de revisão',
+  // Banco v2 (layout): ações principais, painel de filtros no celular, ações dos estados vazios.
+  practice: 'Praticar agora', buildExam: 'Montar prova', filtersShow: 'Filtros', filtersShowCount: 'Filtros ({n})', selectShort: 'Selecionar',
+  emptyGoAi: 'Ver Minhas perguntas (IA)', emptyAiAction: 'Abrir meus mapas',
 } as const;
