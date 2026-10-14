@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useState} from 'react';
-import {profileCapabilities} from '@remoa/contracts';
+import {profileCapabilities} from '@remoa/contracts/study-profile-core'; // zod-free (D-1864)
 import {getStudyProfile,type StudyProfileState} from './api';
 
 /** Before the first read, and on any failure, the legacy capabilities: the menu never loses Enamed by a network error (D-1853). */

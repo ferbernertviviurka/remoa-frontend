@@ -133,7 +133,7 @@ export const studyProfile = {
       subCourse: 'Seu curso, seu foco e a sua instituição ajustam o que o Remoa mostra para você.',
       b1: 'Mapas e revisão no tempo certo, para lembrar o que você aprendeu.',
       b2: 'Desafios corrigidos pela IA, com a fonte sempre à mostra.',
-      enamed: 'Mapas prontos do ENAMED já no ar, e o Enamed no seu menu.',
+      enamed: 'Mapas do ENAMED para Medicina e o Enamed no seu menu.',
       course: 'Crie provas com os assuntos do seu curso e marque tudo no Calendário.',
       other: 'Crie mapas, provas e lembretes para qualquer assunto.',
     },

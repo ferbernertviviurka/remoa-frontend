@@ -1,0 +1,255 @@
+{
+  "kind": "signup: production components, real API/SQL on isolated DB, test auth double",
+  "checks": [
+    {
+      "name": "plan box + 3 steps 1440",
+      "passed": true
+    },
+    {
+      "name": "axe step1 1440",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll step1 1440",
+      "passed": true
+    },
+    {
+      "name": "step1 validation blocks 1440",
+      "passed": true
+    },
+    {
+      "name": "course preselected Enfermagem from ?curso 1440",
+      "passed": true
+    },
+    {
+      "name": "autofill box council COREN + suggested goal, Desfazer 1440",
+      "passed": true
+    },
+    {
+      "name": "axe step2 1440",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll step2 1440",
+      "passed": true
+    },
+    {
+      "name": "axe step2-errors 1440",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll step2-errors 1440",
+      "passed": true
+    },
+    {
+      "name": "step2 validation (no course/goal) blocks and says why 1440",
+      "passed": true
+    },
+    {
+      "name": "período only for graduacao 1440",
+      "passed": true
+    },
+    {
+      "name": "D-1862: signup never asks council number (even profissional) 1440",
+      "passed": true
+    },
+    {
+      "name": "Desfazer removes auto goal 1440",
+      "passed": true
+    },
+    {
+      "name": "\"farmacia\" finds Farmácia (keyboard select) 1440",
+      "passed": true
+    },
+    {
+      "name": "user-picked goal survives course switch; auto goal updates 1440",
+      "passed": true
+    },
+    {
+      "name": "\"tecnico\" finds técnico course 1440",
+      "passed": true
+    },
+    {
+      "name": "Outro curso da saúde → free text; \"Usar\" never blocks 1440",
+      "passed": true
+    },
+    {
+      "name": "not_health asks \"O que você estuda?\" 1440",
+      "passed": true
+    },
+    {
+      "name": "institution \"ufpr\" fills city/UF/type 1440",
+      "passed": true
+    },
+    {
+      "name": "institution \"sao paulo\" async search 1440",
+      "passed": true
+    },
+    {
+      "name": "institution \"Usar o que digitei\" accepted 1440",
+      "passed": true
+    },
+    {
+      "name": "step2 continue (goals needed) 1440",
+      "passed": true
+    },
+    {
+      "name": "axe step3 1440",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll step3 1440",
+      "passed": true
+    },
+    {
+      "name": "consent required 1440",
+      "passed": true
+    },
+    {
+      "name": "draft keeps no password and no council number 1440",
+      "passed": true
+    },
+    {
+      "name": "submit sends metadata study_profile (course nursing) 1440",
+      "passed": true
+    },
+    {
+      "name": "adoption: real API GET study-profile as new user (source signup) 1440",
+      "passed": true
+    },
+    {
+      "name": "no JS exceptions 1440",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "plan box + 3 steps 390",
+      "passed": true
+    },
+    {
+      "name": "axe step1 390",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll step1 390",
+      "passed": true
+    },
+    {
+      "name": "step1 validation blocks 390",
+      "passed": true
+    },
+    {
+      "name": "course preselected Enfermagem from ?curso 390",
+      "passed": true
+    },
+    {
+      "name": "autofill box council COREN + suggested goal, Desfazer 390",
+      "passed": true
+    },
+    {
+      "name": "axe step2 390",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll step2 390",
+      "passed": true
+    },
+    {
+      "name": "axe step2-errors 390",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll step2-errors 390",
+      "passed": true
+    },
+    {
+      "name": "step2 validation (no course/goal) blocks and says why 390",
+      "passed": true
+    },
+    {
+      "name": "período only for graduacao 390",
+      "passed": true
+    },
+    {
+      "name": "D-1862: signup never asks council number (even profissional) 390",
+      "passed": true
+    },
+    {
+      "name": "Desfazer removes auto goal 390",
+      "passed": true
+    },
+    {
+      "name": "\"farmacia\" finds Farmácia (keyboard select) 390",
+      "passed": true
+    },
+    {
+      "name": "user-picked goal survives course switch; auto goal updates 390",
+      "passed": true
+    },
+    {
+      "name": "\"tecnico\" finds técnico course 390",
+      "passed": true
+    },
+    {
+      "name": "Outro curso da saúde → free text; \"Usar\" never blocks 390",
+      "passed": true
+    },
+    {
+      "name": "not_health asks \"O que você estuda?\" 390",
+      "passed": true
+    },
+    {
+      "name": "institution \"ufpr\" fills city/UF/type 390",
+      "passed": true
+    },
+    {
+      "name": "institution \"sao paulo\" async search 390",
+      "passed": true
+    },
+    {
+      "name": "institution \"Usar o que digitei\" accepted 390",
+      "passed": true
+    },
+    {
+      "name": "step2 continue (goals needed) 390",
+      "passed": true
+    },
+    {
+      "name": "axe step3 390",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll step3 390",
+      "passed": true
+    },
+    {
+      "name": "consent required 390",
+      "passed": true
+    },
+    {
+      "name": "draft keeps no password and no council number 390",
+      "passed": true
+    },
+    {
+      "name": "submit sends metadata study_profile (course nursing) 390",
+      "passed": true
+    },
+    {
+      "name": "adoption: real API GET study-profile as new user (source signup) 390",
+      "passed": true
+    },
+    {
+      "name": "no JS exceptions 390",
+      "passed": true,
+      "errors": []
+    }
+  ]
+}

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  applyCourse, applyInstitution, courseName, emptyDraft, focusTitle, fromProfile, newSuggestions, studyCompleteness, toInput, toggleGoal, undoAutoGoal, validateDraft, visibleFields,
+  applyCourse, applyInstitution, courseName, emptyDraft, focusTitle, fromProfile, newSuggestions, studyCompleteness, toInput, toggleGoal, undoAutoGoal, visibleFields,
   type StudyDraft,
 } from './autofill';
+import { validateDraft } from './validate';
 import { COURSES, UFPR, profileFixture } from './fixtures';
 
 const c = (code: string) => COURSES.find((x) => x.code === code)!;

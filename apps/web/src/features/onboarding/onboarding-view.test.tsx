@@ -194,7 +194,8 @@ describe('OnboardingView', () => {
       render(<OnboardingView initial={{ answers: {} }} studyProfile={null} />);
       expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Seu estudo');
       expect(screen.getByRole('button', { name: 'Continuar' })).toBeDisabled();
-      fireEvent.change(screen.getByRole('combobox', { name: 'Curso ou área' }), { target: { value: 'enferm' } });
+      // D-1864: the study form loads after the first paint (dynamic import), like the sign-up
+      fireEvent.change(await screen.findByRole('combobox', { name: 'Curso ou área' }), { target: { value: 'enferm' } });
       await waitFor(() => expect(screen.getAllByRole('option').some((o) => o.textContent?.startsWith('Enfermagem'))).toBe(true));
       fireEvent.click(screen.getAllByRole('option').find((o) => o.textContent?.startsWith('Enfermagem'))!);
       fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));

@@ -1,14 +1,13 @@
-import {
-  studyProfileInputSchema,
-  type CouncilCode, type HealthCourse, type HealthCourseCode, type Institution, type ReferenceSuggestionInput,
-  type StudyGoalCode, type StudyProfile, type StudyProfileInput, type StudySituation,
+import type {
+  CouncilCode, HealthCourse, HealthCourseCode, Institution, ReferenceSuggestionInput,
+  StudyGoalCode, StudyProfile, StudyProfileInput, StudySituation,
 } from '@remoa/contracts';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 
 const t = withStrings({ studyProfile: more.studyProfile });
 
-/** F35 FR-18..FR-22: what the "Seu estudo" form holds while editing (signup step 2, onboarding, Conta). Pure helpers, no React. */
+/** F35 FR-18..FR-22: what the "Seu estudo" form holds while editing (signup, onboarding, Conta). Pure, no React, zod-free (the sign-up's first paint imports it; validation is ./validate). */
 export type StudyDraft = {
   situation: StudySituation;
   course: HealthCourseCode | null;
@@ -31,10 +30,8 @@ export type StudyDraft = {
   councilNumber: string;
 };
 
-export const emptyDraft: StudyDraft = {
-  situation: 'graduacao', course: null, courseLabel: '', council: null, courseOtherText: '', nonHealthTopic: '',
-  institution: null, institutionText: '', city: '', uf: '', period: 1, goals: [], customGoals: [], autoGoal: null, councilNumber: '',
-};
+import { emptyDraft } from './draft';
+export { emptyDraft };
 
 /** FR-18: the course fills the council and suggests its first goal (automatic). Switching course swaps ONLY the automatic goal. */
 export function applyCourse(d: StudyDraft, c: HealthCourse | null, label = c?.name ?? ''): StudyDraft {
@@ -122,27 +119,6 @@ export function toInput(d: StudyDraft, context: 'signup' | 'profile' = 'profile'
 }
 
 export type StudyErrors = Partial<Record<'situation' | 'course' | 'courseOther' | 'nonHealth' | 'goals' | 'uf' | 'city' | 'councilNumber', string>>;
-const issueField: Record<string, keyof StudyErrors> = {
-  situation: 'situation', course: 'course', courseOtherText: 'courseOther', nonHealthTopic: 'nonHealth', goals: 'goals', customGoals: 'goals', uf: 'uf', city: 'city', councilNumber: 'councilNumber',
-};
-const message: Record<keyof StudyErrors, Parameters<typeof t>[0]> = {
-  situation: 'studyProfile.errors.situation', course: 'studyProfile.errors.course', courseOther: 'studyProfile.errors.courseOther', nonHealth: 'studyProfile.errors.nonHealth',
-  goals: 'studyProfile.errors.goals', uf: 'studyProfile.errors.uf', city: 'studyProfile.errors.city', councilNumber: 'studyProfile.errors.councilNumber',
-};
-
-/** FR-9: course and at least one focus; the contract schema is the single rule set. */
-export function validateDraft(d: StudyDraft, context: 'signup' | 'profile' = 'profile'): { errors: StudyErrors; input: StudyProfileInput | null } {
-  if (!d.course) return { errors: { course: t(message.course), ...(d.goals.length + d.customGoals.length ? {} : { goals: t(message.goals) }) }, input: null };
-  const input = toInput(d, context);
-  const p = studyProfileInputSchema.safeParse(input);
-  if (p.success) return { errors: {}, input };
-  const errors: StudyErrors = {};
-  for (const i of p.error.issues) {
-    const f = issueField[String(i.path[0])] ?? 'course';
-    errors[f] ??= t(message[f]);
-  }
-  return { errors, input: null };
-}
 
 /** Saved profile -> form. `courses` gives names and councils; without the list the code stands in. */
 export function fromProfile(p: StudyProfile | null, courses: readonly HealthCourse[]): StudyDraft {

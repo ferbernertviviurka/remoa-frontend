@@ -11,7 +11,8 @@
     "./referral": "./src/referral.ts",
     "./cache": "./src/cache.ts",
     "./medical-schools": "./src/medical-schools.ts",
-    "./constants": "./src/constants.ts"
+    "./constants": "./src/constants.ts",
+    "./study-profile-core": "./src/study-profile-core.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

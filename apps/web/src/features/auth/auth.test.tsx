@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { SignInForm } from './sign-in-form';
 import { SignUpWizard } from './sign-up-wizard';
 
@@ -86,13 +86,14 @@ describe('SignUpWizard', () => {
     type('Senha', pw);
   };
   const pickOption = async (label: string, text: string, option: string) => {
-    fireEvent.change(screen.getByRole('combobox', { name: label }), { target: { value: text } });
+    fireEvent.change(await screen.findByRole('combobox', { name: label }), { target: { value: text } }); // step 2 loads after the first paint
     await waitFor(() => expect(screen.getAllByRole('option').some((o) => o.textContent?.startsWith(option))).toBe(true));
     fireEvent.click(screen.getAllByRole('option').find((o) => o.textContent?.startsWith(option))!);
   };
-  const toStudy = () => { fillAccount(); click('Continuar'); };
+  // "Seu estudo" downloads after the first paint (P-514): wait for it
+  const toStudy = async () => { fillAccount(); click('Continuar'); await screen.findByRole('combobox', { name: 'Curso ou área' }); };
   const toReview = async (course = 'enfermagem', option = 'Enfermagem') => {
-    toStudy();
+    await toStudy();
     await pickOption('Curso ou área', course, option);
     click('Continuar');
     await screen.findByText('Confira e crie a conta');
@@ -111,7 +112,7 @@ describe('SignUpWizard', () => {
 
   it('passo 2 exige curso e um foco; voltar não perde o digitado', async () => {
     render(<SignUpWizard />);
-    toStudy();
+    await toStudy();
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Seu estudo');
     click('Continuar');
     expect(screen.getByText('Escolha o seu curso e pelo menos um foco de estudo.')).toBeVisible();
@@ -121,6 +122,14 @@ describe('SignUpWizard', () => {
     expect(screen.getAllByText('Escolha pelo menos um foco de estudo.').length).toBeGreaterThan(0);
     click('Voltar');
     expect((screen.getByLabelText('Seu nome') as HTMLInputElement).value).toBe('Ana Souza');
+  });
+
+  it('D-1862: o cadastro não pede o número no conselho (vai para a Conta, nunca para os metadados)', async () => {
+    render(<SignUpWizard />);
+    await toStudy();
+    act(() => screen.getByRole('radio', { name: 'Profissional formado(a)' }).click());
+    await pickOption('Curso ou área', 'enfermagem', 'Enfermagem');
+    expect(screen.queryByLabelText('Número no conselho (opcional)')).toBeNull();
   });
 
   it('cria a conta com o estudo nos metadados e mostra o próximo passo (Criar meu primeiro mapa)', async () => {
@@ -156,7 +165,7 @@ describe('SignUpWizard', () => {
   it('?plano= mostra o plano escolhido e leva ao pagamento; ?curso= já vem escolhido', async () => {
     render(<SignUpWizard plan="pro_annual" course="pharmacy" />);
     expect(screen.getByText('Plano escolhido:').parentElement?.textContent).toBe('Plano escolhido: Pro anual. Você pode mudar depois.');
-    toStudy();
+    await toStudy();
     await waitFor(() => expect((screen.getByRole('combobox', { name: 'Curso ou área' }) as HTMLInputElement).value).toBe('Farmácia'));
     click('Continuar');
     await screen.findByText('Confira e crie a conta');
@@ -169,7 +178,7 @@ describe('SignUpWizard', () => {
 
   it('rascunho local: volta com nome, e-mail e estudo, nunca com a senha', async () => {
     const { unmount } = render(<SignUpWizard />);
-    toStudy();
+    await toStudy();
     await pickOption('Curso ou área', 'enfermagem', 'Enfermagem');
     const saved = JSON.parse(sessionStorage.getItem('remoa:signup-draft')!);
     expect(saved).toMatchObject({ email: 'novo@remoa.test', name: 'Ana Souza', study: { course: 'nursing' } });

@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useId, useRef } from 'react';
-import { MAX_GOALS, STUDY_PROFILE_LIMITS, profileCapabilities, studySituations, type HealthCourse, type Institution, type StudyGoalCode } from '@remoa/contracts';
+import type { HealthCourse, Institution, StudyGoalCode } from '@remoa/contracts';
+import { MAX_GOALS } from '@remoa/contracts/constants';
+import { STUDY_PROFILE_LIMITS, profileCapabilities, studySituations } from '@remoa/contracts/study-profile-core'; // zod-free (D-1864)
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Autocomplete, type AutocompleteOption, ChoiceChip, ChoiceChipMulti, Input, NumberStepper } from '@remoa/ui';
@@ -24,7 +26,8 @@ const help = 'm-0 text-[13px] text-muted';
 const autoBox = 'flex flex-col gap-1.5 rounded-field border border-border bg-primary-tint px-4 py-3 text-sm text-primary-deep';
 
 /** F35 FR-14..FR-22: the "Seu estudo" fields, shared by signup step 2, the onboarding and Conta. Controlled: `value` + `onChange`. */
-export function StudyFields({ value: d, onChange, errors = {}, disabled }: { value: StudyDraft; onChange: (d: StudyDraft) => void; errors?: StudyErrors; disabled?: boolean }) {
+/** `askCouncilNumber` false (signup, D-1862): the optional council number is only asked in Conta, never sent through auth metadata. */
+export function StudyFields({ value: d, onChange, errors = {}, disabled, askCouncilNumber = true }: { value: StudyDraft; onChange: (d: StudyDraft) => void; errors?: StudyErrors; disabled?: boolean; askCouncilNumber?: boolean }) {
   const id = useId();
   const courses = useCourses();
   const listed = useGoals(d.course);
@@ -187,7 +190,7 @@ export function StudyFields({ value: d, onChange, errors = {}, disabled }: { val
         </div>
       ) : null}
 
-      {show.councilNumber ? (
+      {show.councilNumber && askCouncilNumber ? (
         <div className="flex flex-col gap-2">
           <Input label={t('studyProfile.council.numberLabel')} value={d.councilNumber} maxLength={STUDY_PROFILE_LIMITS.councilNumber} autoComplete="off" disabled={disabled} onChange={(e) => onChange({ ...d, councilNumber: e.target.value })} aria-invalid={!!errors.councilNumber} aria-describedby={`${id}-reg-help`} />
           <p id={`${id}-reg-help`} className={help}>{t('studyProfile.council.numberHelp')}</p>

@@ -27,7 +27,8 @@ test.describe('health-area landing', () => {
     await expect(page.getByText(/^Para Enfermagem:/)).toContainText('a caminho');
     await expect(page.getByRole('link', { name: L.hero.cta.primary }).first()).toHaveAttribute('href', '/cadastro?curso=nursing&de=landing');
     await group.getByRole('button', { name: 'Medicina' }).click();
-    await expect(page.getByText(/^Para Medicina:/)).toContainText('já no ar');
+    await expect(page.getByText(/^Para Medicina:/)).toContainText('mapas do ENAMED');
+    await expect(page.getByText(/^Para Medicina:/)).not.toContainText('já no ar');
   });
 
   test('FAQ starts with "O Remoa é só para Medicina?" and no question bank is mentioned', async ({ page }) => {

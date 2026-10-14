@@ -14,10 +14,15 @@ import { useAcceptLegal } from '@/features/legal/use-accept-legal';
 import { maskPhone } from '../account/profile/personal-basics';
 import { GOAL_GROUPS, SEGMENTS } from './options';
 import { confirmStudyProfile, saveStudyProfile } from '../study-profile/api';
-import { emptyDraft, fromProfile, validateDraft, type StudyDraft } from '../study-profile/autofill';
+import type { StudyDraft } from '../study-profile/autofill';
+import { emptyDraft } from '../study-profile/draft';
 import { useCourses } from '../study-profile/reference';
-import { StudyFields } from '../study-profile/study-fields';
 import { publishStudyProfile } from '../study-profile/use-study-profile';
+
+// D-1864 (P-514 pattern, as the sign-up): the "Seu estudo" form and its zod schema download after the first paint.
+const loadStudy = () => import('@/features/study-profile/study-step');
+type StudyModule = Awaited<ReturnType<typeof loadStudy>>;
+const StudyFields = dynamic(() => loadStudy().then((m) => m.StudyFields), { loading: () => <SkeletonBlock height={520} radius={16} /> });
 
 const t = withStrings({ account: more.account, boards: more.boards, newMap: more.newMap, onboarding: more.onboarding, personal: more.personal, studyProfile: more.studyProfile });
 type StringKey = Parameters<typeof t>[0];
@@ -48,6 +53,8 @@ export function OnboardingView({ initial, missing = [], profile, next: nextUrl =
   const needsUserType = missing.includes('userType');
   const needsProfile = missing.length > 0;
   useAcceptLegal(needsUserType); // D-954: the Google sign-up path (needsUserType) never saw the consent line
+  const [studyMod, setStudyMod] = useState<StudyModule | null>(null);
+  useEffect(() => void loadStudy().then(setStudyMod, () => undefined), []);
   const [name, setName] = useState(profile?.name ?? '');
   const [phone, setPhone] = useState(profile?.phone ? maskPhone(profile.phone) : '');
   const [institution, setInstitution] = useState<AutocompleteValue | null>(profile?.school ? { value: profile.schoolId, label: profile.school } : null);
@@ -61,7 +68,7 @@ export function OnboardingView({ initial, missing = [], profile, next: nextUrl =
   const courses = useCourses(studyProfile !== undefined);
   const [study, setStudy] = useState<StudyDraft>(emptyDraft);
   const studyTouched = useRef(false);
-  useEffect(() => { if (!studyTouched.current && studyProfile) setStudy(fromProfile(studyProfile, courses)); }, [studyProfile, courses]);
+  useEffect(() => { if (studyMod && !studyTouched.current && studyProfile) setStudy(studyMod.fromProfile(studyProfile, courses)); }, [studyMod, studyProfile, courses]);
   const [failed, setFailed] = useState(false);
   const h1 = useRef<HTMLHeadingElement>(null);
   const first = useRef(true);
@@ -78,7 +85,7 @@ export function OnboardingView({ initial, missing = [], profile, next: nextUrl =
   const nameOk = !missing.includes('name') || isValidName(normalizeName(name));
   const phoneOk = !missing.includes('phone') || !!normalizeBrPhone(phone);
   const typeOk = !needsUserType || !!userType;
-  const value = { userType: (nameOk && phoneOk && typeOk) || undefined, segment, institution: institution?.label.trim() || undefined, goal: picked.length > 0 || undefined, area, start: path, study: !!validateDraft(study, 'signup').input || undefined }[key];
+  const value = { userType: (nameOk && phoneOk && typeOk) || undefined, segment, institution: institution?.label.trim() || undefined, goal: picked.length > 0 || undefined, area, start: path, study: !!studyMod?.validateDraft(study, 'signup').input || undefined }[key];
   const toggleGoal = (g: Goal) => setGoals((p) => (p.includes(g) ? p.filter((x) => x !== g) : p.length < MAX_GOALS ? [...p, g] : p));
 
   async function save(patch: OnboardingAnswersPatch): Promise<boolean> {
@@ -92,7 +99,7 @@ export function OnboardingView({ initial, missing = [], profile, next: nextUrl =
     setFailed(false);
     const patch: OnboardingAnswersPatch = skip ? {} : { segment: { segment }, goal: { goals: picked }, area: { area }, start: {}, userType: {}, institution: {}, study: {} }[key];
     if (key === 'study' && !skip) {
-      const input = validateDraft(study, 'signup').input;
+      const input = studyMod?.validateDraft(study, 'signup').input;
       const send = studyProfile?.source === 'migration' ? confirmStudyProfile : saveStudyProfile;
       const r = input ? await send(input).catch(() => null) : null;
       if (!r?.ok) { setFailed(true); setBusy(false); return; }

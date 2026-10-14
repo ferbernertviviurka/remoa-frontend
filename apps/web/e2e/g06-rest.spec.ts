@@ -85,19 +85,20 @@ test('caso: o tooltip da etapa abre por hover e fecha com Escape; axe com ele ab
   await expect(page.getByRole('tooltip')).toHaveCount(0);
 });
 
-test('perfil: escolher objetivo de outro grupo e momento novo persiste após recarregar; axe', async ({ page, request }) => {
+test('perfil F35: editar Seu estudo (curso, situação, objetivo) persiste após recarregar; axe', async ({ page, request }) => {
   test.setTimeout(120_000);
   await accountUser(page, request);
-  await page.goto('/app/conta/perfil');
-  const residencia = page.getByRole('group', { name: /^Objetivo de prova: Residência/ });
-  await residencia.getByRole('button', { name: 'USP' }).click();
-  await expect(residencia.getByRole('button', { name: 'USP' })).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('radiogroup', { name: 'Momento da graduação' }).getByRole('radio', { name: 'Residente' }).click();
-  await expect(page.getByText('Salvo.').first()).toBeVisible();
-  await expect(page.getByRole('group', { name: /^Objetivo de prova: Enamed/ }).getByRole('button', { pressed: true })).toHaveCount(0); // G14 13: vários objetivos, mas nenhum Enamed marcado
+  await page.goto('/app/conta/perfil?campo=estudo');
+  const curso = page.getByRole('combobox', { name: 'Curso ou área' });
+  await curso.fill('enferm');
+  await page.getByRole('option', { name: 'Enfermagem' }).first().click();
+  await page.getByRole('radio', { name: /Residente/ }).click();
+  await page.getByRole('button', { name: 'Atualização profissional' }).click();
+  await page.getByRole('button', { name: 'Salvar' }).click();
+  await expect(page.getByText('Seu estudo foi atualizado.').first()).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('group', { name: /^Objetivo de prova: Residência/ }).getByRole('button', { name: 'USP' })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByRole('radiogroup', { name: 'Momento da graduação' }).getByRole('radio', { name: 'Residente' })).toBeChecked();
+  await expect(page.getByText('Residente ou pós-graduando em Enfermagem')).toBeVisible();
+  await expect(page.getByText(/Atualização profissional/).first()).toBeVisible();
   expect(await axe(page), 'perfil').toEqual([]);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'perfil 390 sem scroll horizontal').toBe(true);

@@ -1,0 +1,125 @@
+{
+  "kind": "landing: production components in a browser harness (client render, not SSR), synthetic pricebook",
+  "checks": [
+    {
+      "name": "tag \"Para toda a área da saúde\" 1440",
+      "passed": true
+    },
+    {
+      "name": "\"Para quem é\" section lists courses, no promise 1440",
+      "passed": true
+    },
+    {
+      "name": "FAQ first item \"O Remoa é só para Medicina?\" 1440",
+      "passed": true
+    },
+    {
+      "name": "ENAMED \"para Medicina\", marked Em breve (no ready-content promise) 1440",
+      "passed": true
+    },
+    {
+      "name": "no \"já no ar\" anywhere / no \"banco de questões\" 1440",
+      "passed": true
+    },
+    {
+      "name": "no claims of ready content for other areas (grep \"prontos|prontas\" contexts) 1440",
+      "passed": true
+    },
+    {
+      "name": "prices R$ 39 / 349 / 599 unchanged 1440",
+      "passed": true,
+      "detail": {
+        "m": []
+      }
+    },
+    {
+      "name": "picker: pick Enfermagem -> every signup CTA carries curso=nursing 1440",
+      "passed": true
+    },
+    {
+      "name": "picker: plan CTAs keep plano= and add curso 1440",
+      "passed": true,
+      "detail": {
+        "hrefs": []
+      }
+    },
+    {
+      "name": "picker keyboard reachable 1440",
+      "passed": true
+    },
+    {
+      "name": "axe landing 1440",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll landing 1440",
+      "passed": true
+    },
+    {
+      "name": "no JS exceptions 1440",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "tag \"Para toda a área da saúde\" 390",
+      "passed": true
+    },
+    {
+      "name": "\"Para quem é\" section lists courses, no promise 390",
+      "passed": true
+    },
+    {
+      "name": "FAQ first item \"O Remoa é só para Medicina?\" 390",
+      "passed": true
+    },
+    {
+      "name": "ENAMED \"para Medicina\", marked Em breve (no ready-content promise) 390",
+      "passed": true
+    },
+    {
+      "name": "no \"já no ar\" anywhere / no \"banco de questões\" 390",
+      "passed": true
+    },
+    {
+      "name": "no claims of ready content for other areas (grep \"prontos|prontas\" contexts) 390",
+      "passed": true
+    },
+    {
+      "name": "prices R$ 39 / 349 / 599 unchanged 390",
+      "passed": true,
+      "detail": {
+        "m": []
+      }
+    },
+    {
+      "name": "picker: pick Enfermagem -> every signup CTA carries curso=nursing 390",
+      "passed": true
+    },
+    {
+      "name": "picker: plan CTAs keep plano= and add curso 390",
+      "passed": true,
+      "detail": {
+        "hrefs": []
+      }
+    },
+    {
+      "name": "picker keyboard reachable 390",
+      "passed": true
+    },
+    {
+      "name": "axe landing 390",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll landing 390",
+      "passed": true
+    },
+    {
+      "name": "no JS exceptions 390",
+      "passed": true,
+      "errors": []
+    }
+  ]
+}

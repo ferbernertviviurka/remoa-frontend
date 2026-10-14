@@ -1,20 +1,20 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { profileCapabilities, type HealthCourseCode } from '@remoa/contracts';
+import type { HealthCourseCode } from '@remoa/contracts';
 import { isValidName, isValidPassword, normalizeName, passwordStrength, TRIAL_DAYS } from '@remoa/contracts/constants';
 import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
-import { Button, buttonVariants, Checkbox, focusRing, Input, PasswordMeter, Stepper } from '@remoa/ui';
+import { Button, buttonVariants, Checkbox, focusRing, Input, PasswordMeter, SkeletonBlock, Stepper } from '@remoa/ui';
 import { signUp } from '@/server/auth/actions';
 import { track } from '@/lib/analytics';
 import { attributeReferral } from '@/features/referral/invite/actions';
 import { APP_HOME, ONBOARDING_HOME, safeNext } from '@/lib/safe-next';
 import { suggestReference } from '@/features/study-profile/api';
-import { applyCourse, courseName, emptyDraft, focusTitle, newSuggestions, validateDraft, visibleFields, type StudyDraft, type StudyErrors } from '@/features/study-profile/autofill';
+import { applyCourse, courseName, emptyDraft, focusTitle, newSuggestions, visibleFields, type StudyDraft, type StudyErrors } from '@/features/study-profile/autofill';
 import { useCourses, useGoals } from '@/features/study-profile/reference';
-import { StudyFields } from '@/features/study-profile/study-fields';
 import { ConfirmEmail } from './confirm-email';
 import { FieldError, PasswordField } from './password-field';
 import { setSignupAside } from './signup-aside';
@@ -22,6 +22,11 @@ import { planHref, type SignupPlan } from './signup-params';
 import { generalMessage, validEmail } from './sign-in-form';
 
 const t = withStrings({ account: more.account, studyProfile: more.studyProfile });
+
+// P-514 (D-1080): "Seu estudo" (combobox, zod schema) is step 2; it downloads after the first paint, like the old personal-data step.
+const loadStudy = () => import('@/features/study-profile/study-step');
+type StudyModule = Awaited<ReturnType<typeof loadStudy>>;
+const StudyFields = dynamic(() => loadStudy().then((m) => m.StudyFields), { loading: () => <SkeletonBlock height={520} radius={16} /> });
 
 type Values = { email: string; password: string; name: string; consent: boolean };
 type Errs = StudyErrors & Partial<Record<'email' | 'password' | 'name' | 'consent' | 'general', string>>;
@@ -77,6 +82,8 @@ export function SignUpWizard({ next, referred = false, plan, course }: { next?: 
   const preselected = useRef(false);
   const courses = useCourses();
   const allGoals = useGoals();
+  const [mod, setMod] = useState<StudyModule | null>(null);
+  useEffect(() => void loadStudy().then(setMod, () => undefined), []);
   const set = <K extends keyof Values>(k: K, val: Values[K]) => setV((p) => ({ ...p, [k]: val }));
 
   useEffect(() => {
@@ -98,9 +105,10 @@ export function SignUpWizard({ next, referred = false, plan, course }: { next?: 
     preselected.current = true;
     setStudy((s) => (s.course ? s : applyCourse(s, c)));
   }, [course, courses, hydrated]);
+  const showEnamed = !!study.course && !!mod?.profileCapabilities({ course: study.course, situation: study.situation, source: 'signup' }).showEnamed;
   useEffect(() => {
-    setSignupAside(study.course && study.course !== 'not_health' ? { course: courseName(study), showEnamed: study.course === 'medicine' && study.situation === 'graduacao' } : null);
-  }, [study]);
+    setSignupAside(study.course && study.course !== 'not_health' ? { course: courseName(study), showEnamed } : null);
+  }, [study, showEnamed]);
   useEffect(() => () => setSignupAside(null), []);
 
   // Foco: primeiro campo ao abrir; ao trocar de passo, o título do passo (anuncia a mudança).
@@ -115,9 +123,8 @@ export function SignUpWizard({ next, referred = false, plan, course }: { next?: 
 
   const strength = passwordStrength(v.password);
   const name = normalizeName(v.name);
-  const caps = profileCapabilities(study.course ? { course: study.course, situation: study.situation, source: 'signup' } : null);
   const planDest = plan ? planHref(plan) : null;
-  const target = planDest ?? (next ? safeNext(next) : caps.showEnamed ? '/app/cobertura' : null);
+  const target = planDest ?? (next ? safeNext(next) : showEnamed ? '/app/cobertura' : null);
 
   function validate(s: number): Errs {
     if (s === 0) {
@@ -128,7 +135,8 @@ export function SignUpWizard({ next, referred = false, plan, course }: { next?: 
       };
     }
     if (s === 1) {
-      const found = validateDraft(study, 'signup').errors;
+      // until the module arrives, step 2 counts as incomplete (never a submit without validation)
+      const found: StudyErrors = mod ? mod.validateDraft(study, 'signup').errors : { course: t('studyProfile.errors.course') };
       return Object.keys(found).length ? { ...found, general: t('studyProfile.errors.step') } : {};
     }
     return v.consent ? {} : { consent: t('auth.review.consentRequired') };
@@ -136,7 +144,7 @@ export function SignUpWizard({ next, referred = false, plan, course }: { next?: 
 
   async function submit() {
     setBusy(true);
-    const input = validateDraft(study, 'signup').input ?? undefined;
+    const input = mod?.validateDraft(study, 'signup').input ?? undefined;
     const res = await signUp({ email: v.email, password: v.password, name, studyProfile: input, next: toOnboarding(target ?? undefined) });
     if (!res.ok) {
       const code = res.error.code;
@@ -179,7 +187,7 @@ export function SignUpWizard({ next, referred = false, plan, course }: { next?: 
   const focusMain = goalNames.length ? goalNames.join(' · ') : t('studyProfile.focus.noGoal');
 
   if (done) {
-    const first = caps.showEnamed
+    const first = showEnamed
       ? { label: t('studyProfile.signup.ctaEnamed'), href: toOnboarding('/app/cobertura') }
       : { label: t('studyProfile.signup.ctaMap'), href: toOnboarding(next ? safeNext(next) : undefined) };
     return (
@@ -247,7 +255,7 @@ export function SignUpWizard({ next, referred = false, plan, course }: { next?: 
         </div>
       ) : null}
 
-      {step === 1 ? <StudyFields value={study} onChange={setStudy} errors={errs} disabled={busy} /> : null}
+      {step === 1 ? <StudyFields value={study} onChange={setStudy} errors={errs} disabled={busy} askCouncilNumber={false} /> : null}
 
       {step === 2 ? (
         <div className="flex flex-col gap-4">

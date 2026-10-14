@@ -60,7 +60,8 @@ export async function signUp(input: SignUpInput & { studyProfile?: StudyProfileI
   const { studyProfile, next, ...rest } = input;
   const p = signUpSchema.safeParse(rest);
   if (!p.success) return invalid();
-  const sp = studyProfile ? studyProfileInputSchema.safeParse({ ...studyProfile, context: 'signup' }) : null;
+  // D-1862: auth metadata is copied into the JWT, so the council number never goes there (it is asked only in Conta).
+  const sp = studyProfile ? studyProfileInputSchema.safeParse({ ...studyProfile, councilNumber: undefined, context: 'signup' }) : null;
   if (sp && !sp.success) return invalid();
   const supabase = await createClient();
   const { error } = await supabase.auth.signUp({

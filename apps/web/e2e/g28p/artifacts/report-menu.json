@@ -1,0 +1,353 @@
+{
+  "kind": "menu by profile: production components, real API/SQL on isolated DB",
+  "checks": [
+    {
+      "name": "no-row: rail Enamed link shown 1440",
+      "passed": true
+    },
+    {
+      "name": "no-row: Hoje coverage Enamed 1440",
+      "passed": true
+    },
+    {
+      "name": "no-row: banner \"Confirme o seu estudo\" true 1440",
+      "passed": true
+    },
+    {
+      "name": "no-row: /app/cobertura Enamed 1440",
+      "passed": true
+    },
+    {
+      "name": "no-row: no JS exceptions 1440",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "no-row: mobile menu Enamed shown 390",
+      "passed": true
+    },
+    {
+      "name": "no-row: Hoje coverage Enamed 390",
+      "passed": true
+    },
+    {
+      "name": "no-row: banner \"Confirme o seu estudo\" true 390",
+      "passed": true
+    },
+    {
+      "name": "no-row: /app/cobertura Enamed 390",
+      "passed": true
+    },
+    {
+      "name": "no-row: no JS exceptions 390",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "migration: rail Enamed link shown 1440",
+      "passed": true
+    },
+    {
+      "name": "migration: Hoje coverage Enamed 1440",
+      "passed": true
+    },
+    {
+      "name": "migration: banner \"Confirme o seu estudo\" true 1440",
+      "passed": true
+    },
+    {
+      "name": "migration: /app/cobertura Enamed 1440",
+      "passed": true
+    },
+    {
+      "name": "axe migration coverage 1440",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll migration coverage 1440",
+      "passed": true
+    },
+    {
+      "name": "migration: no JS exceptions 1440",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "migration: mobile menu Enamed shown 390",
+      "passed": true
+    },
+    {
+      "name": "migration: Hoje coverage Enamed 390",
+      "passed": true
+    },
+    {
+      "name": "migration: banner \"Confirme o seu estudo\" true 390",
+      "passed": true
+    },
+    {
+      "name": "migration: /app/cobertura Enamed 390",
+      "passed": true
+    },
+    {
+      "name": "axe migration coverage 390",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll migration coverage 390",
+      "passed": true
+    },
+    {
+      "name": "migration: no JS exceptions 390",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "medicine+graduacao: rail Enamed link shown 1440",
+      "passed": true
+    },
+    {
+      "name": "medicine+graduacao: Hoje coverage Enamed 1440",
+      "passed": true
+    },
+    {
+      "name": "medicine+graduacao: banner \"Confirme o seu estudo\" false 1440",
+      "passed": true
+    },
+    {
+      "name": "medicine+graduacao: /app/cobertura Enamed 1440",
+      "passed": true
+    },
+    {
+      "name": "axe medicine+graduacao coverage 1440",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll medicine+graduacao coverage 1440",
+      "passed": true
+    },
+    {
+      "name": "medicine+graduacao: no JS exceptions 1440",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "medicine+graduacao: mobile menu Enamed shown 390",
+      "passed": true
+    },
+    {
+      "name": "medicine+graduacao: Hoje coverage Enamed 390",
+      "passed": true
+    },
+    {
+      "name": "medicine+graduacao: banner \"Confirme o seu estudo\" false 390",
+      "passed": true
+    },
+    {
+      "name": "medicine+graduacao: /app/cobertura Enamed 390",
+      "passed": true
+    },
+    {
+      "name": "axe medicine+graduacao coverage 390",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll medicine+graduacao coverage 390",
+      "passed": true
+    },
+    {
+      "name": "medicine+graduacao: no JS exceptions 390",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "medicine+residente: rail Enamed link hidden 1440",
+      "passed": true
+    },
+    {
+      "name": "medicine+residente: Hoje coverage focus prompt (no Enamed) 1440",
+      "passed": true
+    },
+    {
+      "name": "medicine+residente: banner \"Confirme o seu estudo\" false 1440",
+      "passed": true
+    },
+    {
+      "name": "medicine+residente: /app/cobertura notice not error 1440",
+      "passed": true
+    },
+    {
+      "name": "medicine+residente: no JS exceptions 1440",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "medicine+residente: mobile menu Enamed hidden 390",
+      "passed": true
+    },
+    {
+      "name": "medicine+residente: Hoje coverage focus prompt (no Enamed) 390",
+      "passed": true
+    },
+    {
+      "name": "medicine+residente: banner \"Confirme o seu estudo\" false 390",
+      "passed": true
+    },
+    {
+      "name": "medicine+residente: /app/cobertura notice not error 390",
+      "passed": true
+    },
+    {
+      "name": "medicine+residente: no JS exceptions 390",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "nursing: rail Enamed link hidden 1440",
+      "passed": true
+    },
+    {
+      "name": "nursing: Hoje coverage focus prompt (no Enamed) 1440",
+      "passed": true
+    },
+    {
+      "name": "nursing: banner \"Confirme o seu estudo\" false 1440",
+      "passed": true
+    },
+    {
+      "name": "nursing: /app/cobertura notice not error 1440",
+      "passed": true
+    },
+    {
+      "name": "axe nursing coverage 1440",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll nursing coverage 1440",
+      "passed": true
+    },
+    {
+      "name": "nursing: no JS exceptions 1440",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "nursing: mobile menu Enamed hidden 390",
+      "passed": true
+    },
+    {
+      "name": "nursing: Hoje coverage focus prompt (no Enamed) 390",
+      "passed": true
+    },
+    {
+      "name": "nursing: banner \"Confirme o seu estudo\" false 390",
+      "passed": true
+    },
+    {
+      "name": "nursing: /app/cobertura notice not error 390",
+      "passed": true
+    },
+    {
+      "name": "axe nursing coverage 390",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "name": "no horizontal scroll nursing coverage 390",
+      "passed": true
+    },
+    {
+      "name": "nursing: no JS exceptions 390",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "other_health: rail Enamed link hidden 1440",
+      "passed": true
+    },
+    {
+      "name": "other_health: Hoje coverage focus prompt (no Enamed) 1440",
+      "passed": true
+    },
+    {
+      "name": "other_health: banner \"Confirme o seu estudo\" false 1440",
+      "passed": true
+    },
+    {
+      "name": "other_health: /app/cobertura notice not error 1440",
+      "passed": true
+    },
+    {
+      "name": "other_health: no JS exceptions 1440",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "other_health: mobile menu Enamed hidden 390",
+      "passed": true
+    },
+    {
+      "name": "other_health: Hoje coverage focus prompt (no Enamed) 390",
+      "passed": true
+    },
+    {
+      "name": "other_health: banner \"Confirme o seu estudo\" false 390",
+      "passed": true
+    },
+    {
+      "name": "other_health: /app/cobertura notice not error 390",
+      "passed": true
+    },
+    {
+      "name": "other_health: no JS exceptions 390",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "not_health: rail Enamed link hidden 1440",
+      "passed": true
+    },
+    {
+      "name": "not_health: Hoje coverage focus prompt (no Enamed) 1440",
+      "passed": true
+    },
+    {
+      "name": "not_health: banner \"Confirme o seu estudo\" false 1440",
+      "passed": true
+    },
+    {
+      "name": "not_health: /app/cobertura notice not error 1440",
+      "passed": true
+    },
+    {
+      "name": "not_health: no JS exceptions 1440",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "not_health: mobile menu Enamed hidden 390",
+      "passed": true
+    },
+    {
+      "name": "not_health: Hoje coverage focus prompt (no Enamed) 390",
+      "passed": true
+    },
+    {
+      "name": "not_health: banner \"Confirme o seu estudo\" false 390",
+      "passed": true
+    },
+    {
+      "name": "not_health: /app/cobertura notice not error 390",
+      "passed": true
+    },
+    {
+      "name": "not_health: no JS exceptions 390",
+      "passed": true,
+      "errors": []
+    }
+  ]
+}

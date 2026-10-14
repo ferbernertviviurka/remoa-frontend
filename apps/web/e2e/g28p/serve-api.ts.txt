@@ -1,0 +1,30 @@
+// QA G28-P temp server (deleted after run): real createApp on the isolated DB, test auth, port 4400.
+import { serve } from '@hono/node-server';
+import { randomUUID } from 'node:crypto';
+import { sql } from 'drizzle-orm';
+import { db } from '@remoa/db';
+import { createApp } from './app';
+const users = new Set<string>();
+const app = createApp({ webOrigin: 'http://127.0.0.1:4327', verifyToken: async (t) => (users.has(t) ? t : null) });
+const mk = async (meta?: unknown, migration = false) => {
+  const id = randomUUID(); users.add(id);
+  await db.execute(sql`insert into auth.users (id, email, instance_id, aud, role, raw_user_meta_data) values (${id}, ${`${id}@test.local`}, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', ${meta ? JSON.stringify(meta) : null}::jsonb)`);
+  if (migration) { await db.execute(sql`insert into profiles (user_id, goal, goals, stage) values (${id}, 'enamed_2027_1', '{enamed_2027_1}', 'y5_6') on conflict (user_id) do update set goal = excluded.goal`); }
+  return id;
+};
+let n = 0;
+serve({ port: 4400, hostname: '127.0.0.1', fetch: async (req) => {
+  const u = new URL(req.url);
+  if (u.pathname === '/__test/signup' && req.method === 'POST') {
+    const b = (await req.json()) as { email: string; name?: string; study_profile?: unknown };
+    const id = await mk({ name: b.name, study_profile: b.study_profile });
+    return Response.json({ id, meta: (await db.execute(sql`select raw_user_meta_data m from auth.users where id=${id}`))[0] });
+  }
+  if (u.pathname === '/__test/user') { const id = await mk(undefined, u.searchParams.get('kind') === 'migration'); return Response.json({ id }); }
+  if (u.pathname === '/v1/public/pricebook') return Response.json({ ok: true, data: { monthly: { amount: 3900 }, annual: { amount: 34900 }, lifetime: { amount: 59900 }, currency: 'brl', founder: false } }); // synthetic (Stripe not configured)
+  if (u.pathname === '/__test/suggestion-cols') return Response.json(await db.execute(sql`select column_name from information_schema.columns where table_name='reference_suggestions'`));
+  if (u.pathname === '/__test/sp-row') return Response.json(await db.execute(sql`select * from study_profiles where user_id=${u.searchParams.get('id')}`));
+  const h = new Headers(req.headers); h.set('x-forwarded-for', `10.${(n >> 8) & 255}.${n & 255}.7`); n++;
+  return app.fetch(new Request(req, { headers: h }));
+} });
+console.error('g28p api up 4400');
