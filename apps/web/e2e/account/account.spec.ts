@@ -23,7 +23,7 @@ test.describe('Minha conta', () => {
     await expect(dialog).toBeHidden();
     // Otimista: o hero troca na hora e a linha Foto acompanha, sem recarregar.
     await expect(page.getByRole('region', { name: 'Resumo do perfil' }).locator('img')).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Resumo do perfil' }).getByText('Perfil 60% completo')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Resumo do perfil' }).getByText('Perfil 50% completo')).toBeVisible(); // F35 FR-24 (CCR-160b): 6 itens; nome, e-mail e foto = 3/6
     // O avatar da navbar (link "Minha conta") mostra a foto (o diálogo chama router.refresh()).
     await expect(page.getByRole('banner').getByRole('link', { name: 'Minha conta' }).locator('img')).toBeVisible();
     // Persistiu no servidor: avatar_key gravada.
@@ -94,9 +94,9 @@ test.describe('Minha conta', () => {
     await accountUser(page, request);
     await page.goto('/app/conta/preferencias');
     const hero = page.getByRole('region', { name: 'Resumo do perfil' });
-    await expect(hero.getByText('Perfil 40% completo')).toBeVisible();
+    await expect(hero.getByText('Perfil 33% completo')).toBeVisible(); // F35 FR-24 (CCR-160b): 6 itens; nome e e-mail = 2/6
     await page.getByRole('switch', { name: 'Lembrete diário por e-mail' }).click();
-    await expect(hero.getByText('Perfil 60% completo')).toBeVisible();
+    await expect(hero.getByText('Perfil 50% completo')).toBeVisible();
     await page.reload();
     await expect(page.getByRole('switch', { name: 'Lembrete diário por e-mail' })).toBeChecked();
   });

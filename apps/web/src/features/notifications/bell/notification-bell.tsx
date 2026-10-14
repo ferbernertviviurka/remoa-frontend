@@ -29,16 +29,47 @@ export function NotificationBell() {
     if (r?.ok) {
       setItems(r.data.items);
       setState('ready');
-      // Seeing is reading: unread items now visible are marked read on the server and the badge drops at once.
-      // The list keeps them highlighted until it is reopened (no refetch here).
-      const ids = r.data.items.filter((x) => !x.readAt && !autoRead.current.has(x.id)).map((x) => x.id);
-      if (ids.length) {
-        ids.forEach((id) => autoRead.current.add(id));
-        seen(ids.length);
-        void markRead({ ids }).then(() => seen(0), () => seen(0));
-      }
     } else setState('error');
-  }, [tab, seen]);
+  }, [tab]);
+
+  // Seeing is reading, but only for rows actually on screen (>= 60% inside the scrollable list). Rows scrolled into view later count too.
+  // Marks go out in one batch after a short pause; the badge drops at once. The list keeps them highlighted until reopened.
+  useEffect(() => {
+    if (!open || state !== 'ready' || typeof IntersectionObserver === 'undefined') return;
+    // The popover content mounts after this commit (lazy, in a portal): wait for the list instead of giving up on the first look.
+    let io: IntersectionObserver | undefined;
+    let tries = 0;
+    let poll: ReturnType<typeof setTimeout> | undefined;
+    let batch: string[] = [];
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const flush = () => {
+      const ids = batch;
+      batch = [];
+      void markRead({ ids }).then(() => seen(0), () => seen(0));
+    };
+    const attach = () => {
+      const panel = document.querySelector('[role="dialog"] [role="tabpanel"]');
+      const rows = panel?.querySelectorAll('[data-notification-id][data-unread="true"]');
+      if (!panel || !rows?.length) { if (++tries < 30) poll = setTimeout(attach, 100); return; }
+      io = new IntersectionObserver((entries) => {
+      const ids = entries.filter((e) => e.isIntersecting && e.target instanceof HTMLElement && e.target.dataset.unread === 'true').map((e) => (e.target as HTMLElement).dataset.notificationId!).filter((id) => !autoRead.current.has(id));
+      if (!ids.length) return;
+      ids.forEach((id) => autoRead.current.add(id));
+      batch.push(...ids);
+      seen(ids.length);
+      clearTimeout(timer);
+      timer = setTimeout(flush, 300);
+      }, { root: panel, threshold: 0.6 });
+      rows.forEach((el) => io!.observe(el));
+    };
+    attach();
+    return () => {
+      clearTimeout(poll);
+      io?.disconnect();
+      clearTimeout(timer);
+      if (batch.length) flush();
+    };
+  }, [open, state, items, seen]);
 
   // fetch on open, on tab change and whenever Realtime / a local action bumps `version` (refetch by id: no duplicates)
   useEffect(() => {

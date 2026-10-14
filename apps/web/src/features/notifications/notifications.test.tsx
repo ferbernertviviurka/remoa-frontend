@@ -31,7 +31,21 @@ const bellLabel = () => document.querySelector('[data-testid="bell-icon"]')?.clo
 const TZ = 'America/Sao_Paulo';
 const wrap = (ui: React.ReactNode) => render(<ToastProvider closeLabel="Fechar" viewportLabel="Avisos"><NotificationsProvider timezone={TZ} userId="u1">{ui}</NotificationsProvider></ToastProvider>);
 
+/** jsdom has no layout: this stub lets a test decide which rows are on screen. By default every observed row is visible. */
+type IOEntry = { isIntersecting: boolean; target: Element };
+let observers: { root: Element | null; threshold: number; els: Element[]; cb: (e: IOEntry[]) => void }[] = [];
+let visibleByDefault = true;
+class FakeIO {
+  rec: (typeof observers)[number];
+  constructor(cb: (e: IOEntry[]) => void, o: { root: Element | null; threshold: number }) { this.rec = { root: o.root, threshold: o.threshold, els: [], cb }; observers.push(this.rec); }
+  observe(el: Element) { this.rec.els.push(el); if (visibleByDefault) queueMicrotask(() => this.rec.cb([{ isIntersecting: true, target: el }])); }
+  disconnect() { this.rec.els = []; }
+}
+
 beforeEach(() => {
+  observers = [];
+  visibleByDefault = true;
+  vi.stubGlobal('IntersectionObserver', FakeIO);
   resetNotificationMocks();
   realtime = null;
   status = undefined;
@@ -39,7 +53,7 @@ beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true, toFake: ['setInterval', 'clearInterval', 'Date'] });
   vi.setSystemTime(FIXTURE_NOW);
 });
-afterEach(() => { cleanup(); vi.useRealTimers(); vi.clearAllMocks(); });
+afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.clearAllMocks(); });
 
 describe('view', () => {
   it('groups by calendar day in the profile time zone', () => {
@@ -78,6 +92,27 @@ describe('bell + popover', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Notificações, 3 não lidas' }));
     await screen.findByRole('dialog', { name: 'Central de notificações' });
     await waitFor(() => expect(bellLabel()).toBe('Notificações'));
+  });
+
+  it('only marks the rows that are on screen, and the ones scrolled into view later', async () => {
+    visibleByDefault = false;
+    wrap(<NotificationBell />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Notificações, 3 não lidas' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Central de notificações' });
+    await within(dialog).findByText('Seu mapa Insuficiência cardíaca está pronto');
+    const io = observers.at(-1)!;
+    expect(io.root).toBe(dialog.querySelector('[role="tabpanel"]'));
+    expect(io.threshold).toBe(0.6);
+    expect(io.els).toHaveLength(3);
+    const before = apiMock.mock.calls.length;
+    act(() => io.cb([{ isIntersecting: true, target: io.els[0]! }, { isIntersecting: false, target: io.els[1]! }]));
+    await waitFor(() => expect(bellLabel()).toBe('Notificações, 2 não lidas'));
+    await waitFor(() => expect(JSON.stringify(apiMock.mock.calls.slice(before))).toContain(io.els[0]!.getAttribute('data-notification-id')!));
+    expect(JSON.stringify(apiMock.mock.calls.slice(before))).not.toContain(io.els[1]!.getAttribute('data-notification-id')!);
+    await waitFor(() => expect(bellLabel()).toBe('Notificações, 2 não lidas'));
+    const io2 = observers.at(-1)!;
+    act(() => io2.cb([{ isIntersecting: true, target: io2.els.find((e) => e.getAttribute('data-notification-id') === io.els[1]!.getAttribute('data-notification-id'))! }]));
+    await waitFor(() => expect(bellLabel()).toBe('Notificações, 1 não lida'));
   });
 
   it('mark all clears the badge', async () => {

@@ -26,15 +26,16 @@ test('bell: badge, popover, mark read, open the destination; page: remove and pr
   await expect(bell).toBeVisible();
   await bell.click();
   const dialog = page.getByRole('dialog', { name: 'Central de notificações' });
-  await expect(dialog.getByText(/cards? esperam? por você hoje/).first()).toBeVisible();
-  await dialog.getByRole('button', { name: 'Marcar como lida' }).first().click();
+  await expect(dialog.getByText(/cards? esperam? por você hoje/)).toHaveCount(3);
+  // G29 D-1883 (Fernando, "visto = lido"): opening marks the visible unread rows read; they stay highlighted until reopened
   // the open popover is modal (hides the bell from the a11y tree): close it before reading the badge
+  await expect.poll(() => psql(`select count(*) from notifications where user_id = '${idOf(email)}' and read_at is null`)).toBe('0');
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('button', { name: 'Notificações, 2 não lidas' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Notificações', exact: true })).toBeVisible();
 
   // Realtime (or the 60 s poll): a new row updates the badge without reloading
   await seed(idOf(email), 1);
-  await expect(page.getByRole('button', { name: 'Notificações, 3 não lidas' })).toBeVisible({ timeout: 70_000 });
+  await expect(page.getByRole('button', { name: 'Notificações, 1 não lida' })).toBeVisible({ timeout: 70_000 });
 
   await page.getByRole('button', { name: /^Notificações/ }).click();
   await page.getByRole('link', { name: 'Ver todas as notificações' }).click();

@@ -51,7 +51,7 @@ export function NotificationItem({ item, variant = 'popover', index = 0, meta, m
 
   if (page) {
     return (
-      <div data-unread={item.unread} className={`slide flex items-center gap-4 border-t border-divider py-4 pl-6 pr-4 transition-colors duration-300 ${bg}`} style={{ animationDelay: `${index * 40}ms` }}>
+      <div data-notification-id={item.id} data-unread={item.unread} className={`slide flex items-center gap-4 border-t border-divider py-4 pl-6 pr-4 transition-colors duration-300 ${bg}`} style={{ animationDelay: `${index * 40}ms` }}>
         {icon}
         <span className="flex min-w-0 grow flex-col gap-[3px] leading-[1.4]">
           <span className="flex items-center gap-2">
@@ -73,7 +73,7 @@ export function NotificationItem({ item, variant = 'popover', index = 0, meta, m
   }
 
   return (
-    <div data-unread={item.unread} className={`slide flex items-start border-t border-divider transition-colors duration-300 ${bg}`} style={{ animationDelay: `${index * 35}ms` }}>
+    <div data-notification-id={item.id} data-unread={item.unread} className={`slide flex items-start border-t border-divider transition-colors duration-300 ${bg}`} style={{ animationDelay: `${index * 35}ms` }}>
       <a href={item.href} onClick={() => onOpen?.(item.id)} className={`flex min-w-0 grow items-start gap-3 py-3 pl-5 pr-3 text-ink no-underline ${focusRing}`}>
         {icon}
         <span className="flex min-w-0 grow flex-col gap-0.5 leading-[1.35]">
