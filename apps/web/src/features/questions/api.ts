@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import type { QuestionListQuery, QuestionSessionConfig, QuestionAnswerInput } from '@remoa/contracts';
+import type { QuestionListQuery, QuestionSessionConfig, QuestionAnswerInput, ExamPaperListQuery } from '@remoa/contracts';
 import { t } from './labels';
 import { api, apiFetch, sessionToken } from '@/lib/api';
 import {request,QuestionsApiError} from './request';
@@ -26,6 +26,20 @@ export const queryString = (filters: Partial<QuestionListQuery> & { groups?: str
 };
 export const listQuestions = (filters: Partial<QuestionListQuery>, signal?: AbortSignal) => catalogRequest(`/v1/questions?${queryString(filters)}`, c => c.questionListResultSchema, { signal });
 export const listExams = async (signal?: AbortSignal) => { const [c, {z}] = await Promise.all([loadContracts(), import('zod')]); return request('/v1/exams', z.array(c.examPaperPublicSchema), {signal}); };
+export async function listExamCourses(signal?: AbortSignal) {const [c,{z}]=await Promise.all([loadContracts(),import('zod')]);return request('/v1/public/reference/courses',z.array(c.healthCourseSchema),{signal});}
+/** Release compatibility: only an absent new route falls back to the legacy array. Failures remain failures. */
+export async function listExamCatalog(query: Partial<ExamPaperListQuery>, signal?: AbortSignal) {
+  const [c,{z}]=await Promise.all([loadContracts(),import('zod')]);
+  const schema=z.union([c.examPaperListResultSchema,z.array(c.examPaperPublicSchema)]);
+  const qs=new URLSearchParams(Object.entries(query).filter(([,value])=>value!==undefined&&value!=='').map(([key,value])=>[key,String(value)]));
+  let value;
+  try{value=await request(`/v1/exams/catalog?${qs}`,schema,{signal});}
+  catch(error){if(!(error instanceof QuestionsApiError)||error.code!=='not_found')throw error;value=await request('/v1/exams',schema,{signal});}
+  if(!Array.isArray(value))return value;
+  const needle=query.search?.toLocaleLowerCase('pt-BR');
+  const items=value.filter(paper=>(!query.course||paper.professionCode===query.course)&&(!query.year||paper.year===query.year)&&(!query.institution||paper.institution===query.institution)&&(!needle||`${paper.name} ${paper.institution} ${paper.year} ${paper.booklet}`.toLocaleLowerCase('pt-BR').includes(needle)));
+  return {items,total:items.length,nextCursor:null};
+}
 export const getExam = async (id: string, signal?: AbortSignal) => { const [c, {z}] = await Promise.all([loadContracts(), import('zod')]); return request(`/v1/exams/${id}`, z.object({paper:c.examPaperPublicSchema,questions:z.array(c.questionPublicSchema)}), {signal}); };
 export const listSessions = (signal?: AbortSignal) => catalogRequest('/v1/question-sessions', c => c.questionSessionsListSchema, { signal });
 export const getSession = (id: string, signal?: AbortSignal) => catalogRequest(`/v1/question-sessions/${id}`, c => c.questionSessionPublicSchema, { signal });

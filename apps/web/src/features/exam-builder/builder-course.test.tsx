@@ -1,15 +1,16 @@
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
-import {cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react';
+import {cleanup,fireEvent,render,screen,waitFor,within} from '@testing-library/react';
 import {BuilderScreen} from './builder-screen';
 import {resetStudyProfileCache} from '../study-profile/use-study-profile';
 import {resetReference} from '../study-profile/reference';
 
 const ID=(n:number)=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const AREA=ID(900);
-vi.mock('next/navigation',()=>({useRouter:()=>({push:vi.fn()})}));
+vi.mock('next/navigation',()=>({useRouter:()=>({push})}));
 type Call={path:string;init?:RequestInit};
+let difficultyScenario=false;const push=vi.fn();
 let calls:Call[];let profileCourse:string|null;let catalogByCourse:Record<string,number>;
-const COURSES=[{code:'medicine',name:'Medicina',aliases:['med'],kind:'course'},{code:'nursing',name:'Enfermagem',aliases:['enf'],kind:'course'},{code:'not_health',name:'Outra área',aliases:[],kind:'not_health'}];
+const COURSES=[{code:'medicine',name:'Medicina',aliases:['med'],kind:'course'},{code:'nursing',name:'Enfermagem',aliases:['enf'],kind:'course'},{code:'physical_education',name:'Educação Física',aliases:['ef'],kind:'course'},{code:'not_health',name:'Outra área',aliases:[],kind:'not_health'}];
 const caps=(c:string|null)=>({showEnamed:c==='medicine',suggestedGoals:[],starterTemplates:[c&&c!=='medicine'?'full_40':'enamed','quick','mistakes','blank'],subjectSystem:c&&c!=='medicine'?'course_disciplines':'enamed',needsConfirmation:false});
 const body=(c:Call)=>JSON.parse(String(c.init?.body));
 vi.mock('@/lib/api',()=>({api:vi.fn(async(path:string,init?:RequestInit)=>{
@@ -19,11 +20,15 @@ vi.mock('@/lib/api',()=>({api:vi.fn(async(path:string,init?:RequestInit)=>{
   if(path.startsWith('/v1/challenge-ai/taxonomy'))return {ok:true,data:[{id:AREA,name:'Clínica Médica'}]};
   if(path==='/v1/boards')return {ok:true,data:[]};
   if(path==='/v1/exam-templates')return {ok:true,data:{items:[],limit:3}};
+  if(difficultyScenario&&path==='/v1/exam-builder/availability'){const p=body({path,init});const n=p.difficulties.length?(p.course==='physical_education'?0:9):(p.course==='physical_education'?312:17760);return {ok:true,data:{total:n,areas:n?[{areaId:null,available:n}]:[]}};}
+  if(difficultyScenario&&path==='/v1/exam-builder/preview'){const p=body({path,init}).params;const n=Math.min(p.count,p.difficulties.length?(p.course==='physical_education'?0:9):10);return {ok:true,data:{seed:'a'.repeat(32),allocation:{rows:[{areaId:null,available:n,target:p.count,allocated:n}],requested:p.count,allocated:n,shortfall:p.count-n},items:Array.from({length:n},(_,i)=>({questionId:ID(i+1),canonicalId:ID(i+1),version:1,areaId:null,topicId:null,origin:'official_exam',difficulty:'medium',difficultyAssessment:'unassessed',stemPreview:`Questão realista do curso ${p.course??'medicine'} ${i+1}`,sourceLabel:'Fonte sintética',validation:null,pinned:false}))}};}
+  if(difficultyScenario&&path==='/v1/exam-builder/revalidate')return {ok:true,data:{ok:true,unavailable:[],updated:[]}};
+  if(difficultyScenario&&path==='/v1/question-sessions')return {ok:true,data:{id:ID(700),mode:'study',status:'active',revision:1,startedAt:new Date().toISOString(),deadline:null,finishedAt:null,serverTime:new Date().toISOString(),items:[]}};
   if(path==='/v1/exam-builder/availability'){const n=catalogByCourse[body({path,init}).course??'medicine']??0;return {ok:true,data:{total:n,areas:n?[{areaId:AREA,available:n}]:[]}};}
   if(path==='/v1/exam-builder/preview')return {ok:true,data:{seed:'a'.repeat(32),allocation:{rows:[],requested:1,allocated:0,shortfall:1},items:[]}};
   return {ok:false,error:{code:'not_found',message:path}};
 })}));
-beforeEach(()=>{calls=[];profileCourse=null;catalogByCourse={medicine:50};resetStudyProfileCache();resetReference();sessionStorage.clear();});
+beforeEach(()=>{difficultyScenario=false;push.mockClear();calls=[];profileCourse=null;catalogByCourse={medicine:50};resetStudyProfileCache();resetReference();sessionStorage.clear();});
 afterEach(cleanup);
 const init={ids:[],matrixItemIds:[]};
 const next=()=>fireEvent.click(screen.getByRole('button',{name:'Continuar'}));
@@ -97,4 +102,28 @@ describe('curso no Criador de prova (F35 FR-31..34)',()=>{
     fireEvent.click(await screen.findByRole('button',{name:/Por modo/}));
     expect(screen.getByRole('button',{name:/Simulado completo \(40\)/})).toBeTruthy();
   });
+});
+
+
+it.each(['physical_education','medicine'])('keeps %s course, visibly starts with all difficulties and explicitly expands a short easy pool to ten questions',async course=>{
+ difficultyScenario=true;profileCourse=course;
+ render(<BuilderScreen init={{ids:[],matrixItemIds:[]}}/>);
+ fireEvent.change(screen.getByRole('spinbutton',{name:'Quantidade de questões'}),{target:{value:'10'}});
+ next();next();await field();next();
+ expect(screen.getByRole('button',{name:'Todas as dificuldades'})).toHaveAttribute('aria-pressed','true');
+ expect(screen.getByRole('button',{name:'Fácil'})).toHaveAttribute('aria-pressed','false');
+ fireEvent.click(screen.getByRole('button',{name:'Fácil'}));next();
+ await screen.findByRole('button',{name:'Remover filtro de dificuldade'});
+ await waitFor(()=>expect(calls.filter(c=>c.path==='/v1/exam-builder/preview').map(body).at(-1)?.params).toMatchObject({course:course==='medicine'?null:course,difficulties:['easy'],count:10}));
+ expect(screen.getAllByText(new RegExp(`Encontramos ${course==='medicine'?9:0} questões com essa seleção`)).length).toBeGreaterThan(0);
+ fireEvent.click(screen.getByRole('button',{name:'Remover filtro de dificuldade'}));
+ await screen.findByText(`Questão realista do curso ${course} 1`);
+ await waitFor(()=>expect(calls.filter(c=>c.path==='/v1/exam-builder/preview').map(body).at(-1)?.params).toMatchObject({course:course==='medicine'?null:course,difficulties:[],count:10}));
+ expect(calls.filter(c=>c.path==='/v1/exam-builder/availability').map(body).every(p=>p.course===(course==='medicine'?null:course))).toBe(true);
+ expect(screen.getAllByText('Dificuldade não avaliada').length).toBeGreaterThan(0);
+ fireEvent.click(screen.getByRole('button',{name:'Começar prova'}));
+ fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button',{name:'Começar prova'}));
+ await waitFor(()=>expect(push).toHaveBeenCalledWith(`/app/simulados/${ID(700)}`));
+ const config=calls.filter(c=>c.path==='/v1/question-sessions').map(body).at(-1);
+ expect(config.questionIds).toHaveLength(10);expect(config.builder.params.difficulties).toEqual([]);expect(config.builder.params.course).toBe(course==='medicine'?null:course);
 });

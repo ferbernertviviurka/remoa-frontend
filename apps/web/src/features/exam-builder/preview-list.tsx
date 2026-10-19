@@ -10,9 +10,9 @@ export function PreviewList({items,pinned,areaName,busyId,onSwap,onRemove,onPin}
   const shown=all?items:items.slice(0,VISIBLE);
   return <div className="flex flex-col gap-3">
     <ol aria-label={t('examBuilder.preview')} className="m-0 flex list-none flex-col gap-3 p-0">
-      {shown.map((q,i)=>{const n=i+1;const isPinned=pinned.has(q.questionId);return <li key={q.questionId} className="rounded-card border border-border bg-surface p-4">
+      {shown.map((q,i)=>{const n=i+1;const isPinned=pinned.has(q.questionId);return <li key={q.questionId} className="rounded-[20px] border border-border bg-surface p-4">
         <div className="flex flex-wrap items-center gap-2"><span className="text-sm font-bold text-muted">{t('examBuilder.previewItem',{n})}</span>
-          <Tag>{areaName(q.areaId)}</Tag><Tag tone="unknown">{t(`examBuilder.origins.${q.origin}`)}</Tag>
+          <Tag>{areaName(q.areaId)}</Tag>{q.difficultyAssessment==='unassessed'?<Tag tone="unknown">{t('examBuilder.difficultyUnassessed')}</Tag>:null}<Tag tone="unknown">{t(`examBuilder.origins.${q.origin}`)}</Tag>
           {q.validation?<Tag tone="steady">{t(`examBuilder.seals.${q.validation.kind}`)}</Tag>:null}</div>
         <p className="my-2 break-words text-[15px]">{q.stemPreview}</p>
         <div className="flex flex-wrap gap-2">

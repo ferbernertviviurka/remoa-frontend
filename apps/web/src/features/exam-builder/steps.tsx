@@ -52,7 +52,7 @@ export function StepOrigin({origin,onOrigin,board,ai,onAi,genCount}:{origin:Orig
 
 export function DifficultyField({params,patch}:{params:ExamBuilderParams;patch:Patch}){
   return <div className="flex flex-col gap-2"><span id="eb-diff" className="text-[15px] font-bold">{t('examBuilder.difficulty')}</span>
-    <div role="group" aria-labelledby="eb-diff" className="flex flex-wrap gap-2">{(['easy','medium','hard'] as const).map(d=>{const on=params.difficulties.includes(d);return <Button key={d} size="sm" variant={on?'primary':'secondary'} aria-pressed={on} onClick={()=>patch({difficulties:on?params.difficulties.filter(x=>x!==d):[...params.difficulties,d]})}>{t(`examBuilder.difficultyOptions.${d}`)}</Button>;})}</div></div>;
+    <div role="group" aria-labelledby="eb-diff" className="flex flex-wrap gap-2"><Button size="sm" variant={params.difficulties.length?'secondary':'primary'} aria-pressed={params.difficulties.length===0} onClick={()=>patch({difficulties:[]})}>{t('examBuilder.allDifficulties')}</Button>{(['easy','medium','hard'] as const).map(d=>{const on=params.difficulties.includes(d);return <Button key={d} size="sm" variant={on?'primary':'secondary'} aria-pressed={on} onClick={()=>patch({difficulties:on?params.difficulties.filter(x=>x!==d):[...params.difficulties,d]})}>{t(`examBuilder.difficultyOptions.${d}`)}</Button>;})}</div><p className="text-sm text-muted">{t('examBuilder.difficultyCoverageHelp')}</p></div>;
 }
 
 /** FR-34: the catalog of the course has no published question. The AI origin still works for any course. */

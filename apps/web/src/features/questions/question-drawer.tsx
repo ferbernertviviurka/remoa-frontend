@@ -14,7 +14,7 @@ export function BankMeta({ question: q }: { question: QuestionPublic }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Tag tone={ai ? 'ai' : 'brand'}>{ai ? <span className="mr-1 inline-flex"><Icon name="sparkle" size={12} /></span> : null}{ai ? t('questionsBank.aiLabel') : t(`questions.source.${q.origin}`)}</Tag>
-      <span className="text-xs text-muted">{t(`questions.difficultyLabel.${q.difficulty}`)}</span>
+      <span className="text-xs text-muted">{t(q.teamDisclosure?.difficultyAssessment==='unassessed'?'questions.difficultyUnassessed':`questions.difficultyLabel.${q.difficulty}`)}</span>
       {ai ? null : isInstitutional(q.validation) ? <ValidationSeal validation={q.validation} /> : q.validation?.kind === 'medical_review' ? <Tag tone="steady">{t('questionsBank.sealMedicalBy', { name: q.validation.label })}</Tag> : null}
       {q.sourceLabel ? <span className="text-xs text-muted">{q.sourceLabel}</span> : null}
       <TeamDisclosure question={q} />
