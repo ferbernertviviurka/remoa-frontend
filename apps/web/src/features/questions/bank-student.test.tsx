@@ -307,3 +307,21 @@ it('renders available source figures before the alternatives in the question dra
   expect(within(dialog).getByText(/Não conseguimos mostrar esta imagem/)).toBeInTheDocument();
   expect(within(dialog).getByText('Figura da prova oficial')).toBeInTheDocument();
 });
+
+
+it('shows each item course and source tags without a course filter, consistently in its drawer', async () => {
+  lists = () => page([q(1, { teamDisclosure: { kind: 'remoa_team_attested', rightsStatus: 'pending', medicalReview: false, explanationStatus: 'absent', professionCode: 'veterinary_medicine', flags: [], resolutionEligible: true, declarationDate: '2026-10-19', sourceAreaCodes: ['clinica-e-cirurgia', 'saude-publica'], classificationStatus: 'source_tags_unreviewed' } })]);
+  bank();
+  await screen.findByText('Enunciado sintético 1');
+  expect(screen.getByText('Curso: Medicina Veterinária')).toBeInTheDocument();
+  expect(screen.queryByText('Área: Medicina Veterinária')).toBeNull();
+  expect(screen.getByText('Área de origem: Clínica e Cirurgia, Saúde Pública')).toBeInTheDocument();
+  expect(screen.getByText('Área não classificada.')).toBeInTheDocument();
+  expect(screen.getByText('Assunto não classificado.')).toBeInTheDocument();
+  expect(calls.filter(path => path.startsWith('/v1/questions')).every(path => !path.includes('course='))).toBe(true);
+  fireEvent.click(screen.getByRole('button', { name: 'Ver questão' }));
+  const drawer = await screen.findByRole('dialog');
+  expect(within(drawer).getByText('Curso: Medicina Veterinária')).toBeInTheDocument();
+  expect(within(drawer).getByText('Área de origem: Clínica e Cirurgia, Saúde Pública')).toBeInTheDocument();
+  expect(within(drawer).getByText('Assunto não classificado.')).toBeInTheDocument();
+});

@@ -157,7 +157,7 @@ export function BankStudent() {
               const fav = favorites[q.id] ?? q.userState?.favorite ?? false;
               const isPicked = selected.includes(q.id);
               return <li key={q.id}><article aria-label={q.stem.slice(0, 120)} className={`rounded-[20px] border border-l-4 bg-surface p-4 transition-colors md:p-5 ${isPicked ? 'border-primary' : 'border-border'} ${progressEdge[mark]}`}>
-                <div className="flex flex-wrap items-center gap-2"><Tag tone={progressTone[mark]}>{t(`questionsBank.badge.${mark}`)}</Tag><BankMeta question={q} course={filters.course ? courseName : undefined} /></div>
+                <div className="flex flex-wrap items-center gap-2"><Tag tone={progressTone[mark]}>{t(`questionsBank.badge.${mark}`)}</Tag><BankMeta question={q} /></div>
                 <h2 className="mt-3 line-clamp-3 whitespace-pre-wrap break-words text-base font-semibold leading-relaxed text-ink md:text-[17px]">{q.stem}</h2>
                 <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
                   <Button size="sm" data-bank-open={q.id} onClick={() => { opener.current = q.id; setOpen(q); }}>{t('questionsBank.open')}</Button>
