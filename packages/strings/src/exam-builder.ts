@@ -1,5 +1,8 @@
 /** F34 / G27 FR-22..32: Criador de prova. Namespace `examBuilder` em `@remoa/strings/ns`. */
 export const examBuilder = {
+  difficultyUnassessed: 'Dificuldade não avaliada',
+  allDifficulties: 'Todas as dificuldades', difficultyCoverageHelp: 'Parte do acervo ainda não tem avaliação de dificuldade. Todas as dificuldades inclui essas questões.', difficultyFilterShortfall: 'O filtro de dificuldade limita esta prova', difficultyFilterContext: 'Filtro atual: {levels}. Encontramos {n} questões com essa seleção.', clearDifficulty: 'Remover filtro de dificuldade',
+
   title: 'Criador de prova',
   subtitle: 'Monte uma prova pelos seus filtros, confira as questões e comece quando quiser.',
   eyebrow: 'Banco de questões',

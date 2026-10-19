@@ -77,7 +77,7 @@ export function BuilderScreen({init}:{init:BuilderInit}){
   useEffect(()=>{
     if(!avOn)return;
     const ac=new AbortController();setAvState('loading');
-    getAvailability(JSON.parse(filterKey),ac.signal).then(r=>{setAv(r);setAvState('ready');}).catch(()=>{if(!ac.signal.aborted)setAvState('error');});
+    getAvailability(JSON.parse(filterKey),ac.signal).then(r=>{if(!ac.signal.aborted){setAv(r);setAvState('ready');}}).catch(()=>{if(!ac.signal.aborted)setAvState('error');});
     return()=>ac.abort();
   },[filterKey,genTick,avOn]);
 
@@ -256,6 +256,7 @@ export function BuilderScreen({init}:{init:BuilderInit}){
           {alloc?<ul aria-label={t('examBuilder.composition')} className="m-0 flex list-none flex-col gap-3 p-0">{alloc.rows.map(r=><li key={r.areaId??'none'} className="flex flex-col gap-1">
             <span className="text-sm">{t('examBuilder.compositionRow',{area:areaName(r.areaId),allocated:r.allocated,available:r.available})}</span>
             <Progress size="sm" aria-label={areaName(r.areaId)} value={r.allocated} max={Math.max(r.target,r.allocated,1)}/></li>)}</ul>:null}
+          {alloc&&alloc.shortfall>0&&params.difficulties.length>0?<Alert tone="watch" title={t('examBuilder.difficultyFilterShortfall')}><p>{t('examBuilder.difficultyFilterContext',{levels:params.difficulties.map(level=>t(`examBuilder.difficultyOptions.${level}`)).join(', '),n:av?.total??0})}</p><Button variant="secondary" onClick={()=>patch({difficulties:[]})}>{t('examBuilder.clearDifficulty')}</Button></Alert>:null}
           {alloc&&alloc.shortfall>0&&countOk&&!gen.busy&&!(needGen&&(!genResult||genResult.shortfall>0))?<ShortfallNote got={alloc.allocated} requested={alloc.requested} why={t(origin==='catalog'?'examBuilder.shortWhyCatalog':'examBuilder.shortWhyAi')}>
             {origin==='catalog'?<Button size="sm" onClick={()=>{setOrigin('mixed');setAi(a=>({...a,count:Math.min(alloc.shortfall,EXAM_GENERATE_MAX)}));}}>{t('examBuilder.shortComplete')}</Button>
               :<Button size="sm" disabled={!validGen(Math.min(alloc.shortfall,EXAM_GENERATE_MAX))} onClick={()=>void generate(Math.min(alloc.shortfall,EXAM_GENERATE_MAX))}>{alloc.shortfall===1?t('examBuilder.shortMoreOne'):t('examBuilder.shortMore',{n:Math.min(alloc.shortfall,EXAM_GENERATE_MAX)})}</Button>}

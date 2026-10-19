@@ -2,6 +2,8 @@
 export {
   enamedTopicOptionSchema,
   examPaperPublicSchema,
+  examPaperListResultSchema,
+  healthCourseSchema,
   questionAnswerSavedSchema,
   questionInstitutionListSchema,
   questionListResultSchema,
