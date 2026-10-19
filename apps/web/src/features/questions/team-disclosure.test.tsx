@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { QuestionPublic, QuestionTeamDisclosure } from '@remoa/contracts';
+import { questionSourceAreaCodes, type QuestionPublic, type QuestionTeamDisclosure } from '@remoa/contracts';
 import { canSelectQuestion, isCatalogOnly, TeamDisclosure } from './team-disclosure';
 
 const disclosure: QuestionTeamDisclosure = { kind: 'remoa_team_attested', rightsStatus: 'pending', medicalReview: false, explanationStatus: 'absent', professionCode: 'nursing', flags: [], resolutionEligible: true, declarationDate: '2026-10-19' };
@@ -13,7 +13,7 @@ describe('signed team publication eligibility', () => {
     expect(canSelectQuestion(q)).toBe(false);
     expect(isCatalogOnly(q)).toBe(true);
     render(<TeamDisclosure question={q} />);
-    expect(screen.getByText('Área: Enfermagem')).toBeInTheDocument();
+    expect(screen.getByText('Curso: Enfermagem')).toBeInTheDocument();
     expect(document.body.textContent).toMatch(flag === 'annulled' ? /não conta na pontuação/ : /consulta/);
   });
   it('allows eligible team items without implying a final key or inventing an explanation', () => {
@@ -31,7 +31,40 @@ describe('signed team publication eligibility', () => {
     ['physical_education', 'Educação Física'], ['veterinary_medicine', 'Medicina Veterinária'],
   ] as const)('discloses the actual corpus profession %s without a medical fallback', (professionCode, label) => {
     render(<TeamDisclosure question={question({ teamDisclosure: { ...disclosure, professionCode } })} />);
-    expect(screen.getByText(`Área: ${label}`)).toBeInTheDocument();
+    expect(screen.getByText(`Curso: ${label}`)).toBeInTheDocument();
+  });
+  it('renders historical team snapshots without classification fields as unclassified', () => {
+    render(<TeamDisclosure question={question({ teamDisclosure: disclosure })} />);
+    expect(screen.getByText('Área não classificada.')).toBeInTheDocument();
+    expect(screen.getByText('Assunto não classificado.')).toBeInTheDocument();
+    expect(screen.queryByText(/Área de origem:/)).toBeNull();
+  });
+  it.each(questionSourceAreaCodes)('shows source tag %s without treating it as a reviewed area or inventing a topic', code => {
+    render(<TeamDisclosure question={question({ teamDisclosure: { ...disclosure, sourceAreaCodes: [code], classificationStatus: 'source_tags_unreviewed' } })} />);
+    expect(screen.getByText(/Área de origem:/).textContent).not.toContain(code);
+    expect(screen.getByText('Classificação de origem não revisada.')).toBeInTheDocument();
+    expect(screen.getByText('Área não classificada.')).toBeInTheDocument();
+    expect(screen.getByText('Assunto não classificado.')).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/ENAMED|confirmada|CRM/);
+  });
+  it('shows actual institutional source approval and its expiry without implying a third-party license', () => {
+    render(<TeamDisclosure question={question({ teamDisclosure: { ...disclosure, sourceRightsStatus: 'authorized', sourceApprovalBasis: 'remoa_admin_attestation', sourceRightsExpiresAt: new Date('2030-11-19T23:59:59.000Z') } })} />);
+    expect(screen.getByText('Fonte aprovada pela Remoa.')).toBeInTheDocument();
+    expect(screen.getByText(/Aprovação válida até 19\/11\/2030/)).toBeInTheDocument();
+    expect(screen.queryByText(/Direitos de uso ainda não verificados/)).toBeNull();
+    expect(document.body.textContent).not.toMatch(/licenciada|editora|CRM/);
+  });
+  it.each([
+    ['restricted', 'Fonte com uso restrito.'], ['revoked', 'A aprovação desta fonte foi revogada.'],
+  ] as const)('does not show approval for a %s source', (sourceRightsStatus, message) => {
+    render(<TeamDisclosure question={question({ teamDisclosure: { ...disclosure, sourceRightsStatus, sourceApprovalBasis: 'remoa_admin_attestation', sourceRightsExpiresAt: null } })} />);
+    expect(screen.getByText(message)).toBeInTheDocument();
+    expect(screen.queryByText('Fonte aprovada pela Remoa.')).toBeNull();
+  });
+  it('marks an expired source approval instead of showing it as current', () => {
+    render(<TeamDisclosure question={question({ teamDisclosure: { ...disclosure, sourceRightsStatus: 'authorized', sourceApprovalBasis: 'remoa_admin_attestation', sourceRightsExpiresAt: new Date('2020-01-01T00:00:00.000Z') } })} />);
+    expect(screen.getByText('A aprovação desta fonte expirou.')).toBeInTheDocument();
+    expect(screen.queryByText('Fonte aprovada pela Remoa.')).toBeNull();
   });
   it('preserves existing non-team annulled study behavior', () => {
     const q = question({ availability: 'annulled' });

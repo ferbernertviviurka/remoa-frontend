@@ -9,12 +9,11 @@ import { canSelectQuestion, isCatalogOnly, TeamDisclosure } from './team-disclos
 import { isInstitutional, ValidationSeal } from './validation-seal';
 
 /** D-1823/D-1824: AI questions carry "Gerada por IA" and never a seal; institutional = "Validado pela Remoa"; medical review names the reviewer, never a CRM. */
-export function BankMeta({ question: q, course }: { question: QuestionPublic; course?: string }) {
+export function BankMeta({ question: q }: { question: QuestionPublic }) {
   const ai = q.origin === 'ai_generated';
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Tag tone={ai ? 'ai' : 'brand'}>{ai ? <span className="mr-1 inline-flex"><Icon name="sparkle" size={12} /></span> : null}{ai ? t('questionsBank.aiLabel') : t(`questions.source.${q.origin}`)}</Tag>
-      {course ? <Tag tone="unknown">{course}</Tag> : null}
       <span className="text-xs text-muted">{t(`questions.difficultyLabel.${q.difficulty}`)}</span>
       {ai ? null : isInstitutional(q.validation) ? <ValidationSeal validation={q.validation} /> : q.validation?.kind === 'medical_review' ? <Tag tone="steady">{t('questionsBank.sealMedicalBy', { name: q.validation.label })}</Tag> : null}
       {q.sourceLabel ? <span className="text-xs text-muted">{q.sourceLabel}</span> : null}
