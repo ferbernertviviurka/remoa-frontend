@@ -15,7 +15,6 @@ export const items: { href: string; icon: IconName; label: StringKey }[] = [
   { href: '/app/revisar', icon: 'bolt', label: 'rail.review' },
   { href: '/app/calendario', icon: 'calendar', label: 'calendar.navLabel' },
   { href: '/app/cobertura', icon: 'bars', label: 'rail.enamed' },
-  { href: '/app/banco-de-questoes', icon: 'list', label: 'questions.nav' },
   { href: '/app/provas', icon: 'clock', label: 'questions.proofsNav' },
   { href: '/app/loja', icon: 'store', label: 'rail.store' },
 ];
@@ -24,7 +23,7 @@ export const items: { href: string; icon: IconName; label: StringKey }[] = [
 export const ACCOUNT_HOME = '/app/conta/perfil';
 
 export const isActive = (path: string, href: string, challenge: boolean) =>
-  challenge ? href === '/app/revisar' : path === href || path.startsWith(`${href}/`);
+  challenge ? href === '/app/revisar' : path === href || path.startsWith(`${href}/`) || (href === '/app/provas' && path === '/app/prova/nova-prova');
 
 /** Trilho de 88 px (D-076). `dueTotal` = badge do Revisar. */
 /** F13: who is signed in, for the avatar at the foot of the rail (null = API down, user icon). */

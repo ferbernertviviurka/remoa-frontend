@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { Rail } from './rail';
 
-vi.mock('@/features/questions/flags',()=>({useQuestionFeatureFlags:()=>({import:true,catalog:true,sessions:true,bankStudent:false}),questionDestinationEnabled:(h:string)=>!['/app/banco-de-questoes','/app/provas'].includes(h)}));
+const questionFlags = vi.hoisted(() => ({ bankStudent: false }));
+vi.mock('@/features/questions/flags',()=>({useQuestionFeatureFlags:()=>({import:true,catalog:true,sessions:true,bankStudent:questionFlags.bankStudent}),questionDestinationEnabled:(h:string)=>!['/app/banco-de-questoes','/app/provas'].includes(h)||questionFlags.bankStudent}));
 const push = vi.fn();
 let pathname = '/';
 let search = new URLSearchParams();
@@ -10,6 +11,7 @@ vi.mock('next/navigation', () => ({ usePathname: () => pathname, useRouter: () =
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  questionFlags.bankStudent = false;
 });
 
 describe('Rail', () => {
@@ -42,6 +44,15 @@ describe('Rail', () => {
   it('leaves the account to the navbar (D-607)', () => {
     render(<Rail />);
     expect(screen.queryByRole('button', { name: 'Minha conta' })).toBeNull();
+  });
+
+  it('keeps Provas active in its builder and omits Questões even when the bank is enabled', () => {
+    questionFlags.bankStudent = true;
+    pathname = '/app/prova/nova-prova';
+    render(<Rail />);
+    expect(screen.queryByRole('link', { name: 'Questões' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Provas' })).toHaveAttribute('href', '/app/provas');
+    expect(screen.getByRole('link', { name: 'Provas' })).toHaveAttribute('aria-current', 'page');
   });
 });
 

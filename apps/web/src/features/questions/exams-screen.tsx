@@ -8,11 +8,10 @@ import { getExam, listExamCatalog, listExamCourses, questionError } from './api'
 import {useQuestionFeatureFlags} from './flags';
 import {SessionHistoryScreen} from './session-history-screen';
 import { ConfigDialog, PageTitle, panel, QuestionMeta } from './shared';
-import { aiExamHref } from '@/features/exam-builder/train-topic-link';
 import { MySessionsSection } from './my-sessions-section';
 import { QuestionsSkeleton } from './questions-skeleton';
 const examLink = `${focusRing} inline-flex min-h-12 items-center justify-center gap-2 rounded-btn px-5 text-[15px]`;
-export const personalizedExamHref = '/app/banco-de-questoes/prova';
+export const personalizedExamHref = '/app/prova/nova-prova';
 export function ExamsScreen({sessionsEnabled=true,builderEnabled=true}:{sessionsEnabled?:boolean;builderEnabled?:boolean}={}) {
   const [exams,setExams]=useState<ExamPaperPublic[]>([]);const [total,setTotal]=useState(0);const [cursor,setCursor]=useState<string|null>(null);
   const [search,setSearch]=useState('');const [query,setQuery]=useState('');const [course,setCourse]=useState('all');
@@ -42,7 +41,7 @@ export function ExamsScreen({sessionsEnabled=true,builderEnabled=true}:{sessions
   return <div className="mx-auto flex w-full min-w-0 max-w-[1200px] flex-col gap-8 py-2 md:px-6">
     <header><p className="text-xs font-bold uppercase tracking-[.12em] text-muted">{t('questions.eyebrow')}</p><h1 className="mt-2 font-display text-[34px] font-extrabold leading-tight tracking-tight md:text-[44px]">{t('questions.examsTitle')}</h1><p className="mt-3 max-w-2xl text-muted">{t('questions.examsWorkspaceDescription')}</p></header>
     {sessionsEnabled&&builderEnabled?<section aria-labelledby="create-exam-title" className="grid gap-7 rounded-[30px] bg-panel-dark p-5 text-on-dark md:grid-cols-[minmax(0,1fr)_270px] md:p-8">
-      <div><p className="text-xs font-bold uppercase tracking-[.12em] text-on-dark-muted">{t('questions.examsYourPace')}</p><h2 id="create-exam-title" className="mt-3 max-w-xl font-display text-[26px] font-extrabold leading-tight md:text-[34px]">{t('questions.examsCreateTitle')}</h2><p className="mt-3 max-w-xl text-on-dark-muted">{t('questions.examsCreateHelp')}</p><div className="mt-6 flex flex-wrap gap-3"><Link className={`${examLink} ${buttonVariants.light}`} href={personalizedExamHref}><Icon name="plus" size={20}/>{t('questions.examsCreate')}</Link><Link className={`${examLink} ${buttonVariants['outline-light']}`} href={aiExamHref}><Icon name="sparkle" size={18}/>{t('questions.examsGenerateAi')}</Link></div></div>
+      <div><p className="text-xs font-bold uppercase tracking-[.12em] text-on-dark-muted">{t('questions.examsYourPace')}</p><h2 id="create-exam-title" className="mt-3 max-w-xl font-display text-[26px] font-extrabold leading-tight md:text-[34px]">{t('questions.examsCreateTitle')}</h2><p className="mt-3 max-w-xl text-on-dark-muted">{t('questions.examsCreateHelp')}</p><div className="mt-6 flex flex-wrap gap-3"><Link className={`${examLink} ${buttonVariants.light}`} href={personalizedExamHref}><Icon name="plus" size={20}/>{t('questions.examsCreate')}</Link><Link className={`${examLink} ${buttonVariants['outline-light']}`} href={`${personalizedExamHref}?source=ai`}><Icon name="sparkle" size={18}/>{t('questions.examsGenerateAi')}</Link></div></div>
       <div className="hidden flex-col justify-center gap-4 border-l border-white/20 pl-7 text-sm md:flex"><div><p className="font-bold">{t('questions.examsStudyTitle')}</p><p className="mt-1 text-on-dark-muted">{t('questions.examsStudyHelp')}</p></div><div><p className="font-bold">{t('questions.examsSimulationTitle')}</p><p className="mt-1 text-on-dark-muted">{t('questions.examsSimulationHelp')}</p></div></div>
     </section>:null}
     {sessionsEnabled?<MySessionsSection/>:null}
