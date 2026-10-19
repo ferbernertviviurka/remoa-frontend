@@ -5,6 +5,7 @@ import type { QuestionDrawerAttempt, QuestionPublic } from '@remoa/contracts';
 import { t } from './bank-t';
 import { answerQuestion, getLastAttempt } from './api';
 import { MapLink, ReportDialog } from './shared';
+import { canSelectQuestion, isCatalogOnly, TeamDisclosure } from './team-disclosure';
 import { isInstitutional, ValidationSeal } from './validation-seal';
 
 /** D-1823/D-1824: AI questions carry "Gerada por IA" and never a seal; institutional = "Validado pela Remoa"; medical review names the reviewer, never a CRM. */
@@ -15,8 +16,9 @@ export function BankMeta({ question: q, course }: { question: QuestionPublic; co
       <Tag tone={ai ? 'ai' : 'brand'}>{ai ? <span className="mr-1 inline-flex"><Icon name="sparkle" size={12} /></span> : null}{ai ? t('questionsBank.aiLabel') : t(`questions.source.${q.origin}`)}</Tag>
       {course ? <Tag tone="unknown">{course}</Tag> : null}
       <span className="text-xs text-muted">{t(`questions.difficultyLabel.${q.difficulty}`)}</span>
-      {ai ? null : isInstitutional(q.validation) ? <ValidationSeal /> : q.validation?.kind === 'medical_review' ? <Tag tone="steady">{t('questionsBank.sealMedicalBy', { name: q.validation.label })}</Tag> : null}
+      {ai ? null : isInstitutional(q.validation) ? <ValidationSeal validation={q.validation} /> : q.validation?.kind === 'medical_review' ? <Tag tone="steady">{t('questionsBank.sealMedicalBy', { name: q.validation.label })}</Tag> : null}
       {q.sourceLabel ? <span className="text-xs text-muted">{q.sourceLabel}</span> : null}
+      <TeamDisclosure question={q} />
     </div>
   );
 }
@@ -27,28 +29,30 @@ export function QuestionDrawer({ question, inExam, examFull, onToggleExam, onAns
   question: QuestionPublic; inExam: boolean; examFull: boolean; onToggleExam: () => void; onAnswered: (id: string, result: QuestionDrawerAttempt['result']) => void; onClose: () => void;
 }) {
   const objective = question.type === 'objective';
+  const catalogOnly = isCatalogOnly(question);
   const [selected, setSelected] = useState('');
   const [attempt, setAttempt] = useState<QuestionDrawerAttempt | null>(null);
   const [previous, setPrevious] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState(false);
+  const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set());
   const opened = useRef(Date.now());
   const mutation = useRef<string | null>(null);
   const answerFocus = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!objective) return;
+    if (!objective || catalogOnly) return;
     const controller = new AbortController();
     void getLastAttempt(question.id, controller.signal)
       .then(({ last }) => { if (last && !controller.signal.aborted) { setAttempt(last); setSelected(last.selectedKey); setPrevious(true); } })
       .catch(() => { if (!controller.signal.aborted) setError(t('questionsBank.attemptError')); });
     return () => controller.abort();
-  }, [question.id, objective]);
+  }, [question.id, objective, catalogOnly]);
   useEffect(() => { if (attempt && !previous) answerFocus.current?.focus(); }, [attempt, previous]);
 
   const submit = async () => {
-    if (!selected || busy) return;
+    if (!selected || busy || catalogOnly) return;
     mutation.current ??= crypto.randomUUID(); // reused when the same submit is retried (idempotent by mutationId)
     setBusy(true); setError(null);
     try {
@@ -64,8 +68,13 @@ export function QuestionDrawer({ question, inExam, examFull, onToggleExam, onAns
       <div className="flex flex-col gap-5">
         <BankMeta question={question} />
         <p className="whitespace-pre-wrap break-words text-lg leading-relaxed">{question.stem}</p>
+        {question.assets.map(asset => <figure key={asset.id} className="min-w-0 space-y-2">
+          {failedImages.has(asset.id) ? <Alert tone="watch" title={t('questions.resultImageError')} /> : <img src={asset.url} alt={asset.alt} className="h-auto max-w-full rounded-map border border-border" onError={() => setFailedImages(old => new Set(old).add(asset.id))} />}
+          <figcaption className="whitespace-pre-wrap break-words text-sm text-muted">{asset.alt}</figcaption>
+        </figure>)}
         {!objective ? <div className="flex flex-col gap-3"><p className="text-muted">{t('questionsBank.discursive')}</p><MapLink question={question} /></div>
           : alternatives.length === 0 ? <p className="text-muted">{t('questionsBank.noAlternatives')}</p>
+          : catalogOnly ? <ol className="flex flex-col gap-2">{alternatives.map(a => <li key={a.key} className="whitespace-pre-wrap break-words"><strong>{a.key}. </strong>{a.text}</li>)}</ol>
           : !attempt ? <RadioGroup label={t('questionsBank.alternatives')} value={selected} onValueChange={setSelected} options={alternatives.map((a) => ({ value: a.key, label: `${a.key}. ${a.text}` }))} />
           : <div ref={answerFocus} tabIndex={-1} className="flex flex-col gap-4 outline-none">
             <p role="status" className="font-display text-xl font-bold">{previous ? `${t('questionsBank.previous')}: ` : ''}{t(resultKey[attempt.result])}</p>
@@ -79,8 +88,8 @@ export function QuestionDrawer({ question, inExam, examFull, onToggleExam, onAns
           </div>}
         {error ? <Alert role="alert" tone="review" title={error} /> : null}
         <div className="flex flex-wrap gap-2">
-          {objective && alternatives.length > 0 ? (attempt ? <Button variant="secondary" onClick={redo}>{t('questionsBank.redo')}</Button> : <Button loading={busy} disabled={!selected} onClick={() => void submit()}>{busy ? t('questionsBank.answering') : t('questionsBank.answer')}</Button>) : null}
-          <Button variant="secondary" disabled={!inExam && examFull} onClick={onToggleExam}>{inExam ? t('questionsBank.removeFromExam') : t('questionsBank.addToExam')}</Button>
+          {objective && !catalogOnly && alternatives.length > 0 ? (attempt ? <Button variant="secondary" onClick={redo}>{t('questionsBank.redo')}</Button> : <Button loading={busy} disabled={!selected} onClick={() => void submit()}>{busy ? t('questionsBank.answering') : t('questionsBank.answer')}</Button>) : null}
+          <Button variant="secondary" disabled={!inExam && (examFull || !canSelectQuestion(question))} onClick={onToggleExam}>{inExam ? t('questionsBank.removeFromExam') : t('questionsBank.addToExam')}</Button>
           <Button variant="quiet" onClick={() => setReport(true)}>{t('questionsBank.report')}</Button>
         </div>
       </div>

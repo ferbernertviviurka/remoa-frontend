@@ -8,6 +8,7 @@ import { t } from './bank-t';
 import { listQuestionFacets, listQuestions, saveUserState } from './api';
 import { BankFilterPanel, BankSearchBar, bankFilterCount, bankQuery, emptyBankFilters, type BankFilters, type BankTab } from './questions-filters';
 import { useCourseOptions } from './course-field';
+import { canSelectQuestion } from './team-disclosure';
 import { QuestionDrawer, BankMeta } from './question-drawer';
 import { SelectionBar, BANK_SELECTION_MAX } from './selection-bar';
 import { QuestionsSkeleton } from './questions-skeleton';
@@ -161,7 +162,7 @@ export function BankStudent() {
                 <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
                   <Button size="sm" data-bank-open={q.id} onClick={() => { opener.current = q.id; setOpen(q); }}>{t('questionsBank.open')}</Button>
                   <IconButton variant="quiet" aria-pressed={fav} aria-label={fav ? t('questionsBank.unfavorite') : t('questionsBank.favorite')} onClick={() => void toggleFavorite(q)}><Icon name="star" size={20} fill={fav ? 'currentColor' : 'none'} /></IconButton>
-                  <Checkbox checked={isPicked} disabled={!isPicked && selected.length >= BANK_SELECTION_MAX} onCheckedChange={() => toggleSelect(q.id)} aria-label={`${t('questionsBank.select')}: ${q.stem.slice(0, 80)}`} label={t('questionsBank.selectShort')} />
+                  <Checkbox checked={isPicked} disabled={!isPicked && (!canSelectQuestion(q) || selected.length >= BANK_SELECTION_MAX)} onCheckedChange={() => toggleSelect(q.id)} aria-label={`${t('questionsBank.select')}: ${q.stem.slice(0, 80)}`} label={t('questionsBank.selectShort')} />
                 </div>
               </article></li>;
             })}</ul>

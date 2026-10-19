@@ -15,3 +15,15 @@ describe('validation seal (D-1819)',()=>{
   expect(screen.getByText(/Revisada · Dra. Ana/)).toBeInTheDocument();expect(screen.queryByText('Validado pela Remoa')).toBeNull();
  });
 });
+
+it('distinguishes the team declaration from medical review and Remoa authorship',()=>{
+ render(<QuestionMeta question={{...q({kind:'remoa_team_attested',label:'Remoa',scope:'team_declaration'}),origin:'official_exam',sourceLabel:'Banca oficial',teamDisclosure:{kind:'remoa_team_attested',rightsStatus:'pending',medicalReview:false,explanationStatus:'absent',professionCode:'veterinary_medicine',flags:['key_conflict','image_missing','key_finality_unverified'],resolutionEligible:false,declarationDate:'2026-10-19'}}}/>);
+ expect(screen.getByText('Validado pelo time da Remoa')).toBeInTheDocument();
+ expect(screen.getByText('Fonte: Banca oficial')).toBeInTheDocument();
+ expect(screen.getByText('Área: Medicina Veterinária')).toBeInTheDocument();
+ expect(screen.getByText('Fonte oficial. Direitos de uso ainda não verificados.')).toBeInTheDocument();
+ expect(screen.getByText(/divergência entre os gabaritos/)).toBeInTheDocument();
+ expect(screen.getByText(/imagem necessária está indisponível/)).toBeInTheDocument();
+ expect(screen.getByText(/finalidade do gabarito não foi confirmada/)).toBeInTheDocument();
+ expect(document.body.textContent).not.toMatch(/CRM|Revisada por médico|Autoral Remoa|Validado pela Remoa/);
+});
