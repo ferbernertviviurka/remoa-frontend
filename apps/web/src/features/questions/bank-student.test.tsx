@@ -274,3 +274,36 @@ describe('F34 banco do aluno (HTTP sintético)', () => {
     await waitFor(() => expect(screen.getAllByRole('button', { name: 'Remover das favoritas' })[0]).toHaveAttribute('aria-pressed', 'true'));
   });
 });
+
+it('publishes catalog-only team items with disclosures before any choice and prevents scored selection or answer', async () => {
+  lists = () => page([q(1, { availability: 'unavailable', validation: { kind: 'remoa_team_attested', label: 'Remoa', scope: 'team_declaration' }, teamDisclosure: { kind: 'remoa_team_attested', rightsStatus: 'pending', medicalReview: false, explanationStatus: 'absent', professionCode: 'nursing', flags: ['key_conflict', 'image_missing'], resolutionEligible: false, declarationDate: '2026-10-19' } })]);
+  bank();
+  await screen.findByText('Enunciado sintético 1');
+  expect(screen.getByRole('checkbox', { name: /Selecionar para a prova: Enunciado sintético 1/ })).toBeDisabled();
+  expect(screen.getByText(/Direitos de uso ainda não verificados/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Ver questão' }));
+  const dialog = await screen.findByRole('dialog');
+  expect(within(dialog).getByText('Validado pelo time da Remoa')).toBeInTheDocument();
+  expect(within(dialog).getByText(/divergência entre os gabaritos/)).toBeInTheDocument();
+  expect(within(dialog).queryByRole('radio')).toBeNull();
+  expect(within(dialog).queryByRole('button', { name: 'Responder' })).toBeNull();
+  expect(within(dialog).getByRole('button', { name: 'Adicionar à prova' })).toBeDisabled();
+  expect(calls.some(path => path.endsWith('/attempt') || path.endsWith('/answer'))).toBe(false);
+  expect(answers).toHaveLength(0);
+  expect(document.body.innerHTML).not.toMatch(/correctKey|reviewerCrm|originalPayload|publicationBatch/);
+});
+
+it('renders available source figures before the alternatives in the question drawer', async () => {
+  lists = () => page([q(1, { assets: [{ id: ID(91), alt: 'Figura da prova oficial', url: 'https://assets.example.test/figura.png', provenance: null }] })]);
+  bank();
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver questão' }));
+  const dialog = await screen.findByRole('dialog');
+  const image = within(dialog).getByRole('img', { name: 'Figura da prova oficial' });
+  expect(image).toHaveAttribute('src', 'https://assets.example.test/figura.png');
+  const option = within(dialog).getAllByRole('radio')[0]!;
+  expect(image.compareDocumentPosition(option) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(within(dialog).queryByText('Comentário liberado só após responder')).toBeNull();
+  fireEvent.error(image);
+  expect(within(dialog).getByText(/Não conseguimos mostrar esta imagem/)).toBeInTheDocument();
+  expect(within(dialog).getByText('Figura da prova oficial')).toBeInTheDocument();
+});

@@ -157,7 +157,7 @@ export const examBuilder = {
   reshuffle: 'Sortear de novo',
   reshuffleHelp: 'As fixadas ficam.',
   origins: { official_exam: 'Prova oficial', remoa_authored: 'Autoral Remoa', ai_generated: 'Gerada por IA', user_authored: 'Criada por você' },
-  seals: { medical_review: 'Revisada por médico', remoa_institutional: 'Validado pela Remoa' },
+  seals: { remoa_team_attested: 'Validado pelo time da Remoa', medical_review: 'Revisada por médico', remoa_institutional: 'Validado pela Remoa' },
   // summary
   summary: 'Resumo',
   summaryQuestions: 'Questões',
