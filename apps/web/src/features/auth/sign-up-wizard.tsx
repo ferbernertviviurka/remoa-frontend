@@ -244,7 +244,6 @@ export function SignUpWizard({ next, referred = false, plan, course }: { next?: 
             checks={[
               { id: 'length', label: t('account.security.rules.length'), ok: strength.checks.minLength },
               { id: 'mix', label: t('account.security.rules.mix'), ok: strength.checks.lettersAndNumbers },
-              { id: 'long', label: t('account.security.rules.long'), ok: strength.checks.long },
             ]}
           />
           {plan ? (

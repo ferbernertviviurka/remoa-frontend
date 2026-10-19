@@ -39,16 +39,14 @@ async function pickCourse(text: string, option: string) {
 }
 
 describe('StudyFields', () => {
-  it('busca sem acento, preenche conselho e objetivo automático; Desfazer remove', async () => {
+  it('busca sem acento, preenche conselho e objetivo sem anunciar; o aluno desmarca o objetivo no chip', async () => {
     render(<Harness />);
     await pickCourse('farmacia', 'Farmácia');
-    const auto = screen.getByText('Preenchido automaticamente').parentElement!;
-    expect(within(auto).getByText('Conselho: CRF · Conselho Regional de Farmácia')).toBeVisible();
-    expect(within(auto).getByText(/Objetivo sugerido: Residência multiprofissional em saúde/)).toBeVisible();
+    expect(screen.queryByText('Preenchido automaticamente')).toBeNull();
+    expect(last.council).toBe('CRF');
     expect(last.goals).toEqual(['residencia_multiprofissional']);
-    fireEvent.click(screen.getByRole('button', { name: 'Desfazer' }));
+    fireEvent.click(screen.getByRole('button', { name: /Residência multiprofissional em saúde/, pressed: true }));
     expect(last.goals).toEqual([]);
-    expect(screen.queryByText(/Objetivo sugerido/)).toBeNull();
   });
 
   it('alias acha o curso ("tecnico"); trocar de curso troca só o automático e mantém o escolhido', async () => {
@@ -79,7 +77,7 @@ describe('StudyFields', () => {
     fireEvent.change(box, { target: { value: 'ufpr' } });
     fireEvent.click(await screen.findByRole('option', { name: /UFPR/ }, { timeout: 2000 }));
     expect(search).toHaveBeenCalledWith('ufpr', undefined, expect.any(AbortSignal));
-    expect(screen.getByText('Curitiba, PR · Pública')).toBeVisible();
+    expect(screen.queryByText('Curitiba, PR · Pública')).toBeNull();
     expect(last.institution).toEqual(UFPR);
     fireEvent.change(box, { target: { value: 'Faculdade Nova' } });
     fireEvent.click(await screen.findByRole('option', { name: 'Usar “Faculdade Nova”' }, { timeout: 2000 }));

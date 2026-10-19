@@ -100,6 +100,14 @@ describe('SignUpWizard', () => {
   };
   const create = () => { fireEvent.click(screen.getByRole('checkbox')); click('Criar conta'); };
 
+  it('passo 1: senha de 8 caracteres basta; 12 é só dica de força, não requisito', async () => {
+    render(<SignUpWizard />);
+    fillAccount('abcdef12');
+    expect(screen.queryByText('12 ou mais caracteres deixa a senha mais forte')).toBeNull();
+    click('Continuar');
+    expect(await screen.findByRole('combobox', { name: 'Curso ou área' })).toBeVisible();
+  });
+
   it('passo 1: nome, e-mail válido e senha forte', () => {
     render(<SignUpWizard />);
     expect(screen.getByRole('listitem', { current: 'step' }).textContent).toContain('Conta');
@@ -117,7 +125,8 @@ describe('SignUpWizard', () => {
     click('Continuar');
     expect(screen.getByText('Escolha o seu curso e pelo menos um foco de estudo.')).toBeVisible();
     await pickOption('Curso ou área', 'enfermagem', 'Enfermagem');
-    fireEvent.click(screen.getByRole('button', { name: 'Desfazer' }));
+    expect(screen.queryByText('Preenchido automaticamente')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Provas da faculdade/, pressed: true }));
     click('Continuar');
     expect(screen.getAllByText('Escolha pelo menos um foco de estudo.').length).toBeGreaterThan(0);
     click('Voltar');

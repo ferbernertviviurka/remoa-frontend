@@ -8,7 +8,7 @@ import { withStrings } from '@remoa/strings';
 import * as more from '@remoa/strings/ns';
 import { Autocomplete, type AutocompleteOption, Button, ChoiceChip, ChoiceChipMulti, Input, NumberStepper } from '@remoa/ui';
 import { searchInstitutions } from './api';
-import { applyCourse, applyInstitution, courseName, toggleGoal, undoAutoGoal, visibleFields, type StudyDraft, type StudyErrors } from './autofill';
+import { applyCourse, applyInstitution, courseName, toggleGoal, visibleFields, type StudyDraft, type StudyErrors } from './autofill';
 import { useCourses, useGoals } from './reference';
 
 const t = withStrings({ studyProfile: more.studyProfile });
@@ -23,7 +23,6 @@ function Err({ id, children }: { id: string; children?: string }) {
   return children ? <p id={id} role="alert" className="m-0 text-sm font-semibold text-review-text">{children}</p> : null;
 }
 const help = 'm-0 text-[13px] text-muted';
-const autoBox = 'flex flex-col gap-1.5 rounded-field border border-border bg-primary-tint px-4 py-3 text-sm text-primary-deep';
 
 /** F35 FR-14..FR-22: the "Seu estudo" fields, shared by signup step 2, the onboarding and Conta. Controlled: `value` + `onChange`. */
 /** `askCouncilNumber` false (signup, D-1862): the optional council number is only asked in Conta, never sent through auth metadata. */
@@ -99,7 +98,6 @@ export function StudyFields({ value: d, onChange, errors = {}, disabled, askCoun
     disabled,
   };
   const name = courseName(d);
-  const place = d.city ? `${d.city}${d.uf ? `, ${d.uf}` : ''}` : '';
 
   return (
     <div className="flex flex-col gap-5">
@@ -127,21 +125,6 @@ export function StudyFields({ value: d, onChange, errors = {}, disabled, askCoun
         <p className={help}>{t('studyProfile.course.helpAreas')}</p>
       </div>
 
-      {show.council || d.autoGoal ? (
-        <div role="status" className={autoBox}>
-          <span className="text-xs font-extrabold uppercase tracking-[.08em]">{t('studyProfile.auto.title')}</span>
-          {d.council ? <span>{t('studyProfile.auto.council', { council: `${d.council} · ${t(`studyProfile.councils.${d.council}`)}` })}</span> : null}
-          {d.autoGoal ? (
-            <span className="flex flex-wrap items-center gap-2">
-              {t('studyProfile.auto.goal', { goal: goalName(d.autoGoal) })}
-              <button type="button" disabled={disabled} onClick={() => onChange(undoAutoGoal(d))} className="inline-flex min-h-11 items-center font-bold text-primary-deep underline">
-                {t('studyProfile.auto.undo')}
-              </button>
-            </span>
-          ) : null}
-        </div>
-      ) : null}
-
       {show.courseOther ? (
         <div className="flex flex-col gap-2">
           <Input label={t('studyProfile.course.otherLabel')} value={d.courseOtherText} maxLength={STUDY_PROFILE_LIMITS.courseOther} disabled={disabled} onChange={(e) => onChange({ ...d, courseOtherText: e.target.value })} aria-invalid={!!errors.courseOther} aria-describedby={errors.courseOther ? `${id}-other-err` : undefined} />
@@ -168,12 +151,6 @@ export function StudyFields({ value: d, onChange, errors = {}, disabled, askCoun
           {...combo}
         />
         <p className={help}>{t('studyProfile.institution.help')}</p>
-        {d.institution ? (
-          <div role="status" className={autoBox}>
-            <span className="text-xs font-extrabold uppercase tracking-[.08em]">{t('studyProfile.auto.title')}</span>
-            <span>{place} · {t(`studyProfile.institution.${d.institution.type}`)}</span>
-          </div>
-        ) : null}
         {show.institutionCustom ? (
           <div className="grid grid-cols-[1fr_96px] gap-3">
             <Input label={t('studyProfile.institution.city')} autoComplete="address-level2" value={d.city} maxLength={STUDY_PROFILE_LIMITS.city} disabled={disabled} onChange={(e) => onChange({ ...d, city: e.target.value })} aria-invalid={!!errors.city} />
