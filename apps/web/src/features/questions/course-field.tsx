@@ -4,8 +4,8 @@ import type { HealthCourse, HealthCourseCode } from '@remoa/contracts';
 import { Autocomplete } from '@remoa/ui';
 import { useCourses } from '../study-profile/reference';
 
-/** Catalog course: null = medicine (the ENAMED catalog of today). A profile outside the health list falls back to it too. */
-export const catalogCourse = (code: HealthCourseCode | null | undefined): HealthCourseCode | null => (!code || code === 'medicine' || code === 'not_health' ? null : code);
+/** Builder defaults explicitly to medicine; API null/absence means every course. */
+export const catalogCourse = (code: HealthCourseCode | null | undefined): HealthCourseCode => (!code || code === 'not_health' ? 'medicine' : code);
 
 /** Courses the student can pick (never `not_health`) and the name of the current one. */
 export function useCourseOptions(current: HealthCourseCode | null) {
@@ -17,7 +17,7 @@ export function useCourseOptions(current: HealthCourseCode | null) {
   }, [all, current]);
 }
 
-export function CourseField({ label, placeholder, emptyLabel, value, onChange }: { label: string; placeholder: string; emptyLabel: string; value: HealthCourseCode | null; onChange: (code: HealthCourseCode) => void }) {
+export function CourseField({ label, placeholder, emptyLabel, value, onChange, emptyIsAll=false }: { emptyIsAll?:boolean;label: string; placeholder: string; emptyLabel: string; value: HealthCourseCode | null; onChange: (code: HealthCourseCode) => void }) {
   const { list, name } = useCourseOptions(value);
   return (
     <Autocomplete
@@ -25,7 +25,7 @@ export function CourseField({ label, placeholder, emptyLabel, value, onChange }:
       placeholder={placeholder}
       emptyLabel={emptyLabel}
       options={list.map((c) => ({ value: c.code, label: c.name, keywords: c.aliases }))}
-      value={{ value: value ?? 'medicine', label: name }}
+      value={emptyIsAll&&value===null?null:{ value: value ?? 'medicine', label: name }}
       onValueChange={(next) => { if (next?.value) onChange(next.value as HealthCourseCode); }}
     />
   );

@@ -17,6 +17,7 @@ vi.mock('@/lib/api',()=>({api:vi.fn(async(path:string,init?:RequestInit)=>{
   calls.push({path,init});
   if(path==='/v1/account/study-profile')return {ok:true,data:{profile:profileCourse?{course:profileCourse,source:'user'}:null,capabilities:caps(profileCourse)}};
   if(path==='/v1/public/reference/courses')return {ok:true,data:COURSES};
+  if(path.startsWith('/v1/questions/classification?')){const course=new URL(path,'http://x').searchParams.get('course')!;const n=catalogByCourse[course]??0;return {ok:true,data:{course,total:n,unclassifiedArea:0,unclassifiedTopic:0,areas:n?[{id:AREA,name:'Clínica Médica',count:n,classificationKind:course==='medicine'?'enamed':'automatic_unreviewed',topics:[]}]:[]}};}
   if(path.startsWith('/v1/challenge-ai/taxonomy'))return {ok:true,data:[{id:AREA,name:'Clínica Médica'}]};
   if(path==='/v1/boards')return {ok:true,data:[]};
   if(path==='/v1/exam-templates')return {ok:true,data:{items:[],limit:3}};
@@ -46,20 +47,20 @@ describe('curso no Criador de prova (F35 FR-31..34)',()=>{
     const input=await field();fireEvent.focus(input);fireEvent.change(input,{target:{value:'outra'}});
     expect(screen.queryByRole('option',{name:/Outra área/})).toBeNull();
   });
-  it('profile null or medicine keeps the ENAMED catalog (course null, 7 areas, Formato ENAMED)',async()=>{
+  it('profile null or medicine keeps the ENAMED catalog (explicit medicine, course taxonomy, Formato ENAMED)',async()=>{
     await goContent();
     expect((await field() as HTMLInputElement).value).toBe('Medicina');
-    await waitFor(()=>expect(avs().at(-1)).toMatchObject({course:null}));
+    await waitFor(()=>expect(avs().at(-1)).toMatchObject({course:'medicine'}));
     fireEvent.click(screen.getByRole('button',{name:/Por especialidade/}));
-    expect(await screen.findByText(/Clínica Médica · 50 disponíveis/)).toBeTruthy();
+    const area=await screen.findByRole('combobox',{name:'Áreas do curso'});fireEvent.focus(area);expect(await screen.findByRole('option',{name:/Clínica Médica · aptas: 50 · ENAMED/})).toBeTruthy();fireEvent.keyDown(area,{key:'Escape'});
     fireEvent.click(screen.getByRole('button',{name:/Por modo/}));
     expect(screen.getByRole('button',{name:/Formato ENAMED/})).toBeTruthy();
     expect(screen.queryByRole('radio',{name:/Simulado completo/})).toBeNull();
   });
   it('changing course resets the content choice and areas, and the params carry the new course (alias search)',async()=>{
-    await goContent();await screen.findByText(/Clínica Médica · 50/);
+    await goContent();await screen.findByRole('combobox',{name:'Áreas do curso'});
     fireEvent.click(screen.getByRole('button',{name:/Por especialidade/}));
-    fireEvent.click(await screen.findByRole('checkbox',{name:/Clínica Médica/}));
+    fireEvent.focus(await screen.findByRole('combobox',{name:'Áreas do curso'}));fireEvent.click(await screen.findByRole('option',{name:/Clínica Médica · aptas: 50 · ENAMED/}));
     await chooseCourse('enf','Enfermagem');
     await waitFor(()=>expect(avs().at(-1)).toMatchObject({course:'nursing',areaIds:[],topicIds:[]}));
     expect(screen.getByRole('button',{name:/Por especialidade/}).getAttribute('aria-pressed')).toBe('true');
@@ -68,7 +69,7 @@ describe('curso no Criador de prova (F35 FR-31..34)',()=>{
     profileCourse='nursing';await goContent();
     expect(await screen.findByText('Ainda não há questões publicadas para Enfermagem.')).toBeTruthy();
     expect(screen.queryByText(/Clínica Médica ·/)).toBeNull();
-    expect(screen.getByText('Ainda não há áreas nem disciplinas cadastradas para Enfermagem.')).toBeTruthy();
+    expect(await screen.findByText('Ainda não há áreas ou assuntos classificados neste curso. As questões sem classificação continuam disponíveis.')).toBeTruthy();
     next();next();
     expect(await screen.findByText('Ainda não há questões publicadas para Enfermagem.')).toBeTruthy();
     expect((screen.getByRole('button',{name:'Começar prova'}) as HTMLButtonElement).disabled).toBe(true);
@@ -97,7 +98,7 @@ describe('curso no Criador de prova (F35 FR-31..34)',()=>{
     expect(b.params).toMatchObject({count:40,mode:'simulation',timePerQuestionSec:180,distribution:'balanced',progress:'all',course:'nursing'});
   });
   it('switching from medicine to a non-profile course derives presets from the course', async()=>{
-    await goContent();await screen.findByText(/Clínica Médica · 50/);
+    await goContent();await screen.findByRole('combobox',{name:'Áreas do curso'});
     await chooseCourse('enf','Enfermagem');
     fireEvent.click(await screen.findByRole('button',{name:/Por modo/}));
     expect(screen.getByRole('button',{name:/Simulado completo \(40\)/})).toBeTruthy();
@@ -114,16 +115,16 @@ it.each(['physical_education','medicine'])('keeps %s course, visibly starts with
  expect(screen.getByRole('button',{name:'Fácil'})).toHaveAttribute('aria-pressed','false');
  fireEvent.click(screen.getByRole('button',{name:'Fácil'}));next();
  await screen.findByRole('button',{name:'Remover filtro de dificuldade'});
- await waitFor(()=>expect(calls.filter(c=>c.path==='/v1/exam-builder/preview').map(body).at(-1)?.params).toMatchObject({course:course==='medicine'?null:course,difficulties:['easy'],count:10}));
+ await waitFor(()=>expect(calls.filter(c=>c.path==='/v1/exam-builder/preview').map(body).at(-1)?.params).toMatchObject({course:course,difficulties:['easy'],count:10}));
  expect(screen.getAllByText(new RegExp(`Encontramos ${course==='medicine'?9:0} questões com essa seleção`)).length).toBeGreaterThan(0);
  fireEvent.click(screen.getByRole('button',{name:'Remover filtro de dificuldade'}));
  await screen.findByText(`Questão realista do curso ${course} 1`);
- await waitFor(()=>expect(calls.filter(c=>c.path==='/v1/exam-builder/preview').map(body).at(-1)?.params).toMatchObject({course:course==='medicine'?null:course,difficulties:[],count:10}));
- expect(calls.filter(c=>c.path==='/v1/exam-builder/availability').map(body).every(p=>p.course===(course==='medicine'?null:course))).toBe(true);
+ await waitFor(()=>expect(calls.filter(c=>c.path==='/v1/exam-builder/preview').map(body).at(-1)?.params).toMatchObject({course:course,difficulties:[],count:10}));
+ expect(calls.filter(c=>c.path==='/v1/exam-builder/availability').map(body).every(p=>p.course===(course))).toBe(true);
  expect(screen.getAllByText('Dificuldade não avaliada').length).toBeGreaterThan(0);
  fireEvent.click(screen.getByRole('button',{name:'Começar prova'}));
  fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button',{name:'Começar prova'}));
  await waitFor(()=>expect(push).toHaveBeenCalledWith(`/app/simulados/${ID(700)}`));
  const config=calls.filter(c=>c.path==='/v1/question-sessions').map(body).at(-1);
- expect(config.questionIds).toHaveLength(10);expect(config.builder.params.difficulties).toEqual([]);expect(config.builder.params.course).toBe(course==='medicine'?null:course);
+ expect(config.questionIds).toHaveLength(10);expect(config.builder.params.difficulties).toEqual([]);expect(config.builder.params.course).toBe(course);
 });

@@ -2,7 +2,7 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {useRouter} from 'next/navigation';
 import {Alert,Button,Card,Icon,Progress,Stepper,Tag} from '@remoa/ui';
-import {EXAM_GENERATE_MAX,type ExamAvailability,type HealthCourseCode,type ExamBuilderParams,type ExamGenerateResult,type ExamPreviewItem,type ExamTemplate,type QuestionSessionConfig} from '@remoa/contracts';
+import {EXAM_GENERATE_MAX,type ExamAvailability,type HealthCourseCode,type ExamBuilderParams,type ExamGenerateResult,type ExamPreviewItem,type ExamTemplate,type QuestionSessionConfig,type QuestionClassificationCatalog} from '@remoa/contracts';
 import {calendarApi} from '@/features/calendar/api';
 import {t} from './labels';
 import {errorTag,generateWithProgress,getAvailability,getBoardContent,getPreview,listAreas,listBoards,listTemplates,listTopics,revalidate,saveTemplate,startBuilderSession,swapQuestion,QuestionsApiError} from './api';
@@ -10,6 +10,8 @@ import {applyPreset,compose,defaultAi,defaultParams,filterOf,genCountOf,idempote
 import {CourseEmpty,GenProgress,ShortfallNote,StepContent,StepExam,StepFormat,StepOrigin,ThemeCard} from './steps';
 import {useStudyProfile} from '../study-profile/use-study-profile';
 import {catalogCourse,useCourseOptions} from '../questions/course-field';
+import {ClassificationFilters} from '../questions/classification-filters';
+import {t as qt} from '../questions/labels';
 import {PreviewList} from './preview-list';
 import {ActiveDialog,ChangedDialog,ConfirmDialog,FieldDialog,type Changed} from './dialogs';
 
@@ -23,7 +25,7 @@ const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMon
 export function BuilderScreen({init}:{init:BuilderInit}){
   const router=useRouter();
   const {profile,capabilities,loaded}=useStudyProfile();
-  // FR-31: null = still the profile's course; a pick (null = medicine) or a template wins. Until the profile is read nothing is fetched.
+  // FR-31: a picked or template course wins; legacy null defaults explicitly to medicine before any request.
   const [picked,setPicked]=useState<HealthCourseCode|null|undefined>(undefined);
   const courseRef=useRef<HTMLDivElement>(null);
   const [raw,setParams]=useState<ExamBuilderParams>(()=>{
@@ -51,8 +53,10 @@ export function BuilderScreen({init}:{init:BuilderInit}){
   const fetched=useRef('');
   const [name,setName]=useState(t('examBuilder.defaultName'));
   const [templateId,setTemplateId]=useState<string|null>(null);
+  const [catalogAreas,setCatalogAreas]=useState<Map<string,string>>(new Map());
+  const receiveCatalog=useCallback((catalog:QuestionClassificationCatalog)=>setCatalogAreas(new Map(catalog.areas.map(area=>[area.id,area.name]))),[]);
   const [areas,setAreas]=useState<Map<string,string>>(new Map());
-  const [av,setAv]=useState<ExamAvailability|null>(null);const [avState,setAvState]=useState<Load>('loading');
+  const [availability,setAvailability]=useState<{key:string;data:ExamAvailability}|null>(null);const [avState,setAvState]=useState<Load>('loading');
   const [seed,setSeed]=useState<string|null>(null);const [items,setItems]=useState<ExamPreviewItem[]>([]);const [pvState,setPvState]=useState<Load>('loading');
   const [pinned,setPinned]=useState<Set<string>>(()=>new Set(init.ids));
   const excluded=useRef<Set<string>>(new Set());const pinnedRef=useRef(pinned);pinnedRef.current=pinned;
@@ -66,7 +70,7 @@ export function BuilderScreen({init}:{init:BuilderInit}){
 
   const patch=(p:Partial<ExamBuilderParams>)=>{setParams(v=>({...v,...p}));setPreset(null);setTemplateId(null);};
   const countOk=validCount(params.count);
-  const areaName=useCallback((id:string|null)=>id===null?t('examBuilder.areaNone'):areas.get(id)??t('examBuilder.areaUnknown'),[areas]);
+  const areaName=useCallback((id:string|null)=>id===null?t('examBuilder.areaNone'):(params.source==='catalog'?catalogAreas.get(id):areas.get(id))??t('examBuilder.areaUnknown'),[areas,catalogAreas,params.source]);
 
   useEffect(()=>{let live=true;listAreas().then(a=>live&&setAreas(new Map(a.map(x=>[x.id,x.name])))).catch(()=>undefined);listTemplates().then(r=>live&&setTemplates(r)).catch(()=>undefined);
     listBoards().then(b=>live&&setBoards(b.map(x=>({id:x.id,name:x.title})))).catch(()=>live&&setBoards([]));listTopics().then(x=>live&&setTopics(x)).catch(()=>undefined);return()=>{live=false;};},[]);
@@ -74,10 +78,12 @@ export function BuilderScreen({init}:{init:BuilderInit}){
 
   // FR-24: availability (never draws). Area choice is applied locally, so it is asked with every area.
   const filterKey=JSON.stringify(filterOf(params));const avOn=step>=2&&loaded;
+  const av=avState==='ready'&&availability?.key===filterKey?availability.data:null;
+  const availableCount=av?(params.areaIds.length?av.areas.filter(area=>area.areaId!==null&&params.areaIds.includes(area.areaId)).reduce((sum,area)=>sum+area.available,0):av.total):null;
   useEffect(()=>{
     if(!avOn)return;
-    const ac=new AbortController();setAvState('loading');
-    getAvailability(JSON.parse(filterKey),ac.signal).then(r=>{if(!ac.signal.aborted){setAv(r);setAvState('ready');}}).catch(()=>{if(!ac.signal.aborted)setAvState('error');});
+    const ac=new AbortController();setAvState('loading');setAvailability(null);
+    getAvailability(JSON.parse(filterKey),ac.signal).then(r=>{if(!ac.signal.aborted){setAvailability({key:filterKey,data:r});setAvState('ready');}}).catch(()=>{if(!ac.signal.aborted)setAvState('error');});
     return()=>ac.abort();
   },[filterKey,genTick,avOn]);
 
@@ -89,6 +95,7 @@ export function BuilderScreen({init}:{init:BuilderInit}){
     const id=setTimeout(()=>{
       const p={...params,count:Math.max(params.count,pinnedRef.current.size)};
       getPreview(p,[...pinnedRef.current],[...excluded.current],undefined,ac.signal).then(r=>{
+        if(ac.signal.aborted)return;
         fetched.current=paramsKey;setSeed(r.seed);setItems(r.items);setPvState('ready');setSwapMsg(null);
         setPinned(new Set(r.items.filter(i=>i.pinned||pinnedRef.current.has(i.questionId)).map(i=>i.questionId)));
       }).catch(()=>{if(!ac.signal.aborted)setPvState('error');});
@@ -111,16 +118,16 @@ export function BuilderScreen({init}:{init:BuilderInit}){
   const genCount=genCountOf(origin,ai,params.count);
   const themeMode=needsGenerate(origin,ai,board)&&!board;
   const areaOpts=useMemo(()=>[...areas].map(([id,name])=>({id,name})),[areas]);
-  const noNarrowing=!params.topicIds.length&&!params.matrixItemIds.length&&!params.difficulties.length&&params.progress==='all';
+  const noNarrowing=!params.areaIds.length&&!params.classificationStatus&&!params.topicIds.length&&!params.matrixItemIds.length&&!params.difficulties.length&&params.progress==='all';
   // FR-34: the course has no published catalog (availability 0 with no narrowing filter). Map/AI origins are never affected.
   const courseEmpty=origin==='catalog'&&!!params.course&&avState==='ready'&&av?.total===0&&noNarrowing;
   const presets=presetIdsFor(params.course,params.course===profileCourse?capabilities.starterTemplates:undefined);
-  const pickCourse=(code:HealthCourseCode)=>{const c=catalogCourse(code);if(c===params.course)return;setPicked(c);setContent('area');setPreset(null);setTemplateId(null);setStepErr(null);setParams(p=>({...p,areaIds:[],topicIds:[]}));};
+  const pickCourse=(code:HealthCourseCode)=>{const c=catalogCourse(code);if(c===params.course)return;setPicked(c);setContent('area');setPreset(null);setTemplateId(null);setStepErr(null);setParams(p=>({...p,areaIds:[],topicIds:[],classificationStatus:undefined}));};
   const otherCourse=()=>{go(2);setTimeout(()=>courseRef.current?.querySelector('input')?.focus(),0);};
   const emptyBox=courseEmpty?<CourseEmpty course={courseName} onMap={()=>{setOrigin('ai');go(1);}} onOther={otherCourse}/>:null;
   const needGen=needsGenerate(origin,ai,board);
-  const setOrigin=(o:Origin)=>{setParams(p=>({...p,source:sourceOf(o)}));setTemplateId(null);setStepErr(null);if(o==='ai'&&board&&!ai.use&&!ai.gen)setAi(a=>({...a,use:true}));};
-  const pickContent=(c:Content)=>{setContent(c);setStepErr(null);setTemplateId(null);setParams(p=>({...p,areaIds:c==='area'||c==='custom'?p.areaIds:[],topicIds:c==='topic'||c==='custom'?p.topicIds:[],...(c==='area'||c==='topic'?{progress:'all' as const}:{})}));};
+  const setOrigin=(o:Origin)=>{const retainedAreas=params.areaIds.filter(id=>areas.has(id)),retainedTopics=params.topicIds.filter(id=>topics.some(topic=>topic.id===id));const cleared=origin==='catalog'&&o!=='catalog'&&(retainedAreas.length!==params.areaIds.length||retainedTopics.length!==params.topicIds.length||!!params.classificationStatus);setParams(p=>({...p,source:sourceOf(o),...(cleared?{areaIds:retainedAreas,topicIds:retainedTopics,classificationStatus:undefined}:{})}));if(cleared)setNotice({tone:'review',text:qt('questions.classification.originCleared')});setTemplateId(null);setStepErr(null);if(o==='ai'&&board&&!ai.use&&!ai.gen)setAi(a=>({...a,use:true}));};
+  const pickContent=(c:Content)=>{setContent(c);setStepErr(null);setTemplateId(null);setParams(p=>({...p,areaIds:c==='area'||c==='custom'?p.areaIds:[],topicIds:c==='topic'||c==='custom'?p.topicIds:[],classificationStatus:c==='mode'?undefined:p.classificationStatus,...(c==='area'||c==='topic'?{progress:'all' as const}:{})}));};
   const go=(to:number)=>{setStepErr(null);setStep(to);};
   const next=()=>{const e=stepError(stepIds[step]!,{origin,ai,content,params,board,theme});if(e)setStepErr(t(`examBuilder.errors.${e}`));else go(step+1);};
   /** Explicit click only (spends the AI quota). `n` = how many to ask; a second call ("gerar mais") adds to what is already pinned. */
@@ -156,7 +163,7 @@ export function BuilderScreen({init}:{init:BuilderInit}){
       setParams(p=>({...p,areaIds:c.areaIds,topicIds:c.topicIds}));setContent(c.areaIds.length&&c.topicIds.length?'custom':c.topicIds.length?'topic':'area');setPrefilled(boards?.find(b=>b.id===id)?.name??'');
     }).catch(()=>undefined);
   };
-  const applyTemplate=(tpl:ExamTemplate)=>{setParams(tpl.params);setBoard(tpl.params.boardId);setPrefilled(null);setPicked(tpl.params.course);setName(tpl.name);setTemplateId(tpl.id);setPreset(null);setContent('custom');setAi(defaultAi);setGen({busy:false,result:null,error:null});go(LAST);};
+  const applyTemplate=(tpl:ExamTemplate)=>{setParams(tpl.params);setBoard(tpl.params.boardId);setPrefilled(null);setPicked(catalogCourse(tpl.params.course));setName(tpl.name);setTemplateId(tpl.id);setPreset(null);setContent('custom');setAi(defaultAi);setGen({busy:false,result:null,error:null});go(LAST);};
 
   const begin=async()=>{
     if(!total)return;
@@ -228,7 +235,7 @@ export function BuilderScreen({init}:{init:BuilderInit}){
         <h2 ref={heading} tabIndex={-1} className="m-0 font-display text-2xl font-extrabold outline-none">{t(`examBuilder.stepTitles.${stepIds[step]!}`)}</h2>
         {step===0?<StepExam name={name} onName={setName} params={params} patch={patch} board={board} onBoard={changeBoard} boards={boards}/>:null}
         {step===1?<StepOrigin origin={origin} onOrigin={setOrigin} board={board} ai={ai} onAi={p=>{setAi(a=>({...a,...p}));setStepErr(null);}} genCount={genCount}/>:null}
-        {step===2?<StepContent areaOpts={areaOpts} content={content} onContent={pickContent} params={params} patch={patch} av={av} areaName={areaName} toggleArea={toggleArea} topics={topics} preset={preset} presets={presets} showCourse={origin!=='ai'} prefilled={prefilled} theme={themeMode?<ThemeCard params={params} patch={patch} areas={areaOpts} topics={topics} theme={theme} onTheme={setTheme}/>:null} courseName={courseName} onCourse={pickCourse} courseEmpty={emptyBox} courseRef={courseRef} matrixCount={params.matrixItemIds.length}
+        {step===2?<StepContent catalogFilters={origin==='catalog'?<ClassificationFilters course={params.course??'medicine'} value={{areaIds:params.areaIds,topicIds:params.topicIds,classificationStatus:params.classificationStatus}} onCatalog={receiveCatalog} onChange={patch}/>:undefined} areaOpts={areaOpts} content={content} onContent={pickContent} params={params} patch={patch} av={av} areaName={areaName} toggleArea={toggleArea} topics={topics} preset={preset} presets={presets} showCourse={origin!=='ai'} prefilled={prefilled} theme={themeMode?<ThemeCard params={params} patch={patch} areas={areaOpts} topics={topics} theme={theme} onTheme={setTheme}/>:null} courseName={courseName} onCourse={pickCourse} courseEmpty={emptyBox} courseRef={courseRef} matrixCount={params.matrixItemIds.length}
           onPreset={id=>{setParams(p=>applyPreset(p,id));setPreset(id);setTemplateId(null);}}/>:null}
         {step===3?<StepFormat params={params} patch={patch} content={content}/>:null}
         {stepErr?<Alert tone="review" role="alert" title={stepErr}/>:null}
@@ -251,12 +258,12 @@ export function BuilderScreen({init}:{init:BuilderInit}){
           </div></Card>:null}
         {emptyBox}
         <section aria-label={t('examBuilder.composition')} aria-live="polite" className="flex flex-col gap-3">
-          <h2 className="m-0 font-display text-xl font-extrabold">{avState==='loading'&&!av?t('examBuilder.availabilityLoading'):av?(av.total===0?t('examBuilder.foundNone'):av.total===1?t('examBuilder.foundOne'):t('examBuilder.found',{n:av.total})):t('examBuilder.composition')}</h2>
+          <h2 className="m-0 font-display text-xl font-extrabold">{avState==='loading'?t('examBuilder.availabilityLoading'):availableCount!==null?(availableCount===0?t('examBuilder.foundNone'):availableCount===1?t('examBuilder.foundOne'):t('examBuilder.found',{n:availableCount})):t('examBuilder.composition')}</h2>
           {avState==='error'?<Alert tone="review" role="alert" title={t('examBuilder.availabilityError')}/>:null}
           {alloc?<ul aria-label={t('examBuilder.composition')} className="m-0 flex list-none flex-col gap-3 p-0">{alloc.rows.map(r=><li key={r.areaId??'none'} className="flex flex-col gap-1">
             <span className="text-sm">{t('examBuilder.compositionRow',{area:areaName(r.areaId),allocated:r.allocated,available:r.available})}</span>
             <Progress size="sm" aria-label={areaName(r.areaId)} value={r.allocated} max={Math.max(r.target,r.allocated,1)}/></li>)}</ul>:null}
-          {alloc&&alloc.shortfall>0&&params.difficulties.length>0?<Alert tone="watch" title={t('examBuilder.difficultyFilterShortfall')}><p>{t('examBuilder.difficultyFilterContext',{levels:params.difficulties.map(level=>t(`examBuilder.difficultyOptions.${level}`)).join(', '),n:av?.total??0})}</p><Button variant="secondary" onClick={()=>patch({difficulties:[]})}>{t('examBuilder.clearDifficulty')}</Button></Alert>:null}
+          {alloc&&alloc.shortfall>0&&params.difficulties.length>0?<Alert tone="watch" title={t('examBuilder.difficultyFilterShortfall')}><p>{t('examBuilder.difficultyFilterContext',{levels:params.difficulties.map(level=>t(`examBuilder.difficultyOptions.${level}`)).join(', '),n:availableCount??0})}</p><Button variant="secondary" onClick={()=>patch({difficulties:[]})}>{t('examBuilder.clearDifficulty')}</Button></Alert>:null}
           {alloc&&alloc.shortfall>0&&countOk&&!gen.busy&&!(needGen&&(!genResult||genResult.shortfall>0))?<ShortfallNote got={alloc.allocated} requested={alloc.requested} why={t(origin==='catalog'?'examBuilder.shortWhyCatalog':'examBuilder.shortWhyAi')}>
             {origin==='catalog'?<Button size="sm" onClick={()=>{setOrigin('mixed');setAi(a=>({...a,count:Math.min(alloc.shortfall,EXAM_GENERATE_MAX)}));}}>{t('examBuilder.shortComplete')}</Button>
               :<Button size="sm" disabled={!validGen(Math.min(alloc.shortfall,EXAM_GENERATE_MAX))} onClick={()=>void generate(Math.min(alloc.shortfall,EXAM_GENERATE_MAX))}>{alloc.shortfall===1?t('examBuilder.shortMoreOne'):t('examBuilder.shortMore',{n:Math.min(alloc.shortfall,EXAM_GENERATE_MAX)})}</Button>}

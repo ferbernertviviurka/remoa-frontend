@@ -8,12 +8,12 @@ export const presetIds=['enamed','full_40','quick','mistakes','blank'] as const 
 /** Medicine (null = legacy) keeps "Formato ENAMED"; every other course gets "Simulado completo (40)". `fromProfile` = capabilities.starterTemplates, valid only for the profile's own course. */
 export function presetIdsFor(course:HealthCourseCode|null,fromProfile?:readonly StarterTemplate[]):PresetId[]{
   if(fromProfile)return fromProfile.filter((x):x is PresetId=>starterTemplates.includes(x));
-  return [course?'full_40':'enamed','quick','mistakes','blank'];
+  return [!course||course==='medicine'?'enamed':'full_40','quick','mistakes','blank'];
 }
 export const defaultParams=(over:Partial<ExamBuilderParams>={}):ExamBuilderParams=>examBuilderParamsSchema.parse({count:20,mode:'study',...over});
 /** Keeps what the preset does not own (source, areas, topics, difficulty, shuffle). */
 export const applyPreset=(p:ExamBuilderParams,id:PresetId):ExamBuilderParams=>({...p,...presetDefs[id]});
-export const filterOf=(p:ExamBuilderParams):ExamBuilderFilter=>({source:p.source,areaIds:[],topicIds:p.topicIds,matrixItemIds:p.matrixItemIds,difficulties:p.difficulties,progress:p.progress,boardId:p.boardId,course:p.course});
+export const filterOf=(p:ExamBuilderParams):ExamBuilderFilter=>({source:p.source,areaIds:[],topicIds:p.topicIds,matrixItemIds:p.matrixItemIds,difficulties:p.difficulties,progress:p.progress,boardId:p.boardId,course:p.course,...(p.classificationStatus?{classificationStatus:p.classificationStatus}:{})});
 export const validCount=(n:number)=>Number.isInteger(n)&&n>=1&&n<=200;
 
 /** Client-side allocation (same function as the server): the bars and the shortfall. Never completes from another source. */
@@ -60,7 +60,7 @@ export function stepError(step:StepId,s:Stage):'needChoice'|'needGen'|'needTheme
   if(step==='content'){
     // Without a map the AI needs a theme to write about.
     if(needsGenerate(s.origin,s.ai,s.board)&&!s.board&&!s.params.areaIds.length&&!s.params.topicIds.length&&!s.theme?.trim())return 'needTheme';
-    if(s.content==='topic'&&!s.params.topicIds.length&&!s.params.course)return 'needTopics';
+    if(s.content==='topic'&&!s.params.topicIds.length&&!s.params.classificationStatus&&(s.origin==='catalog'||!s.params.course))return 'needTopics';
   }
   return null;
 }

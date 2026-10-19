@@ -15,9 +15,12 @@ const body=(c:Call)=>JSON.parse(String(c.init?.body));
 const last=(p:string)=>[...calls].reverse().find(c=>c.path===p);
 const session={id:ID(700),mode:'study',status:'active',revision:1,startedAt:new Date().toISOString(),deadline:null,finishedAt:null,serverTime:new Date().toISOString(),items:[]};
 
+let availabilityGate:Promise<unknown>|null=null;let availabilityOverride:{total:number;areas:{areaId:string;available:number}[]}|null=null;
+let classificationAuto=false;
 let progressEvents:unknown[];let boardContent:{cardCount:number;areaIds:string[];topicIds:string[]};
 vi.mock('@/lib/api',()=>({api:vi.fn(async(path:string,init?:RequestInit,_f?:unknown,onProgress?:(p:unknown)=>void)=>{
   calls.push({path,init});
+  if(path.startsWith('/v1/questions/classification?'))return {ok:true,data:{course:'medicine',total:available,unclassifiedArea:0,unclassifiedTopic:0,areas:[{id:classificationAuto?ID(930):AREA,name:classificationAuto?'Área sugerida':'Clínica Médica',count:available,classificationKind:classificationAuto?'automatic_unreviewed':'enamed',topics:[{id:classificationAuto?ID(940):TOPIC,name:classificationAuto?'Assunto sugerido':'Asma',count:available}]}]}};
   if(path==='/v1/challenge-ai/taxonomy?kind=topic')return {ok:true,data:[{id:TOPIC,name:'Asma'}]};
   if(path.startsWith('/v1/challenge-ai/taxonomy'))return {ok:true,data:[{id:AREA,name:'Clínica Médica'}]};
   if(path==='/v1/boards')return {ok:true,data:[{id:BOARD,title:'Mapa sintético'}]};
@@ -25,7 +28,7 @@ vi.mock('@/lib/api',()=>({api:vi.fn(async(path:string,init?:RequestInit,_f?:unkn
   if(path.startsWith('/v1/exam-builder/board-content'))return {ok:true,data:{boardId:BOARD,matrixItemIds:[],...boardContent}};
   if(path==='/v1/exam-templates'&&!init?.method)return {ok:true,data:{items:tplList,limit:3}};
   if(path==='/v1/exam-templates')return templateReply==='limit'?{ok:false,error:{code:'limit_reached',message:'limit_reached'}}:{ok:true,data:{id:ID(800),name:'x',params:JSON.parse(String(init!.body)).params,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}};
-  if(path==='/v1/exam-builder/availability')return {ok:true,data:{total:available,areas:[{areaId:AREA,available}]}};
+  if(path==='/v1/exam-builder/availability'){if(body({path,init}).topicIds.length&&availabilityGate)return availabilityGate;return {ok:true,data:availabilityOverride??{total:available,areas:[{areaId:AREA,available}]}};}
   if(path==='/v1/exam-builder/preview'){
     const b=JSON.parse(String(init!.body));const n=Math.min(b.params.count,pool);const ids=[...b.pinnedIds.map((id:string)=>Number(id.slice(-12)))];
     for(let i=1;ids.length<n;i++)if(!ids.includes(i)&&!b.excludedIds.includes(ID(i)))ids.push(i);
@@ -37,7 +40,7 @@ vi.mock('@/lib/api',()=>({api:vi.fn(async(path:string,init?:RequestInit,_f?:unkn
   return {ok:false,error:{code:'not_found',message:path}};
 })}));
 
-beforeEach(()=>{progressEvents=[];boardContent={cardCount:0,areaIds:[],topicIds:[]};tplList=[];genReply={ok:true,data:{questionIds:[ID(71),ID(72)],requested:2,reused:1,generated:1,shortfall:0,stoppedBy:null,shortfallReason:null}};calls=[];available=100;pool=100;startResults=[];templateReply='ok';revalidateReply={ok:true,unavailable:[],updated:[]};push.mockClear();sessionStorage.clear();});
+beforeEach(()=>{availabilityGate=null;availabilityOverride=null;classificationAuto=false;progressEvents=[];boardContent={cardCount:0,areaIds:[],topicIds:[]};tplList=[];genReply={ok:true,data:{questionIds:[ID(71),ID(72)],requested:2,reused:1,generated:1,shortfall:0,stoppedBy:null,shortfallReason:null}};calls=[];available=100;pool=100;startResults=[];templateReply='ok';revalidateReply={ok:true,unavailable:[],updated:[]};push.mockClear();sessionStorage.clear();});
 afterEach(cleanup);
 const init={ids:[],matrixItemIds:[]};
 const next=()=>fireEvent.click(screen.getByRole('button',{name:'Continuar'}));
@@ -49,6 +52,8 @@ const choose=(name:RegExp)=>fireEvent.click(screen.getByRole('button',{name}));
 // Radix Select scrolls the chosen option into view; jsdom has no scrollIntoView.
 beforeAll(()=>Object.defineProperty(HTMLElement.prototype,'scrollIntoView',{configurable:true,value:vi.fn()}));
 const pick=async(label:string,option:string)=>{fireEvent.keyDown(screen.getByRole('combobox',{name:label}),{key:'Enter',code:'Enter'});fireEvent.click(await screen.findByRole('option',{name:option}));};
+const pickClass=async(label:string,name:RegExp)=>{const field=await screen.findByRole('combobox',{name:label});fireEvent.focus(field);fireEvent.click(await screen.findByRole('option',{name}));};
+const pickCatalogTopic=async()=>{await pickClass('Áreas do curso',/Clínica Médica · aptas: 100 · ENAMED/);await pickClass('Assuntos das áreas escolhidas',/Asma · aptas: 100 · ENAMED/);};
 const previews=()=>calls.filter(c=>c.path==='/v1/exam-builder/preview').map(body);
 
 describe('presets (FR-22)',()=>{
@@ -106,30 +111,30 @@ describe('stepper navigation and validation (D-1846)',()=>{
   it('Por matéria needs at least one topic',async()=>{
     render(<BuilderScreen init={init}/>);toContent();choose(/Por matéria/);next();
     expect(screen.getByRole('alert').textContent).toMatch(/ao menos uma matéria/);
-    await pick('Matérias','Asma');next();expect(h2('Formato da prova')).toBeTruthy();
+    await pickCatalogTopic();next();expect(h2('Formato da prova')).toBeTruthy();
   });
 });
 
 describe('filter modes map to params',()=>{
   it('Por especialidade: areas checklist, no topics, params without topics',async()=>{
     render(<BuilderScreen init={init}/>);toContent();
-    expect(await screen.findByRole('checkbox',{name:/Clínica Médica · 100 disponíveis/})).toBeTruthy();
+    expect(await screen.findByRole('combobox',{name:'Áreas do curso'})).toBeTruthy();
     expect(screen.queryByRole('combobox',{name:'Matérias'})).toBeNull();
     next();next();await screen.findByText('Enunciado sintético 1');
     expect(previews().at(-1)).toMatchObject({params:{areaIds:[],topicIds:[],source:'catalog',boardId:null}});
   });
   it('Por matéria sets topicIds (and the availability filter carries them)',async()=>{
-    render(<BuilderScreen init={init}/>);toContent();choose(/Por matéria/);await pick('Matérias','Asma');next();next();
+    render(<BuilderScreen init={init}/>);toContent();choose(/Por matéria/);await pickCatalogTopic();next();next();
     await screen.findByText('Enunciado sintético 1');
     expect(previews().at(-1)).toMatchObject({params:{topicIds:[TOPIC]}});
     expect(body(last('/v1/exam-builder/availability')!)).toMatchObject({topicIds:[TOPIC]});
   });
   it('Totalmente personalizada offers areas, matérias, dificuldade and progresso',async()=>{
     render(<BuilderScreen init={init}/>);toContent();choose(/Totalmente personalizada/);
-    expect(await screen.findByRole('checkbox',{name:/Clínica Médica/})).toBeTruthy();
-    expect(screen.getByRole('combobox',{name:'Matérias'})).toBeTruthy();
+    expect(await screen.findByRole('combobox',{name:'Áreas do curso'})).toBeTruthy();
+    expect(screen.getByText('Escolha uma área para ver os assuntos relacionados.')).toBeTruthy();
     expect(screen.getByText('Progresso')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button',{name:'Fácil'}));await pick('Matérias','Asma');next();
+    fireEvent.click(screen.getByRole('button',{name:'Fácil'}));await pickCatalogTopic();next();
     expect(screen.queryByText('Dificuldade')).toBeNull(); // already set in the previous step
     next();await screen.findByText('Enunciado sintético 1');
     expect(previews().at(-1)).toMatchObject({params:{difficulties:['easy'],topicIds:[TOPIC]}});
@@ -404,4 +409,31 @@ describe('templates and calendar (FR-29, FR-31, FR-39)',()=>{
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button',{name:'Salvar modelo'}));
     expect(await screen.findByText(/limite de modelos/)).toBeTruthy();
   });
+});
+
+it('clears automatic catalog UUIDs visibly before the AI origin and never generates automatically',async()=>{
+ classificationAuto=true;render(<BuilderScreen init={init}/>);toContent();
+ await pickClass('Áreas do curso',/Área sugerida · aptas: 100 · automática, não revisada/);await pickClass('Assuntos das áreas escolhidas',/Assunto sugerido · aptas: 100 · automática, não revisada/);
+ next();next();await screen.findByText('Enunciado sintético 1');
+ expect(previews().at(-1)?.params).toMatchObject({source:'catalog',areaIds:[ID(930)],topicIds:[ID(940)]});
+ fireEvent.click(screen.getByRole('button',{name:'Voltar'}));fireEvent.click(screen.getByRole('button',{name:'Voltar'}));fireEvent.click(screen.getByRole('button',{name:'Voltar'}));
+ choose(/Questões da IA/);expect(screen.getByText(/Os filtros automáticos do catálogo foram removidos/)).toBeVisible();next();
+ fireEvent.click(await screen.findByRole('checkbox',{name:'Clínica Médica'}));next();next();await screen.findByRole('button',{name:'Gerar 20 questões com IA'});
+ await waitFor(()=>expect(previews().at(-1)?.params).toMatchObject({source:'ai',areaIds:[AREA],topicIds:[]}));
+ expect(last('/v1/exam-builder/generate')).toBeUndefined();expect(JSON.stringify(previews().at(-1)?.params)).not.toContain(ID(930));expect(JSON.stringify(previews().at(-1)?.params)).not.toContain(ID(940));
+});
+
+it('hides stale availability and allocation while the actual topic request is pending, then displays the exact 25',async()=>{
+ let resolve!:(value:unknown)=>void;availabilityGate=new Promise(r=>{resolve=r;});
+ render(<BuilderScreen init={init}/>);toContent();await pickCatalogTopic();next();next();await screen.findByText('Enunciado sintético 1');
+ expect(screen.getByRole('heading',{name:'Contando questões'})).toBeVisible();
+ expect(screen.queryByRole('heading',{name:'Encontramos 100 questões disponíveis'})).toBeNull();expect(screen.queryByText(/Clínica Médica: 20 de 100 disponíveis/)).toBeNull();
+ expect(body(last('/v1/exam-builder/availability')!)).toMatchObject({course:'medicine',topicIds:[TOPIC]});
+ resolve({ok:true,data:{total:25,areas:[{areaId:AREA,available:25}]}});
+ expect(await screen.findByRole('heading',{name:'Encontramos 25 questões disponíveis'})).toBeVisible();expect(screen.getByText('Clínica Médica: 20 de 25 disponíveis')).toBeVisible();
+});
+it('shows the capacity of selected areas instead of the total for every area',async()=>{
+ availabilityOverride={total:1000,areas:[{areaId:AREA,available:53},{areaId:ID(999),available:947}]};
+ render(<BuilderScreen init={init}/>);toContent();await pickClass('Áreas do curso',/Clínica Médica · aptas: 100 · ENAMED/);next();next();await screen.findByText('Enunciado sintético 1');
+ expect(await screen.findByRole('heading',{name:'Encontramos 53 questões disponíveis'})).toBeVisible();expect(screen.queryByRole('heading',{name:'Encontramos 1000 questões disponíveis'})).toBeNull();expect(screen.getByText('Clínica Médica: 20 de 53 disponíveis')).toBeVisible();
 });

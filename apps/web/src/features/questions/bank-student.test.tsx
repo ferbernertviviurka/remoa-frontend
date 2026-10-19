@@ -115,12 +115,13 @@ describe('F34 banco do aluno (HTTP sintético)', () => {
     expect(screen.getByText('Resposta atual')).toBeInTheDocument();
   });
 
-  it('topic autocomplete: debounce 200 ms, keyboard, counts, empty message, chip, clear resets the cursor', async () => {
+  it('private topic autocomplete: debounce 200 ms, keyboard, counts, empty message, chip, clear resets the cursor', async () => {
     const topics = [{ id: ID(50), name: 'Cardiologia sintética', count: 4 }];
     facets = (u) => { const tq = u.searchParams.get('topicQuery'); return ok(tq ? { total: 1, topics: tq === 'zzz' ? [] : topics } : fac()); };
     lists = (u) => (u.searchParams.get('cursor') ? page([q(3)]) : page([q(1)], 'c1', 30));
     bank();
     await screen.findByText('Enunciado sintético 1');
+    fireEvent.click(screen.getByRole('button',{name:'Criadas por mim'}));
     const box = screen.getByRole('combobox', { name: 'Assunto' });
     box.focus();
     vi.useFakeTimers({ shouldAdvanceTime: true });

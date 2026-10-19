@@ -3,6 +3,7 @@ import {useState} from 'react';
 import {Button,Tag} from '@remoa/ui';
 import type {ExamPreviewItem} from '@remoa/contracts';
 import {t} from './labels';
+import {ClassificationMeta} from '../questions/classification-meta';
 
 const VISIBLE=7;
 export function PreviewList({items,pinned,areaName,busyId,onSwap,onRemove,onPin}:{items:readonly ExamPreviewItem[];pinned:ReadonlySet<string>;areaName:(id:string|null)=>string;busyId:string|null;onSwap:(id:string)=>void;onRemove:(id:string)=>void;onPin:(id:string)=>void}){
@@ -12,8 +13,8 @@ export function PreviewList({items,pinned,areaName,busyId,onSwap,onRemove,onPin}
     <ol aria-label={t('examBuilder.preview')} className="m-0 flex list-none flex-col gap-3 p-0">
       {shown.map((q,i)=>{const n=i+1;const isPinned=pinned.has(q.questionId);return <li key={q.questionId} className="rounded-[20px] border border-border bg-surface p-4">
         <div className="flex flex-wrap items-center gap-2"><span className="text-sm font-bold text-muted">{t('examBuilder.previewItem',{n})}</span>
-          <Tag>{areaName(q.areaId)}</Tag>{q.difficultyAssessment==='unassessed'?<Tag tone="unknown">{t('examBuilder.difficultyUnassessed')}</Tag>:null}<Tag tone="unknown">{t(`examBuilder.origins.${q.origin}`)}</Tag>
-          {q.validation?<Tag tone="steady">{t(`examBuilder.seals.${q.validation.kind}`)}</Tag>:null}</div>
+          <Tag>{q.classification?.area.label??areaName(q.areaId)}</Tag>{q.difficultyAssessment==='unassessed'?<Tag tone="unknown">{t('examBuilder.difficultyUnassessed')}</Tag>:null}<Tag tone="unknown">{t(`examBuilder.origins.${q.origin}`)}</Tag>
+          <ClassificationMeta classification={q.classification} kind={q.classificationKind}/>{q.validation?<Tag tone="steady">{t(`examBuilder.seals.${q.validation.kind}`)}</Tag>:null}</div>
         <p className="my-2 break-words text-[15px]">{q.stemPreview}</p>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" size="sm" aria-label={t('examBuilder.swapLabel',{n})} loading={busyId===q.questionId} onClick={()=>onSwap(q.questionId)}>{t('examBuilder.swap')}</Button>
