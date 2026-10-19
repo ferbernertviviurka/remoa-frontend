@@ -1,4 +1,5 @@
 'use client';
+import {ClassificationMeta} from './classification-meta';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Dialog, Icon, RadioGroup, Tag } from '@remoa/ui';
 import type { QuestionDrawerAttempt, QuestionPublic } from '@remoa/contracts';
@@ -17,7 +18,7 @@ export function BankMeta({ question: q }: { question: QuestionPublic }) {
       <span className="text-xs text-muted">{t(q.teamDisclosure?.difficultyAssessment==='unassessed'?'questions.difficultyUnassessed':`questions.difficultyLabel.${q.difficulty}`)}</span>
       {ai ? null : isInstitutional(q.validation) ? <ValidationSeal validation={q.validation} /> : q.validation?.kind === 'medical_review' ? <Tag tone="steady">{t('questionsBank.sealMedicalBy', { name: q.validation.label })}</Tag> : null}
       {q.sourceLabel ? <span className="text-xs text-muted">{q.sourceLabel}</span> : null}
-      <TeamDisclosure question={q} />
+      <ClassificationMeta classification={q.classification} kind={q.classificationKind}/><TeamDisclosure question={q} />
     </div>
   );
 }

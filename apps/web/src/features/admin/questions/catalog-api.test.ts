@@ -14,3 +14,13 @@ describe('strict catalog and history role boundary',()=>{
  it('guards selected question and canonical family in version responses',async()=>{vi.mocked(api).mockResolvedValue({ok:true,data:mockQuestionVersionHistoryPage});await expect(getQuestionVersionHistory(false,id,{})).resolves.toEqual(mockQuestionVersionHistoryPage);vi.mocked(api).mockResolvedValue({ok:true,data:{...mockQuestionVersionHistoryPage,questionId:'00000000-0000-4000-8000-000000000999'}});await expect(getQuestionVersionHistory(false,id,{})).rejects.toMatchObject({code:'invalid_response'});vi.mocked(api).mockResolvedValue({ok:true,data:{...mockQuestionVersionHistoryPage,items:mockQuestionVersionHistoryPage.items.map(item=>({...item,canonicalId:'00000000-0000-4000-8000-000000000999'}))}});await expect(getQuestionVersionHistory(false,id,{})).rejects.toMatchObject({code:'invalid_response'});});
  it('guards medical signatures to this selected question and exact admin schema',async()=>{vi.mocked(api).mockResolvedValue({ok:true,data:{...mockQuestionReviewHistoryPage,audit:mockAuditEntry}});await expect(getQuestionReviewHistory(true,id,{cursor:'signature cursor'})).resolves.toEqual(mockQuestionReviewHistoryPage);expect(vi.mocked(api).mock.calls[0]![0]).toContain('/v1/admin/questions/'+id+'/reviews?limit=25&cursor=signature+cursor');vi.mocked(api).mockResolvedValue({ok:true,data:{...mockQuestionReviewHistoryPage,questionId:'00000000-0000-4000-8000-000000000999'}});await expect(getQuestionReviewHistory(false,id,{})).rejects.toMatchObject({code:'invalid_response'});});
 });
+
+it('serializes course classification UUIDs as repeated parameters while preserving admin filters',async()=>{
+ vi.mocked(api).mockResolvedValue({ok:true,data:{...mockQuestionAdminCatalogPage,audit:mockAuditEntry}});
+ const second='00000000-0000-4000-8000-000000000222';
+ await listQuestionCatalog(true,{course:'nursing',areaIds:[id,second],topicIds:[second],status:'published',versions:'all'});
+ const url=new URL(String(vi.mocked(api).mock.calls[0]![0]),'http://local');
+ expect(url.searchParams.getAll('areaIds')).toEqual([id,second]);expect(url.searchParams.getAll('topicIds')).toEqual([second]);expect(url.searchParams.get('course')).toBe('nursing');expect(url.searchParams.get('status')).toBe('published');
+ vi.mocked(api).mockClear();await listQuestionCatalog(true,{course:'nursing',classificationStatus:'unclassified'});
+ const pending=new URL(String(vi.mocked(api).mock.calls[0]![0]),'http://local');expect(pending.searchParams.get('classificationStatus')).toBe('unclassified');expect(pending.searchParams.has('areaIds')).toBe(false);expect(pending.searchParams.has('topicIds')).toBe(false);
+});

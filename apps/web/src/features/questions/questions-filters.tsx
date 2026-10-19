@@ -6,6 +6,7 @@ import { t } from './labels';
 import { listQuestionFacets } from './api';
 import { t as bt } from './bank-t';
 import { CourseField } from './course-field';
+import {ClassificationFilters} from './classification-filters';
 
 type Filters = Partial<QuestionListQuery>;
 type Named = { id: string; name: string };
@@ -212,15 +213,16 @@ export function QuestionFilterBar({
 /* ---- F34 student bank filters (flag bankStudent): multivalue, facet counts, ARIA topic combobox ---- */
 
 type Difficulty = 'easy' | 'medium' | 'hard';
-export type BankFilters = { search: string; topicIds: string[]; institutions: string[]; years: number[]; difficulties: Difficulty[]; origin: '' | 'official_exam' | 'remoa_authored'; state: '' | 'unseen' | 'answered' | 'wrong' | 'favorite'; sort: '' | 'difficulty' | 'topic'; /** G29: optional course filter (null = none, the default: never empties the bank on its own). */ course: HealthCourseCode | null };
-export const emptyBankFilters: BankFilters = { search: '', topicIds: [], institutions: [], years: [], difficulties: [], origin: '', state: '', sort: '', course: null };
-export const bankFilterCount = (f: BankFilters) => f.topicIds.length + f.institutions.length + f.years.length + f.difficulties.length + (f.origin ? 1 : 0) + (f.state ? 1 : 0) + (f.search.trim() ? 1 : 0) + (f.course ? 1 : 0);
+export type BankFilters = { areaIds?:string[];classificationStatus?:'unclassified';search: string; topicIds: string[]; institutions: string[]; years: number[]; difficulties: Difficulty[]; origin: '' | 'official_exam' | 'remoa_authored'; state: '' | 'unseen' | 'answered' | 'wrong' | 'favorite'; sort: '' | 'difficulty' | 'topic'; /** G29: optional course filter (null = none, the default: never empties the bank on its own). */ course: HealthCourseCode | null };
+export const emptyBankFilters: BankFilters = { areaIds:[],search: '', topicIds: [], institutions: [], years: [], difficulties: [], origin: '', state: '', sort: '', course: null };
+export const bankFilterCount = (f: BankFilters) => (f.areaIds?.length??0)+(f.classificationStatus?1:0)+f.topicIds.length + f.institutions.length + f.years.length + f.difficulties.length + (f.origin ? 1 : 0) + (f.state ? 1 : 0) + (f.search.trim() ? 1 : 0) + (f.course ? 1 : 0);
 export type BankTab = 'all' | 'mine';
 /** Query shared by list and facets (no cursor). G29: the tab is only the scope ('all' = catalog + mine, 'mine' = created by me); the origin filter and the course exist only in 'all'. */
 export const bankQuery = (tab: BankTab, f: BankFilters): Partial<QuestionListQuery> => ({
   scope: tab === 'all' ? 'all' : 'mine',
   origin: tab === 'all' ? f.origin || undefined : undefined,
   search: f.search.trim() || undefined,
+  areaIds:tab==='all'&&f.areaIds?.length?f.areaIds:undefined,classificationStatus:tab==='all'?f.classificationStatus:undefined,
   topicIds: f.topicIds.length ? f.topicIds : undefined, institutions: f.institutions.length ? f.institutions : undefined,
   years: f.years.length ? f.years : undefined, difficulties: f.difficulties.length ? f.difficulties : undefined,
   state: f.state || undefined, sort: f.sort || undefined,
@@ -317,11 +319,12 @@ export function BankFilterPanel({ tab, filters, onChange, onClear, facets, facet
   return (
     <div className="flex flex-col gap-4" role="group" aria-label={bt('questionsBank.filtersGroup')}>
       {tab === 'all' ? <div className="flex min-w-0 flex-col gap-3">
-        <div><FilterChip pressed={filters.course !== null} onClick={() => set({ course: filters.course ? null : 'medicine' })}>{filters.course ? bt('questionsBank.courseFilterOff') : bt('questionsBank.courseFilter')}</FilterChip></div>
-        {filters.course ? <CourseField label={bt('questionsBank.courseLabel')} placeholder={bt('questionsBank.coursePlaceholder')} emptyLabel={bt('questionsBank.courseNone')} value={filters.course} onChange={(course) => set({ course })} /> : null}
+        <div><FilterChip pressed={filters.course !== null} onClick={() => set({ course: filters.course ? null : 'medicine',areaIds:[],topicIds:[],classificationStatus:undefined })}>{filters.course ? bt('questionsBank.courseFilterOff') : bt('questionsBank.courseFilter')}</FilterChip></div>
+        {filters.course ? <CourseField label={bt('questionsBank.courseLabel')} placeholder={bt('questionsBank.coursePlaceholder')} emptyLabel={bt('questionsBank.courseNone')} value={filters.course} onChange={(course) => set({ course,areaIds:[],topicIds:[],classificationStatus:undefined })} /> : null}
       </div> : null}
-      <TopicCombobox tab={tab} filters={filters} onPick={(topic) => { topicNames[topic.id] = topic.name; set({ topicIds: toggle(filters.topicIds, topic.id) }); }} />
-      {filters.topicIds.length ? <ul aria-label={bt('questionsBank.topicSelected')} className="flex flex-wrap gap-2">{filters.topicIds.map((id) => {
+      {tab==='all'?<ClassificationFilters course={filters.course} value={{areaIds:filters.areaIds??[],topicIds:filters.topicIds,classificationStatus:filters.classificationStatus}} onChange={set}/>:null}
+      {tab==='mine'?<TopicCombobox tab={tab} filters={filters} onPick={(topic) => { topicNames[topic.id] = topic.name; set({ topicIds: toggle(filters.topicIds, topic.id) }); }} />:null}
+      {tab==='mine'&&filters.topicIds.length ? <ul aria-label={bt('questionsBank.topicSelected')} className="flex flex-wrap gap-2">{filters.topicIds.map((id) => {
         const name = topicNames[id] ?? bt('questionsBank.topicUnknown');
         return <li key={id}><Button size="sm" variant="secondary" aria-label={bt('questionsBank.topicRemove', { name })} onClick={() => set({ topicIds: filters.topicIds.filter((v) => v !== id) })}>{name} ×</Button></li>;
       })}</ul> : null}

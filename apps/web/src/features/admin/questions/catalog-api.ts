@@ -1,7 +1,7 @@
 import type {QuestionAdminCatalogQuery,QuestionAdminCatalogPage,QuestionHistoryQuery,QuestionVersionHistoryPage,QuestionReviewHistoryPage} from '@remoa/contracts';
 import {request,QuestionsApiError} from '@/features/questions/request';
 const base=(admin:boolean)=>`/v1/${admin?'admin':'editorial'}/questions`;
-const params=(query:Record<string,unknown>)=>{const result=new URLSearchParams();for(const[key,value]of Object.entries(query))if(value!==undefined)result.set(key,String(value));return result;};
+const params=(query:Record<string,unknown>)=>{const result=new URLSearchParams();for(const[key,value]of Object.entries(query))if(value!==undefined){if(Array.isArray(value))for(const item of value)result.append(key,String(item));else result.set(key,String(value));}return result;};
 export async function listQuestionCatalog(admin:boolean,query:Partial<QuestionAdminCatalogQuery>,signal?:AbortSignal):Promise<QuestionAdminCatalogPage>{
  const c=await import('./catalog-schema-loaders');const parsed=c.questionAdminCatalogQuerySchema.parse(query);const path=`${base(admin)}/catalog?${params(parsed)}`;
  const result=admin?await request(path,c.questionAdminCatalogResultSchema,{signal}):await request(path,c.questionAdminCatalogPageSchema,{signal});

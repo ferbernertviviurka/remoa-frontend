@@ -23,8 +23,8 @@ export function TeamDisclosure({ question }: { question: QuestionPublic }) {
       <p>{t('questions.teamSourceAreas', { names: disclosure.sourceAreaCodes.map(code => t(`questions.teamSourceAreaLabels.${code}`)).join(', ') })}</p>
       <p>{t('questions.teamClassificationUnreviewed')}</p>
     </> : null}
-    {!question.areaId ? <p>{t('questions.teamAreaUnclassified')}</p> : null}
-    {!question.topicId ? <p>{t('questions.teamTopicUnclassified')}</p> : null}
+    {!question.areaId&&!question.classification?.area ? <p>{t('questions.teamAreaUnclassified')}</p> : null}
+    {!question.topicId&&!question.classification?.topic ? <p>{t('questions.teamTopicUnclassified')}</p> : null}
     <p>{t(rightsLabel)}</p>
     {approved && !expired && expiresAt ? <p>{t('questions.teamSourceExpires', { date: new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(expiresAt)) })}</p> : null}
     {disclosure.flags.map(flag => <p key={flag}>{t(`questions.teamFlags.${flag}`)}</p>)}

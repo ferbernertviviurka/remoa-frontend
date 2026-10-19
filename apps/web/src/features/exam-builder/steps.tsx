@@ -80,7 +80,7 @@ export function ThemeCard({params,patch,areas,topics,theme,onTheme}:{params:Exam
   </div></Card>;
 }
 
-export function StepContent({content,onContent,params,patch,av,areaName,toggleArea,topics,preset,presets,onPreset,matrixCount,showCourse,courseName,onCourse,courseEmpty,courseRef,prefilled,theme,areaOpts=[]}:{areaOpts?:Opt[];content:Content;onContent:(c:Content)=>void;params:ExamBuilderParams;patch:Patch;av:ExamAvailability|null;areaName:(id:string|null)=>string;toggleArea:(id:string,on:boolean)=>void;topics:Opt[];preset:PresetId|null;presets:readonly PresetId[];onPreset:(id:PresetId)=>void;matrixCount:number;showCourse:boolean;courseName:string;onCourse:(c:HealthCourseCode)=>void;courseEmpty:ReactNode;courseRef:RefObject<HTMLDivElement|null>;prefilled:string|null;theme:ReactNode}){
+export function StepContent({catalogFilters,content,onContent,params,patch,av,areaName,toggleArea,topics,preset,presets,onPreset,matrixCount,showCourse,courseName,onCourse,courseEmpty,courseRef,prefilled,theme,areaOpts=[]}:{catalogFilters?:ReactNode;areaOpts?:Opt[];content:Content;onContent:(c:Content)=>void;params:ExamBuilderParams;patch:Patch;av:ExamAvailability|null;areaName:(id:string|null)=>string;toggleArea:(id:string,on:boolean)=>void;topics:Opt[];preset:PresetId|null;presets:readonly PresetId[];onPreset:(id:PresetId)=>void;matrixCount:number;showCourse:boolean;courseName:string;onCourse:(c:HealthCourseCode)=>void;courseEmpty:ReactNode;courseRef:RefObject<HTMLDivElement|null>;prefilled:string|null;theme:ReactNode}){
   const showAreas=content==='area'||content==='custom',showTopics=content==='topic'||content==='custom';
   const chosen=params.areaIds;
   const areaRows=(av?.areas??[]).filter(a=>a.areaId!==null);
@@ -104,8 +104,9 @@ export function StepContent({content,onContent,params,patch,av,areaName,toggleAr
       </div>
       {preset==='enamed'?<p className="m-0 text-sm text-muted">{t('examBuilder.enamedNote')}</p>:null}
     </div>:null}
-    {noSubjects&&(showAreas||showTopics)?<Alert tone="steady" role="status" title={t('examBuilder.subjectsNone',{course:courseName})}/>:null}
-    {(showAreas||showTopics)&&!noSubjects?<Card><div className="flex flex-col gap-5">
+    {!catalogFilters&&noSubjects&&(showAreas||showTopics)?<Alert tone="steady" role="status" title={t('examBuilder.subjectsNone',{course:courseName})}/>:null}
+    {catalogFilters&&(showAreas||showTopics)?<Card><div className="flex flex-col gap-5">{catalogFilters}{content==='custom'?<><DifficultyField params={params} patch={patch}/><Select label={t('examBuilder.progress')} value={params.progress} onValueChange={v=>patch({progress:v as ExamBuilderParams['progress']})} options={(['all','unseen','wrong'] as const).map(v=>({value:v,label:t(`examBuilder.progressOptions.${v}`)}))}/></>:null}</div></Card>:null}
+    {!catalogFilters&&(showAreas||showTopics)&&!noSubjects?<Card><div className="flex flex-col gap-5">
       {showAreas?<fieldset className="m-0 flex flex-col gap-1 border-0 p-0"><legend className="mb-1 text-[15px] font-bold">{t('examBuilder.areas')}</legend>
         {areaRows.map(a=>{const id=a.areaId as string;return <Checkbox key={id} checked={chosen.length===0||chosen.includes(id)} onCheckedChange={on=>toggleArea(id,on===true)}
           label={`${areaName(id)} · ${a.available===1?t('examBuilder.areaAvailableOne'):t('examBuilder.areaAvailable',{n:a.available})}`}/>;})}

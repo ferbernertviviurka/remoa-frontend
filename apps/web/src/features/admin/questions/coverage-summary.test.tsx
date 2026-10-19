@@ -13,13 +13,14 @@ describe('canonical public coverage',()=>{
  });
  it('shows all eligible courses and classification gaps while keeping overlapping source tags separate',()=>{
   const byCourse=[{course:'biomedicine',count:704},{course:'dentistry',count:1456},{course:'medicine',count:17760},{course:'nursing',count:1568},{course:'nutrition',count:940},{course:'pharmacy',count:1248},{course:'physical_education',count:312},{course:'physiotherapy',count:750},{course:'psychology',count:846},{course:'veterinary_medicine',count:1925}];
-  const metrics=questionCatalogMetricsSchema.parse({...base,acervoCoverage:{eligibleTotal:27509,byCourse,unclassifiedArea:27000,unclassifiedTopic:27509,sourceAreaTags:[{code:'clinica-medica',count:20000},{code:'cirurgia',count:20000}],sourceAreaTagsUnreviewed:true}});
+  const metrics=questionCatalogMetricsSchema.parse({...base,acervoCoverage:{eligibleTotal:27509,byCourse,unclassifiedArea:26316,unclassifiedTopic:26316,automaticClassifiedTotal:1167,sourceAreaTags:[{code:'clinica-medica',count:20000},{code:'cirurgia',count:20000}],sourceAreaTagsUnreviewed:true}});
   render(<CoverageSummary metrics={metrics}/>);
-  expect(screen.getAllByText('27.509')).toHaveLength(2);
+  expect(screen.getByText('27.509')).toBeInTheDocument();
+  expect(screen.getByText('Classificação automática, ainda não revisada: 1.167 questões aptas')).toBeInTheDocument();
   expect(screen.getByText('10 cursos com questões aptas')).toBeInTheDocument();
   for(const name of ['Biomedicina','Odontologia','Medicina','Enfermagem','Nutrição','Farmácia','Educação Física','Fisioterapia','Psicologia','Medicina Veterinária'])expect(screen.getByText(name)).toBeInTheDocument();
   const area=screen.getByText('Área ainda não classificada').parentElement!;
-  expect(within(area).getByText('27.000')).toBeInTheDocument();
+  expect(within(area).getByText('26.316')).toBeInTheDocument();
   expect(screen.getByText('Assunto ainda não classificado')).toBeInTheDocument();
   expect(screen.getByRole('heading',{name:'Áreas de origem — não revisadas'})).toBeInTheDocument();
   expect(screen.getByText(/não some estas contagens/)).toBeInTheDocument();
