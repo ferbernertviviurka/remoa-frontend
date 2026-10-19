@@ -16,8 +16,8 @@ beforeEach(()=>{push.mockClear();vi.mocked(getExam).mockReset();vi.mocked(create
 afterEach(cleanup);
 it('offers the real catalog builder first and keeps the AI origin explicit, with honest zero papers',async()=>{
  render(<ExamsScreen/>);
- expect(screen.getByRole('link',{name:'Criar prova personalizada'})).toHaveAttribute('href','/app/banco-de-questoes/prova');
- expect(screen.getByRole('link',{name:'Gerar com IA'})).toHaveAttribute('href','/app/banco-de-questoes/prova?source=ai');
+ expect(screen.getByRole('link',{name:'Criar prova personalizada'})).toHaveAttribute('href','/app/prova/nova-prova');
+ expect(screen.getByRole('link',{name:'Gerar com IA'})).toHaveAttribute('href','/app/prova/nova-prova?source=ai');
  await screen.findByText('Ainda não há provas de origem disponíveis.');
  expect(screen.getByText(/seleções por prova de origem aparecem aqui quando publicadas/)).toBeInTheDocument();
  expect(screen.queryByText('A administração está trabalhando nisso')).toBeNull();
