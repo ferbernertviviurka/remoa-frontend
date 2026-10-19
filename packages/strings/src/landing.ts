@@ -457,7 +457,7 @@ export const landing = {
     items: [
       {
         q: 'O Remoa é só para Medicina?',
-        a: 'Não. O Remoa funciona para qualquer curso da área da saúde e também para quem estuda outro assunto. Os mapas prontos do ENAMED são para quem estuda Medicina; o conteúdo pronto das outras áreas da saúde está a caminho, e enquanto isso você monta os seus próprios mapas.',
+        a: 'Não. O Remoa funciona para qualquer curso da área da saúde e também para quem estuda outro assunto. Os mapas prontos do ENAMED são para quem estuda Medicina; os mapas prontos de outras áreas estão a caminho. O banco de questões já tem conteúdo para 10 cursos da saúde, com disponibilidade por curso e filtros. Você também pode montar seus próprios mapas.',
       },
       {
         q: 'Funciona com o Anki?',
@@ -586,15 +586,15 @@ export const landing = {
 
   seo: {
     title: 'Remoa: mapas de estudo para a área da saúde, com IA e Enamed',
-    description: 'Mapas de estudo para toda a área da saúde: a IA cria cards e corrige com fonte, calendário de provas e mapas prontos do Enamed para Medicina.',
+    description: 'Estude na área da saúde com mapas, IA e mais de 27 mil questões para 10 cursos. Monte provas personalizadas e pratique no seu ritmo.',
     ogTitle: 'O que você aprende, fica.',
-    ogDescription: 'Mapas de estudo da área da saúde que te testam pela conexão.',
+    ogDescription: 'Mapas, questões e provas personalizadas para estudar na área da saúde.',
     orgName: 'Remoa',
     appCategory: 'EducationalApplication',
     // /llms.txt (llmstxt.org): resumo do produto para assistentes de IA.
     llms: {
       summary: 'O Remoa é um app de estudo para toda a área da saúde: o aluno monta mapas de cards conectados, revisa na hora certa com revisão espaçada (FSRS) e usa o próprio mapa como teste.',
-      details: 'Público: estudantes e profissionais de qualquer curso da área da saúde (graduação, técnico, residência, concursos e atualização). Os mapas prontos do Enamed são para Medicina, começando pela Clínica Médica; o conteúdo pronto das outras áreas está a caminho. Principais recursos: mapas de cards ligados por conexões com rótulo; fila diária "Revisar hoje"; modo "Desafiar este mapa" (card oculto, conexão, próximo passo, imagem e caso clínico); correção das respostas com fonte; cobertura da matriz do Enamed; importação de baralhos do Anki e de PDFs; mapas prontos com revisão editorial; revisão pelo celular. O conteúdo médico gerado por IA só é publicado depois de revisado por um médico.',
+      details: 'Público: estudantes e profissionais de qualquer curso da área da saúde (graduação, técnico, residência, concursos e atualização). Os mapas prontos do Enamed são para Medicina, começando pela Clínica Médica; os mapas prontos de outras áreas estão a caminho. O banco tem questões disponíveis para 10 cursos da saúde, com disponibilidade variável por curso e filtros. É possível criar provas personalizadas, fazer simulados e explorar seleções parciais de questões de provas de origem. Principais recursos: mapas de cards ligados por conexões com rótulo; fila diária "Revisar hoje"; modo "Desafiar este mapa" (card oculto, conexão, próximo passo, imagem e caso clínico); correção das respostas com fonte; cobertura da matriz do Enamed; importação de baralhos do Anki e de PDFs; mapas prontos com revisão editorial; revisão pelo celular. O conteúdo médico gerado por IA só é publicado depois de revisado por um médico.',
       pages: 'Páginas',
       blog: 'Blog',
       optional: 'Optional',

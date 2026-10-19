@@ -68,8 +68,8 @@ describe('plans keep their prices and carry curso + plano (FR-37)', () => {
   });
 });
 
-describe('no question bank on the Landing (existing rule)', () => {
-  it('no "banco de questões" in the rendered sections, the FAQ list or the header labels', () => {
+describe('available question bank on the Landing', () => {
+  it('FAQ distinguishes the available bank from forthcoming ready-made maps', () => {
     const { container } = render(
       <>
         <HeroSection h1="a" flags={flags} />
@@ -82,7 +82,8 @@ describe('no question bank on the Landing (existing rule)', () => {
         <FaqSection items={buildFaqItems(true)} />
       </>,
     );
-    expect(container.textContent!.toLowerCase()).not.toContain('banco de quest');
+    expect(container.textContent!.toLowerCase()).toContain('banco de questões já tem conteúdo para 10 cursos');
+    expect(container.textContent!).toContain('mapas prontos de outras áreas estão a caminho');
   });
 });
 

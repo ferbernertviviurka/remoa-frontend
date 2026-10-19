@@ -12,7 +12,7 @@ import { LandingAnalytics } from './shell/landing-analytics';
 import { buildFaqItems } from './shell/faq';
 import { loadPublicPriceBook } from './shell/pricebook';
 import type { H1Variant } from './shell/variants';
-import { CalendarIsland, DemoIsland, EnamedIsland, FaqIsland, FeaturesIsland, IaIsland, PlansIsland, WaitlistIsland } from './islands';
+import { BankIsland, CalendarIsland, DemoIsland, EnamedIsland, FaqIsland, FeaturesIsland, IaIsland, PlansIsland, WaitlistIsland } from './islands';
 import { loadEnamedSlides } from './enamed/load-enamed';
 import './shell/shell.css'; // used inside lazy islands (D-535): keep it in the page's CSS so the server HTML is styled before they load
 import './demos.css';
@@ -39,6 +39,7 @@ export async function LandingPage({ h1, variant }: { h1: H1Variant; variant: '29
       <FeaturesIsland />
       <IaIsland features={flags.ia} />
       <EnamedIsland slides={enamed} />
+      <BankIsland />
       <CalendarIsland />
       <MoreSection flags={flags} />
       <DemoIsland flags={flags} />

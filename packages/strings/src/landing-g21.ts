@@ -179,15 +179,19 @@ export const landingExtras = {
   },
   bank: {
     eyebrow: 'Banco de questões',
-    title: 'Pratique por assunto, no modo estudo ou em simulado.',
-    lead: 'Filtre o acervo, responda no seu ritmo e volte só ao que errou.',
+    title: 'Mais de {n} mil questões disponíveis.',
+    lead: 'Questões para 10 cursos da saúde. Monte sua prova, treine no modo estudo ou faça um simulado. A disponibilidade varia conforme o curso e os filtros.',
+    create: 'Criar minha prova',
+    browse: 'Explorar Provas',
+    coverage: 'Seleções de questões de provas de origem',
+    coverageHelp: 'Explore as questões disponíveis de cada seleção. A seleção pode conter apenas parte da prova original.',
     playerLabel: 'Animação em três passos: filtrar questões por assunto, responder no modo estudo e rever o caderno de erros.',
     preview: 'Prévia',
     windowTitle: 'Remoa · Banco de questões',
     steps: [
-      { title: 'Filtre por assunto', text: 'Escolha a área e o tema e monte o treino com o que quer praticar.' },
+      { title: 'Escolha seu curso', text: 'Consulte as questões disponíveis e ajuste os filtros para o seu treino.' },
       { title: 'Estudo ou simulado', text: 'No estudo a correção vem na hora. No simulado, só no fim.' },
-      { title: 'Caderno de erros', text: 'O que você errou fica separado para revisar de novo.' },
+      { title: 'Retome e acompanhe', text: 'Continue de onde parou e consulte seus resultados no histórico de provas.' },
     ],
     play: {
       compose: 'Monte o treino',
